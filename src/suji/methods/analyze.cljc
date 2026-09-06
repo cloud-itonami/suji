@@ -146,10 +146,22 @@
        (add! "| muscle | tension %MVC | endurance | stiffness (強張り) | band |")
        (add! "|---|---|---|---|---|")
        (doseq [s (stable-sort-by-neg-stiffness (:strains r))]
-         (let [end (cond
+         (let [;; The endurance figure carries WHERE it sits relative to the range
+               ;; the published curve was fitted over, and the report used to drop
+               ;; that. A bare `∞` for a muscle at 6 %MVC is the model's own floor,
+               ;; not a measured result, and 20 of the 48 rows at the default
+               ;; posture sit below it — which is where a desk posture lives.
+               ;; `strain` already computes the position; this only stops
+               ;; discarding it.
+               pos (case (:endurance-position s)
+                     :below-endurance-floor "（モデルの床未満）"
+                     :below-fitted-range "（適合域より下）"
+                     :above-maximum-voluntary-contraction "（MVC 超）"
+                     nil)
+               end (cond
                      (nil? (:endurance-minutes s)) "—"
-                     (math/infinite? (:endurance-minutes s)) "∞"
-                     :else (str (fmt-f 0 (:endurance-minutes s)) " min"))
+                     (math/infinite? (:endurance-minutes s)) (str "∞" pos)
+                     :else (str (fmt-f 0 (:endurance-minutes s)) " min" pos))
                ;; a refused muscle stays in the table with a dash. Dropping it
                ;; would make a muscle the model could not solve read as a muscle
                ;; that was fine — the same reason `stable-sort-by-neg-stiffness`
@@ -158,6 +170,24 @@
            (add! (str "| " (:name s) " | " mvc " | " end " | "
                       (fmt-or-dash 2 (:stiffness-index s)) " | "
                       (strain/stiffness-band (:stiffness-index s)) " |"))))
+       ;; Why each dashed row has no %MVC. The table renders every one of them as
+       ;; `—`, which correctly says "no number" and cannot say WHICH KIND of no
+       ;; number — and there are two, which this library is careful to keep apart
+       ;; (`muscle/numeric-mvc?`: "the model declined to compute a force" versus
+       ;; "the entry is a LIGAMENT, which cannot contract and therefore has no
+       ;; maximum voluntary contraction to be a fraction of"). A reader of the
+       ;; table alone cannot tell a ligament from a refused antagonist, so the
+       ;; distinction the model makes does not survive to the page.
+       (let [by-reason (->> (:strains r)
+                            (remove muscle/numeric-mvc?)
+                            (group-by #(or (:refused %) :no-mvc))
+                            (sort-by (comp name key)))]
+         (when (seq by-reason)
+           (add! "")
+           (add! "無い理由（%MVC 欄が — の行）:")
+           (doseq [[reason ss] by-reason]
+             (add! (str "- `" (name reason) "` — "
+                        (str/join "、" (map :name ss)))))))
        (let [w (worst-stiffness (:strains r))]
          (add! "")
          (add! (if w
