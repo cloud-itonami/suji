@@ -51,16 +51,22 @@ sustained-isometric dose accumulated over a work session, from a power-law endur
 curve of the family Rohmert's belongs to — *not* Rohmert's own equation, and since
 2026-09-07 it answers to a published meta-analysis of measured endurance times.
 
-### The answer (`bb -m suji.methods.analyze`)
+### The answer (`clojure -M -m suji.methods.analyze`)
 
 | workstation | head flexion | neck load | ×head-weight | worst-muscle stiffness |
 |---|---|---|---|---|
 | laptop-on-lap | 44° | **23.6 kgf** | 4.2× | cervical-extensors **1.00** (very-high) |
 | laptop-on-desk | 27° | 17.9 kgf | 3.2× | cervical-extensors 1.00 |
-| external-monitor + keyboard @ eye level | 5° | **8.1 kgf** | 1.4× | anterior-deltoid **0.05** (low) |
+| external-monitor + keyboard @ eye level | 5° | **8.1 kgf** | 1.4× | erector-spinae **0.04** (low) |
 
 → raising the screen to eye level cuts the cervical compressive load **−66%** and drops every
-muscle to *low* stiffness. (Self-referenced Wellbecoming, G3 — the same body across setups, not a
+muscle to *low* stiffness.
+
+⚠ **This table is a transcript of one run, and it went stale without anyone
+noticing** — the last column said `anterior-deltoid 0.05` and the report says
+`erector_spinae 0.04`. It could go stale for a long time because until 2026-09-07
+`clojure -M -m suji.methods.analyze` **threw**, so nobody was reading its output
+to compare. See the report note below. Regenerate rather than trusting it. (Self-referenced Wellbecoming, G3 — the same body across setups, not a
 ranking of people. Mechanism only; a clinician owns any health interpretation.)
 
 ## Empirical anchor — Hansraj (2014)
@@ -408,10 +414,10 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 220 tests / 6470 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 202 tests / 1420 assertions
+clojure -M:test                                   # JVM   — 223 tests / 6538 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 205 tests / 1488 assertions
 clojure -M:lint                                   # 0 errors (13 pre-existing warnings)
-clojure -M -m suji.methods.analyze                # the laptop-posture report
+clojure -M -m suji.methods.analyze                # the laptop-posture report (works again)
 ```
 
 **Why two hosts.** Until 2026-09-06 every namespace here was named `.cljc` and four
@@ -812,6 +818,26 @@ out of range. The hip, knee and ankle joint centres are stacked on one vertical
 line with no anterior-posterior offsets, so the small characteristic knee and hip
 moments of quiet standing come out near zero where a real body has them. A seated
 person's feet are unloaded.
+
+**The report did not run (fixed 2026-09-07).** `clojure -M -m suji.methods.analyze`,
+the command this README advertises, threw a `NullPointerException` out of `fmt-f`.
+`render-report` reached straight for `(:mvc-pct s)` and `(:stiffness-index s)` and
+handed them to a formatter that calls `.doubleValue`; a REFUSED muscle has neither,
+and a LIGAMENT has no %MVC at all because it cannot contract. It had been throwing
+since before 2026-09-06 and **nothing in the suite called `render-report`**, so the
+suite was green and the entry point was dead — the same shape as `.cljc` that only
+claims to be portable, one layer up. The lower limb made it worse rather than
+causing it: every seated scenario now has antagonist refusals in its table.
+
+The fix is the idiom `muscle/numeric-mvc?` was written for, at what is now the
+fourth emit site to learn it: **branch on whether the number is there, not on why
+it is not.** A refused muscle stays in the table with a dash and the
+`not-computed` band, because dropping it would make a muscle the model could not
+solve read as a muscle that was fine. A second unreachable-input path in the same
+function is fixed with it: the comparison baseline was looked up by the literal
+name `laptop-on-lap`, so rendering any other set of results returned nil and threw
+two lines later. `report-test` renders the report and asserts on the parsed table
+cells — not on `includes?` of words the prose above the table also uses.
 
 **Honest R0**: design + runnable physics + a validated cervical model. Anthropometry / muscle /
 endurance parameters are `:representative` (G7); the cervical leg is validated and the muscle %MVC
