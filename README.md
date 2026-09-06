@@ -99,8 +99,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 125 tests / 3446 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 109 tests /  544 assertions
+clojure -M:test                                   # JVM   — 132 tests / 3874 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 116 tests /  585 assertions
 clojure -M:lint                                   # 0 errors
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -165,6 +165,28 @@ hand-written expressions. `recruit` shares them by minimum cubed stress
 (Crowninshield & Brand 1981) in closed form — exact, and it moves when the anatomy
 moves. The old trapezius expression also charged the head's extension load a second
 time, on top of the cervical group; that term is gone.
+
+**Every placed joint is solved, except the hip on purpose (2026-09-06).** The
+wrist was the last one the kinematics placed and the kinetics did not, and it had
+the opposite problem from the elbow: no wrist ANGLE existed, so the hand continued
+the forearm rigidly and its muscles' moment arms could not change with a joint that
+could not move. `:wrist-extension-deg` is an input now, the workstation model
+derives it from keyboard height, and wrist extensors and flexors share the
+equilibrium — the extensors carrying it in every palm-down posture, which is the
+group a typist complains about.
+
+The hip stays unsolved deliberately: this is a SEATED model whose base is the
+pelvis, and a hip moment would need a thigh segment `segment/build-body` does not
+have. An absent segment, not a forgotten equilibrium, and
+`every-placed-joint-except-the-hip-has-an-equilibrium` asserts the whole claim
+against the data rather than a comment.
+
+**A retinaculum is not a wrapping surface.** A surface the tendon passes over puts
+a floor under the moment arm and lets the chord win where the chord gives more; a
+retinaculum straps the tendon against the bone, so the arm is pinned in BOTH
+directions. That is why the wrist's arms are near-constant through its range where
+the elbow's are not. Without the distinction the wrist extensor's arm grew from
+11 mm to 29 mm across 45° of extension, which no retinaculum would allow.
 
 **The elbow has an equilibrium (2026-09-06).** `pose` has placed an elbow since
 the pose layer existed and no muscle acted about it — the forearm and hand hung

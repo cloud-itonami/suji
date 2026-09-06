@@ -146,6 +146,38 @@
     :wrap {:radius-m 0.016 :sign -1.0}
     :source "representative; the elbow extensor, arm ~20-25 mm"}
 
+   ;; --- the wrist --------------------------------------------------------------
+   ;; The last joint the kinematics placed and the kinetics did not. The hand is
+   ;; small, but a keyboard posture holds it out horizontally for hours and the
+   ;; wrist extensors are the muscles a typist actually complains about.
+
+   "wrist_extensors"
+   {:name "wrist_extensors" :paired? true :pcsa-cm2 5.0
+    :acts-about :wrist :task :wrist-flexion
+    ;; lateral epicondyle → dorsal metacarpals. With the forearm horizontal,
+    ;; gravity pulls the hand DOWN, so these are the muscles holding it up —
+    ;; which is why they are the ones a keyboard posture loads.
+    ;; `:ant` is the SEGMENT's own anterior axis, which rotates with it — for a
+    ;; forearm tilted past horizontal it no longer points anywhere near world
+    ;; anterior. Dorsal and palmar are body-fixed, so the offsets are stated in
+    ;; the local frame and the sign that makes the extensors extend was measured,
+    ;; not assumed: stating them the other way round put the PALMAR group on the
+    ;; lifting side, and only the wrapping surface hid it.
+    :origin {:segment "forearm" :along 0.10 :ant 0.0080 :lat 0.0}
+    :insertion {:segment "hand" :along 0.25 :ant 0.0060 :lat 0.0}
+    :wrap {:radius-m 0.011 :sign 1.0 :retinaculum true}
+    :source "representative; wrist extension moment arm ~12-18 mm"}
+
+   "wrist_flexors"
+   {:name "wrist_flexors" :paired? true :pcsa-cm2 8.0
+    :acts-about :wrist :task :wrist-flexion
+    ;; medial epicondyle → palmar metacarpals: the antagonist, larger and with a
+    ;; slightly longer arm, and idle in the posture above
+    :origin {:segment "forearm" :along 0.10 :ant -0.0090 :lat 0.0}
+    :insertion {:segment "hand" :along 0.25 :ant -0.0070 :lat 0.0}
+    :wrap {:radius-m 0.014 :sign -1.0 :retinaculum true}
+    :source "representative; wrist flexion moment arm ~15-20 mm"}
+
    ;; --- the frontal plane ------------------------------------------------------
    ;; None of these existed before 2026-09-06, which is why every frontal-plane
    ;; moment this actor computed was reported as carried by nobody.
@@ -292,6 +324,10 @@
   there. The two branches agree at the crossing (|straight| = R), so the arm is
   continuous, which `attachment-test` checks rather than assumes.
 
+  `:retinaculum true` on the wrap means the tendon is strapped against the bone
+  rather than passing over it, so the arm is pinned at the radius in BOTH
+  directions instead of merely floored — see the branch below.
+
   `:sign` is declared, not derived. It says which side of the joint the muscle
   wraps on — anterior for the deltoid, which is what keeps it a flexor rather than
   letting it swap sides when the chord would have crossed through. Deriving it
@@ -312,6 +348,18 @@
        ;; far enough to the wrong side its magnitude exceeds R again, and the model
        ;; hands back a straight-line arm with the sign flipped, so the flexor
        ;; becomes an extensor at 130°. Measured 2026-09-06.
+       ;; A RETINACULUM is not a wrapping surface. A surface the tendon passes
+       ;; over puts a FLOOR under the moment arm: the chord may give more leverage
+       ;; and then it wins. A retinaculum straps the tendon against the bone, so
+       ;; the arm is PINNED at the radius in both directions — which is why the
+       ;; wrist's moment arms are near-constant through its range where the elbow's
+       ;; are not. Measured 2026-09-06: without the distinction the wrist extensor
+       ;; arm grew from 11 mm to 29 mm across 45 deg of extension, which no
+       ;; retinaculum would allow.
+       (and radius-m (:retinaculum (:wrap muscle)))
+       {:arm (* (or sign 1.0) radius-m) :straight straight
+        :wrapped? true :retinaculum? true :radius-m radius-m}
+
        (and radius-m (< (* (or sign 1.0) straight) radius-m))
        {:arm (* (or sign 1.0) radius-m) :straight straight
         :wrapped? true :radius-m radius-m}
