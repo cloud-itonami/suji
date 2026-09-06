@@ -8,6 +8,7 @@
   That is what these pin."
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
+            [clojure.set]
             [suji.methods.attachment :as att]
             [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]
@@ -316,20 +317,37 @@
 
 ;; --- the wrist ---------------------------------------------------------------
 
-(deftest every-placed-joint-except-the-hip-has-an-equilibrium
+(def ^:private landmarks
+  "Points `pose` places that are NOT joints, so nothing is expected to take a
+  moment about them. `:pelvis-base` is the bottom of the pelvis segment on the
+  midline — the femoral heads are `:hip/left` and `:hip/right`, to either side of
+  it — and the heels and toes are the two edges of the base of support."
+  #{:vertex :pelvis-base :heel/left :heel/right :toe/left :toe/right})
+
+(def ^:private awaiting-muscles
+  "Joints the kinematics places and the kinetics does not solve YET.
+
+  This set is the honest form of the gap. It used to be the sentence `the hip is
+  deliberately unsolved, because a seated model has no thigh` — which was true when
+  it was written, stopped being true the moment `segment/build-body` grew a thigh,
+  and would have gone on reading as a decision. A set that has to be emptied is
+  harder to forget than a paragraph that has to be reread."
+  #{:hip/left :hip/right :knee/left :knee/right :ankle/left :ankle/right})
+
+(deftest every-placed-joint-has-an-equilibrium-or-is-named-as-a-gap
   ;; The coverage question, asked of the data rather than of a comment: which
-  ;; joints does the kinematics place, and which does the kinetics solve? The hip
-  ;; is the one exception and it is not an oversight — this is a SEATED model whose
-  ;; base is the pelvis, and a hip moment would need a thigh segment that
-  ;; `segment/build-body` does not have. An absent segment, not a forgotten
-  ;; equilibrium.
+  ;; joints does the kinematics place, and which does the kinetics solve?
   (let [p (pose/solve-pose body (merge neutral {:elbow-flexion-deg 90.0}))
         placed (set (keys (:joints p)))
         acted (set (map :acts-about att/instances))
-        skeletal (disj placed :hip :vertex)]
+        skeletal (clojure.set/difference placed landmarks awaiting-muscles)]
     (doseq [j skeletal]
       (is (contains? acted j) (str j " is placed by the kinematics and must be solved")))
-    (is (not (contains? acted :hip)) "the hip is deliberately unsolved; see the docstring")))
+    (doseq [j awaiting-muscles]
+      (is (contains? placed j)
+          (str j " is listed as awaiting muscles but is not even placed")))
+    (doseq [j landmarks]
+      (is (contains? placed j) (str j " is listed as a landmark but is not placed")))))
 
 (deftest a-held-out-hand-loads-the-wrist-extensors
   ;; palm down, forearm horizontal: gravity drops the hand, and the muscles that
