@@ -72,7 +72,22 @@
   A zero or negative load produces zero forces rather than a refusal: holding
   nothing is a real answer."
   [candidates load]
-  (let [usable (filter (fn [{:keys [coeff f-max-n]}]
+  (let [;; PASSIVE TENSION IS NOT DISTRIBUTED — it is determined by length and is
+        ;; there whether the nervous system wants it or not. It is subtracted from
+        ;; the load first, through each muscle's own coefficient (an antagonist's
+        ;; passive pull ADDS to what the agonists must supply), and only the
+        ;; remainder is shared. Distributing it alongside the active forces would
+        ;; let the criterion "choose" a force that is not chosen.
+        passive-moment (reduce + 0.0
+                               (for [{:keys [coeff passive-n]} candidates
+                                     :when (and (number? coeff) (number? passive-n))]
+                                 (* coeff passive-n)))
+        load (- load passive-moment)
+        ;; passive tissue can carry the whole thing, and then no activation is
+        ;; needed. A negative remainder is not an error and not a reason to
+        ;; activate an antagonist: it is flexion-relaxation.
+        load (max 0.0 load)
+        usable (filter (fn [{:keys [coeff f-max-n]}]
                          (and (number? coeff) (>= coeff min-coeff)
                               (number? f-max-n) (pos? f-max-n)))
                        candidates)
@@ -98,24 +113,41 @@
                           " — a straight-line model has no wrapping surface here")}
 
               (<= load 0.0)
-              {:name name :force-n 0.0 :coeff coeff :f-max-n f-max-n}
+              ;; nothing is asked of the contractile machinery — but the tissue's
+              ;; own force is still there, and dropping it here reported a muscle
+              ;; transmitting zero while its passive term held the whole posture
+              {:name name :coeff coeff :f-max-n f-max-n
+               :active-n 0.0
+               :passive-n (or (:passive-n c) 0.0)
+               :force-n (or (:passive-n c) 0.0)}
 
               (<= denom 0.0)
               {:name name :refused :no-usable-synergist
+               :passive-n (or (:passive-n c) 0.0)
                :note "no muscle in this task has usable leverage at this posture"}
 
               :else
-              {:name name
-               :coeff coeff
-               :f-max-n f-max-n
-               :force-n (/ (* (pow32 f-max-n) (Math/sqrt coeff) load) denom)}))
+              (let [active (if (pos? denom)
+                             (/ (* (pow32 f-max-n) (Math/sqrt coeff) load) denom)
+                             0.0)
+                    passive (or (:passive-n c) 0.0)]
+                {:name name
+                 :coeff coeff
+                 :f-max-n f-max-n
+                 :active-n active
+                 :passive-n passive
+                 ;; what the muscle is actually transmitting: what it chose to
+                 ;; produce plus what its tissue produces regardless
+                 :force-n (+ active passive)})))
           candidates)))
 
 (defn residual
-  "Σ c_i F_i − load over the entries that got a force. The criterion is exact, so
-  this is zero up to floating point WHENEVER nothing was refused; when something
-  was refused it is the part of the load this model could not place, and reporting
-  it is the difference between an incomplete answer and a wrong one."
+  "Σ c_i F_i − load over the entries that got a force, counting the passive term.
+  The criterion is exact, so this is zero up to floating point WHENEVER nothing
+  was refused AND the passive tissue did not over-carry; when something was
+  refused it is the part of the load this model could not place, and when passive
+  tension exceeds the load it is the surplus the tissue supplies without being
+  asked."
   [shared load]
   (let [carried (reduce + 0.0 (keep (fn [{:keys [coeff force-n]}]
                                       (when (and coeff force-n) (* coeff force-n)))

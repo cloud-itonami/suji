@@ -99,8 +99,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 138 tests / 3980 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 122 tests /  691 assertions
+clojure -M:test                                   # JVM   — 146 tests / 4002 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 130 tests /  713 assertions
 clojure -M:lint                                   # 0 errors
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -165,6 +165,31 @@ hand-written expressions. `recruit` shares them by minimum cubed stress
 (Crowninshield & Brand 1981) in closed form — exact, and it moves when the anatomy
 moves. The old trapezius expression also charged the head's extension load a second
 time, on top of the cervical group; that term is gone.
+
+**Passive tension (2026-09-06).** A stretched muscle produces force without being
+activated and without costing anything metabolically — it is the tissue resisting
+being stretched. This actor assigned the whole of every load to active contraction
+and therefore overstated the effort of any posture that lengthens a muscle. The
+passive term is now subtracted from the load first, through each muscle's own
+coefficient, and only the remainder is shared: it is determined by length, so the
+criterion must not get to choose it. Passive tissue can carry the whole load, and
+then nothing is asked of the contractile machinery at all.
+
+⚠ **It is not, by itself, flexion-relaxation** — and the first draft of the
+docstring said it was. Measured after writing it: at 60° of trunk flexion the
+erector spinae reaches 1.27× its optimal length and its own passive tissue supplies
+151 N of the 3,379 N the posture demands, about 4%. Real flexion-relaxation is the
+posterior ligamentous system taking over — supraspinous and interspinous ligaments,
+thoracolumbar fascia — and those are separate structures this model does not have.
+`the-passive-term-is-small-here-and-the-model-says-so` pins the fraction, so making
+the passive term large enough to explain the phenomenon fails a test and has to be
+argued for.
+
+A measured side effect: the per-level spinal profile's attachment steps are GONE.
+A stretched muscle now contributes across levels where it previously contributed
+exactly zero. `attachment-steps` is still there and still correct — what changed is
+that this model no longer produces the artefact, and its test now checks the
+detector on constructed input rather than asserting the model still has one.
 
 **%MVC's denominator is no longer a constant (2026-09-06).** It divided by
 PCSA × specific tension, which assumes a muscle can produce its maximum at every
