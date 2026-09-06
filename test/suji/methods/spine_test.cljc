@@ -766,3 +766,125 @@
     (is (pos? (:muscle-n-after s))
         (str "the level below is not empty, which is exactly why the exact-zero "
              "test could not fire: " s))))
+
+;; --- C2/C3: what blocks it, measured rather than asserted ---------------------
+;;
+;; `attachment-test`'s `awaiting-muscles` names `:c2c3` as a joint the kinematics
+;; places and the kinetics does not solve, and until 2026-09-08 it explained the
+;; blockage as a shortage of MUSCLES — "Filling it needs the muscles that act on the
+;; upper cervical spine specifically (rectus capitis anterior and lateralis, longus
+;; capitis, the semispinalis and multifidus cervicis fascicles that end on C2), none
+;; of which this model has."
+;;
+;; Two of those were added the same day and they did not fill it, because they act
+;; about the atlanto-occipital joint. That prompted the question this test answers:
+;; is the segmentation the blocker at all? The answer is no — and it is measured
+;; here rather than argued, because the reason a gap is open decides what would
+;; close it, and getting that wrong sends the next wave at the wrong thing.
+;;
+;; `spine/levels-crossed` and `attachment/moment-arm` both take a muscle map rather
+;; than a name, so a candidate that is NOT in `attachment/instances` can be handed
+;; to them and the model will answer about it. That is what makes the claim
+;; checkable without adding an unprovenanced muscle to the solve.
+
+(def ^:private c2c3-candidates
+  "Three real muscles that act on the C2/C3 segment, written in this model's own
+  attachment language and deliberately NOT added to `attachment/muscles`.
+
+  Their anatomy is Vasavada AN, `Architectural Design and Function of Human Back
+  Muscles`, Rothman-Simeone The Spine ch.3, full text fetched 2026-09-08 from
+  https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf and read with
+  `pdftotext -layout`, not an abstract:
+
+    semispinalis cervicis  \"originates on thoracic transverse processes and inserts
+                            on cervical spinous processes from C2 to C5, with the
+                            bulk of its mass inserting on C2\" (p.66)
+    multifidus (cervical)  \"smaller muscles that span one or two vertebral
+                            segments\" (p.66), caudal transverse/articular processes
+                            to rostral spinous processes
+    longus colli, superior \"fibers run superomedially from transverse processes to
+      oblique part          the anterior vertebral bodies\" (p.66); the superior
+                            oblique part reaches the anterior tubercle of the atlas
+
+  THE OFFSETS ARE ILLUSTRATIVE AND NOTHING IS SOLVED WITH THEM. They exist to answer
+  one question — can a line between two of this model's bones cross C2/C3 and have a
+  moment arm about it that moves — and the answer does not depend on their values,
+  only on which segments the ends ride."
+  [{:name "semispinalis_cervicis"
+    :origin {:segment "thorax_abdomen" :along 0.88 :ant -0.0141 :lat 0.0}
+    :insertion {:segment "upper_cervical" :along 0.20 :ant -0.0106 :lat 0.0}}
+   {:name "multifidus_cervicis"
+    :origin {:segment "lower_cervical" :along 0.88 :ant -0.0088 :lat 0.0}
+    :insertion {:segment "upper_cervical" :along 0.20 :ant -0.0106 :lat 0.0}}
+   {:name "longus_colli_superior_oblique"
+    :origin {:segment "lower_cervical" :along 0.45 :ant 0.0053 :lat 0.0}
+    :insertion {:segment "upper_cervical" :along 0.80 :ant 0.0047 :lat 0.0}}])
+
+(deftest the-segmentation-can-express-a-c2c3-muscle
+  ;; THE FIRST HALF OF THE VERDICT: the three muscles that act at C2/C3 in anatomy
+  ;; all have their two ends on DIFFERENT segments of this model, so none of them is
+  ;; the shape `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm`
+  ;; names as the known error, and each has a moment arm about `:c2c3` that moves
+  ;; when the joint moves.
+  (let [flex #(pose/solve-pose body (merge posture/standing-neutral
+                                           {:head-flexion-deg (double %)}))]
+    (doseq [m c2c3-candidates]
+      (is (not= (get-in m [:origin :segment]) (get-in m [:insertion :segment]))
+          (str (:name m) " spans two of this model's bones"))
+      (is (some #(= "C2/C3" (:name %)) (spine/levels-crossed (flex 0) m))
+          (str (:name m) " crosses the C2/C3 level"))
+      (let [arms (mapv #(attachment/moment-arm (flex %) 1.70 m
+                                               (get-in (flex %) [:joints :c2c3]))
+                       [-15 0 15 30 45 60])]
+        (is (= 6 (count (distinct arms)))
+            (str (:name m) ": its arm about :c2c3 must move with the joint, got " arms))
+        (is (every? (fn [[a b]] (not= a b)) (partition 2 1 arms))
+            (str (:name m) ": monotone in the joint angle, got " arms)))))
+  ;; and the one-level multifidus crosses C2/C3 and NOTHING ELSE, which is the
+  ;; sharpest form of the claim: a muscle can be placed that acts at this joint and
+  ;; at no other level in the model
+  (let [mf (second c2c3-candidates)
+        crossed (mapv :name (spine/levels-crossed
+                             (pose/solve-pose body posture/standing-neutral) mf))]
+    (is (= ["C2/C3"] crossed)
+        (str "a C3-to-C2 multifidus crosses exactly the one level, got " crossed))))
+
+(deftest nothing-is-solved-at-c2c3-and-the-reason-is-provenance
+  ;; THE SECOND HALF: the joint is still unsolved, and now the reason can be stated
+  ;; without hedging. It is not the segmentation — the test above measures that. It
+  ;; is that no PCSA is published for any of the three in the source this model uses,
+  ;; and that the lumped `cervical_extensors` is already documented as standing for
+  ;; two of them, so adding them would double-count against a number that has no
+  ;; provenance to divide.
+  (let [pd (pose/solve-pose body lap)]
+    ;; nothing acts AT it
+    (is (empty? (filter #(= :c2c3 (:acts-about %)) attachment/instances))
+        "no muscle in this model is solved at :c2c3")
+    (is (contains? (:joints pd) :c2c3) "and the joint is placed, so this is a gap")
+    ;; muscles DO cross the level, and every one of them belongs to another joint's
+    ;; equilibrium — which is the shape `awaiting-muscles` calls a lower bound
+    (let [crossing (filter #(some (fn [l] (= "C2/C3" (:name l)))
+                                  (spine/levels-crossed pd %))
+                           attachment/instances)]
+      (is (seq crossing) "muscles do cross the C2/C3 level")
+      (is (every? #(not= :c2c3 (:acts-about %)) crossing)
+          (str "and not one of them is solved at it: "
+               (mapv (juxt :name :acts-about) crossing)))
+      ;; the anterior half of that set is new on 2026-09-08. Before it, every line
+      ;; crossing C2/C3 that carried force was a posterior extensor; `longus_capitis`
+      ;; is the first anterior one, so the level's lower bound is less short than it
+      ;; was even though nothing is solved there yet.
+      (is (some #(= "longus_capitis" (:group %)) crossing)
+          (str "an anterior line now crosses C2/C3: " (mapv :name crossing))))
+    ;; the lumped group is where the double-count would land, and its own :source
+    ;; names the two muscles it stands for. Pinning the SENTENCE rather than a
+    ;; number, because the blocker is a provenance claim and a provenance claim
+    ;; that quietly disappears from the file is exactly how a gap gets refilled by
+    ;; accident.
+    (let [src (:source (attachment/instance "cervical_extensors"))]
+      (is (re-find #"semispinalis cervicis" src)
+          "the lumped cervical group still declares that it stands for semispinalis cervicis")
+      (is (re-find #"multifidus" src)
+          "and for multifidus, which is the other muscle acting at C2/C3")
+      (is (re-find #"UNPROVENANCED" src)
+          "and it still declares that its own 12.0 cm2 has no source to carve from"))))
