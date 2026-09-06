@@ -387,10 +387,17 @@
   ;; reach zero, which the model no longer produces. The README published the
   ;; silence as `the attachment steps are GONE`.
   ;;
-  ;; Measured 2026-09-07 at laptop-on-lap: the erector spinae inserts at 0.25 of
-  ;; the trunk, which lies between L2/L3 (0.21) and L1/L2 (0.28), so it crosses
-  ;; every level below and none above. The muscle term falls 482.86 N → 4.19 N,
-  ;; 99.1% of it, in one level.
+  ;; Measured at laptop-on-lap: the erector spinae inserts at 0.25 of the trunk,
+  ;; which lies between L2/L3 (0.21) and L1/L2 (0.28), so it crosses every level
+  ;; below and none above.
+  ;;
+  ;; THE STEP IS STRUCTURAL AND THE MAGNITUDE IS NOT, and this wave watched the
+  ;; difference happen. At `1abb7028` the term fell 482.86 N → 4.19 N; after the
+  ;; lumbar joint moment was fixed on main it falls 1074.73 N → 4.19 N. The two
+  ;; levels, the muscle and the fact of the step did not move at all. So the
+  ;; structure is asserted as identity and the newtons are asserted as today's
+  ;; measurement — if the load layer moves them again this fails and somebody
+  ;; re-measures, which is the point of pinning them.
   (let [rows (:rows (run lap))
         steps (spine/attachment-steps rows)
         lumbar (filterv #(= "L1/L2" (:at %)) steps)
@@ -400,10 +407,16 @@
     (is (= "L2/L3" (:after s)))
     (is (= ["erector_spinae"] (:lost s))
         (str "and it is the erector spinae's point insertion: " s))
-    (is (math/nearly= 482.855 (:muscle-n-before s) 0.01))
+    ;; exactly one muscle is lost and none is gained, so the newtons that left are
+    ;; the whole of the change — the detector is not estimating anything
+    (is (math/nearly= (:lost-n s) (- (:muscle-n-before s) (:muscle-n-after s)) 1e-9)
+        (str "the force lost IS the change, because one muscle left and none "
+             "arrived: " s))
+    (is (math/nearly= 1074.734 (:muscle-n-before s) 0.01))
     (is (math/nearly= 4.187 (:muscle-n-after s) 0.01))
-    (is (math/nearly= 478.668 (:lost-n s) 0.01)
+    (is (math/nearly= 1070.547 (:lost-n s) 0.01)
         "the newtons that went with it, so the size is reported rather than judged")
-    ;; the drop is 99.1%, and the old predicate saw none of it because 4.19 is not 0
-    (is (math/nearly= 0.991 (- 1.0 (/ (:muscle-n-after s) (:muscle-n-before s))) 0.001)
-        (str "a 99.1% fall the exact-zero test could not see: " s))))
+    ;; and the old predicate saw none of it, because 4.19 N is not 0.0 N
+    (is (pos? (:muscle-n-after s))
+        (str "the level below is not empty, which is exactly why the exact-zero "
+             "test could not fire: " s))))
