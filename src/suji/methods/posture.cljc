@@ -220,10 +220,18 @@
   BEHIND the knee and the quadriceps carry it — which is the difference between
   this and standing, where the same force passes in front of the knee and the
   quadriceps do nothing. Representative angles for a squat held with the heels
-  down; a squat is a range of postures and this is one of them."
+  down; a squat is a range of postures and this is one of them.
+
+  THE TRUNK LEAN IS NOT FREE. A squat is only a posture somebody is holding while
+  the line of gravity stays over the feet, and with the thighs near horizontal the
+  trunk is most of what decides where that line falls: at 45 degrees it lands a
+  quarter of the way along the base of support and at 55 it lands a third of the
+  way, just anterior to the ankle. 55 is used here because that is a squat balanced
+  on the whole foot rather than on the heel. `a-standing-posture-keeps-its-line-of-
+  gravity-over-its-feet` asserts the constraint rather than trusting the choice."
   {:name "deep-squat"
    :support :standing
-   :head-flexion-deg 0.0 :trunk-flexion-deg 45.0
+   :head-flexion-deg 0.0 :trunk-flexion-deg 55.0
    :shoulder-flexion-deg 60.0 :elbow-flexion-deg 20.0 :wrist-extension-deg 0.0
    :hip-flexion-deg 85.0 :knee-flexion-deg 110.0 :ankle-dorsiflexion-deg 25.0
    :arms-supported false})

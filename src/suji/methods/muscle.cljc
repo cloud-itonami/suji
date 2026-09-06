@@ -211,7 +211,23 @@
    ;; the wrist, added 2026-09-06 — the last joint the kinematics placed and the
    ;; kinetics did not
    "wrist_extensors"    {:name "wrist_extensors"    :pcsa-cm2 5.0}
-   "wrist_flexors"      {:name "wrist_flexors"      :pcsa-cm2 8.0}))
+   "wrist_flexors"      {:name "wrist_flexors"      :pcsa-cm2 8.0}
+   ;; the lower limb, added 2026-09-07. These PCSAs are the only MEASURED ones in
+   ;; this table — Ward et al. 2009 Table 3, 21 cadaver limbs, mean age 83 — and
+   ;; the provenance, including the fact that specimens that old make every
+   ;; lower-limb %MVC here an overstatement of a young body's effort, is in
+   ;; `attachment/muscles`. `:moment-arm-m` stays what it is everywhere else in
+   ;; this table: the representative NEUTRAL arm the attachment offsets are
+   ;; calibrated to reproduce, documentation of the calibration target rather than
+   ;; a value used in the solve.
+   "gluteus_maximus"    {:name "gluteus_maximus"    :pcsa-cm2 33.4 :moment-arm-m 0.060}
+   "iliopsoas"          {:name "iliopsoas"          :pcsa-cm2 17.6 :moment-arm-m 0.035}
+   "vasti"              {:name "vasti"              :pcsa-cm2 72.4 :moment-arm-m 0.045}
+   "rectus_femoris"     {:name "rectus_femoris"     :pcsa-cm2 13.5 :moment-arm-m 0.045}
+   "hamstrings"         {:name "hamstrings"         :pcsa-cm2 34.5 :moment-arm-m 0.035}
+   "gastrocnemius"      {:name "gastrocnemius"      :pcsa-cm2 30.8 :moment-arm-m 0.050}
+   "soleus"             {:name "soleus"             :pcsa-cm2 51.8 :moment-arm-m 0.050}
+   "tibialis_anterior"  {:name "tibialis_anterior"  :pcsa-cm2 10.9 :moment-arm-m 0.035}))
 
 ;; emission order — midline groups, then each side, matching `attachment/instances`
 (def emit-order (mapv :name attachment/instances))
@@ -248,13 +264,23 @@
   effect, stated as which segments are hanging rather than as a multiplier.
 
   Per side since the model became bilateral: this used to be `2 ×` one arm, which
-  is the same number for a symmetric posture and cannot represent any other."
-  [body p side]
-  (let [w (pose/segment-weights body p)
-        hanging (if (:arms-supported (meta p)) ["upper_arm"] ["upper_arm" "forearm" "hand"])]
-    (reduce + 0.0 (map #(get w (:name %)) (pose/segments-on p hanging side)))))
+  is the same number for a symmetric posture and cannot represent any other.
 
-(defn- girdle-load-n [body p side arms-supported]
+  THE FLAG IS AN ARGUMENT NOW, and until 2026-09-07 it was read from `(meta p)`.
+  `pose` does not call `with-meta` anywhere and never has, so that lookup returned
+  nil at every call and this function had a branch that could not be taken:
+  measured on a 70 kg / 1.70 m body at `laptop-on-desk`, supported and unsupported
+  both gave 34.32 N, which is the UNSUPPORTED answer. The desk transferred
+  nothing. Nothing downstream was wrong, because `solve-muscle-tensions` used a
+  private twin that took the flag properly — which is the other half of the
+  defect: a duplicated body is what let the public one rot unnoticed. There is one
+  body now, and `supporting-the-forearms-unloads-the-girdle` fails if the branch
+  stops being reachable again.
+
+  A FLAG THAT TRAVELS IN METADATA TRAVELS INVISIBLY. It does not show up in the
+  argument list, it survives no `assoc`, and the caller cannot tell from the call
+  site whether it was ever set."
+  [body p side arms-supported]
   (let [w (pose/segment-weights body p)
         hanging (if arms-supported ["upper_arm"] ["upper_arm" "forearm" "hand"])]
     (reduce + 0.0 (map #(get w (:name %)) (pose/segments-on p hanging side)))))
@@ -338,6 +364,8 @@
         sup (:arms-supported posture)
         joint (fn [n] (first (filter #(= n (:joint %)) (:joints loads))))
         by-name (fn [xs] (into {} (map (juxt :name identity)) xs))
+        by-joint (into {} (map (juxt :joint identity)) (:joints loads))
+        side-load (fn [n side] (get-in by-joint [n :per-side side] 0.0))
         shoulder-per-side (:per-side (joint "shoulder"))
         task-list
         (concat
@@ -359,15 +387,28 @@
                                       (get shoulder-per-side side 0.0))]
                       [[:scapular-suspension side]
                        (recruit/share (candidates :scapular-suspension side coeffs)
-                                      (girdle-load-n body p side sup))]
+                                      (suspended-weight-n body p side sup))]
                       [[:elbow-flexion side]
                        (share-signed (candidates :elbow-flexion side coeffs)
-                                     (get-in (into {} (map (juxt :joint identity) (:joints loads)))
-                                             ["elbow" :per-side side] 0.0))]
+                                     (side-load "elbow" side))]
                       [[:wrist-flexion side]
                        (share-signed (candidates :wrist-flexion side coeffs)
-                                     (get-in (into {} (map (juxt :joint identity) (:joints loads)))
-                                             ["wrist" :per-side side] 0.0))]
+                                     (side-load "wrist" side))]
+                      ;; the lower limb. All three are mirror-paired antagonist
+                      ;; tasks like the elbow and the wrist — one side of the joint
+                      ;; resists and the other is its antagonist — so they share
+                      ;; through `share-signed` and the SIGN of the load decides
+                      ;; which. That sign is the whole difference between standing
+                      ;; and squatting at the knee.
+                      [[:hip-extension side]
+                       (share-signed (candidates :hip-extension side coeffs)
+                                     (side-load "hip" side))]
+                      [[:knee-extension side]
+                       (share-signed (candidates :knee-extension side coeffs)
+                                     (side-load "knee" side))]
+                      [[:ankle-plantarflexion side]
+                       (share-signed (candidates :ankle-plantarflexion side coeffs)
+                                     (side-load "ankle" side))]
                       [[:shoulder-abduction side]
                        (share-signed (candidates :shoulder-abduction side coeffs)
                                      (get-in loads [:frontal :shoulder-per-side side] 0.0))]]]
@@ -391,12 +432,24 @@
                               (:name x)))]
     (mapv (fn [n]
             (let [inst (instance-by n)
-                  t (->tension (get results n))]
+                  t (->tension (get results n))
+                  ;; A TWO-JOINT MUSCLE'S OTHER JOINT. It was solved in one
+                  ;; equilibrium and is simultaneously pulling on a second one that
+                  ;; was not told about it — see `attachment/secondary-arm`.
+                  ;; Reporting the moment makes the size of that approximation
+                  ;; visible at every posture; leaving it out would make a coupled
+                  ;; model and an uncoupled one produce identical output.
+                  sec-arm (attachment/secondary-arm p (:stature-m body) inst)]
               (merge (select-keys inst [:group :side :task :ligament?])
                      (when (:ligament? inst)
                        {:at-limit? (ligament-at-limit?
                                     inst (get lens (:name inst)) (get opts (:name inst)))})
                      t
+                     (when (and sec-arm (:crosses inst))
+                       {:crosses-joint (get-in inst [:crosses :joint])
+                        :secondary-arm-m sec-arm
+                        :secondary-moment-nm (when (number? (:force-n t))
+                                               (* sec-arm (:force-n t)))})
                      (when (and (:refused t) (contains? carried-names n))
                        {:antagonist? true}))))
           emit-order)))
@@ -420,6 +473,16 @@
                      optimum does not co-contract. NOT a gap.
     :over-mvc        the load was placed, and placing it needs more force than the
                      muscle can produce. Also not a gap — a finding.
+    :two-joint-unfed-nm
+                     per joint, the total moment two-joint muscles are exerting
+                     there which that joint's equilibrium was NOT given. This is
+                     the one approximation the lower limb makes and cannot remove:
+                     a muscle spanning two joints appears in two equilibria at
+                     once, and `recruit`'s closed form solves ONE constraint. See
+                     `attachment/secondary-arm`. It is not a refusal and not a gap
+                     in coverage — the load WAS placed — it is a statement of how
+                     far the uncoupled answer could be from a coupled one, at this
+                     posture, in newton-metres.
 
   Frontal-plane loads used to appear here as `:unassigned-frontal-nm`, because
   this actor had no frontal-plane musculature at all. It has since 2026-09-06."
@@ -435,7 +498,14 @@
               :over-mvc (count (over-mvc tensions))
               :complete? (not-any? #(and (:refused %) (not (:antagonist? %))) tensions)
               :max-mvc-pct (let [xs (keep :mvc-pct tensions)] (when (seq xs) (apply max xs)))}
-       frontal (assoc :frontal frontal)))))
+       frontal (assoc :frontal frontal)
+       true (assoc :two-joint-unfed-nm
+                   (reduce (fn [m t]
+                             (if-let [j (:crosses-joint t)]
+                               (update m j (fnil + 0.0) (or (:secondary-moment-nm t) 0.0))
+                               m))
+                           {}
+                           tensions))))))
 
 (defn numeric-mvc?
   "Does this entry have a %MVC at all?

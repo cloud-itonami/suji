@@ -9,7 +9,9 @@
   against standing, a lean against a perfect stack."
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
+            [suji.methods.attachment :as att]
             [suji.methods.load :as load]
+            [suji.methods.muscle :as muscle]
             [suji.methods.math :as math]
             [suji.methods.pose :as pose]
             [suji.methods.posture :as posture]
@@ -229,3 +231,267 @@
       (let [j (joint loads nm)]
         (is (map? (:per-side j)) (str nm " reports per side, like the shoulder does"))
         (is (map? (:supported-weight-n j)) (str nm " reports the axial force it transmits"))))))
+
+;; --- the muscles -------------------------------------------------------------
+
+(defn- tensions-at [posture]
+  (let [l (load/solve-posture-loads body posture)
+        ts (muscle/solve-muscle-tensions body posture l)]
+    {:loads l
+     :tensions ts
+     :summary (muscle/tension-summary ts l)
+     :by (into {} (map (juxt :name identity)) ts)}))
+
+(deftest soleus-works-in-quiet-standing
+  ;; THE PREDICTION THE LOWER LIMB WAS ASKED TO MAKE. In quiet standing the ground
+  ;; reaction passes anterior to the ankle, so the plantarflexors are never off.
+  ;; A model that reports soleus silent in quiet standing is wrong, and it is
+  ;; wrong in a way that reads as a clean answer.
+  ;;
+  ;; THE CONTROL is the perfect vertical stack, where soleus SHOULD be silent —
+  ;; because a body balanced exactly over its ankles asks nothing of its calves.
+  ;; Without that control this test would pass against a model that gave soleus a
+  ;; floor, which is the cheapest way to make this number come out non-zero and
+  ;; the one that would mean nothing.
+  (let [quiet (:by (tensions-at posture/quiet-standing))
+        flat (:by (tensions-at posture/standing-neutral))
+        sol (quiet "soleus/left")]
+    (is (number? (:mvc-pct sol))
+        (str "soleus must have a %MVC at all in quiet standing, got " (select-keys sol [:refused :note])))
+    (is (< 1.0 (:mvc-pct sol) 15.0)
+        (str "and it must be low but NOT zero — a few %MVC is what quiet standing "
+             "is measured to cost the calf. Got " (:mvc-pct sol) " %"))
+    (is (> (:force-n sol) 50.0)
+        (str "which is a real force, not a rounding artefact: " (:force-n sol) " N"))
+    ;; the control
+    (is (< (:force-n (flat "soleus/left")) 5.0)
+        (str "stacked perfectly over the ankles, soleus has nothing to do: "
+             (:force-n (flat "soleus/left")) " N"))
+    (is (> (:force-n sol) (* 20.0 (max 1.0 (:force-n (flat "soleus/left")))))
+        "so the demand comes from the lean, not from a constant")
+    ;; and the one-joint / two-joint pair are both on, with soleus doing more —
+    ;; it is the larger muscle and the one that does not care about the knee
+    (is (pos? (:force-n (quiet "gastrocnemius/left"))))
+    (is (> (:force-n sol) (:force-n (quiet "gastrocnemius/left")))
+        "soleus carries more of quiet standing than gastrocnemius does")))
+
+(deftest a-deep-squat-loads-the-quadriceps-and-standing-does-not
+  ;; THE CONTROL IS THAT STANDING IS LOW, asserted on the standing number. Written
+  ;; the other way round — squat is high — it would pass against a model that
+  ;; loaded the quadriceps in every posture.
+  (let [squat (:by (tensions-at posture/deep-squat))
+        quiet (:by (tensions-at posture/quiet-standing))]
+    ;; In quiet standing the model does not say the vasti are working a little —
+    ;; it says they are the ANTAGONIST. The ground reaction passes IN FRONT of the
+    ;; knee, so the demand there is flexor and the knee rests back on itself, and
+    ;; a static optimum does not co-contract the extensors against that.
+    (is (:antagonist? (quiet "vasti/left"))
+        (str "quiet standing must leave the vasti as the antagonist, got "
+             (select-keys (quiet "vasti/left") [:refused :force-n :mvc-pct])))
+    (is (nil? (:mvc-pct (quiet "vasti/left")))
+        "so there is no %MVC for them at all there")
+    (is (> (:force-n (squat "vasti/left")) 500.0)
+        (str "a deep squat is what a quadriceps is for: " (:force-n (squat "vasti/left")) " N"))
+    (is (> (:mvc-pct (squat "vasti/left")) 15.0)
+        (str "and it is a large fraction of what they can produce: "
+             (:mvc-pct (squat "vasti/left")) " %"))
+    ;; both heads of the extensor mechanism, and the hip extensor with them
+    (is (pos? (:force-n (squat "rectus_femoris/left"))))
+    (is (> (:force-n (squat "gluteus_maximus/left")) 500.0)
+        "and a squat is a hip extension as much as a knee extension")
+    ;; the mechanism, stated as the sign of the joint moment rather than inferred
+    (let [k (fn [r] (:left (:per-side (joint (:loads r) "knee"))))]
+      (is (neg? (k (tensions-at posture/quiet-standing))))
+      (is (pos? (k (tensions-at posture/deep-squat)))
+          "the knee moment reverses sign, which is why the muscle changes"))))
+
+(deftest the-lower-limb-muscles-pull-the-way-they-are-named
+  ;; Sign errors in a moment arm look like numbers, not like errors. At the
+  ;; anatomical neutral every one of these has a known sense, and getting one
+  ;; backwards would silently hand a joint's load to its antagonist.
+  (let [p (pose/solve-pose body att/reference-posture)
+        arm (fn [n] (get (att/arms p 1.70) n))]
+    (doseq [[n sense] [["gluteus_maximus/left" :neg]   ;; hip extensor
+                       ["iliopsoas/left" :pos]         ;; hip flexor
+                       ["vasti/left" :pos]             ;; knee extensor
+                       ["rectus_femoris/left" :pos]    ;; knee extensor
+                       ["hamstrings/left" :neg]        ;; knee flexor
+                       ["gastrocnemius/left" :neg]     ;; ankle plantarflexor
+                       ["soleus/left" :neg]            ;; ankle plantarflexor
+                       ["tibialis_anterior/left" :pos]]] ;; ankle dorsiflexor
+      (is (if (= :pos sense) (pos? (arm n)) (neg? (arm n)))
+          (str n " must act " (name sense) " at neutral, got " (arm n))))
+    ;; and each pair really opposes, which is what makes the equilibrium solvable
+    (doseq [[a b] [["gluteus_maximus/left" "iliopsoas/left"]
+                   ["vasti/left" "hamstrings/left"]
+                   ["soleus/left" "tibialis_anterior/left"]]]
+      (is (neg? (* (arm a) (arm b))) (str a " and " b " must oppose")))
+    ;; the two sides mirror in the sagittal plane: a sagittal moment does NOT
+    ;; reverse under the mirror, unlike a frontal one
+    (doseq [g ["gluteus_maximus" "vasti" "soleus" "tibialis_anterior"]]
+      (is (math/nearly= (arm (str g "/left")) (arm (str g "/right")) 1e-9)
+          (str g ": a sagittal arm is the same on both sides")))))
+
+(deftest neutral-lower-limb-arms-reproduce-their-calibration-targets
+  ;; The same anchor the upper limb has. The offsets in `attachment/muscles` exist
+  ;; to put each neutral arm on the representative value `muscle/specs` records;
+  ;; if an edit moves the neutral leverage, every lower-limb %MVC silently changes
+  ;; meaning.
+  (let [p (pose/solve-pose body att/reference-posture)]
+    (doseq [g ["gluteus_maximus" "iliopsoas" "vasti" "rectus_femoris"
+               "hamstrings" "gastrocnemius" "soleus" "tibialis_anterior"]]
+      (let [want (:moment-arm-m (get muscle/specs g))
+            got (math/abs* (get (att/arms p 1.70) (str g "/left")))]
+        (is (number? want) (str g " must record its calibration target"))
+        (is (math/nearly= want got (* 0.06 want))
+            (str g ": neutral arm " got " must reproduce the stated " want))))))
+
+(deftest the-patella-floors-the-quadriceps-arm
+  ;; The patella is a sesamoid the extensor tendon passes OVER, so it holds the
+  ;; line of action away from the knee centre — the same wrapping machinery as the
+  ;; humeral head, not a second one. Without it the chord swings toward the joint
+  ;; as the knee flexes and the force needed to hold a squat diverges.
+  (let [spec (att/instance "vasti/left")
+        r (get-in spec [:wrap :radius-m])
+        at (fn [d] (let [p (pose/solve-pose body (merge att/reference-posture
+                                                        {:hip-flexion-deg 85.0
+                                                         :knee-flexion-deg (double d)}))]
+                     (att/moment-arm-detail p 1.70 spec (get-in p [:joints :knee/left])
+                                            att/flexion-axis)))
+        dets (mapv at (range 0 141 10))]
+    (is (some? r) "the quadriceps must declare a wrapping surface")
+    (is (not (:retinaculum (:wrap spec)))
+        "a patella is passed OVER, so it floors the arm rather than pinning it")
+    (is (every? #(>= (:arm %) (- r 1e-12)) dets)
+        (str "no arm may fall below the patellar radius " r ": " (mapv :arm dets)))
+    (is (every? #(pos? (:arm %)) dets) "and the extensor stays an extensor")
+    (is (some :wrapped? dets)
+        "the surface must actually take over somewhere, or it is not doing anything")
+    (is (some (complement :wrapped?) dets)
+        "and must not take over everywhere, or it has flattened the variation")
+    ;; the defect it removes: without it, the chord alone goes below the floor
+    (is (some #(< (:straight %) r) dets)
+        (str "the straight chord does fall under the radius, which is the reason "
+             "the surface is declared: " (mapv :straight dets)))))
+
+(deftest gluteus-maximus-stays-an-extensor-through-a-squat
+  ;; THE DEFECT MEASURED WHILE ADDING THE HIP. The straight chord's hip-extension
+  ;; arm falls from 60 mm at neutral through ZERO near 55° of flexion and is
+  ;; POSITIVE by 85° — so a straight-line model reports the principal hip extensor
+  ;; as a flexor in exactly the posture the muscle exists for, nobody is left to
+  ;; carry the squat's hip moment, and `recruit` declines the whole equilibrium.
+  (let [spec (att/instance "gluteus_maximus/left")
+        at (fn [d] (let [p (pose/solve-pose body (merge att/reference-posture
+                                                        {:hip-flexion-deg (double d)}))]
+                     (att/moment-arm-detail p 1.70 spec (get-in p [:joints :hip/left])
+                                            att/flexion-axis)))
+        dets (mapv at [0 15 30 45 60 75 85 100])]
+    (is (every? #(neg? (:arm %)) dets)
+        (str "an extensor stays an extensor through the range: " (mapv :arm dets)))
+    (is (some #(pos? (:straight %)) dets)
+        (str "and the straight chord does cross over, which is why the wrap is "
+             "declared rather than assumed: " (mapv :straight dets)))
+    ;; and the consequence at the level a consumer sees
+    (is (:complete? (:summary (tensions-at posture/deep-squat)))
+        "so the squat's hip moment is carried rather than declined")
+    (is (pos? (:force-n ((:by (tensions-at posture/deep-squat)) "gluteus_maximus/left")))
+        "by the muscle whose job it is")))
+
+(deftest the-retinaculum-pins-the-tibialis-anterior
+  ;; The extensor retinacula strap the tendon against the front of the ankle, so
+  ;; the arm is pinned in BOTH directions rather than merely floored — the
+  ;; distinction the wrist already makes. A straight chord to a mid-foot insertion
+  ;; gives 53 mm of leverage, half again what a dorsiflexor is measured to have,
+  ;; because bowstringing forward is exactly what the retinaculum prevents.
+  (let [spec (att/instance "tibialis_anterior/left")
+        r (get-in spec [:wrap :radius-m])
+        dets (mapv (fn [d]
+                     (let [p (pose/solve-pose body (merge att/reference-posture
+                                                          {:ankle-dorsiflexion-deg (double d)}))]
+                       (att/moment-arm-detail p 1.70 spec (get-in p [:joints :ankle/left])
+                                              att/flexion-axis)))
+                   [-20 -10 0 10 20 30])]
+    (is (:retinaculum (:wrap spec)) "tibialis anterior is held by a retinaculum")
+    (is (apply = (mapv #(math/round-to (:arm %) 9) dets))
+        (str "a pinned arm does not vary: " (mapv :arm dets)))
+    (is (math/nearly= r (:arm (first dets)) 1e-9) "and is pinned at the stated radius")
+    (is (> (:straight (nth dets 2)) (* 1.3 r))
+        (str "the unpinned chord would give half again as much: "
+             (:straight (nth dets 2)) " against " r))))
+
+(deftest the-two-joint-muscles-are-solved-at-one-joint-and-reported-at-both
+  ;; THE HONEST SCOPE OF THE LOWER LIMB, asserted rather than described. A muscle
+  ;; spanning two joints appears in two equilibria at once and the two are
+  ;; coupled; `recruit`'s Crowninshield–Brand closed form solves ONE equality
+  ;; constraint, and there is no closed form of that shape for two. So each
+  ;; two-joint muscle is solved where it is the primary actor, and the moment it
+  ;; is simultaneously exerting at its other joint is COMPUTED and reported.
+  ;;
+  ;; The test that matters is the last one: the reported quantity must be
+  ;; non-zero somewhere, or the model is claiming an approximation it never makes
+  ;; and a coupled solve would give identical output.
+  (let [{:keys [by summary]} (tensions-at posture/deep-squat)
+        two-joint ["rectus_femoris/left" "hamstrings/left" "gastrocnemius/left"]]
+    (doseq [n two-joint]
+      (let [t (by n)
+            inst (att/instance n)]
+        (is (some? (get-in inst [:crosses :joint])) (str n " must declare its second joint"))
+        (is (= (:crosses-joint t) (get-in inst [:crosses :joint]))
+            (str n " must report which joint it also crosses"))
+        (is (number? (:secondary-arm-m t)) (str n " must report its arm there"))
+        ;; solved at ONE joint: the task it belongs to is its primary joint's
+        (is (not= (:acts-about inst) (get-in inst [:crosses :joint]))
+            (str n " cannot be solved at the joint it is only reported at"))
+        (when (number? (:force-n t))
+          (is (math/nearly= (* (:secondary-arm-m t) (:force-n t))
+                            (:secondary-moment-nm t) 1e-9)
+              (str n ": the reported secondary moment must be arm × force")))))
+    ;; the hip's equilibrium is solved WITHOUT the two muscles that cross it
+    (let [hip-task (set (map :name (filter #(= :hip-extension (:task %)) att/instances)))]
+      (is (= #{"gluteus_maximus/left" "gluteus_maximus/right"
+               "iliopsoas/left" "iliopsoas/right"} hip-task)
+          (str "the hip is solved by its one-joint muscles only: " hip-task))
+      (is (not (contains? hip-task "rectus_femoris/left"))
+          "rectus femoris crosses the hip and is not in its equilibrium — that is the approximation")
+      (is (not (contains? hip-task "hamstrings/left"))))
+    ;; and the size of the approximation is reported, per joint, and is not zero
+    (is (map? (:two-joint-unfed-nm summary)))
+    (is (contains? (:two-joint-unfed-nm summary) :hip/left))
+    (is (> (math/abs* (get-in summary [:two-joint-unfed-nm :hip/left])) 1.0)
+        (str "in a squat the unfed hip moment is a real quantity, not a formality: "
+             (:two-joint-unfed-nm summary)))))
+
+(deftest every-lower-limb-load-in-range-is-carried
+  ;; The coverage sweep, which is what the upper limb's frontal-plane work also
+  ;; ended in. If a posture in the range the lower limb accepts produces a load no
+  ;; muscle here can take, the model must say so rather than round it away.
+  ;;
+  ;; Out-of-balance postures are counted and REPORTED rather than excluded: a body
+  ;; whose line of gravity has left its feet is falling, and the fact that a fifth
+  ;; of a naive sweep is in that state is a property of sweeping angles
+  ;; independently, not a defect.
+  (let [postures (for [support [:standing :seated]
+                       hip [0.0 20.0 45.0 70.0 90.0]
+                       knee [0.0 20.0 45.0 70.0 90.0 110.0]
+                       ankle [-15.0 0.0 15.0 30.0]]
+                   (merge att/reference-posture
+                          {:support support :arms-supported false
+                           :trunk-flexion-deg 10.0 :head-flexion-deg 5.0
+                           :shoulder-flexion-deg 15.0 :elbow-flexion-deg 90.0
+                           :hip-flexion-deg hip :knee-flexion-deg knee
+                           :ankle-dorsiflexion-deg ankle}))
+        results (mapv (fn [pp]
+                        (let [r (tensions-at pp)]
+                          {:posture pp
+                           :complete? (:complete? (:summary r))
+                           :balanced? (get-in r [:loads :support :cop-inside-base?])}))
+                      postures)
+        incomplete (filterv (complement :complete?) results)]
+    (is (= 240 (count results)) "the sweep must actually run")
+    (is (empty? incomplete)
+        (str (count incomplete) " of " (count results)
+             " swept postures have a load nobody carries, e.g. "
+             (select-keys (:posture (first incomplete))
+                          [:support :hip-flexion-deg :knee-flexion-deg :ankle-dorsiflexion-deg])))
+    (is (pos? (count (filterv #(false? (:balanced? %)) results)))
+        "and some of them are postures a body could not hold, which the model says")))

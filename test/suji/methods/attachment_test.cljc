@@ -137,6 +137,31 @@
     (is (not (apply = (mapv #(math/round-to (arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid/left") 9)
                             [0 30 60]))))))
 
+(deftest supporting-the-forearms-unloads-the-girdle
+  ;; A BRANCH THAT COULD NOT FIRE, until 2026-09-07. `muscle/suspended-weight-n`
+  ;; read the flag from `(meta p)`, and `pose` calls `with-meta` nowhere and never
+  ;; has — so the lookup returned nil at every call and the function's whole
+  ;; documented effect was unreachable. Measured on this body at `laptop-on-desk`:
+  ;; supported and unsupported both gave 34.32 N, which is the UNSUPPORTED answer.
+  ;; The desk transferred nothing. Nothing downstream was wrong because
+  ;; `solve-muscle-tensions` used a private twin that took the flag properly, and
+  ;; that duplicate body is the other half of the defect — it is what let the
+  ;; public one rot with nobody noticing.
+  ;;
+  ;; The numbers are pinned rather than merely compared, because `supported <
+  ;; unsupported` would also pass against a model that shaved a gram off.
+  (let [ws (posture/posture-from-workstation posture/laptop-on-desk)
+        w (fn [sup] (muscle/suspended-weight-n
+                     body (pose/solve-pose body (assoc ws :arms-supported sup)) :left sup))
+        g (fn [n] (* (:mass-kg (segment/seg body n)) segment/gravity))]
+    (is (math/nearly= (+ (g "upper_arm") (g "forearm") (g "hand")) (w false) 1e-9)
+        (str "an unsupported girdle hangs the whole arm: " (w false) " N"))
+    (is (math/nearly= (g "upper_arm") (w true) 1e-9)
+        (str "resting the forearms transfers two segments to the desk: " (w true) " N"))
+    (is (> (w false) (* 1.5 (w true)))
+        (str "which is a large difference and not a rounding one: "
+             (w false) " vs " (w true) " N"))))
+
 (deftest suspension-muscles-are-not-given-a-moment-arm
   ;; asking for the shoulder moment arm of a suspension muscle returns a number,
   ;; and at neutral it is NEGATIVE — it would claim these muscles flex the joint
@@ -327,12 +352,14 @@
 (def ^:private awaiting-muscles
   "Joints the kinematics places and the kinetics does not solve YET.
 
-  This set is the honest form of the gap. It used to be the sentence `the hip is
-  deliberately unsolved, because a seated model has no thigh` — which was true when
-  it was written, stopped being true the moment `segment/build-body` grew a thigh,
-  and would have gone on reading as a decision. A set that has to be emptied is
-  harder to forget than a paragraph that has to be reread."
-  #{:hip/left :hip/right :knee/left :knee/right :ankle/left :ankle/right})
+  EMPTY, as of 2026-09-07. It held the six lower-limb joints for exactly as long
+  as it took to give them muscles. It used to be the sentence `the hip is
+  deliberately unsolved, because a seated model has no thigh` — true when it was
+  written, false the moment `segment/build-body` grew a thigh, and it would have
+  gone on reading as a decision. A set that has to be emptied is harder to forget
+  than a paragraph that has to be reread; leaving it here, empty, is what makes
+  the next gap cheap to state."
+  #{})
 
 (deftest every-placed-joint-has-an-equilibrium-or-is-named-as-a-gap
   ;; The coverage question, asked of the data rather than of a comment: which
