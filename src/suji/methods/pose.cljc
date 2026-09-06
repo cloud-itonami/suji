@@ -17,11 +17,21 @@
   of it. The same placement is what a renderer needs, so the picture and the physics
   cannot drift apart — they are the same data.
 
-  FRAME. Right-handed, metres, origin at L5/S1:
+  FRAME. Right-handed, metres:
 
       +X  anterior (the direction the person faces)
       +Y  superior (up)
       +Z  to the person's left
+
+  THE ORIGIN IS THE SUPPORT, and it depends on the posture (2026-09-10). Standing,
+  it is the midpoint of the two ankles — holding the ankle holds the whole rigid
+  foot, so the sole, the ground plane and the base of support stay where the world
+  put them. Seated, it is the base of the pelvis, which is this model's stand-in
+  for the ischial tuberosities. `support-landmarks` argues both; `:frame :origin`
+  and `:root` say which one a given pose used. The chain is still BUILT from L5/S1
+  outward, because `spine/levels` states every level as a fraction measured from
+  L5/S1 upward; what changed is which point the world holds still afterwards, and
+  that is a rigid translation of the built chain — see `rooted-at`.
 
   The sagittal plane is XY. Flexion is a rotation about Z, abduction and lateral
   bend are rotations about X, and axial rotation is about the segment's own long
@@ -43,6 +53,7 @@
   REPRESENTATIVE (G7): lengths come from `segment`, i.e. Winter/Drillis regressions
   on stature — a population average, not a scan of anybody."
   (:require [suji.methods.math :as math]
+            [suji.methods.posture :as posture]
             [suji.methods.segment :as segment]))
 
 (defn- dir-from-vertical
@@ -277,12 +288,26 @@
   to state either one's SS or PT. Wilke's comparison is a difference too, so this
   is the quantity the cross-check needs and not a lesser substitute for it.
 
-  AND THE ONE THING IT GETS OBVIOUSLY WRONG. L5/S1 is the root of this chain and
-  does not move, so tilting the lumbar chord carries the whole body above it
-  forward or back through space. A real body compensates elsewhere and keeps its
-  line of gravity over its feet; this one does not, and `load/lower-limb-loads`
-  will report `:cop-inside-base? false` for a standing posture given enough
-  lordosis. That is the model failing to state a posture, and it says so."
+  AND THE ONE THING IT GETS OBVIOUSLY WRONG. Tilting the lumbar chord carries the
+  whole body above L5/S1 forward or back OVER THE FEET. A real body compensates
+  elsewhere and keeps its line of gravity over them; this one does not, and
+  `load/lower-limb-loads` will report `:cop-inside-base? false` for a standing
+  posture given enough lordosis. That is the model failing to state a posture, and
+  it says so.
+
+  IT IS NOT A ROOTING ARTEFACT, corrected 2026-09-10. This paragraph used to blame
+  it on L5/S1 being the root of the chain, and that reading survived into
+  `spine/standing-sitting-decomposition`, which attributed its dominant term the
+  same way. It is wrong. Every joint angle in this model is measured from the
+  WORLD vertical, so the chain's shape is fixed before anything is anchored and
+  changing the anchor is a rigid translation — `pose/rooted-at`, and
+  `re-rooting-the-chain-moves-no-moment` measures it. The displacement is a shape
+  fact: rotating the pelvis rod by `p` separates L5/S1 from the hip axis by
+  `L_pelvis x sin p` whichever end is held, and tilting the chord by `p/2`
+  separates T12/L1 from L5/S1 by `L_lumbar x sin(p/2)`. Both follow from this
+  model identifying lumbar lordosis with a RIGID rotation of the whole pelvis
+  (`lumbar-lordosis-deg`), which is where the size of the displacement comes from
+  and where a repair would have to go."
   [trunk-flexion-deg pelvic-tilt-deg]
   (+ trunk-flexion-deg (* 0.5 pelvic-tilt-deg)))
 
@@ -433,12 +458,21 @@
 
   THE THREE ANGLES, and what each is measured against:
 
-    :hip-flexion-deg          the thigh's tilt anterior from straight down. This
-                              model's pelvis never rotates — `solve-pose` places
-                              it vertically below L5/S1 at every posture — so the
-                              tilt from vertical and the anatomical hip angle are
-                              the same number here, which they would not be in a
-                              model with a mobile pelvis.
+    :hip-flexion-deg          the thigh's tilt anterior from straight down —
+                              measured from the WORLD vertical, not from the
+                              pelvis. It used to be the same number as the
+                              anatomical hip angle, because the pelvis never
+                              rotated; since `:pelvic-tilt-deg` exists (2026-09-08)
+                              it is not. A posture that names 46.5 deg of anterior
+                              pelvic tilt and 0 deg of hip flexion is a femur held
+                              vertical under a pelvis rotated 46.5 deg on it, i.e.
+                              a hip flexed 46.5 deg, and this key does not say so.
+                              Keeping it world-referenced is deliberate — it is
+                              what makes a standing posture's legs stay under the
+                              body when the pelvis moves — but it means
+                              `:hip-flexion-deg` is a LEG orientation and not a
+                              joint angle, and a consumer reading it as the latter
+                              is reading it wrong.
     :knee-flexion-deg         the shank swung POSTERIOR relative to the thigh, so
                               the shank's tilt is the thigh's MINUS this. The knee
                               bends one way; a negative value is hyperextension
@@ -495,12 +529,122 @@
     {:hip hip :knee knee :ankle ankle :heel heel :toe (:distal ft-seg)
      :segments [th-seg sh-seg ft-seg]}))
 
+;; --- where the world holds the body ------------------------------------------
+
+(def support-landmarks
+  "Which landmark the world holds still, per support mode.
+
+  A CHAIN HAS TO BE ROOTED SOMEWHERE, and until 2026-09-10 this one was rooted at
+  L5/S1 — a point that touches nothing. That is a defensible place to *build* from,
+  because `spine/levels` states every level as a fraction measured from L5/S1
+  upward, and it is the wrong place to *hold*: nothing in the world holds a
+  lumbosacral disc still. The visible cost was that tilting the pelvis moved the
+  FLOOR. On a 1.70 m body at Cho's standing lordosis the soles travelled 11.7 cm
+  posteriorly and 5.0 cm upward, which is the model saying a person who arches
+  their back slides their feet backwards and lifts off the ground.
+
+  Standing, the world holds the FEET. The foot is a rigid segment whose tilt is
+  set by world-referenced joint angles (`leg-chain`), so holding the ankle holds
+  the whole sole — the contact patch, `ground-y` and `base-of-support` with it.
+  The ankle is also the joint the entire ground reaction passes through on its way
+  up the leg, and the joint quiet standing is judged at.
+
+  Seated, the world holds the ISCHIAL TUBEROSITIES — `posture/support-mode` says
+  so in words: the chair takes the trunk through them, and that load reaches the
+  seat without passing through the hip, the knee or the ankle. THIS MODEL HAS NO
+  ISCHIUM. Its pelvis is a rod from L5/S1 to the hip axis, and the tuberosities
+  sit posterior and inferior to that axis on the same rigid bone. So the seated
+  root is the hip axis (`:pelvis-base`) standing in for them, and the substitution
+  costs nothing that this model can report: the offset between the two is a
+  constant vector inside one rigid body, and every quantity this library returns
+  is invariant under a rigid translation — which is measured, not assumed, by
+  `re-rooting-the-chain-moves-no-moment`.
+
+  WHAT THIS DOES NOT DO, stated because it is the whole finding of 2026-09-10 and
+  reading it the other way would be worse than not knowing. Re-rooting is a rigid
+  translation of the placed chain, so it changes no moment, no muscle force, no
+  compression and no line of gravity. It does not shrink
+  `:lumbosacral-moment-on-the-neutral-geometry`, and it cannot: the moment about
+  L5/S1 is a sum of `weight x (x_com - x_l5s1)`, and both x's move together under
+  a translation. See `standing-sitting-decomposition` in `spine`, whose attribution
+  of that term to the root was corrected on the strength of this."
+  {:standing :mid-ankle
+   :seated :pelvis-base})
+
+(defn support-landmark
+  "The landmark the world holds still for this posture. REFUSES a support mode it
+  has no landmark for rather than silently rooting at L5/S1 — a chain rooted at a
+  point nothing holds and a chain whose support was not recognised must not be the
+  same value."
+  [posture]
+  (let [mode (posture/support-mode posture)]
+    (or (get support-landmarks mode)
+        (throw (ex-info (str "no support landmark for support mode " (pr-str mode))
+                        {:type :value-error :support-mode mode})))))
+
+(defn landmark-point
+  "Where a root landmark is in a placed chain, in that chain's own coordinates.
+
+  `:mid-ankle` is the midpoint of the two ankles rather than one of them, so that
+  the root of a bilateral chain does not silently pick a side; for a sagittal
+  posture the two have the same x and y and opposite z, so the midpoint is on the
+  midline exactly.
+
+  REFUSES a chain that does not have the landmark — a body model with no lower
+  limb cannot be rooted at its feet, and answering `nil` would put the root at the
+  origin, which is the L5/S1 rooting this exists to replace."
+  [pose-data landmark]
+  (let [pt (fn [k] (or (get-in pose-data [:joints k])
+                       (throw (ex-info (str "this chain has no " (pr-str k)
+                                            ", so it cannot be rooted at "
+                                            (pr-str landmark))
+                                       {:type :value-error :landmark landmark
+                                        :joint k}))))]
+    (case landmark
+      :l5s1 (pt :l5s1)
+      :pelvis-base (pt :pelvis-base)
+      :mid-ankle (math/v* (math/v+ (pt :ankle/left) (pt :ankle/right)) 0.5)
+      (throw (ex-info (str "unknown root landmark " (pr-str landmark))
+                      {:type :value-error :landmark landmark})))))
+
+(defn rooted-at
+  "The same placed chain with `landmark` at the origin: every point translated by
+  the same vector, and nothing else touched.
+
+  It is a RIGID translation and it is written as one, in one place, so that the
+  claim `re-rooting changes no moment` is a property of three lines rather than of
+  a reading of `solve-pose`. `:root` records the landmark and the vector that was
+  applied, so a consumer can undo it or compare two rootings without recomputing."
+  [pose-data landmark]
+  (let [d (math/v* (landmark-point pose-data landmark) -1.0)]
+    (-> pose-data
+        (update :joints #(into {} (map (fn [[k p]] [k (math/v+ p d)])) %))
+        (update :segments
+                (fn [segs]
+                  (mapv (fn [s] (-> s
+                                    (update :proximal math/v+ d)
+                                    (update :distal math/v+ d)
+                                    (update :com math/v+ d)))
+                        segs)))
+        (assoc-in [:frame :origin] (name landmark))
+        (assoc :root {:landmark landmark :translation d}))))
+
 (defn solve-pose
   "Place the whole chain in world space for a body + posture.
 
-  Returns {:joints {…point} :segments [placed…] :sides #{…} :frame {…}}. Joint keys
-  are the anatomical landmarks the moment solver takes moments about; segments are
-  in proximal-to-distal order, midline first, then each arm, then each leg.
+  Returns {:joints {…point} :segments [placed…] :sides #{…} :frame {…} :root {…}}.
+  Joint keys are the anatomical landmarks the moment solver takes moments about;
+  segments are in proximal-to-distal order, midline first, then each arm, then
+  each leg.
+
+  THE CHAIN IS ROOTED AT THE SUPPORT (2026-09-10). It is built from L5/S1 outward
+  and then translated so that the point the world holds still sits at the origin —
+  the midpoint of the ankles when standing, the base of the pelvis when seated.
+  `support-landmarks` argues why each, `rooted-at` does it, and `:root` records
+  the landmark and the vector applied. Nothing about the body's SHAPE depends on
+  this: every joint angle is measured from the world vertical, so re-rooting is a
+  rigid translation and every moment, force and lever this library reports is
+  invariant under it.
 
   BILATERAL since 2026-09-06. The model used to place ONE arm and multiply its
   load by two, which is exact for a symmetric posture and silently wrong for every
@@ -551,12 +695,18 @@
         thorax (segment/seg body "thorax")
         pelvic-tilt (or (:pelvic-tilt-deg posture) 0.0)
         l5s1 [0.0 0.0 0.0]
-        ;; The LUMBAR segment is the ROOT of this chain and the pelvis hangs off
-        ;; its proximal end. Both start at L5/S1, so either could have been called
-        ;; the root; the lumbar spine is, because `spine/levels` states every level
-        ;; as a fraction of a segment measured from L5/S1 upward, and rooting the
-        ;; chain anywhere else would make that reading depend on a convention
-        ;; stated somewhere the levels cannot see.
+        ;; The LUMBAR segment is the root of the ATTACHMENT TREE and the pelvis
+        ;; hangs off its proximal end. Both start at L5/S1, so either could have
+        ;; carried the tree's root; the lumbar spine does, because `spine/levels`
+        ;; states every level as a fraction of a segment measured from L5/S1
+        ;; upward, and hanging that tree anywhere else would make the reading
+        ;; depend on a convention the levels cannot see.
+        ;;
+        ;; THAT IS A DIFFERENT ROOT FROM THE ONE THE WORLD HOLDS. This builds the
+        ;; chain from L5/S1 at the origin; `rooted-at`, applied at the end, moves
+        ;; the finished chain so that the SUPPORT sits at the origin instead. The
+        ;; two are independent because every joint angle here is measured from the
+        ;; world vertical: the shape is complete before anything is anchored.
         ;;
         ;; THE PELVIS ROTATES SINCE 2026-09-08. It used to be placed straight down
         ;; at every posture, which is what made sitting and standing identical
@@ -595,12 +745,16 @@
         lat-axis (:lat t-frame)
         left (arm-chain body posture c7 lat-axis abduct :left 1.0 stature-m)
         right (arm-chain body posture c7 lat-axis abduct :right -1.0 stature-m)
-        ;; the legs hang from the PELVIS, whose frame this model never rotates, so
-        ;; their lateral axis is the world's rather than the trunk's — leaning the
-        ;; trunk sideways carries the shoulders with it and does not carry the hips
+        ;; the legs hang from the PELVIS, so their lateral axis is the pelvis's
+        ;; rather than the trunk's — leaning the trunk sideways carries the
+        ;; shoulders with it and does not carry the hips. The pelvis rotates in the
+        ;; SAGITTAL plane only, so its `:lat` is still the world's `+Z`; the axis is
+        ;; read off the frame rather than written as `[0 0 1]` so that the day the
+        ;; pelvis bends laterally the legs follow it instead of staying behind.
         leg-left (leg-chain body posture p-seg (:lat (:frame p-seg)) :left 1.0 stature-m)
         leg-right (leg-chain body posture p-seg (:lat (:frame p-seg)) :right -1.0 stature-m)]
-    {:frame {:units :metres :origin "L5/S1" :axes {:x :anterior :y :superior :z :left}}
+    (rooted-at
+     {:frame {:units :metres :origin "L5/S1" :axes {:x :anterior :y :superior :z :left}}
      :sides #{:left :right}
      :joints {:l5s1 l5s1
               ;; the midline landmark at the base of the pelvis segment. It is NOT
@@ -636,9 +790,10 @@
               :c2c3 (:c2c3 neck)
               :atlanto-occipital (:atlanto-occipital neck)
               :vertex (:vertex neck)}
-     :segments (vec (concat (into [p-seg l-seg t-seg] (:segments neck))
-                            (:segments left) (:segments right)
-                            (:segments leg-left) (:segments leg-right)))}))
+      :segments (vec (concat (into [p-seg l-seg t-seg] (:segments neck))
+                             (:segments left) (:segments right)
+                             (:segments leg-left) (:segments leg-right)))}
+     (support-landmark posture))))
 
 (defn seg-at
   "The placed segment with this name, or nil."
@@ -794,6 +949,65 @@
                  pt [proximal distal]]
              (first pt))]
     (when (seq xs) {:back (apply min xs) :front (apply max xs)})))
+
+(defn line-of-gravity
+  "Where the whole body's line of gravity falls relative to the ankles, and the
+  two travels that put it there.
+
+  `:ahead-of-ankle-m` is the quantity quiet standing is judged by: a real quiet
+  stance keeps it 2-6 cm anterior to the ankle, which is why the plantarflexors
+  never switch off. The other three say WHERE it came from, and they sum to it
+  exactly — `:residual-m` is the arithmetic check, not a fudge:
+
+    :sacrum-over-the-feet-m     how far L5/S1 has travelled anterior to the ankles,
+                                weighted by the fraction of body weight that is
+                                above L5/S1. This is the LEG-AND-PELVIS path: bend
+                                the ankles, bend the knees, or rotate the pelvis on
+                                the hip and the sacrum moves over the feet.
+    :trunk-over-the-sacrum-m    how far the mass above L5/S1 leans anterior to
+                                L5/S1, weighted the same way. This is the SPINE
+                                path: the lumbar chord's tilt and the trunk's.
+    :everything-below-l5s1-m    the pelvis and both legs, about their own ankles.
+
+  WHY IT IS WORTH A FUNCTION. On 2026-09-09 this split had to be measured by
+  BREAKING `lumbar-chord-tilt-deg` so it ignored the pelvic tilt, running the
+  model, and reverting — a counterfactual that could not be shipped and could not
+  be tested. The split is an identity over the placed chain, so it needs no
+  counterfactual at all: every term is read off one pose.
+
+  THE FRACTION IS A LEVER, NOT A MASS FRACTION IN DISGUISE. `:sacrum-over-the-
+  feet-m` is `(W_above / W) x (x_l5s1 - x_ankle)`, so it is the sacrum's travel
+  discounted by how much of the body actually rides on it — the legs are below
+  L5/S1 and do not follow it. Splitting the same way is what makes the three
+  terms add up.
+
+  ANKLE-REFERENCED even when the pose is seated, where the ankles are not carrying
+  anything. A seated line of gravity relative to the ankles is not a balance
+  criterion; `load/lower-limb-loads` reports `:cop-inside-base?` only when
+  standing, and this function does not claim otherwise."
+  [body pose-data]
+  (let [w (segment-weights body pose-data)
+        segs (:segments pose-data)
+        total (reduce + 0.0 (map #(get w (:name %)) segs))
+        ax (first (landmark-point pose-data :mid-ankle))
+        lx (first (get-in pose-data [:joints :l5s1]))
+        below? #(contains? segment/below-l5s1 (:base %))
+        above (remove below? segs)
+        below (filter below? segs)
+        w-above (reduce + 0.0 (map #(get w (:name %)) above))
+        moment (fn [ss x0]
+                 (reduce + 0.0 (map (fn [s] (* (get w (:name s))
+                                               (- (first (:com s)) x0)))
+                                    ss)))
+        sacrum (* (/ w-above total) (- lx ax))
+        trunk (/ (moment above lx) total)
+        legs (/ (moment below ax) total)
+        ahead (- (first (:point (whole-body-com body pose-data))) ax)]
+    {:ahead-of-ankle-m ahead
+     :sacrum-over-the-feet-m sacrum
+     :trunk-over-the-sacrum-m trunk
+     :everything-below-l5s1-m legs
+     :residual-m (- ahead (+ sacrum trunk legs))}))
 
 (defn centre-of-pressure
   "Where the ground pushes back: `[x y z]` for one foot, or nil when the pose has

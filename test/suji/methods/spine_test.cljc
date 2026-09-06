@@ -1128,20 +1128,38 @@
 
 (deftest the-pelvis-actually-rotates
   ;; The kinematic half, checked where it is visible rather than only where it is
-  ;; convenient. An ANTERIOR pelvic tilt tips the top of the sacrum forward and
-  ;; therefore carries the femoral heads BACKWARD, and the legs go with them.
+  ;; convenient. An ANTERIOR pelvic tilt tips the top of the sacrum forward, so
+  ;; the sacrum and the femoral heads SEPARATE along X by `L_pelvis x sin(tilt)`.
+  ;;
+  ;; WHICH OF THE TWO MOVES IS THE ROOTING QUESTION, and since 2026-09-10 the
+  ;; standing chain is rooted at the feet: the world holds the ankles, so the hip
+  ;; stays where the legs put it and L5/S1 travels ANTERIORLY instead. Before that
+  ;; the chain was rooted at L5/S1 and this test asserted the mirror image — the
+  ;; hip travelling posteriorly — which is the SAME separation seen from the other
+  ;; end. The separation is the physics; which end moves is the frame.
   (let [pst {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0 :shoulder-flexion-deg 0.0
              :elbow-flexion-deg 0.0 :support :standing
              :hip-flexion-deg 0.0 :knee-flexion-deg 0.0 :ankle-dorsiflexion-deg 0.0}
         flat (pose/solve-pose body pst)
         tilted (pose/solve-pose body (assoc pst :pelvic-tilt-deg 30.0))
-        hip-x (fn [p] (first (get-in p [:joints :hip/left])))
-        ankle-x (fn [p] (first (get-in p [:joints :ankle/left])))]
-    (is (math/nearly= 0.0 (hip-x flat) 1e-12) "the pelvis hangs straight down at zero")
-    (is (< (hip-x tilted) -0.05)
-        (str "an anterior tilt carries the hip posterior: " (hip-x tilted)))
-    (is (math/nearly= (hip-x tilted) (ankle-x tilted) 1e-9)
-        "and the straight leg goes with it")))
+        x (fn [p k] (first (get-in p [:joints k])))
+        sep (fn [p] (- (x p :hip/left) (x p :l5s1)))
+        expected (- (* (:length-m (segment/seg body "pelvis"))
+                       (Math/sin (math/radians 30.0))))]
+    (is (math/nearly= 0.0 (sep flat) 1e-12) "the pelvis hangs straight down at zero")
+    (is (math/nearly= expected (sep tilted) 1e-12)
+        (str "an anterior tilt separates hip from sacrum by L_pelvis x sin(30) = "
+             expected " m, and got " (sep tilted)))
+    (is (< (sep tilted) -0.05)
+        (str "which carries the hip posterior RELATIVE TO THE SACRUM: " (sep tilted)))
+    ;; and the world holds the feet, so it is the sacrum that travels
+    (is (math/nearly= (x flat :ankle/left) (x tilted :ankle/left) 1e-12)
+        "the standing chain is rooted at the feet, so the ankle does not move")
+    (is (math/nearly= (x flat :hip/left) (x tilted :hip/left) 1e-12)
+        "and neither does the hip, because the leg between them did not change")
+    (is (math/nearly= (- expected) (- (x tilted :l5s1) (x flat :l5s1)) 1e-12)
+        (str "L5/S1 is what travels, and anteriorly: "
+             (- (x tilted :l5s1) (x flat :l5s1)) " m"))))
 
 (deftest a-tilted-level-drops-its-shear-and-nothing-carries-it
   ;; THE COST OF THE NEW DEGREE OF FREEDOM, in newtons. `weight-above-n` takes the
