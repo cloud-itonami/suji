@@ -41,11 +41,7 @@
     (let [f (/ mvc-pct 100.0)]
       (* 0.2 (Math/pow f -2.32)))))
 
-(defn muscle-strain
-  "Stiffness accrued by one muscle holding `mvc-pct` for `session-minutes`."
-  [t session-minutes]
-  (when (< session-minutes 0)
-    (throw (ex-info "session_minutes must be >= 0" {:type :value-error})))
+(defn- muscle-strain* [t session-minutes]
   (let [mvc-pct (:mvc-pct t)
         t-end (endurance-minutes mvc-pct)
         acute (if (math/infinite? t-end) 0.0 (/ session-minutes t-end))
@@ -66,6 +62,34 @@
      :saturated? saturated?
      :over-endurance (and (not (math/infinite? t-end)) (> session-minutes t-end))}))
 
+(defn muscle-strain
+  "Stiffness accrued by one muscle holding `mvc-pct` for `session-minutes`.
+
+  A REFUSAL PASSES THROUGH. `muscle/solve-muscle-tensions` can decline to compute
+  a force — when a straight-line muscle's line of action passes too close to the
+  joint it acts about, the required force diverges and the model says so instead
+  of returning a number. Such an entry has no `:mvc-pct`, and there is no dose to
+  accumulate from a load nobody computed. Before 2026-09-06 this function reached
+  straight for `(:mvc-pct t)` and threw a NullPointerException on the arithmetic
+  two lines later — which is the right thing happening for the wrong reason: the
+  caller learned there was a problem, but from a crash rather than from an answer,
+  and only if it happened to exercise the posture."
+  [t session-minutes]
+  (when (< session-minutes 0)
+    (throw (ex-info "session_minutes must be >= 0" {:type :value-error})))
+  (if (or (:refused t) (nil? (:mvc-pct t)))
+    {:name (:name t)
+     :mvc-pct nil
+     :session-minutes session-minutes
+     :refused (or (:refused t) :no-mvc)
+     :endurance-minutes nil
+     :acute-dose nil
+     :chronic-dose nil
+     :stiffness-index nil
+     :saturated? false
+     :over-endurance nil}
+    (muscle-strain* t session-minutes)))
+
 (defn session-strain
   "Stiffness map for a whole work session (default 2 hours of continuous posture)."
   ([tensions] (session-strain tensions 120.0))
@@ -73,9 +97,12 @@
    (mapv #(muscle-strain % session-minutes) tensions)))
 
 (defn stiffness-band
-  "A coarse human-readable band for the stiffness index (display only, non-diagnostic)."
+  "A coarse human-readable band for the stiffness index (display only,
+  non-diagnostic). A nil index — the model refused this muscle's load — gets its
+  own band rather than falling into `low`, which would read as the best case."
   [stiffness-index]
   (cond
+    (nil? stiffness-index) "not-computed"
     (< stiffness-index 0.20) "low"
     (< stiffness-index 0.45) "moderate"
     (< stiffness-index 0.70) "high"
