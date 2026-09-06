@@ -99,8 +99,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 149 tests / 4205 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 133 tests /  736 assertions
+clojure -M:test                                   # JVM   — 150 tests / 4218 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 134 tests /  749 assertions
 clojure -M:lint                                   # 0 errors
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -281,11 +281,21 @@ against 346 N of weight, because an extensor works at a short moment arm and all
 of the force it needs presses the joint together.
 
 ⚠ **The level profile is NOT validated and disagrees with the leg that is.** At the
-cervical spine it gives 519 N where the Hansraj-calibrated lumped model gives 232 N
-— a ratio of 2.2, because it uses the muscle's geometric moment arm rather than an
-effective lever fitted to the published table. `cervical-cross-check` computes that
-ratio and names which of the two is validated, so the profile cannot be read as
-though it inherited the validation. It did not.
+cervical spine it disagrees with the Hansraj-calibrated lumped model by roughly a
+factor of two, because it uses the muscle's geometric moment arm rather than an
+effective lever fitted to the published table.
+
+**The ratio is not written here on purpose.** It moves whenever the muscle set
+moves — it was 2.24 when the level profile landed and 2.44 after the ligaments —
+and a number in a standing document gets quoted with its date dropped. Ask for it:
+
+```clojure
+(spine/cervical-cross-check body posture tensions (:cervical loads))
+;; => {:level-force-n … :lumped-force-n … :ratio … :validated :lumped}
+```
+
+It names which of the two is validated, so the profile cannot be read as though it
+inherited the validation. It did not.
 
 `attachment-steps` reports the levels where the muscle term drops to zero between
 neighbours. A real muscle attaches over a range of vertebrae; this one attaches at

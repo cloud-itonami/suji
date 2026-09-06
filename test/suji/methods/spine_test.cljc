@@ -28,8 +28,29 @@
     (doseq [r rows]
       (is (number? (:stress-mpa r)))
       (is (pos? (:disc-area-cm2 r)))
-      (is (math/nearly= (:force-n r) (+ (:weight-n r) (:muscle-n r)) 1e-9)
-          (str (:name r) ": force must be weight + muscle, with nothing else hidden in it")))))
+      (is (number? (:ligament-n r)) (str (:name r) ": the ligament term is reported"))
+      (is (math/nearly= (:force-n r) (+ (:weight-n r) (:muscle-n r) (:ligament-n r)) 1e-9)
+          (str (:name r)
+               ": force must be weight + muscle + ligament, with nothing else hidden in it")))))
+
+(deftest the-tissue-term-is-split-because-the-name-stopped-being-true
+  ;; It was one number called `:muscle-n`. Once the posterior ligamentous system
+  ;; landed that name was false: measured at 60 degrees of trunk flexion the term
+  ;; was 3,904 N of which 3,989 N came from the LIGAMENT — the muscles' net axial
+  ;; contribution had gone negative and the ligament was pressing the joint
+  ;; together on its own. A reader taking `:muscle-n` literally would read a spine
+  ;; compressed by muscle where it is compressed by tissue, which is a different
+  ;; statement about the posture and about what would change it.
+  (let [deep (:rows (run (merge lap {:trunk-flexion-deg 60.0 :arms-supported false})))
+        l5s1 (first (filter #(= "L5/S1" (:name %)) deep))]
+    (is (pos? (:ligament-n l5s1)) "the ligament presses the lumbar spine in deep flexion")
+    (is (> (:ligament-n l5s1) (math/abs* (:muscle-n l5s1)))
+        (str "and does more of it than the muscles: " (select-keys l5s1 [:muscle-n :ligament-n])))
+    ;; and in a moderate posture the muscles are still the answer
+    (let [mild (first (filter #(= "L5/S1" (:name %)) (:rows (run lap))))]
+      (is (> (:muscle-n mild) (:ligament-n mild))
+          (str "in an ordinary posture the muscle term dominates: "
+               (select-keys mild [:muscle-n :ligament-n]))))))
 
 (deftest the-muscle-term-dominates-a-flexed-posture
   ;; THE POINT of computing this rather than quoting the weight carried. An
