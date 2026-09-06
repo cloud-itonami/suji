@@ -255,6 +255,33 @@
                     1e-9)
       "12.00 + 10.80 + 8.52 = 31.32 cm² of cervical extensor, a factor of 2.61"))
 
+(deftest the-pcsa-written-twice-is-written-the-same-twice
+  ;; EVERY muscle's PCSA is written in TWO places — `attachment/muscles` (beside its
+  ;; attachment points and its provenance essay) and `muscle/specs` (beside its legacy
+  ;; moment arm) — and only ONE of them is computed with. `muscle/peak-force-n` reads
+  ;; the spec; nothing in `src/` reads `:pcsa-cm2` off an attachment entry.
+  ;;
+  ;; MEASURED 2026-09-08, which is why this test exists rather than the observation:
+  ;; upper_trapezius 9.0 → 1.96 and levator_scapulae 5.0 → 2.18 were edited in
+  ;; `attachment.cljc` alone and the analysis was re-run. f-max stayed 538.8428711996462
+  ;; and 297.97574654143773 N, %MVC stayed 9.304071997087153 and 8.326497941818612, and
+  ;; the C7 moments stayed −0.16137983649613535 and −0.0279302907535573 N·m. **The edit
+  ;; changed nothing and no test noticed.** The number a reader would fix is not the
+  ;; number the model uses.
+  ;;
+  ;; The two tables agree today (32 entries, checked here). This does not collapse them
+  ;; into one — that is a source change and the attachment-side numbers carry the
+  ;; sourcing prose that makes them worth keeping legible — it makes a divergence loud.
+  (let [attached (into {} (for [[k v] att/muscles :when (:pcsa-cm2 v)] [k (:pcsa-cm2 v)]))
+        specced  (into {} (for [[k v] muscle/specs :when (:pcsa-cm2 v)] [k (:pcsa-cm2 v)]))]
+    (is (= (set (keys attached)) (set (keys specced)))
+        "the same muscles carry a PCSA in both tables")
+    (is (pos? (count attached)) "and there is something to compare")
+    (doseq [[m pcsa] (sort attached)]
+      (is (math/nearly= pcsa (get specced m) 1e-9)
+          (str m ": attachment says " pcsa " cm², muscle/specs says " (get specced m)
+               " — and muscle/specs is the one f-max is computed from")))))
+
 (deftest an-extensor-stays-an-extensor-through-its-range
   ;; THE DEFECT THIS CATCHES. A straight line from a high insertion crosses to the
   ;; wrong side of the joint as the joint flexes, and the model then reports the
