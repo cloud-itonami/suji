@@ -38,10 +38,17 @@
      (.toFixed (double x) n)))
 
 (defn worst-stiffness
-  "max(strains, key=stiffness_index) — Python max returns the FIRST max on ties."
+  "max(strains, key=stiffness_index) — Python max returns the FIRST max on ties.
+
+  A REFUSED muscle has no stiffness index, because it has no force to accumulate
+  a dose from. Those are skipped rather than compared as nil: `>` on a nil throws,
+  and treating them as zero would let a muscle the model could not solve win the
+  argument about which one is least loaded."
   [strains]
-  (reduce (fn [a b] (if (> (:stiffness-index b) (:stiffness-index a)) b a))
-          (first strains) (rest strains)))
+  (let [xs (filter :stiffness-index strains)]
+    (when (seq xs)
+      (reduce (fn [a b] (if (> (:stiffness-index b) (:stiffness-index a)) b a))
+              (first xs) (rest xs)))))
 
 (defn analyze-workstation
   ([body ws] (analyze-workstation body ws 120.0))
@@ -66,9 +73,13 @@
   (analyze-all total-mass-kg stature-m session-minutes))
 
 (defn- stable-sort-by-neg-stiffness
-  "sorted(strains, key=lambda s: -s.stiffness_index) — stable; ties keep input order."
+  "sorted(strains, key=lambda s: -s.stiffness_index) — stable; ties keep input order.
+
+  A refused muscle has no index and sorts last rather than throwing. It is kept in
+  the list: a muscle that disappears from a report when the model could not solve
+  it reads as a muscle that was fine."
   [strains]
-  (sort-by #(- (:stiffness-index %)) strains))
+  (sort-by #(if-let [x (:stiffness-index %)] (- x) 1.0) strains))
 
 (defn render-report
   "Render the report markdown (1:1 with render_report)."
@@ -107,9 +118,10 @@
        (add! "| muscle | tension %MVC | endurance | stiffness (強張り) | band |")
        (add! "|---|---|---|---|---|")
        (doseq [s (stable-sort-by-neg-stiffness (:strains r))]
-         (let [end (if (math/infinite? (:endurance-minutes s))
-                     "∞"
-                     (str (fmt-f 0 (:endurance-minutes s)) " min"))]
+         (let [end (cond
+                     (nil? (:endurance-minutes s)) "—"
+                     (math/infinite? (:endurance-minutes s)) "∞"
+                     :else (str (fmt-f 0 (:endurance-minutes s)) " min"))]
            (add! (str "| " (:name s) " | " (fmt-f 0 (:mvc-pct s)) "% | " end " | "
                       (fmt-f 2 (:stiffness-index s)) " | "
                       (strain/stiffness-band (:stiffness-index s)) " |"))))

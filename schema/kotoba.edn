@@ -35,6 +35,11 @@
  {:db/ident :muscle/group         :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; :cervical-extensors :upper-trapezius :levator-scapulae :anterior-deltoid :erector-spinae
  {:db/ident :muscle/force-n       :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}
  {:db/ident :muscle/mvc-pct       :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}
+ ;; a muscle the model DECLINED to give a force. Present instead of force-n/mvc-pct,
+ ;; never alongside them: omitting the muscle would make an unanswered load
+ ;; indistinguishable from an absent one, and a zero would be a claim.
+ {:db/ident :muscle/refused       :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; :acts-the-wrong-way :coefficient-below-floor :no-line-of-action
+ {:db/ident :muscle/antagonist    :db/valueType :db.type/boolean :db/cardinality :db.cardinality/one}   ;; refused because its opposite number is carrying this instant's load
 
  ;; ── strain (Rohmert sustained-isometric dose; stiffness index = 強張り) ─────────
  {:db/ident :strain/id            :db/valueType :db.type/string  :db/cardinality :db.cardinality/one :db/unique :db.unique/identity}
@@ -43,5 +48,6 @@
  {:db/ident :strain/session-min   :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}
  {:db/ident :strain/endurance-min :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}   ;; inf encoded as -1
  {:db/ident :strain/stiffness     :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}   ;; [0,1) 強張り index
+ {:db/ident :strain/saturated     :db/valueType :db.type/boolean :db/cardinality :db.cardinality/one}   ;; the index reached 1.0 in double precision and has no resolution left
  {:db/ident :strain/band          :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; :low :moderate :high :very-high
  {:db/ident :strain/as-of         :db/valueType :db.type/long    :db/cardinality :db.cardinality/one}]  ;; trajectory stamp (非終末論)

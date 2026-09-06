@@ -70,7 +70,11 @@
    "latissimus_dorsi"   {:name "latissimus_dorsi"   :pcsa-cm2 14.0}
    "quadratus_lumborum" {:name "quadratus_lumborum" :pcsa-cm2 8.0}
    "obliques"           {:name "obliques"           :pcsa-cm2 16.0}
-   "scalenes"           {:name "scalenes"           :pcsa-cm2 5.0}))
+   "scalenes"           {:name "scalenes"           :pcsa-cm2 5.0}
+   ;; the elbow, added 2026-09-06 — the chain placed it and nothing solved it
+   "biceps_brachii"     {:name "biceps_brachii"     :pcsa-cm2 9.0}
+   "brachialis"         {:name "brachialis"         :pcsa-cm2 12.0}
+   "triceps_brachii"    {:name "triceps_brachii"    :pcsa-cm2 20.0}))
 
 ;; emission order — midline groups, then each side, matching `attachment/instances`
 (def emit-order (mapv :name attachment/instances))
@@ -186,6 +190,10 @@
                       [[:scapular-suspension side]
                        (recruit/share (candidates :scapular-suspension side coeffs)
                                       (girdle-load-n body p side sup))]
+                      [[:elbow-flexion side]
+                       (share-signed (candidates :elbow-flexion side coeffs)
+                                     (get-in (into {} (map (juxt :joint identity) (:joints loads)))
+                                             ["elbow" :per-side side] 0.0))]
                       [[:shoulder-abduction side]
                        (share-signed (candidates :shoulder-abduction side coeffs)
                                      (get-in loads [:frontal :shoulder-per-side side] 0.0))]]]

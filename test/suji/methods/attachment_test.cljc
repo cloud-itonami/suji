@@ -246,3 +246,69 @@
         (when (and (:mvc-pct lft) (:mvc-pct rgt))
           (is (math/nearly= (:mvc-pct lft) (:mvc-pct rgt) 1e-9)
               (str g ": and must load the two sides equally")))))))
+
+;; --- the elbow ---------------------------------------------------------------
+
+(deftest the-elbow-has-an-equilibrium-at-all
+  ;; THE GAP THIS CLOSES. `pose` has placed an elbow since the pose layer existed
+  ;; and no muscle acted about it: the forearm and hand hung off a joint whose
+  ;; equilibrium nobody solved, as though it were welded. Every joint the
+  ;; kinematics places should have kinetics, or the model should say which do not.
+  (let [acted (set (map :acts-about att/instances))]
+    (is (contains? acted :elbow/left))
+    (is (contains? acted :elbow/right))))
+
+(deftest holding-the-forearm-out-loads-the-elbow-flexors
+  (let [posture (merge neutral {:shoulder-flexion-deg 15.0 :elbow-flexion-deg 90.0
+                                :arms-supported false})
+        l (suji.methods.load/solve-posture-loads body posture)
+        ts (muscle/solve-muscle-tensions body posture l)
+        by (into {} (map (juxt :name identity)) ts)
+        elbow (first (filter #(= "elbow" (:joint %)) (:joints l)))]
+    (is (> (:moment-nm elbow) 1.0) "a held-out forearm is a real elbow moment")
+    (is (pos? (:mvc-pct (by "biceps_brachii/left"))))
+    (is (pos? (:mvc-pct (by "brachialis/left"))))
+    (is (:antagonist? (by "triceps_brachii/left"))
+        "the extensor is the antagonist here, not a gap")))
+
+(deftest resting-the-forearms-empties-the-elbow
+  ;; the whole of the arms-supported effect at this joint, stated as which
+  ;; segments are still hanging rather than as a multiplier
+  (let [posture (merge neutral {:shoulder-flexion-deg 15.0 :elbow-flexion-deg 90.0
+                                :arms-supported true})
+        l (suji.methods.load/solve-posture-loads body posture)
+        elbow (first (filter #(= "elbow" (:joint %)) (:joints l)))]
+    (is (math/nearly= 0.0 (:moment-nm elbow) 1e-12)
+        "a forearm on the desk is carried by the desk")))
+
+(deftest the-elbow-flexors-and-the-extensor-oppose
+  (doseq [e [0 45 90 135]]
+    (let [p (at :shoulder-flexion-deg 15.0 :elbow-flexion-deg (double e))
+          bi (arm p "biceps_brachii/left")
+          br (arm p "brachialis/left")
+          tri (arm p "triceps_brachii/left")]
+      (is (pos? bi) (str e "°: biceps is a flexor"))
+      (is (pos? br) (str e "°: brachialis is a flexor"))
+      (is (neg? tri) (str e "°: triceps is an extensor, got " tri)))))
+
+(deftest the-biceps-leverage-peaks-in-mid-range
+  ;; a constant arm would be flat; the shape is what makes computing it worth it
+  (let [as (mapv #(arm (at :shoulder-flexion-deg 15.0 :elbow-flexion-deg (double %))
+                       "biceps_brachii/left")
+                 [0 30 60 90 120])
+        peak (apply max as)]
+    (is (> peak (first as)) "leverage rises off full extension")
+    (is (> peak (last as)) "and falls again toward full flexion")
+    (is (> (/ peak (first as)) 1.2) "by enough to matter")))
+
+(deftest the-bigger-flexor-takes-the-bigger-share
+  ;; brachialis has the larger cross-section and the shorter arm; the criterion
+  ;; weighs both, and this pins which way it comes out
+  (let [posture (merge neutral {:shoulder-flexion-deg 15.0 :elbow-flexion-deg 90.0
+                                :arms-supported false})
+        l (suji.methods.load/solve-posture-loads body posture)
+        by (into {} (map (juxt :name identity)) (muscle/solve-muscle-tensions body posture l))]
+    (is (> (:force-n (by "brachialis/left")) (:force-n (by "biceps_brachii/left")))
+        "the larger muscle carries more force")
+    (is (< (:mvc-pct (by "brachialis/left")) (:mvc-pct (by "biceps_brachii/left")))
+        "and is nonetheless working at a lower fraction of its maximum")))

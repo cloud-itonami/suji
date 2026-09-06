@@ -23,7 +23,12 @@
             #?(:clj [clojure.java.io :as io])))
 
 (def ^:private joint-kw
-  {"cervicothoracic" ":cervicothoracic" "shoulder" ":shoulder" "lumbosacral" ":lumbosacral"})
+  ;; A joint missing from this map used to emit a nil keyword into the datom and
+  ;; then fail two lines later on the arithmetic. Adding a joint to `load` and
+  ;; forgetting it here is the obvious mistake, so the fallback derives the
+  ;; keyword instead of returning nothing.
+  {"cervicothoracic" ":cervicothoracic" "shoulder" ":shoulder"
+   "elbow" ":elbow" "lumbosacral" ":lumbosacral"})
 
 (defn- muscle-kw [name]
   (str ":" (str/replace name "_" "-")))
@@ -59,26 +64,45 @@
                       (mapv (fn [j]
                               (array-map
                                ":load/id" (str pid "-load-" (:joint j)) ":load/posture" pid
-                               ":load/joint" (joint-kw (:joint j))
+                               ":load/joint" (or (joint-kw (:joint j)) (str ":" (:joint j)))
                                ":load/moment-nm" (math/round-to (:moment-nm j) 4)))))
         muscle-ds (mapv (fn [t]
-                          (array-map
-                           ":muscle/id" (str pid "-musc-" (:name t)) ":muscle/posture" pid
-                           ":muscle/group" (muscle-kw (:name t))
-                           ":muscle/force-n" (math/round-to (:force-n t) 2)
-                           ":muscle/mvc-pct" (math/round-to (:mvc-pct t) 2)))
+                          ;; a REFUSED muscle has no force and no %MVC; rounding
+                          ;; a nil threw here the moment a refusal could reach
+                          ;; this far. The datom carries the reason instead —
+                          ;; omitting the muscle would make an unanswered load
+                          ;; indistinguishable from an absent one.
+                          (if (:refused t)
+                            (array-map
+                             ":muscle/id" (str pid "-musc-" (:name t)) ":muscle/posture" pid
+                             ":muscle/group" (muscle-kw (:name t))
+                             ":muscle/refused" (str ":" (name (:refused t)))
+                             ":muscle/antagonist" (boolean (:antagonist? t)))
+                            (array-map
+                             ":muscle/id" (str pid "-musc-" (:name t)) ":muscle/posture" pid
+                             ":muscle/group" (muscle-kw (:name t))
+                             ":muscle/force-n" (math/round-to (:force-n t) 2)
+                             ":muscle/mvc-pct" (math/round-to (:mvc-pct t) 2))))
                         (:tensions result))
         strain-ds (mapv (fn [st]
-                          (let [end (if (math/infinite? (:endurance-minutes st))
-                                      -1.0
-                                      (math/round-to (:endurance-minutes st) 2))]
+                          (let [end (cond
+                                      (nil? (:endurance-minutes st)) -1.0
+                                      (math/infinite? (:endurance-minutes st)) -1.0
+                                      :else (math/round-to (:endurance-minutes st) 2))]
                             (array-map
                              ":strain/id" (str pid "-strain-" (:name st)) ":strain/posture" pid
                              ":strain/group" (muscle-kw (:name st))
                              ":strain/session-min" (:session-minutes st)
                              ":strain/endurance-min" end
-                             ":strain/stiffness" (math/round-to (:stiffness-index st) 4)
+                             ;; -1 for "not computed", the same sentinel this file
+                             ;; already uses for an infinite endurance. A nil here
+                             ;; renders as an empty slot and the map literal comes
+                             ;; back with an odd number of forms.
+                             ":strain/stiffness" (if (:stiffness-index st)
+                                                   (math/round-to (:stiffness-index st) 4)
+                                                   -1.0)
                              ":strain/band" (str ":" (strain/stiffness-band (:stiffness-index st)))
+                             ":strain/saturated" (boolean (:saturated? st))
                              ":strain/as-of" idx)))
                         (:strains result))]
     (-> [posture-d cerv-d]

@@ -95,10 +95,23 @@
                     {:type :value-error})))
   (let [body (segment/build-body (get s "total_mass_kg") (get s "stature_m"))
         tensions (muscle/solve-muscle-tensions body (posture-from-state s) (get s "_loads"))
+        ;; A REFUSED muscle carries no force and has no %MVC. Rounding a nil threw
+        ;; a NullPointerException here the moment the elbow was added and the
+        ;; triceps became an antagonist — the same shape as the one `strain` had:
+        ;; a refusal introduced where it is raised, and the next namespace unable
+        ;; to hold the value it produces. The reason is carried instead, so the
+        ;; emitted record says WHY there is no number rather than omitting the
+        ;; muscle or inventing a zero.
         mt (mapv (fn [t]
-                   {"group" (str/replace (:name t) "_" "-")
-                    "forceN" (math/round-to (:force-n t) 2)
-                    "mvcPct" (math/round-to (:mvc-pct t) 2)})
+                   (if (:refused t)
+                     {"group" (str/replace (:name t) "_" "-")
+                      "forceN" nil
+                      "mvcPct" nil
+                      "refused" (name (:refused t))
+                      "antagonist" (boolean (:antagonist? t))}
+                     {"group" (str/replace (:name t) "_" "-")
+                      "forceN" (math/round-to (:force-n t) 2)
+                      "mvcPct" (math/round-to (:mvc-pct t) 2)}))
                  tensions)]
     (assoc s "muscle_tensions" mt "phase" phase-distributed)))
 
