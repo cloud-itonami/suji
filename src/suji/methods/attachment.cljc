@@ -64,7 +64,7 @@
     :acts-about :c7 :task :cervical-extension
     ;; posterior to the neck axis, running from the upper thorax to the occiput
     :origin {:segment "thorax_abdomen" :along 0.90 :ant -0.01965 :lat 0.0}
-    :insertion {:segment "head_neck" :along 0.05 :ant -0.00982 :lat 0.0}
+    :insertion {:segment "lower_cervical" :along 0.16666666666666669 :ant -0.00982 :lat 0.0}
     ;; the cervical vertebrae. The extensors lie ON them, so their leverage floors
     ;; at the column's radius instead of thinning toward zero as the head folds —
     ;; without this the straight-line arm falls under the leverage floor at large
@@ -120,28 +120,50 @@
    ;;     C4/C5   34.51 N  levator_scapulae
    ;;     C3/C4    0.00 N  nothing
    ;;
-   ;; WHERE THE SKULL SITS ON THIS SEGMENT, derived from the model rather than
-   ;; guessed. `head_neck` runs C7 → vertex and is 0.3094 m long at reference
-   ;; stature. `spine/levels` spaces the five cervical levels 0.06 of that apart —
-   ;; 18.6 mm, which is what a cervical vertebra plus its disc measures — so
-   ;; continuing the model's OWN spacing upward past C3/C4 (0.24) gives C2/C3 0.30,
-   ;; C1/C2 0.36, and the occipito-atlantal joint 0.42, i.e. 130 mm above C7. An
-   ;; insertion above 0.24 therefore crosses every cervical level this model has.
+   ;; WHERE THE SKULL SITS, derived from the model rather than guessed. This block
+   ;; was written on the morning of 2026-09-07, when C7→vertex was ONE segment
+   ;; 0.3094 m long: `spine/levels` spaces the five cervical levels 0.06 of that
+   ;; apart — 18.6 mm, a cervical vertebra plus its disc — so continuing the model's
+   ;; own spacing upward past C3/C4 (0.24) gave C2/C3 0.30, C1/C2 0.36, and the
+   ;; occipito-atlantal joint 0.42, i.e. 130 mm above C7.
    ;;
-   ;; ⚠ WHAT IS NOT HERE, AND WHY. The suboccipitals — rectus capitis posterior major
-   ;; and minor, obliquus capitis superior and inferior — run from C1 and C2 to the
-   ;; occiput, so BOTH THEIR ENDS WOULD BE ON `head_neck`: this model has one rigid
-   ;; head-and-neck segment and no atlanto-occipital or atlanto-axial joint.
+   ;; LATER THAT DAY THE DERIVATION BECAME THE SEGMENTATION. `segment` cuts the
+   ;; neck at exactly those two places, so the fractions above are now segment
+   ;; boundaries and every `:along` in this file that used to be measured along
+   ;; `head_neck` has been rescaled onto whichever of the three it lands on:
+   ;;
+   ;;     head_neck 0.05 → lower_cervical 0.1667   (cervical_extensors)
+   ;;     head_neck 0.07 → lower_cervical 0.2333   (nuchal_ligament)
+   ;;     head_neck 0.10 → lower_cervical 0.3333   (upper_trapezius)
+   ;;     head_neck 0.16 → lower_cervical 0.5333   (scalenes)
+   ;;     head_neck 0.22 → lower_cervical 0.7333   (levator_scapulae)
+   ;;     head_neck 0.44 → head 0.0345             (sternocleidomastoid)
+   ;;     head_neck 0.45 → head 0.0517             (splenius_capitis)
+   ;;     head_neck 0.48 → head 0.1034             (semispinalis_capitis)
+   ;;
+   ;; At the NEUTRAL posture the three segments are collinear, so every one of
+   ;; those sites lands on the same world point it did before and every neutral
+   ;; moment arm this file is calibrated to is unchanged to the bit. Away from
+   ;; neutral they do not, which is the whole purpose of the split.
+   ;;
+   ;; ⚠ WHAT WAS NOT HERE UNTIL THE NECK HAD JOINTS. This paragraph used to say the
+   ;; suboccipitals could not be written down at all, because with one rigid
+   ;; head-and-neck segment BOTH ENDS of each rode on the same bone —
    ;; `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm` names
-   ;; that shape as the error that produced a constant-looking arm, and it would be
-   ;; that error here rather than the exception `middle_trapezius` earned: that one is
-   ;; defensible because a SUSPENSION coefficient is a cosine against the world
-   ;; vertical, which the segment does not carry, and a suboccipital is solved as a
-   ;; MOMENT, whose axis the segment does carry. Its arm could not vary and its length
-   ;; could not change, so the model would report a muscle that never works. What is
-   ;; missing is a JOINT, not an attachment, and no attachment can supply it. They are
-   ;; excluded rather than faked; `exactly-one-muscle-has-both-ends-on-one-segment-and-it-is-a-suspender`
-   ;; is what keeps them excluded.
+   ;; that shape as the error that produces a constant-looking arm. It ended: "What
+   ;; is missing is a JOINT, not an attachment, and no attachment can supply it."
+   ;; That was right, and the joint is here now: three of the four cross the
+   ;; atlanto-occipital joint and are below.
+   ;;
+   ;; ⚠ OBLIQUUS CAPITIS INFERIOR IS STILL NOT HERE. It runs from the spinous
+   ;; process of C2 to the transverse process of C1, and this model puts the atlas
+   ;; and the axis in ONE segment, `upper_cervical` — so both its ends are still on
+   ;; one bone and it would still be the error above. Splitting the atlas from the
+   ;; axis would fix it and would open the atlanto-axial joint, whose cardinal
+   ;; motion is 40.5 deg of AXIAL ROTATION against about 10 deg of flexion; a
+   ;; sagittal model would pay for a vertebra-level mass split that no
+   ;; anthropometric table publishes and collect almost none of the benefit. See
+   ;; `segment/head-share-of-complex` for the three tables that were checked.
    ;;
    ;; PCSA HERE IS MEASURED, and it is the second measured column in this file after
    ;; the lower limb's. Kamibayashi LK, Richmond FJR, "Morphometry of human neck
@@ -185,7 +207,7 @@
     ;; joint the model's own level spacing puts at 0.42 — the nuchal lines are on the
     ;; occipital squama, above the foramen magnum.
     :origin {:segment "thorax_abdomen" :along 0.85 :ant -0.0168 :lat 0.0}
-    :insertion {:segment "head_neck" :along 0.48 :ant -0.0191 :lat 0.0}
+    :insertion {:segment "head" :along 0.10344827586206896 :ant -0.0191 :lat 0.0}
     ;; THE CERVICAL COLUMN — the same surface `cervical_extensors` declares, at the
     ;; same 0.012 m, because it is the same column and this file's rule is one bone
     ;; one radius (`the-abduction-floor-is-the-humeral-head-and-it-is-a-floor`).
@@ -211,7 +233,7 @@
     ;; capitis, so its origin sits further posterior (the spinous process tips rather
     ;; than the transverse processes) and its extension arm is the larger of the two.
     :origin {:segment "thorax_abdomen" :along 0.90 :ant -0.0230 :lat 0.0}
-    :insertion {:segment "head_neck" :along 0.45 :ant -0.0206 :lat 0.0}
+    :insertion {:segment "head" :along 0.05172413793103453 :ant -0.0206 :lat 0.0}
     ;; the same cervical column, the same radius — see the note above.
     :wrap {:radius-m 0.012 :sign 1.0}
     :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, splenius 4.26 cm2 per side x 2 = 8.52 cm2 bilateral (measured; N=9, range 2.57-5.48). ⚠ THAT ENTRY IS THE WHOLE SPLENIUS: the table gives one mass and one PCSA for splenius capitis and splenius cervicis together and separates them only by fascicle length (12.3 cm and 14.7 cm). This entry therefore stands for both, which puts a share of splenius cervicis's cross-section on a cranial insertion it does not have - cervicis runs to the C1-C3 transverse processes. It crosses the same five levels either way, so the error is in WHERE the force is applied on the skull and not in which levels carry it. Neutral extension arm calibrated to a representative 0.038 m, larger than semispinalis capitis's because Vasavada (chapter 3, p.68) states the semispinalis capitis has the smaller of the two."}
@@ -241,14 +263,106 @@
     ;; would need it paired and in `:cervical-lateral-flexion`, and a muscle belongs to
     ;; one task here.
     :origin {:segment "thorax_abdomen" :along 0.96 :ant 0.0260 :lat 0.0}
-    :insertion {:segment "head_neck" :along 0.44 :ant -0.0040 :lat 0.0}
+    :insertion {:segment "head" :along 0.03448275862068969 :ant -0.0040 :lat 0.0}
     :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 3.72 cm2 per side x 2 = 7.44 cm2 bilateral (measured; N=9, range 1.81-5.26). No double count to decide: the lumped cervical_extensors is an extensor group and this is the antagonist, which was absent from the model entirely. Neutral arm -0.036 m, a FLEXION arm about C7; Vasavada chapter 3 Figure 3-14 puts the sternocleidomastoid's lower-cervical flexion moment arm between about -2 and -4 cm and has it increasing in flexed postures."}
+
+   ;; --- the suboccipitals -------------------------------------------------------
+   ;; Added 2026-09-07, in the same hour the neck got its joints, because until it
+   ;; had them these four muscles were the thing this model could not say. Three of
+   ;; them are here; obliquus capitis inferior is not, for the reason given above.
+   ;;
+   ;; THEY ACT ABOUT THE ATLANTO-OCCIPITAL JOINT and nothing else in this model
+   ;; does. That is the point of them: they are the only muscles whose equilibrium
+   ;; is the one the split created, so if the split had bought nothing they would
+   ;; have nowhere to act.
+   ;;
+   ;; PCSA IS MEASURED. Kamibayashi LK, Richmond FJR, "Morphometry of human neck
+   ;; muscles", Spine 23(12):1314-1323, 1998, read as Table 3-3 of Vasavada AN,
+   ;; "Architectural Design and Function of Human Back Muscles" (Rothman-Simeone
+   ;; The Spine, ch.3, p.65) — the same table and the same fetched PDF the capitis
+   ;; muscles above are sourced from, https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf,
+   ;; full text read on 2026-09-07. Per side, mean (SD), range:
+   ;;
+   ;;     rectus capitis posterior major   0.93 (0.33)  0.44-1.45  N=9
+   ;;     rectus capitis posterior minor   0.50 (0.19)  0.48-0.83  N=9
+   ;;     obliquus capitis superior        1.03 (0.46)  0.29-1.59  N=8
+   ;;     obliquus capitis inferior        1.29 (0.54)  0.69-1.73  N=9   ← not modelled
+   ;;
+   ;; They sum to 3.75 cm² per side, which is the figure this file already quoted
+   ;; when it was explaining why they were absent. Each is doubled below, because a
+   ;; midline group here carries the bilateral sum. The three that can be modelled
+   ;; are 4.92 cm² of the 7.50; the missing obliquus capitis inferior is 2.58 cm²,
+   ;; a third of the suboccipital cross-section, and it is a ROTATOR of C1 on C2
+   ;; rather than a sagittal extensor, so what its absence costs this sagittal model
+   ;; is smaller than its share.
+   ;;
+   ;; THE GEOMETRY IS CALIBRATED AGAINST MEASURED LENGTHS, NOT AGAINST INVENTED
+   ;; MOMENT ARMS, and that is a departure from the rest of this file. Everywhere
+   ;; else the offsets are chosen so the neutral arm reproduces a constant this
+   ;; actor already used; there is no such constant here, because there was no such
+   ;; muscle. Inventing a moment-arm target and then calibrating to it would be a
+   ;; number pretending to be an anchor. Kamibayashi & Richmond DO publish a muscle
+   ;; length for each of these (same table, `MUSCLE LENGTH (cm)` range), so the
+   ;; sites are placed from bony landmarks and the resulting line LENGTH is checked
+   ;; against the measurement — `the-suboccipital-lengths-are-checked-against-the-
+   ;; measurement` reports the comparison. The moment arms are then whatever the
+   ;; geometry gives, and they are reported rather than targeted.
+   ;;
+   ;; ⚠ THE MODEL'S UPPER CERVICAL IS SHORT. `upper_cervical` spans C2/C3 to the
+   ;; occipital condyles and is 37 mm at reference stature, because `segment` cuts
+   ;; it at the model's own uniform 18.6 mm level spacing; a real atlas plus axis is
+   ;; nearer 50 mm, since C2 with its dens is taller than a typical vertebra and the
+   ;; uniform spacing cannot know that. Every muscle spanning this joint therefore
+   ;; comes out SHORTER here than the cadaver measurement, which is exactly what the
+   ;; length check reports and is not corrected by a factor nobody measured. A short
+   ;; muscle also changes length by a larger FRACTION for the same joint rotation, so
+   ;; the force-length term falls off faster than it should — biasing these three
+   ;; toward reporting less available force, i.e. a higher %MVC, than a correctly
+   ;; scaled model would.
+
+   "rectus_capitis_posterior_major"
+   {:name "rectus_capitis_posterior_major" :pcsa-cm2 1.86
+    :acts-about :atlanto-occipital :task :atlanto-occipital-extension
+    ;; spinous process of the axis (C2) → lateral part of the inferior nuchal line.
+    ;; The C2 spinous is the most prominent process in the upper neck; 30 mm behind
+    ;; the column axis at reference stature.
+    :origin {:segment "upper_cervical" :along 0.15 :ant -0.0176 :lat 0.0}
+    :insertion {:segment "head" :along 0.055 :ant -0.0159 :lat 0.0}
+    ;; the same 0.012 m column radius the other posterior cervical muscles declare
+    ;; — one bone one radius. It is a FLOOR and it does not bind at any reference
+    ;; posture (the neutral arm is more than twice it, and the atlanto-occipital
+    ;; joint EXTENDS as the head flexes on the trunk, which lengthens the arm);
+    ;; `the-suboccipital-wrap-floor-never-binds` says so rather than leaving a
+    ;; surface in the file whose only effect is to look like diligence.
+    :wrap {:radius-m 0.012 :sign 1.0}
+    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 0.93 cm2 per side x 2 = 1.86 cm2 bilateral (measured; N=9, range 0.44-1.45). Attachment offsets are REPRESENTATIVE landmark distances (C2 spinous 30 mm posterior; inferior nuchal line 27 mm posterior, 10 mm above the condyles) and are NOT calibrated to a moment arm - no measured moment arm about the atlanto-occipital joint was obtained. Modelled midline: the pair's lateral components cancel and what is solved is the sagittal resultant, so this entry says nothing about head rotation."}
+
+   "rectus_capitis_posterior_minor"
+   {:name "rectus_capitis_posterior_minor" :pcsa-cm2 1.00
+    :acts-about :atlanto-occipital :task :atlanto-occipital-extension
+    ;; posterior tubercle of the atlas (C1) → the occiput medial to and below the
+    ;; inferior nuchal line. The shortest muscle in this model.
+    :origin {:segment "upper_cervical" :along 0.72 :ant -0.0129 :lat 0.0}
+    :insertion {:segment "head" :along 0.070 :ant -0.0141 :lat 0.0}
+    :wrap {:radius-m 0.012 :sign 1.0}
+    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 0.50 cm2 per side x 2 = 1.00 cm2 bilateral (measured; N=9, range 0.48-0.83). Offsets representative (C1 posterior tubercle 22 mm posterior; occipital insertion 24 mm posterior, 13 mm above the condyles). Its modelled length falls SHORT of the 2.6-3.1 cm the same table measures, for the reason stated above the block: this model's upper cervical segment is 37 mm where an atlas plus axis is nearer 50."}
+
+   "obliquus_capitis_superior"
+   {:name "obliquus_capitis_superior" :pcsa-cm2 2.06
+    :acts-about :atlanto-occipital :task :atlanto-occipital-extension
+    ;; transverse process of the atlas → the occiput between the nuchal lines,
+    ;; lateral. It runs up and BACK, so it has the largest posterior travel of the
+    ;; three and the smallest sagittal moment arm — most of its line is vertical.
+    :origin {:segment "upper_cervical" :along 0.72 :ant -0.0059 :lat 0.0}
+    :insertion {:segment "head" :along 0.150 :ant -0.0135 :lat 0.0}
+    :wrap {:radius-m 0.012 :sign 1.0}
+    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 1.03 cm2 per side x 2 = 2.06 cm2 bilateral (measured; N=8, range 0.29-1.59). Offsets representative. MODELLED MIDLINE AND THEREFORE SAGITTAL ONLY, which costs more here than it does for the other two: the real obliquus capitis superior runs from a TRANSVERSE process, 25 mm lateral, and its lateral flexion and its contribution to steadying the head in rotation are absent. What is modelled is the sagittal component of a bilateral pair."}
 
    "upper_trapezius"
    {:name "upper_trapezius" :paired? true :pcsa-cm2 9.0
     :acts-about :shoulder :task :scapular-suspension
     ;; occiput/nuchal line → lateral clavicle-acromion; suspends the girdle
-    :origin {:segment "head_neck" :along 0.10 :ant -0.0170 :lat 0.0180}
+    :origin {:segment "lower_cervical" :along 0.33333333333333337 :ant -0.0170 :lat 0.0180}
     :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0090 :lat 0.1225}
     :source "representative; suspension line. The insertion rides on the THORAX, not on the humerus: the acromion belongs to the shoulder girdle, and a girdle that rotated with the arm would swing its own suspension line horizontal under abduction and report that the trapezius cannot lift"}
 
@@ -257,7 +371,7 @@
     :acts-about :shoulder :task :scapular-suspension
     ;; upper cervical transverse processes → superior medial scapula: shorter,
     ;; more vertical, and closer to the midline than the trapezius
-    :origin {:segment "head_neck" :along 0.22 :ant -0.0120 :lat 0.0125}
+    :origin {:segment "lower_cervical" :along 0.7333333333333334 :ant -0.0120 :lat 0.0125}
     :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0120 :lat 0.0750}
     :source "representative; suspension line, on the thorax for the same reason as upper_trapezius — the scapula is not the humerus"}
 
@@ -346,7 +460,7 @@
     :ref-stretch 1.60
     :force-at-ref 150.0
     :origin {:segment "thorax_abdomen" :along 0.97 :ant -0.0200 :lat 0.0}
-    :insertion {:segment "head_neck" :along 0.07 :ant -0.0130 :lat 0.0}
+    :insertion {:segment "lower_cervical" :along 0.23333333333333336 :ant -0.0130 :lat 0.0}
     :source "representative; the cervical counterpart, engaging in sustained forward head posture"}
 
    ;; --- the elbow --------------------------------------------------------------
@@ -501,7 +615,7 @@
     :acts-about :c7 :task :cervical-lateral-flexion
     ;; first and second ribs → cervical transverse processes
     :origin {:segment "thorax_abdomen" :along 0.93 :ant 0.0040 :lat 0.0250}
-    :insertion {:segment "head_neck" :along 0.16 :ant 0.0040 :lat 0.0150}
+    :insertion {:segment "lower_cervical" :along 0.5333333333333333 :ant 0.0040 :lat 0.0150}
     :source "representative; lateral flexor of the cervical spine"}
 
 

@@ -204,6 +204,17 @@
    "semispinalis_capitis" {:name "semispinalis_capitis" :pcsa-cm2 10.80 :moment-arm-m 0.030}
    "splenius_capitis"     {:name "splenius_capitis"     :pcsa-cm2 8.52  :moment-arm-m 0.038}
    "sternocleidomastoid"  {:name "sternocleidomastoid"  :pcsa-cm2 7.44  :moment-arm-m -0.036}
+   ;; the suboccipitals, added 2026-09-07 with the atlanto-occipital joint they act
+   ;; about. PCSA measured from the same Kamibayashi & Richmond table; NO
+   ;; `:moment-arm-m`, and its absence is the statement — there is no legacy
+   ;; constant and no published moment arm about this joint to calibrate against,
+   ;; so `attachment` places them from bony landmarks, checks the resulting LENGTHS
+   ;; against the lengths the same table measures, and lets the arms be whatever
+   ;; the geometry gives. Writing a target here would have made an invented number
+   ;; look like an anchor.
+   "rectus_capitis_posterior_major" {:name "rectus_capitis_posterior_major" :pcsa-cm2 1.86}
+   "rectus_capitis_posterior_minor" {:name "rectus_capitis_posterior_minor" :pcsa-cm2 1.00}
+   "obliquus_capitis_superior"      {:name "obliquus_capitis_superior"      :pcsa-cm2 2.06}
    "upper_trapezius"    {:name "upper_trapezius"    :pcsa-cm2 9.0  :moment-arm-m 0.025}
    "levator_scapulae"   {:name "levator_scapulae"   :pcsa-cm2 5.0  :moment-arm-m 0.020}
    "anterior_deltoid"   {:name "anterior_deltoid"   :pcsa-cm2 10.0 :moment-arm-m 0.030}
@@ -385,6 +396,27 @@
          [[[:cervical-extension :midline]
            (recruit/share (candidates :cervical-extension nil coeffs)
                           (get-in loads [:cervical :extensor-moment-nm]))]
+          ;; THE ATLANTO-OCCIPITAL EQUILIBRIUM, new on 2026-09-07 and the one the
+          ;; cervical split exists to make possible. Its load is the moment the
+          ;; SKULL alone exerts about the occipital condyles, computed from the
+          ;; placed chain rather than from a fitted lever — see
+          ;; `load/atlanto-occipital-moment`.
+          ;;
+          ;; ⚠ THE CAPITIS MUSCLES CROSS THIS JOINT TOO AND ARE NOT IN IT.
+          ;; Semispinalis capitis and splenius capitis run from the thorax to the
+          ;; occiput, so they generate a moment about the atlanto-occipital joint
+          ;; as well as about C7 — and a muscle belongs to ONE task here, because
+          ;; `recruit`'s closed form solves one constraint. They are solved at C7,
+          ;; where they are the principal actors, and this equilibrium is therefore
+          ;; charged entirely to the suboccipitals. That OVERSTATES what the
+          ;; suboccipitals must do, by exactly the moment the two capitis muscles
+          ;; are already exerting here. It is the same approximation
+          ;; `attachment/secondary-arm` states for the two-joint muscles of the
+          ;; lower limb, and `load/atlanto-occipital-moment` reports the size of it
+          ;; at every posture rather than leaving it as a sentence.
+          [[:atlanto-occipital-extension :midline]
+           (recruit/share (candidates :atlanto-occipital-extension nil coeffs)
+                          (get-in loads [:atlanto-occipital :moment-nm]))]
           [[:trunk-extension :midline]
            (recruit/share (candidates :trunk-extension nil coeffs)
                           (:moment-nm (joint "lumbosacral")))]
