@@ -76,3 +76,23 @@
     (let [reduction (- 1 (/ (get-in mon [:loads :cervical :compressive-load-kgf])
                             (get-in lap [:loads :cervical :compressive-load-kgf])))]
       (is (> reduction 0.4)))))
+
+(deftest a-refusal-passes-through-the-strain-model
+  ;; `muscle` can decline to compute a force; there is no dose to accumulate from
+  ;; a load nobody computed. Before 2026-09-06 this threw a NullPointerException
+  ;; two lines into the arithmetic — the caller found out from a crash rather than
+  ;; from an answer, and only if it happened to exercise the posture.
+  (let [refused {:name "anterior_deltoid" :refused :coefficient-below-floor :mvc-pct nil}
+        s (strain/muscle-strain refused 120.0)]
+    (is (nil? (:stiffness-index s)))
+    (is (= :coefficient-below-floor (:refused s)))
+    (is (not (:saturated? s)) "a refusal is not a saturation")
+    (is (= "not-computed" (strain/stiffness-band (:stiffness-index s)))
+        "and it must not fall into the `low` band, which reads as the best case"))
+  ;; a whole session of tensions, some refused
+  (let [xs (strain/session-strain [{:name "a" :mvc-pct 12.0}
+                                   {:name "b" :refused :no-line-of-action :mvc-pct nil}]
+                                  60.0)]
+    (is (= 2 (count xs)))
+    (is (number? (:stiffness-index (first xs))))
+    (is (nil? (:stiffness-index (second xs))))))
