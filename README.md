@@ -1630,7 +1630,7 @@ Function of Human Back Muscles*, Rothman-Simeone The Spine ch.3 p.65 —
 <https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf>, **fetched 2026-09-08 and
 read in full text** with `pdftotext -layout`, not as an abstract. Its longus capitis row
 also gives mass 3.7 (1.2) g, muscle length 7.8–11.1 cm mean 9.2 (1.4), NF length 3.8 (1)
-cm. **Rectus capitis anterior is not one of its fourteen rows** — checked in the fetched
+cm. **Rectus capitis anterior is not one of its fifteen muscle rows** — checked in the fetched
 text rather than assumed — and Vasavada names it only qualitatively: *"On the ventral
 side, the rectus capitis anterior and rectus capitis lateralis are very small muscles
 that connect the skull to C1, presumably with (small) moment arms for flexion and lateral
@@ -1822,7 +1822,7 @@ at this joint and at no other level in the model.
 **What actually blocks it is provenance, in two parts.**
 
 1. Kamibayashi & Richmond 1998 Table 3-3 — the source every measured PCSA in this model
-   comes from — has fourteen rows and **not one of the three is among them**. Checked in
+   comes from — has fifteen muscle rows and **not one of the three is among them**. Checked in
    the fetched full text. Their cross-sections would be invented.
 2. The lumped `cervical_extensors` **already declares that it stands for two of them**.
    Its `:source` says it places *"semispinalis cervicis, multifidus, longissimus and
