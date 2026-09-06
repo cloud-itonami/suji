@@ -24,8 +24,13 @@
   geometry supplies only the variation away from neutral. `attachment-test` pins
   that agreement, so a change to the anatomy that silently moves the neutral
   leverage fails. This is a schematic line-of-action model (G7 `:representative`):
-  it has no wrapping surfaces, no via points, no muscle volume, and it is NOT a
-  measurement of anybody.
+  it has no via points and no muscle volume, and it is NOT a measurement of
+  anybody. It DOES have wrapping surfaces — the first landed on 2026-09-06 and
+  this sentence went on saying otherwise until 2026-09-07. A wrapping
+  surface is a floor the chord can beat (`moment-arm-detail`), so a radius taken
+  from a moment-arm target rather than from the bone binds at every posture and
+  quietly restores the constant this file exists to remove; `middle_deltoid` did
+  exactly that.
 
   NON-DIAGNOSTIC (G1): a moment arm is a length."
   (:require [suji.methods.math :as math]
