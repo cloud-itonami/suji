@@ -37,6 +37,26 @@
      :cljs
      (.toFixed (double x) n)))
 
+(defn fmt-or-dash
+  "`fmt-f`, or an em dash when there is no number.
+
+  WHY THIS EXISTS. `render-report` reached straight for `(:mvc-pct s)` and
+  `(:stiffness-index s)` and handed them to `fmt-f`, which calls `.doubleValue` on
+  them. A REFUSED muscle has neither — the model declined to compute its force —
+  and a LIGAMENT has no %MVC at all, because it cannot contract. So the report
+  threw a NullPointerException the moment either could reach it, and it had been
+  throwing since before 2026-09-06: the command the README advertises,
+  `clojure -M -m suji.methods.analyze`, did not run. The test suite could not see
+  it because nothing called `render-report`.
+
+  This is the same lesson `muscle/numeric-mvc?` was written for and the fourth
+  emit site to learn it: branch on whether the number is THERE, not on why it is
+  not. A site that branches on the reason has to be revisited every time a new
+  reason appears, and two new ones appeared (ligaments, then the lower limb's
+  antagonists) between that function being written and this one being needed."
+  [n x]
+  (if (number? x) (fmt-f n x) "—"))
+
 (defn worst-stiffness
   "max(strains, key=stiffness_index) — Python max returns the FIRST max on ties.
 
@@ -126,68 +146,56 @@
        (add! "| muscle | tension %MVC | endurance | stiffness (強張り) | band |")
        (add! "|---|---|---|---|---|")
        (doseq [s (stable-sort-by-neg-stiffness (:strains r))]
-         ;; A row without a %MVC is rendered AS a refusal, with its reason, the way
-         ;; the browser table does it. Printing a dash would let a reader take the
-         ;; row for a small number; the reason is the answer.
-         ;;
-         ;; The branch is `numeric-mvc?`, not `:refused`. There are two ways to
-         ;; have no %MVC — the model declined to compute a force, and the entry is
-         ;; a LIGAMENT, which cannot contract and so has no maximum voluntary
-         ;; contraction to be a fraction of. That helper's own docstring calls this
-         ;; "the question every emit site should ask, and the one three of them got
-         ;; wrong in a row"; this was the fourth, and the only one a user could
-         ;; reach from the README.
-         (if-not (muscle/numeric-mvc? s)
-           (add! (str "| " (:name s) " | 適用範囲外"
-                      (when (:refused s) (str "（" (name (:refused s)) "）"))
-                      " | — | — | " (strain/stiffness-band nil) " |"))
-           (let [;; The endurance figure carries WHERE it sits relative to the
-                 ;; range the published curve was fitted over. A bare `∞` for a
-                 ;; muscle at 6 %MVC is a modelling choice — the model's own floor
-                 ;; — and nothing in the report said so; a reader took it for a
-                 ;; measured result. `strain` computes the position; this only
-                 ;; declines to drop it.
-                 pos (case (:endurance-position s)
-                       :below-endurance-floor "（モデルの床未満）"
-                       :below-fitted-range "（適合域より下）"
-                       :above-maximum-voluntary-contraction "（MVC 超）"
-                       nil)
-                 end (cond
-                       (nil? (:endurance-minutes s)) "—"
-                       (math/infinite? (:endurance-minutes s)) (str "∞" pos)
-                       :else (str (fmt-f 0 (:endurance-minutes s)) " min" pos))]
-             (add! (str "| " (:name s) " | " (fmt-f 0 (:mvc-pct s)) "% | " end " | "
-                        (fmt-f 2 (:stiffness-index s)) " | "
-                        (strain/stiffness-band (:stiffness-index s)) " |")))))
-       ;; `worst-stiffness` already returns nil when every muscle was refused —
-       ;; and then there is no worst, which is a statement rather than a gap.
-       (if-let [w (worst-stiffness (:strains r))]
-         (do (add! "")
-             (add! (str "- worst: **" (:name w) "** stiffness " (fmt-f 2 (:stiffness-index w))
-                        " (" (strain/stiffness-band (:stiffness-index w)) ")"))
-             (add! ""))
-         (do (add! "")
-             (add! "- worst: none — the model computed no stiffness for any muscle in this posture.")
-             (add! ""))))
+         (let [end (cond
+                     (nil? (:endurance-minutes s)) "—"
+                     (math/infinite? (:endurance-minutes s)) "∞"
+                     :else (str (fmt-f 0 (:endurance-minutes s)) " min"))
+               ;; a refused muscle stays in the table with a dash. Dropping it
+               ;; would make a muscle the model could not solve read as a muscle
+               ;; that was fine — the same reason `stable-sort-by-neg-stiffness`
+               ;; keeps it in the list rather than filtering it out.
+               mvc (if (number? (:mvc-pct s)) (str (fmt-f 0 (:mvc-pct s)) "%") "—")]
+           (add! (str "| " (:name s) " | " mvc " | " end " | "
+                      (fmt-or-dash 2 (:stiffness-index s)) " | "
+                      (strain/stiffness-band (:stiffness-index s)) " |"))))
+       (let [w (worst-stiffness (:strains r))]
+         (add! "")
+         (add! (if w
+                 (str "- worst: **" (:name w) "** stiffness "
+                      (fmt-or-dash 2 (:stiffness-index w))
+                      " (" (strain/stiffness-band (:stiffness-index w)) ")")
+                 ;; `worst-stiffness` returns nil when the model could not solve a
+                 ;; single muscle at this posture. That is a real state and it must
+                 ;; not print as a blank line that reads like nothing was wrong.
+                 "- worst: — (this model could not solve any muscle at this posture)"))
+         (add! "")))
      ;; Comparison / Wellbecoming guidance
-     (let [base (first (filter #(= (:workstation %) "laptop-on-lap") results))
-           best (reduce (fn [a b]
-                          (if (< (:stiffness-index (worst-stiffness (:strains b)))
-                                 (:stiffness-index (worst-stiffness (:strains a))))
-                            b a))
+     (let [;; the baseline is the laptop-on-lap scenario when there is one. It is
+           ;; looked up BY NAME, and a caller who renders any other set of results
+           ;; got nil and a NullPointerException two lines down — a second way this
+           ;; function could not be called with input it was never given. The
+           ;; fallback is the first result, which is what a one-scenario report
+           ;; means by "the baseline".
+           base (or (first (filter #(= (:workstation %) "laptop-on-lap") results))
+                    (first results))
+           ;; a scenario in which nothing could be solved has no worst muscle, and
+           ;; comparing nil threw here as soon as one could occur
+           worst-of (fn [r] (or (:stiffness-index (worst-stiffness (:strains r))) 0.0))
+           best (reduce (fn [a b] (if (< (worst-of b) (worst-of a)) b a))
                         (first results) (rest results))
            bc (get-in base [:loads :cervical :compressive-load-kgf])
            fc (get-in best [:loads :cervical :compressive-load-kgf])
            bw (worst-stiffness (:strains base))
-           bestw (worst-stiffness (:strains best))]
+           bestw (worst-stiffness (:strains best))
+           nm (fn [x] (if x (:name x) "—"))]
        (add! "## Comparison (self-referenced Wellbecoming, G3)")
        (add! "")
        (add! (str "- `" (:workstation base) "` neck load " (fmt-f 1 bc) " kgf → `"
                   (:workstation best) "` " (fmt-f 1 fc) " kgf (**−"
                   (fmt-f 0 (* (- 1 (/ fc bc)) 100)) "%** cervical compressive load)."))
-       (add! (str "- worst-muscle stiffness " (fmt-f 2 (:stiffness-index bw)) " ("
-                  (:name bw) ") → " (fmt-f 2 (:stiffness-index bestw)) " ("
-                  (:name bestw) ")."))
+       (add! (str "- worst-muscle stiffness " (fmt-or-dash 2 (:stiffness-index bw)) " ("
+                  (nm bw) ") → " (fmt-or-dash 2 (:stiffness-index bestw)) " ("
+                  (nm bestw) ")."))
        (add! (str "- mechanism, not advice: raising the screen toward eye level reduces head "
                   "flexion (the dominant cervical-load term); supporting the forearms unloads "
                   "the upper trapezius (the 肩こり muscle). A clinician (mitate/iyashi) owns any "
