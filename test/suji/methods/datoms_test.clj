@@ -190,3 +190,41 @@
     (is (= 8 (count (filter #(contains? % ":load/joint") ds)))
         (str "every joint the solver reports must be emitted exactly once, got "
              (mapv #(get % ":load/joint") (filter #(contains? % ":load/joint") ds))))))
+
+(deftest test-the-group-and-side-are-carried-not-parsed-back-out-of-the-name
+  ;; `attachment/instances` sets `:group` and `:side` as distinct keys, and the
+  ;; dose layer used to drop them and carry only `:name` — so the emitter had to
+  ;; recover the pair by looking for a "/" in a string. That is a parser for a
+  ;; grammar nothing declares: an instance whose name happened to contain no "/"
+  ;; silently became `:midline`, and one whose name contained two would have split
+  ;; at the wrong place.
+  (let [body (segment/build-body 70.0 1.70)
+        p (posture/posture-from-workstation posture/laptop-on-lap)
+        tensions (muscle/solve-muscle-tensions body p (load/solve-posture-loads body p))
+        strains (strain/session-strain tensions 120.0)]
+    (is (seq strains) "no strains, so this asserts nothing")
+    (is (every? :group strains)
+        (str "dose rows without a group: "
+             (pr-str (mapv :name (remove :group strains)))))
+    (is (every? :side strains)
+        (str "dose rows without a side: "
+             (pr-str (mapv :name (remove :side strains)))))
+    ;; and they agree with the tensions they came from, which is the point —
+    ;; equal values, not a re-derivation that happens to match
+    (let [by-name (into {} (map (juxt :name identity) tensions))]
+      (doseq [s strains]
+        (let [t (get by-name (:name s))]
+          (is (= (:group t) (:group s)) (str (:name s) ": group differs from its tension"))
+          (is (= (:side t) (:side s)) (str (:name s) ": side differs from its tension")))))))
+
+(deftest test-a-record-without-a-group-is-refused-for-the-reason-it-names
+  ;; The fallback is gone, so a producer that has not been updated must be told
+  ;; so rather than have its side guessed. Pins the reason, not merely that it
+  ;; threw: a nil-punning NullPointerException would also "throw".
+  (let [e (try (datoms/instance-group+side {:name "upper_trapezius/left"})
+               nil
+               (catch clojure.lang.ExceptionInfo ex ex))]
+    (is (some? e) "a record with no :group must be refused")
+    (is (= :value-error (:type (ex-data e))))
+    (is (= :group (:missing (ex-data e)))
+        (str "refused for a different reason: " (pr-str (ex-data e))))))

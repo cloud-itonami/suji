@@ -587,6 +587,8 @@
         ;; can still distinguish, not about an exact value.
         saturated? (>= stiffness 1.0)]
     {:name (:name t)
+     :group (:group t)
+     :side (:side t)
      :task (:task t)
      :mvc-pct mvc-pct
      :session-minutes session-minutes
@@ -622,6 +624,14 @@
     (throw (ex-info "session_minutes must be >= 0" {:type :value-error})))
   (if (or (:refused t) (nil? (:mvc-pct t)))
     {:name (:name t)
+     ;; `:group` and `:side` travel with the dose, because the anatomy layer had
+     ;; already separated them and re-joining them into `:name` made every
+     ;; consumer split the string back apart. `attachment/instances` sets both on
+     ;; every instance and `solve-muscle-tensions` merges them through; this is
+     ;; the one hop that used to drop them, which is why `datoms` had to recover
+     ;; the pair by looking for a "/" — a parser for a grammar nothing declared.
+     :group (:group t)
+     :side (:side t)
      :task (:task t)
      :mvc-pct nil
      :session-minutes session-minutes
