@@ -33,8 +33,66 @@
    "elbow" ":elbow" "wrist" ":wrist" "lumbosacral" ":lumbosacral"
    "hip" ":hip" "knee" ":knee" "ankle" ":ankle"})
 
-(defn- muscle-kw [name]
-  (str ":" (str/replace name "_" "-")))
+(defn- kw-str
+  "A vocabulary term as the datom log writes it: an EDN keyword literal in a string.
+  Every controlled-vocabulary value this emitter writes goes through here, so the
+  lexicon enums can be literal sets of exactly these strings with no normalisation
+  step in between. A validator that normalises before comparing cannot tell
+  `\"low\"` from `\":low\"`, and a contract check that cannot tell two spellings
+  apart is not checking the spelling."
+  [s]
+  (str ":" (str/replace (str s) "_" "-")))
+
+(defn instance-group+side
+  "Split a muscle instance's identity into the two facts it is made of: WHICH
+  STRUCTURE, and WHICH SIDE OF THE BODY.
+
+  WHY THIS IS TWO FIELDS AND NOT ONE. Until 2026-09-07 this emitter wrote
+  `:muscle/group :upper-trapezius/left` — the group name and the side concatenated
+  into a single vocabulary term. That is two facts in one string, and it breaks the
+  `group` enum in the published lexicon in a specific way: the enum's stated job
+  (G10) is to say WHICH ANATOMICAL STRUCTURES this model may name, so that no
+  経絡/気/波動 term can enter it. Folding the side in turns that vocabulary into a
+  list of INSTANCES — it grows by two every time a muscle is modelled bilaterally,
+  a purely mechanical change becomes a breaking change to a published enum, and the
+  enum stops answering \"is this a mechanical structure?\" and starts answering
+  \"have we modelled this instance yet?\". Only the first question is the charter's.
+
+  It was also a field whose grammar varied by value: `cervical-extensors`,
+  `erector-spinae`, `nuchal-ligament` and `posterior-lumbar-ligaments` are midline
+  and carried no suffix, so a consumer parsing `group` could not know from the
+  schema whether a suffix was coming. `side` with an explicit `:midline` makes
+  every record the same shape, and makes \"compare left against right\" an equality
+  rather than string surgery.
+
+  The model had already separated them: `attachment/instances` sets `:group` and
+  `:side` as distinct keys on every instance (`attachment.cljc`, `mirror`/`midline`).
+  This emitter was re-joining what the anatomy layer had taken apart. Where those
+  keys are present they are used verbatim; `strain/muscle-strain` carries only
+  `:name` forward, so for a strain record the pair is recovered by splitting the
+  name — see the note on `strain-group+side` below."
+  [m]
+  (if (:group m)
+    [(kw-str (:group m)) (kw-str (name (:side m)))]
+    (let [n (str (:name m))
+          i (str/index-of n "/")]
+      (if i
+        [(kw-str (subs n 0 i)) (kw-str (subs n (inc i)))]
+        [(kw-str n) ":midline"]))))
+
+(def ^:private omit
+  "Marker for a field that is NOT EMITTED, as distinct from a field emitted with a
+  stand-in value. See `ordered-datom`."
+  ::omit)
+
+(defn- ordered-datom
+  "Build a datom from ordered [k v] pairs, dropping any pair whose value is `omit`.
+
+  `array-map` and not `assoc`: a PersistentArrayMap promotes to a hash map on the
+  ninth `assoc` and silently loses insertion order, and `render-edn` renders the
+  map in iteration order. The strain datom is now long enough to cross that line."
+  [pairs]
+  (apply array-map (mapcat identity (remove #(= omit (second %)) pairs))))
 
 (defn body-datom [body-id total-mass-kg stature-m]
   (array-map
@@ -96,38 +154,73 @@
                           ;; indistinguishable from an absent one.
                           ;; branch on whether the number is THERE, not on why
                           ;; it is not — a ligament has no %MVC and is not refused
-                          (if-not (muscle/numeric-mvc? t)
-                            (array-map
-                             ":muscle/id" (str pid "-musc-" (:name t)) ":muscle/posture" pid
-                             ":muscle/group" (muscle-kw (:name t))
-                             ":muscle/refused" (if (:refused t) (str ":" (name (:refused t))) ":none")
-                             ":muscle/antagonist" (boolean (:antagonist? t)))
-                            (array-map
-                             ":muscle/id" (str pid "-musc-" (:name t)) ":muscle/posture" pid
-                             ":muscle/group" (muscle-kw (:name t))
-                             ":muscle/force-n" (math/round-to (:force-n t) 2)
-                             ":muscle/mvc-pct" (math/round-to (:mvc-pct t) 2))))
+                          (let [[grp side] (instance-group+side t)
+                                has-mvc? (muscle/numeric-mvc? t)]
+                            (ordered-datom
+                             [[":muscle/id" (str pid "-musc-" (:name t))]
+                              [":muscle/posture" pid]
+                              [":muscle/group" grp]
+                              [":muscle/side" side]
+                              [":muscle/force-n" (if has-mvc? (math/round-to (:force-n t) 2) omit)]
+                              [":muscle/mvc-pct" (if has-mvc? (math/round-to (:mvc-pct t) 2) omit)]
+                              ;; `:none` is not a refusal — it is a LIGAMENT, which
+                              ;; cannot contract and so has no maximum voluntary
+                              ;; contraction to be a fraction of. The lexicon says so.
+                              [":muscle/refused" (if has-mvc? omit
+                                                     (if (:refused t)
+                                                       (kw-str (name (:refused t)))
+                                                       ":none"))]
+                              [":muscle/antagonist" (if has-mvc? omit (boolean (:antagonist? t)))]])))
                         (:tensions result))
         strain-ds (mapv (fn [st]
-                          (let [end (cond
-                                      (nil? (:endurance-minutes st)) -1.0
-                                      (math/infinite? (:endurance-minutes st)) -1.0
-                                      :else (math/round-to (:endurance-minutes st) 2))]
-                            (array-map
-                             ":strain/id" (str pid "-strain-" (:name st)) ":strain/posture" pid
-                             ":strain/group" (muscle-kw (:name st))
-                             ":strain/session-min" (:session-minutes st)
-                             ":strain/endurance-min" end
-                             ;; -1 for "not computed", the same sentinel this file
-                             ;; already uses for an infinite endurance. A nil here
-                             ;; renders as an empty slot and the map literal comes
-                             ;; back with an odd number of forms.
-                             ":strain/stiffness" (if (:stiffness-index st)
-                                                   (math/round-to (:stiffness-index st) 4)
-                                                   -1.0)
-                             ":strain/band" (str ":" (strain/stiffness-band (:stiffness-index st)))
-                             ":strain/saturated" (boolean (:saturated? st))
-                             ":strain/as-of" idx)))
+                          ;; THE SENTINEL IS GONE (2026-09-07). Until today both of
+                          ;; these fields wrote `-1.0` when there was no number, and
+                          ;; `:strain/endurance-min` wrote it for TWO OPPOSITE
+                          ;; reasons: the model refused this muscle (no endurance to
+                          ;; report) and the load is below the endurance floor, where
+                          ;; the model returns ∞ (endurance effectively unlimited —
+                          ;; the SAFEST case). Measured on the reference scenarios:
+                          ;; 101 of 144 were the ∞ case and 28 were the refusal, and
+                          ;; both were the same -1.0. A consumer sorting the column
+                          ;; numerically puts the least-loaded muscles at the bottom
+                          ;; next to the ones nobody solved — the identical failure
+                          ;; the browser band function had when a nil fell into the
+                          ;; LOWEST band. `-1.0` in `:strain/stiffness` was worse
+                          ;; still: the lexicon declares that field `minimum 0,
+                          ;; maximum 1`, so the sentinel was out of its own contract.
+                          ;;
+                          ;; A number is emitted only when there IS one. Which kind
+                          ;; of absence it is goes in `:strain/endurance-limit`, a
+                          ;; vocabulary term, where it cannot be sorted or averaged;
+                          ;; `:strain/band` already did this for stiffness with its
+                          ;; `:not-computed` value, and this is the same idiom.
+                          (let [[grp side] (instance-group+side st)
+                                mins (:endurance-minutes st)
+                                unbounded? (and mins (math/infinite? mins))
+                                finite? (and mins (not unbounded?))
+                                stiff (:stiffness-index st)]
+                            (ordered-datom
+                             [[":strain/id" (str pid "-strain-" (:name st))]
+                              [":strain/posture" pid]
+                              [":strain/group" grp]
+                              [":strain/side" side]
+                              [":strain/session-min" (:session-minutes st)]
+                              [":strain/endurance-limit" (cond finite? ":finite"
+                                                               unbounded? ":unbounded"
+                                                               :else ":not-computed")]
+                              [":strain/endurance-min" (if finite? (math/round-to mins 2) omit)]
+                              ;; the caveat travels with the number, the way
+                              ;; `strain/endurance` and the analyze report already
+                              ;; carry it: 6 of the 15 finite endurance times on the
+                              ;; reference scenarios are extrapolated below the
+                              ;; fitted range, and nothing in a bare number says so.
+                              [":strain/endurance-position" (if-let [p (:endurance-position st)]
+                                                              (kw-str (name p))
+                                                              omit)]
+                              [":strain/stiffness" (if stiff (math/round-to stiff 4) omit)]
+                              [":strain/band" (kw-str (strain/stiffness-band stiff))]
+                              [":strain/saturated" (boolean (:saturated? st))]
+                              [":strain/as-of" idx]])))
                         (:strains result))]
     (-> [posture-d cerv-d]
         (into joint-ds)
@@ -141,6 +234,165 @@
    (into [(body-datom body-id total-mass-kg stature-m)]
          (mapcat (fn [[idx r]] (scenario-datoms r body-id idx))
                  (map-indexed vector results)))))
+
+;; --- the published contract --------------------------------------------------
+;;
+;; `data/lex/*.edn` are the PUBLISHED records. This emitter is their only producer,
+;; and until 2026-09-07 nothing in the repo compared the two: the charter test
+;; checked a lexicon enum against a five-element set typed into the test file, so
+;; the emitter could grow from 5 muscle groups to 26 (48 instances), start writing a
+;; `:not-computed` band the enum did not list, and stop writing two `required`
+;; fields, with every test green. A snapshot test cannot detect drift between a
+;; contract and its producer, because the producer is not one of its inputs.
+;;
+;; The binding below is what makes the real check possible: which lexicon each
+;; emitted datom belongs to, and which declared property each emitted attribute is
+;; the datom projection of. It is data and not a naming convention on purpose —
+;; `:body/id` → `bodyId` but `:posture/body` → `bodyId` too, and `:strain/session-min`
+;; → `sessionMinutes`, so no mechanical camel-casing gets all of them right, and one
+;; that got most of them right would fail silently on the rest.
+
+(def lexicon-bindings
+  "datom kind → {:lexicon <data/lex stem> :attrs {<emitted attribute> <lexicon property>}}.
+
+  Every attribute this namespace can emit appears here exactly once. An attribute
+  absent from its kind's map is a violation, not a pass — see `validate-datoms`."
+  {"body"
+   {:lexicon "bodyModel"
+    :attrs {":body/id" :bodyId ":body/total-mass-kg" :totalMassKg
+            ":body/stature-m" :statureM ":body/representative" :representative
+            ":body/encrypted-cid" :encryptedPayloadCid}}
+   "posture"
+   {:lexicon "postureScenario"
+    :attrs {":posture/id" :postureId ":posture/body" :bodyId
+            ":posture/workstation" :workstation
+            ":posture/head-flex-deg" :headFlexDeg ":posture/trunk-flex-deg" :trunkFlexDeg
+            ":posture/shoulder-flex-deg" :shoulderFlexDeg
+            ":posture/arms-supported" :armsSupported ":posture/support" :support
+            ":posture/hip-flex-deg" :hipFlexDeg ":posture/knee-flex-deg" :kneeFlexDeg
+            ":posture/ankle-dorsiflex-deg" :ankleDorsiflexDeg ":posture/as-of" :asOf}}
+   "load"
+   {:lexicon "jointLoad"
+    :attrs {":load/id" :loadId ":load/posture" :postureId ":load/joint" :joint
+            ":load/moment-nm" :momentNm ":load/compressive-kgf" :compressiveKgf
+            ":load/mult-vs-head" :multVsHead
+            ":load/supported-weight-n" :supportedWeightN}}
+   "muscle"
+   {:lexicon "muscleTension"
+    :attrs {":muscle/id" :muscleId ":muscle/posture" :postureId
+            ":muscle/group" :group ":muscle/side" :side
+            ":muscle/force-n" :forceN ":muscle/mvc-pct" :mvcPct
+            ":muscle/refused" :refused ":muscle/antagonist" :antagonist}}
+   "strain"
+   {:lexicon "strainReport"
+    :attrs {":strain/id" :strainId ":strain/posture" :postureId
+            ":strain/group" :group ":strain/side" :side
+            ":strain/session-min" :sessionMinutes
+            ":strain/endurance-limit" :enduranceLimit
+            ":strain/endurance-min" :enduranceMinutes
+            ":strain/endurance-position" :endurancePosition
+            ":strain/stiffness" :stiffnessIndex ":strain/band" :band
+            ":strain/saturated" :saturated ":strain/as-of" :asOf}}})
+
+(defn datom-kind
+  "The kind of a datom, from its `:…/id` attribute. `nil` if it has none — a datom
+  with no identity cannot be checked against a record contract, and saying so is
+  better than skipping it silently.
+
+  The leading colon is required, not stripped optimistically: `suji.cells.
+  strain-accumulate.state-machine` emits a SECOND projection of the same
+  `strainReport` record with bare keys (`\"strain/id\"`), and stripping the first
+  character regardless turned that into the kind `\"train\"` — a wrong answer in
+  the violation report rather than an honest `nil`."
+  [d]
+  (some (fn [k]
+          (when (and (str/starts-with? k ":") (str/ends-with? k "/id"))
+            (subs k 1 (- (count k) 3))))
+        (keys d)))
+
+(defn- type-ok? [declared v]
+  (case declared
+    "string" (string? v)
+    "number" (number? v)
+    "integer" (integer? v)
+    "boolean" (boolean? v)
+    true))
+
+(defn validate-datoms
+  "Check emitted datoms against the published lexicon records. Returns a vector of
+  violation maps (empty = conformant); never throws on a bad datom, because a
+  validator that dies on the first problem reports one of them.
+
+  `records` is {<lexicon stem> <the :main :record map>} — the caller supplies it,
+  so this function stays portable and the file reading stays on the host that has
+  a filesystem.
+
+  WHAT IT CHECKS, and why each one is a defect this repo actually shipped:
+
+  - `:undeclared-property` — an attribute whose lexicon property is not declared.
+    Every record sets `additionalProperties false`, i.e. claims such a field is
+    STRUCTURALLY unrepresentable; four of them were being emitted anyway.
+  - `:unbound-attribute` — an emitted attribute with no entry in `lexicon-bindings`.
+    Without this, adding an attribute and forgetting the binding would make the
+    check quietly stop covering it, which is the failure mode this whole file is
+    about.
+  - `:missing-required` — a `required` property no datom of that kind carries.
+    `mvcPct` and `stiffnessIndex` were both required and both routinely absent.
+  - `:value-not-in-enum` — the drift the charter test was meant to catch and could
+    not, because it never looked at an emitted value.
+  - `:type-mismatch`, `:below-minimum` / `:above-maximum` — the `-1.0` stiffness
+    sentinel was outside the field's own declared `[0,1]`."
+  [datoms records]
+  (into []
+        (mapcat
+         (fn [d]
+           (let [kind (datom-kind d)
+                 binding (get lexicon-bindings kind)
+                 rec (get records (:lexicon binding))
+                 props (:properties rec)
+                 base {:kind kind :id (get d (str ":" kind "/id"))}]
+             (cond
+               (nil? kind) [(assoc base :violation :no-identity-attribute :datom d)]
+               (nil? binding) [(assoc base :violation :unknown-kind)]
+               (nil? rec) [(assoc base :violation :lexicon-not-supplied
+                                  :lexicon (:lexicon binding))]
+               :else
+               (concat
+                ;; every emitted attribute is bound, declared, and in contract
+                (mapcat
+                 (fn [[a v]]
+                   (let [prop (get (:attrs binding) a)
+                         spec (get props prop)
+                         at (assoc base :attribute a :property prop :value v)]
+                     (cond
+                       (nil? prop) [(assoc at :violation :unbound-attribute)]
+                       (nil? spec) [(assoc at :violation :undeclared-property)]
+                       :else
+                       (cond-> []
+                         (not (type-ok? (:type spec) v))
+                         (conj (assoc at :violation :type-mismatch :expected (:type spec)))
+                         (and (:enum spec) (not (contains? (set (:enum spec)) v)))
+                         (conj (assoc at :violation :value-not-in-enum :enum (:enum spec)))
+                         (and (:minimum spec) (number? v) (< v (:minimum spec)))
+                         (conj (assoc at :violation :below-minimum :minimum (:minimum spec)))
+                         (and (:maximum spec) (number? v) (> v (:maximum spec)))
+                         (conj (assoc at :violation :above-maximum :maximum (:maximum spec)))))))
+                 d)
+                ;; every required property is actually there
+                (let [emitted (into #{} (keep (:attrs binding)) (keys d))]
+                  (for [r (:required rec)
+                        :let [rk (keyword r)]
+                        :when (not (contains? emitted rk))]
+                    (assoc base :violation :missing-required :property rk))))))))
+        datoms))
+
+(defn emitted-vocabulary
+  "The distinct values the emitter actually produced for one attribute, as a set.
+  The other half of the contract check: an enum that admits everything emitted can
+  still be a stale superset, and for the closed vocabularies (`group`, `side`,
+  `joint`, `band`, `enduranceLimit`) the lexicon should list exactly what exists."
+  [datoms attr]
+  (into #{} (keep #(get % attr)) datoms))
 
 (defn- py-float-repr
   "Python str(float): shortest round-trip decimal. For the magnitudes this actor emits
