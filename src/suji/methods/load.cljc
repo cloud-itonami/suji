@@ -39,7 +39,16 @@
   `cervical-load` used to be handed `head-flexion-deg` directly, so it reported
   EXACTLY ZERO cervical load for the second of those two people. Every reference
   workstation in `posture` has non-zero trunk flexion, so every cervical number
-  this actor has ever produced was understated."
+  this actor has ever produced was understated.
+
+  IT IS THE SAGITTAL TILT, NOT THE ANGLE BETWEEN THE HEAD AND THE VERTICAL. With
+  lateral bend the two differ: measured at head 20° / trunk 10° / bend 30°, this
+  returns 30.0° while the placed head's long axis is 41.4° off vertical. That is
+  deliberate rather than an approximation left in — `cervical-load` is a sagittal
+  model, and the out-of-plane component is reported separately as
+  `frontal-moments`' `:cervical-nm` (−4.10 N·m at that posture) and carried by the
+  scalenes in `muscle`'s `:cervical-lateral-flexion` equilibrium. Folding the bend
+  into this angle would charge the same load to two equilibria."
   [pose-data]
   (:tilt-deg (pose/seg-at pose-data "head_neck")))
 

@@ -129,3 +129,32 @@
         sh-unsup (first (filter #(= (:joint %) "shoulder")
                                 (:joints (load/solve-posture-loads body unsup))))]
     (is (> (:moment-nm sh-unsup) (:moment-nm sh-sup)))))
+
+(deftest test-the-cervical-angle-is-the-sagittal-tilt-and-the-bend-is-reported-elsewhere
+  ;; `head-tilt-from-vertical-deg` returns the SAGITTAL tilt, which with lateral
+  ;; bend is not the angle between the head's long axis and the vertical. That is a
+  ;; division of labour rather than an approximation: the out-of-plane component is
+  ;; `frontal-moments`' `:cervical-nm`, carried by the scalenes. Folding the bend
+  ;; into the sagittal angle would charge one load to two equilibria — so this test
+  ;; pins that bending does NOT move the sagittal number and DOES move the frontal
+  ;; one.
+  (let [body (segment/build-body 70.0 1.70)
+        at (fn [bend] {:head-flexion-deg 20.0 :trunk-flexion-deg 10.0
+                       :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0
+                       :arms-supported false :trunk-lateral-bend-deg bend})
+        tilt (fn [bend] (load/head-tilt-from-vertical-deg (pose/solve-pose body (at bend))))
+        true-deg (fn [bend]
+                   (let [d (:dir (pose/seg-at (pose/solve-pose body (at bend)) "head_neck"))]
+                     (* (/ 180.0 math/pi) (Math/acos (nth d 1)))))
+        frontal (fn [bend] (:cervical-nm (load/frontal-moments body (at bend))))]
+    (is (math/nearly= 30.0 (tilt 0.0) 1e-9) "trunk + head, with no bend")
+    (is (math/nearly= (tilt 0.0) (tilt 30.0) 1e-9)
+        (str "lateral bend must NOT move the sagittal angle, got " (tilt 30.0)))
+    (is (math/nearly= (true-deg 0.0) (tilt 0.0) 1e-9)
+        "with no bend the sagittal tilt IS the angle from vertical")
+    (is (> (true-deg 30.0) (+ 10.0 (tilt 30.0)))
+        (str "and with bend it is not: the head's axis is " (true-deg 30.0)
+             "° off vertical where the sagittal tilt is " (tilt 30.0) "°"))
+    (is (math/nearly= 0.0 (frontal 0.0) 1e-9) "no bend, no frontal cervical moment")
+    (is (> (math/abs* (frontal 30.0)) 1.0)
+        (str "and the bend's load is reported there instead, got " (frontal 30.0)))))

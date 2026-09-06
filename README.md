@@ -448,8 +448,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 232 tests / 6683 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 214 tests / 1633 assertions
+clojure -M:test                                   # JVM   — 233 tests / 6689 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 215 tests / 1639 assertions
 clojure -M:lint                                   # 0 errors (13 pre-existing warnings)
 clojure -M -m suji.methods.analyze                # the laptop-posture report (works again)
 ```
