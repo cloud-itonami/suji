@@ -99,8 +99,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 100 tests / 1273 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  —  84 tests /  321 assertions
+clojure -M:test                                   # JVM   — 107 tests / 1312 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  —  91 tests /  360 assertions
 clojure -M:lint                                   # 0 errors
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -138,6 +138,19 @@ consequence: the cervical extensor arm falls from 20.0 mm at neutral to 6.1 mm a
 60° of head flexion, so the same neck moment costs three times the muscle force —
 which is why laptop-on-lap's cervical extensors read 50 %MVC now and 27 %MVC before.
 
+**Wrapping surfaces (2026-09-06).** A straight chord between two attachment points
+can pass through the joint it acts about; the arm goes to zero and the force needed
+to hold any moment diverges. Real muscles lie ON the bone and wrap over it, and every
+tangent to a circle of radius R is R from its centre — so the arm floors at R instead
+of vanishing. The anterior deltoid (humeral head, R = 20 mm) and the cervical
+extensors (the cervical column, R = 12 mm) declare one. Measured across 3,240
+postures, this removed **every** `:coefficient-below-floor` refusal.
+
+The condition is `sign × straight < R`, not `|straight| < R`. The second looks right
+and is not: once the chord swings far enough to the wrong side its magnitude exceeds
+R again, wrapping switches off, and the model hands back a straight-line arm with the
+sign flipped — the anterior deltoid became an *extensor* at 130° of shoulder flexion.
+
 A straight line goes wrong in two ways, and both are in the tests. It can cross to
 the far side of the joint as the joint flexes, at which point the model reports the
 extensors as flexors — the cervical group did this at 30° and erector spinae near
@@ -163,10 +176,22 @@ in this model carries. The alternative, which this actor did until 2026-09-06, i
 to accept the input, move the picture with it, and quietly leave the load out of
 every number on the page.
 
-Two kinds of incompleteness, reported separately because they have different
-fixes: `:refused` means a muscle exists but its leverage is unresolvable here
-(wrapping surfaces would fix it); `:unassigned-frontal-nm` means no muscle in this
-model can carry that load at all (more muscles would fix it).
+Kinds of incompleteness, reported separately because they have different fixes:
+
+| | what it means | what fixes it |
+|---|---|---|
+| `:coefficient-below-floor` | real leverage, too little for a straight line to resolve | a wrapping surface |
+| `:acts-the-wrong-way` | the line would ADD to the load at this posture | nothing here — the posture has left the range this line represents |
+| `:no-line-of-action` | degenerate geometry | the attachment data |
+| `:unassigned-frontal-nm` | no muscle in this model can carry that load at all | more muscles |
+
+The second used to be reported as the first, because `suspension-effectiveness`
+clamped its cosine at zero — so a muscle pulling the girdle *down* was described as
+"below the leverage floor — a straight-line model has no wrapping surface here",
+which sends the reader to a repair that cannot help. The remaining refusals in this
+model are all of that kind, and they occur where the head folds past horizontal
+(combined trunk + head flexion beyond about 100°), where a one-sided schematic
+suspension line genuinely stops representing the anatomy.
 
 **The stiffness index saturates and now says so.** It is mathematically in [0,1) but
 reaches exactly 1.0 in double precision once the dose passes ~37 — roughly 50 %MVC

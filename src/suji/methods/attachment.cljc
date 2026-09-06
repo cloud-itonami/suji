@@ -55,6 +55,11 @@
     ;; posterior to the neck axis, running from the upper thorax to the occiput
     :origin {:segment "thorax_abdomen" :along 0.90 :ant -0.01965 :lat 0.0}
     :insertion {:segment "head_neck" :along 0.05 :ant -0.00982 :lat 0.0}
+    ;; the cervical vertebrae. The extensors lie ON them, so their leverage floors
+    ;; at the column's radius instead of thinning toward zero as the head folds —
+    ;; without this the straight-line arm falls under the leverage floor at large
+    ;; combined trunk+head flexion and `recruit` declines an ordinary posture.
+    :wrap {:radius-m 0.012 :sign 1.0}
     :source "representative; occipital insertion near C7 height and well posterior, so the line stays behind the joint through flexion — a straight line from a HIGH insertion crosses in front of C7 around 30 deg and would report the extensors as flexors"}
 
    "upper_trapezius"
@@ -62,8 +67,8 @@
     :acts-about :shoulder :task :scapular-suspension
     ;; occiput/nuchal line → lateral clavicle-acromion; suspends the girdle
     :origin {:segment "head_neck" :along 0.10 :ant -0.0170 :lat 0.0}
-    :insertion {:segment "upper_arm" :along 0.02 :ant -0.0090 :lat 0.0480}
-    :source "representative; suspension line, offsets calibrated to a 0.025 m neutral arm"}
+    :insertion {:segment "thorax_abdomen" :along 0.985 :ant -0.0090 :lat 0.0480}
+    :source "representative; suspension line. The insertion rides on the THORAX, not on the humerus: the acromion belongs to the shoulder girdle, and a girdle that rotated with the arm would swing its own suspension line horizontal under abduction and report that the trapezius cannot lift"}
 
    "levator_scapulae"
    {:name "levator_scapulae" :pcsa-cm2 5.0
@@ -71,8 +76,8 @@
     ;; upper cervical transverse processes → superior medial scapula: shorter,
     ;; more vertical, and closer to the midline than the trapezius
     :origin {:segment "head_neck" :along 0.22 :ant -0.0120 :lat 0.0125}
-    :insertion {:segment "upper_arm" :along 0.02 :ant -0.0120 :lat 0.0270}
-    :source "representative; suspension line, offsets calibrated to a 0.020 m neutral arm"}
+    :insertion {:segment "thorax_abdomen" :along 0.985 :ant -0.0120 :lat 0.0270}
+    :source "representative; suspension line, on the thorax for the same reason as upper_trapezius — the scapula is not the humerus"}
 
    "anterior_deltoid"
    {:name "anterior_deltoid" :pcsa-cm2 10.0
@@ -80,6 +85,10 @@
     ;; clavicle → deltoid tuberosity, anterior to the humeral axis
     :origin {:segment "thorax_abdomen" :along 1.0 :ant 0.01811 :lat 0.0}
     :insertion {:segment "upper_arm" :along 0.42 :ant 0.0 :lat 0.0}
+    ;; the humeral head. Without it the straight chord crosses the joint centre at
+    ;; 90° of shoulder flexion and the arm goes to zero; with it the arm plateaus
+    ;; at the head's radius, which is what a tendon lying on bone actually does.
+    :wrap {:radius-m 0.020 :sign 1.0}
     :source "representative; clavicular origin (NOT on the humerus — both ends on one bone rotate rigidly with it and give a moment arm that cannot change with the joint angle), anterior offset calibrated to the 0.030 m neutral arm"}
 
    "erector_spinae"
@@ -116,19 +125,72 @@
   about Z (see `pose`), so a moment about +Z is what an extensor must resist."
   [0.0 0.0 1.0])
 
-(defn moment-arm
-  "Signed moment arm (metres) of a muscle about `joint-point` and `axis`.
+(defn straight-moment-arm
+  "Signed moment arm (metres) of the straight line from insertion to origin, about
+  `joint-point` and `axis`.
 
-  Positive means the muscle's pull opposes flexion — i.e. it is an extensor at
-  this posture. The SIGN is part of the answer: a muscle whose line of action
-  crosses to the other side of the joint stops being an extensor there, and a
-  model that returns only a magnitude cannot say so."
-  ([pose-data stature-m muscle joint-point] (moment-arm pose-data stature-m muscle joint-point flexion-axis))
+  Positive means the muscle's pull opposes flexion — it is an extensor at this
+  posture. The SIGN is part of the answer: a muscle whose line of action crosses
+  to the other side of the joint stops being an extensor there, and a model that
+  returns only a magnitude cannot say so."
+  [pose-data stature-m muscle joint-point axis]
+  (let [{:keys [insertion dir]} (line-of-action pose-data stature-m muscle)]
+    (when dir
+      (let [r (math/v- insertion joint-point)]
+        (math/vdot (math/vcross r dir) axis)))))
+
+(defn moment-arm-detail
+  "The moment arm, and whether it came from the straight line or from a wrapping
+  surface: `{:arm :straight :wrapped? :radius-m}`.
+
+  WHY WRAPPING EXISTS. A straight line between two attachment points can pass
+  arbitrarily close to — and through — the joint it acts about, at which point the
+  computed arm goes to zero and the force required to hold any moment diverges.
+  Real muscles do not do this: they lie ON the bone, and at the range where a
+  straight chord would cut the corner they wrap over it. This model's anterior
+  deltoid crossed zero at 90° of shoulder flexion, which is an ordinary posture,
+  and `recruit` had to decline it.
+
+  THE GEOMETRY, which is why this is three lines and not a solver. A muscle
+  wrapping over a circular surface of radius R centred on the joint follows a
+  tangent–arc–tangent path, and every tangent to that circle is exactly R from the
+  centre — so the moment arm while wrapping IS R, independent of the joint angle.
+  The straight-line arm therefore does not fall to zero; it falls to R and stays
+  there. The two branches agree at the crossing (|straight| = R), so the arm is
+  continuous, which `attachment-test` checks rather than assumes.
+
+  `:sign` is declared, not derived. It says which side of the joint the muscle
+  wraps on — anterior for the deltoid, which is what keeps it a flexor rather than
+  letting it swap sides when the chord would have crossed through. Deriving it
+  from the straight-line arm would read the sign off exactly the degenerate
+  configuration this exists to handle."
+  ([pose-data stature-m muscle joint-point]
+   (moment-arm-detail pose-data stature-m muscle joint-point flexion-axis))
   ([pose-data stature-m muscle joint-point axis]
-   (let [{:keys [insertion dir]} (line-of-action pose-data stature-m muscle)]
-     (when dir
-       (let [r (math/v- insertion joint-point)]
-         (math/vdot (math/vcross r dir) axis))))))
+   (let [straight (straight-moment-arm pose-data stature-m muscle joint-point axis)
+         {:keys [radius-m sign]} (:wrap muscle)]
+     (cond
+       (nil? straight) {:arm nil :straight nil :wrapped? false}
+
+       ;; Wrap whenever the chord would give LESS leverage on the muscle's own
+       ;; side than the surface does — including when the chord has swung past the
+       ;; joint entirely and would report the muscle acting the other way. Testing
+       ;; `|straight| < R` instead looks right and is not: once the chord passes
+       ;; far enough to the wrong side its magnitude exceeds R again, and the model
+       ;; hands back a straight-line arm with the sign flipped, so the flexor
+       ;; becomes an extensor at 130°. Measured 2026-09-06.
+       (and radius-m (< (* (or sign 1.0) straight) radius-m))
+       {:arm (* (or sign 1.0) radius-m) :straight straight
+        :wrapped? true :radius-m radius-m}
+
+       :else {:arm straight :straight straight :wrapped? false :radius-m radius-m}))))
+
+(defn moment-arm
+  "Signed moment arm (metres), wrapping included. See `moment-arm-detail`."
+  ([pose-data stature-m muscle joint-point]
+   (moment-arm pose-data stature-m muscle joint-point flexion-axis))
+  ([pose-data stature-m muscle joint-point axis]
+   (:arm (moment-arm-detail pose-data stature-m muscle joint-point axis))))
 
 (def vertical
   "The direction a suspension muscle has to pull to hold a hanging girdle up."
@@ -136,7 +198,8 @@
 
 (defn suspension-effectiveness
   "How much of a unit of this muscle's force acts vertically — the direction
-  cosine of its line of action against `vertical`, in [0,1].
+  cosine of its line of action against `vertical`, in [-1,1]. Negative means it
+  would pull the girdle down at this posture; see the note in the body.
 
   A SUSPENSION TASK IS NOT A MOMENT TASK, and the difference is not cosmetic.
   Upper trapezius and levator scapulae do not flex the glenohumeral joint; they
@@ -150,7 +213,14 @@
   namespace refuses to hand one out as the other."
   [pose-data stature-m muscle]
   (let [{:keys [dir]} (line-of-action pose-data stature-m muscle)]
-    (when dir (max 0.0 (math/vdot dir vertical)))))
+    ;; NOT clamped at zero. A non-positive cosine means this muscle's line, at this
+    ;; posture, pulls the girdle DOWN rather than up — it is acting the wrong way,
+    ;; which is a different fact from having a little leverage, and `recruit`
+    ;; refuses the two with different reasons. Clamping to 0 collapsed them into
+    ;; one, and the reported reason ("below the leverage floor — a straight-line
+    ;; model has no wrapping surface here") was then simply wrong: no wrapping
+    ;; surface fixes a muscle that is pulling the other way.
+    (when dir (math/vdot dir vertical))))
 
 (defn effectiveness
   "The coefficient this muscle contributes to its task's equilibrium: a moment arm
