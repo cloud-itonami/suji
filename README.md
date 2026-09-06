@@ -577,7 +577,7 @@ after:
 | shoulder moment, sagittal | 9.922588 N·m | 1.812620 | 1.812620 |
 | shoulder moment, **frontal** (left) | −3.9184149037422804 N·m | **−3.9184149037422804** | **−1.600583792781923** |
 | `middle_deltoid/left` | 21.56177777831644 %MVC | **21.56177777831644** | **8.843874638150753** |
-| L5/S1 weight-above (`spine`) | 367.945508 N | **367.945508** | **367.945508** — see below |
+| L5/S1 weight-above (`spine`) | 367.945508 N | **367.945508** | **337.741026** — see below |
 
 The supported column was **byte-identical** to the unsupported one in the frontal plane. In the
 sagittal plane a forearm rested on a desk; in the frontal plane the same forearm, of the same arm,
@@ -591,7 +591,9 @@ supported, and `quadratus_lumborum/right` goes 27.882735608784447 → 24.5779002
 **One place decides now.** `load/body-carries?` answers "does the body still carry this segment,
 or has the desk taken it", `load/desk-borne-bases` is `#{"forearm" "hand"}`, and
 `arm-moment-about`, `elbow-moment`, `wrist-moment`, `lumbar-borne-bases` and `frontal-moments` all
-route through it. `lumbar-borne-bases` **was a map keyed by support state** — a second
+route through it — and since later the same day so does `spine/above-fraction`, which was the
+last holdout (see **The spine has paid the desk** below; that is what moved the fourth row of the
+table from byte-identical to 337.741026 N). `lumbar-borne-bases` **was a map keyed by support state** — a second
 hand-written copy of the same two-element answer — and is derived now; the frontal L5/S1 term
 asks it for its segment list rather than concatenating its own. The idealisation is stated once,
 in `body-carries?`, and therefore holds identically everywhere: *the desk's upward reaction is
@@ -614,39 +616,33 @@ posture chosen so that all six are non-zero. Three of the six did not move by a 
 workstations is unchanged too (ratios 2.379664 / 1.666824 / 1.766411), because the arms load
 trunk levels only and never reached a cervical one.
 
-### What the spine still owes the desk, and the function it can call
+### The spine has paid the desk (2026-09-07)
 
-`spine/above-fraction` decides how much of each segment sits above a level, and its "a segment the
-rank table does not know is an ARM, which hangs from the girdle and therefore loads every trunk
-level" branch is **right and incomplete**: an arm hangs from the girdle *unless it is lying on a
-desk*. `weight-above-n` is therefore identical in both support states — 367.945508 N at the
-posture above — and `spine.cljc` is the last place in this model where the desk does not exist.
+`spine/above-fraction` decides how much of each segment sits above a level, and its "an
+unrecognised segment is an ARM, which hangs from the girdle and therefore loads every trunk level"
+branch was **right and incomplete**: an arm hangs from the girdle *unless it is lying on a desk*.
+`weight-above-n` was byte-identical in both support states, so `spine.cljc` was the last place in
+this model where the desk did not exist. It exists now: `above-fraction` asks
+`load/body-carries?`, the same function every other equilibrium asks, and the posture is threaded
+`profile` → `level-compression` → `weight-above-n` → `above-fraction`. `level-compression` gained
+a parameter; `profile` is its only caller in this tree.
 
-`spine.cljc` already `:require`s `load`, so the call is available with no new dependency:
-
-```clojure
-(load/body-carries? posture (:base seg))   ;; false for "forearm"/"hand" when :arms-supported
-```
-
-It needs the POSTURE, which `above-fraction` and `weight-above-n` do not currently take.
-`profile` has it, and threading it through `level-compression` → `weight-above-n` →
-`above-fraction` is the whole change. Measured with that thread in place and then reverted
-byte-identical, on the same 70 kg / 1.70 m body:
-
-| posture | level | weight-above now | with the flag honoured | force-n now | with the flag |
+| posture | level | weight-above before | after | force-n before | after |
 |---|---|---|---|---|---|
-| audit, supported | L5/S1 | 367.9455 N | **337.7410** | 400.1093 N | **369.9048** |
-| audit, supported | L4/L5 | 350.8868 | **320.6824** | 383.0506 | **352.8461** |
-| `laptop-on-desk` | L5/S1 | 366.5454 | **336.4558** | 660.4416 | **630.3521** |
-| `laptop-on-desk` | L4/L5 | 349.5516 | **319.4621** | 643.4479 | **613.3583** |
+| `laptop-on-desk` | L5/S1 | 366.545364 N | **336.455819** | 660.441627 N | **630.352082** |
+| `laptop-on-desk` | L4/L5 | 349.551610 | **319.462065** | 643.447872 | **613.358328** |
+| `external-monitor+keyboard` | L5/S1 | 366.545364 | **336.455819** | 590.956342 | **560.866797** |
+| `external-monitor+keyboard` | L4/L5 | 349.551610 | **319.462065** | 573.962588 | **543.873043** |
 
-The drop is the same at every lumbar level, because `above-fraction` gives an arm 1.0 at all of
-them: **30.2045 N** at the audit posture and **30.0896 N** at `laptop-on-desk`. Both are the
-weight of two forearms and two hands — 30.204482 N — times the level axis's vertical component,
-which is 1.0 for an upright trunk and cos 5° for that workstation's. Both cross-checks are unmoved by
-it: `lumbar-cross-check` because Wilke's posture is unsupported, `cervical-cross-check` because no
-cervical level ever counted an arm. That is measured, not predicted: 350.8868 N / 0.6357 and
-2.3797 / 1.6668 / 1.7664 with the thread in and with it out.
+The drop is **30.089545 N** and it is the same at every lumbar level, because the cut gives an arm
+1.0 at all of them. `the-desk-takes-the-forearms-off-the-lumbar-spine` derives that number rather
+than typing it — two forearms and two hands, projected on the level axis — and asserts that **no
+cervical level moves at all**, because an arm hangs below every one of them. `laptop-on-lap` is
+untouched: it is `:arms-supported false`.
+
+Neither published cross-check moved: `lumbar-cross-check` because Wilke's posture is unsupported
+(350.886840 N, ratio 0.635665, unchanged to the bit), `cervical-cross-check` because no cervical
+level ever counted an arm.
 
 **An audit finding that did not reproduce.** The same audit reported that
 `muscle/suspended-weight-n` read the flag from `(meta p)` and that `pose` never calls `with-meta`,

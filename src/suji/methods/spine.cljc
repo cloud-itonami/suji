@@ -163,8 +163,8 @@
   DERIVED FROM THE SAME CUT AS `crosses?` SINCE 2026-09-07, and that is the point
   of the rewrite rather than a side effect. This used to be a rank table —
   mapping thorax_abdomen to rank 0 and head_neck to rank 1, with a branch for
-  segments the table did not know, which meant an unrecognised segment was `an arm` and had to be told
-  about legs separately through `segment/below-l5s1`. It answered correctly, and it
+  segments the table did not know, which meant an unrecognised segment was an ARM
+  and had to be told about legs separately through `segment/below-l5s1`. It answered correctly, and it
   answered from a second hand-written copy of the skeleton's shape sitting in the
   same file as the first. Two copies of a topology is one place for it to be
   corrected and one place for it to be forgotten; there is now one, and it is the
@@ -182,24 +182,44 @@
 
   Measured 2026-09-07: this returns the same value as the rank table for every
   segment at every level across the eight reference postures — the weight term did
-  not move by one bit."
-  [tree level seg]
-  (let [name (:name seg)
-        end (fn [along] (side-of-level tree level {:segment name :along along}))]
-    (case [(end 0.0) (end 1.0)]
-      [:distal :distal] 1.0
-      [:proximal :proximal] 0.0
-      (max 0.0 (- 1.0 (:along level))))))
+  not move by one bit.
+
+  AND THE DESK EXISTS HERE NOW, which it did not until 2026-09-07. The cut says an
+  arm hangs from the girdle and therefore sits above every trunk level, and that is
+  right *unless the forearm is lying on a desk*, in which case the desk holds it up
+  and the lumbar spine does not. `load/body-carries?` is the one place that
+  question is answered — `arm-moment-about`, `elbow-moment`, `wrist-moment`,
+  `lumbar-borne-bases` and `frontal-moments` all route through it — and this was
+  the last equilibrium in the model that did not ask it. Measured: L5/S1 drops
+  366.5454 N -> 336.4558 N at `laptop-on-desk`, the weight of two forearms and two
+  hands times the level axis's vertical component, and the same drop appears at
+  every lumbar level because the cut gives an arm 1.0 at all of them.
+
+  It is asked of `:base`, the anthropometric name, because the desk does not
+  distinguish a left forearm from a right one."
+  [posture tree level seg]
+  (if-not (load/body-carries? posture (:base seg))
+    0.0
+    (let [name (:name seg)
+          end (fn [along] (side-of-level tree level {:segment name :along along}))]
+      (case [(end 0.0) (end 1.0)]
+        [:distal :distal] 1.0
+        [:proximal :proximal] 0.0
+        (max 0.0 (- 1.0 (:along level)))))))
 
 (defn- weight-above-n
-  "Axial component of the weight sitting above a level."
-  [body pose-data level]
+  "Axial component of the weight sitting above a level.
+
+  TAKES THE POSTURE as well as the pose, because `:arms-supported` is a fact about
+  the posture that the placed geometry does not carry — a forearm resting on a desk
+  is in the same place as one held there."
+  [body posture pose-data level]
   (let [w (pose/segment-weights body pose-data)
         tree (attachment-tree pose-data)
         {:keys [axis]} (level-point pose-data level)]
     (reduce + 0.0
             (for [seg (:segments pose-data)
-                  :let [f (above-fraction tree level seg)]
+                  :let [f (above-fraction posture tree level seg)]
                   :when (pos? f)]
               ;; gravity is [0,-w,0]; its compressive component along the spine
               ;; axis is w × (axis · up)
@@ -313,10 +333,15 @@
                                      attachment/instances))}))
 
 (defn level-compression
-  "Compression at one level: {:name :region :force-n :stress-mpa :weight-n :muscle-n}."
-  [body pose-data tensions level]
+  "Compression at one level: {:name :region :force-n :stress-mpa :weight-n :muscle-n}.
+
+  TAKES THE POSTURE since 2026-09-07 — an arity change, and the only caller in this
+  tree is `profile`, which already had it. `:arms-supported` is not recoverable
+  from a solved pose, and without it this level counted a forearm lying on a desk
+  as hanging from the shoulder girdle."
+  [body posture pose-data tensions level]
   (let [stature-m (:stature-m body)
-        weight (weight-above-n body pose-data level)
+        weight (weight-above-n body posture pose-data level)
         {:keys [muscle-n ligament-n muscle-crossing]}
         (tissue-compression-n pose-data stature-m level tensions)
         force (+ weight muscle-n ligament-n)
@@ -336,7 +361,7 @@
   "Compression at every level, in the order `levels` declares."
   [body posture tensions]
   (let [p (pose/solve-pose body posture)]
-    (mapv #(level-compression body p tensions %) levels)))
+    (mapv #(level-compression body posture p tensions %) levels)))
 
 (defn cervical-cross-check
   "Compare this namespace's C7/T1 force against `load/cervical-load`'s lumped,

@@ -294,6 +294,55 @@
     (is (= :value-error (:type d)) (str "an unknown bone is refused: " (pr-str d)))
     (is (= "tail" (:segment d)) "and the refusal names it")))
 
+(deftest the-desk-takes-the-forearms-off-the-lumbar-spine
+  ;; `:arms-supported` reached every other equilibrium in this model and did not
+  ;; reach this one. `above-fraction` gave an arm 1.0 at every trunk level because
+  ;; it hangs from the girdle, which is right *unless the forearm is lying on a
+  ;; desk* — and `weight-above-n` was byte-identical in both support states, so a
+  ;; forearm resting on a desk was still hanging in mid-air as far as the lumbar
+  ;; spine was concerned. `load/body-carries?` is the one place that question is
+  ;; answered and this was the last caller that did not ask it.
+  ;;
+  ;; Measured 2026-09-07 on a 70 kg / 1.70 m body at `laptop-on-desk`: L5/S1 weight
+  ;; above falls 366.5454 N -> 336.4558 N, and `:force-n` with it, 660.4416 ->
+  ;; 630.3521.
+  (let [supported (posture/posture-from-workstation posture/laptop-on-desk)
+        unsupported (assoc supported :arms-supported false)
+        rows-of (fn [p] (:rows (run p)))
+        w-at (fn [rows n] (:weight-n (first (filter #(= n (:name %)) rows))))
+        sup (rows-of supported) uns (rows-of unsupported)]
+    (is (true? (:arms-supported supported)) "this workstation does rest the arms")
+    (is (math/nearly= 336.4558 (w-at sup "L5/S1") 0.001)
+        (str "the desk holds the forearms: " (w-at sup "L5/S1")))
+    (is (math/nearly= 366.5454 (w-at uns "L5/S1") 0.001)
+        (str "and without it the body does: " (w-at uns "L5/S1")))
+    ;; the drop is DERIVED, not typed: two forearms and two hands, projected on the
+    ;; level axis. If it were anything else the flag would be moving the wrong mass.
+    (let [pd (pose/solve-pose body supported)
+          l5s1 (level-named "L5/S1")
+          axis (:axis (spine/level-point pd l5s1))
+          arms (* 2.0 (+ (segment/weight-n (segment/seg body "forearm"))
+                         (segment/weight-n (segment/seg body "hand"))))]
+      (is (math/nearly= (* arms (nth axis 1))
+                        (- (w-at uns "L5/S1") (w-at sup "L5/S1"))
+                        1e-9)
+          "the mass the desk took is exactly two forearms and two hands"))
+    ;; the same at every lumbar level, because the cut gives an arm 1.0 at all of
+    ;; them, and NOT at any cervical level, because an arm never counted there
+    (let [drop-at #(- (w-at uns %) (w-at sup %))
+          lumbar (mapv drop-at ["L5/S1" "L4/L5" "L3/L4" "L2/L3" "L1/L2"])]
+      (is (every? #(math/nearly= (first lumbar) % 1e-9) lumbar)
+          (str "one drop at every lumbar level: " lumbar))
+      (is (pos? (first lumbar)) "and it is a drop, not a nothing")
+      (doseq [n ["C7/T1" "C6/C7" "C5/C6" "C4/C5" "C3/C4"]]
+        (is (math/nearly= 0.0 (drop-at n) 1e-12)
+            (str n " does not move: an arm hangs below every cervical level"))))
+    ;; and an unsupported workstation is not touched by any of this
+    (let [lap-sup (:rows (run (assoc lap :arms-supported true)))]
+      (is (not (math/nearly= (w-at (:rows (run lap)) "L5/S1")
+                             (w-at lap-sup "L5/S1") 1e-9))
+          "the flag moves laptop-on-lap too when it is set; it is the flag and not the workstation"))))
+
 (defn- row
   "A profile row as `attachment-steps` needs it: named, in a region, and carrying
   the muscles that cross it with the force each contributes."
