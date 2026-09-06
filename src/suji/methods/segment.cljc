@@ -192,6 +192,146 @@
                   head)]
     (/ (- x-head atlanto-occipital-along) head-span)))
 
+;; --- the trunk, split in two at T12/L1 (2026-09-08) --------------------------
+;;
+;; WHY. `thorax_abdomen` ran L5/S1 to C7 as ONE rigid body. The five lumbar
+;; intervertebral levels `spine` reports all sat on it, so all five took the
+;; THORAX's orientation, and the only thing that could change that orientation was
+;; `:trunk-flexion-deg`. Two consequences followed and neither was a decision:
+;;
+;;   * the pelvis could not rotate. `pose` placed it straight down from L5/S1 at
+;;     every posture, so sitting and standing differed ONLY below L5/S1 and the
+;;     lumbar spine could not tell them apart. `spine/lumbar-cross-check` measured
+;;     exactly that: the same 350.887 N at L4/L5 for both, where Wilke measures
+;;     0.50 MPa standing against 0.46 MPa sitting.
+;;   * lordosis was not representable at all. `spine`'s own docstring said so
+;;     ("There is no curvature"), and lordosis is precisely what separates a
+;;     seated lumbar spine from a standing one.
+;;
+;; A missing segment was a missing degree of freedom, exactly as it was in the
+;; neck. This is the same repair.
+;;
+;; WHY TWO AND NOT FIVE. Five lumbar segments would give each level its own
+;; orientation, which is anatomically better and is not honest here: it needs a
+;; mass and a centre of mass PER VERTEBRA, which no table checked for the cervical
+;; split publishes and none publishes here either, and an angle for each of five
+;; joints where the posture supplies one. That is the argument `cervical-split`
+;; made against per-vertebra necks, and it is not weaker one region down. Two
+;; segments buy the degree of freedom the cross-check needs — a lumbar spine whose
+;; orientation is NOT the thorax's — and buy nothing else, which is the point.
+;;
+;; WHAT IT DOES NOT BUY, said plainly: the five lumbar levels STILL share one
+;; orientation. It is now the lumbar's own rather than the thorax's, and that is
+;; the whole change.
+
+(def lumbar-span
+  "Where the T12/L1 disc sits, as a fraction of the L5/S1 -> C7 length — 0.35.
+
+  DERIVED FROM THIS MODEL'S OWN LEVEL SPACING rather than imported, the same way
+  `lower-cervical-span` is. `spine/levels` spaces the five lumbar levels 0.07 of
+  the trunk apart (20.2 mm at reference stature, which is a lumbar vertebra plus
+  its disc) and puts L1/L2 at 0.28; continuing that spacing upward gives T12/L1
+  at 0.35.
+
+  A PLAUSIBILITY CHECK, not a measurement: 0.35 x 0.288 H is 0.171 m at 1.70 m
+  stature, and an adult lumbar spine from the S1 endplate to the top of L1 is
+  about 0.17 m. That it lands there is a check on the 0.07 spacing, which was
+  itself representative."
+  0.35)
+
+(def thorax-span (- 1.0 lumbar-span))
+
+(def trunk-len-frac
+  "L5/S1 to C7 as a fraction of stature — Drillis & Contini via Winter, the value
+  `thorax_abdomen` carried. The two segments partition it."
+  0.288)
+
+(def trunk-mass-frac
+  "Winter (4e) Table 4.1, `Thorax and abdomen` — 35.5% of body mass. The two
+  segments sum to exactly this."
+  0.355)
+
+(def trunk-com-frac
+  "Where the WHOLE trunk's centre of mass sits, as a fraction of L5/S1 -> C7 from
+  L5/S1 — the 0.50 `thorax_abdomen` carried. The split preserves it exactly
+  (`the-trunk-split-keeps-the-trunk-centre-of-mass`), which is what keeps every
+  moment in this model unchanged at the neutral posture where the two segments are
+  collinear. Away from neutral they are not collinear and the moments DO change —
+  that is the point of the split, not a side effect of it.
+
+  ⚠ IT IS NOT WINTER'S. Winter's own `Thorax and abdomen` row puts the centre of
+  mass at 0.63 of C7-T1 -> L4-L5 from C7, i.e. 0.37 from the bottom, and his two
+  component rows agree with that (0.361 recomputed over this model's span). This
+  model has used 0.50 since it existed. The split SURFACES that discrepancy and
+  deliberately does not correct it here: correcting it would move every moment in
+  the library at once, which would make the lordosis result below unattributable.
+  It is recorded so the next reader can take it, and the direction is stated — a
+  trunk centre of mass 0.13 of the trunk too high OVER-states every trunk moment
+  this model reports."
+  0.50)
+
+(def trunk-mass-split
+  "The two-way split of Winter's 0.355, as fractions of BODY mass.
+
+  MEASURED, AND FROM THE TABLE THIS MODEL ALREADY QUOTES — which is where this
+  split differs from the cervical one. `head-share-of-complex` is 0.80 because
+  three standard tables were checked and NONE of them divides head from neck.
+  Winter divides the trunk at exactly the place this split needs it:
+
+    Thorax               C7-T1/T12-L1 and diaphragm    0.216
+    Abdomen              T12-L1/L4-L5                  0.139
+    Thorax and abdomen   C7-T1/L4-L5                   0.355
+
+  and 0.216 + 0.139 = 0.355 exactly, against the row this model was already using.
+  Full text read 2026-09-08 from
+  https://courses.grainger.illinois.edu/me481/sp2021/Anthro-Winter.pdf (Table 4.1).
+
+  ⚠ ONE LEVEL OF MISMATCH, WHICH THE SPLIT INHERITS AND DID NOT CREATE. Winter's
+  abdomen ends at L4-L5 and his pelvis begins there; this model's trunk ends at
+  L5/S1 and its pelvis begins there. So the model has always applied Winter's
+  0.355 to a span one level longer than his, and now applies his 0.139 to the same
+  one-level-longer span. Correcting it would need a mass for the L5 vertebra and
+  its share of the abdominal wall and viscera, which Winter does not publish.
+
+  THE TRUNK IS NOT UNIFORM, AND THAT MOVES A NUMBER. 0.139 over 0.35 of the length
+  is 0.397 of body mass per unit trunk length; 0.216 over 0.65 is 0.332. The lower
+  trunk is 20% denser than the upper one, and until this split the model spread
+  0.355 evenly along the whole trunk. `spine/weight-above-n` therefore changes at
+  every lumbar level except L5/S1 — see the README. It moves for this reason and
+  for no other, and `the-lumbar-weight-above-is-the-two-masses` derives it rather
+  than pinning it."
+  {:lumbar 0.139
+   :thorax 0.216})
+
+(def thorax-com-frac
+  "Where the thorax's centre of mass sits along T12/L1 -> C7, from T12/L1.
+
+  DERIVED, not chosen — the same construction as `head-com-frac`. The lumbar
+  segment is given the uniform-cylinder 0.50 that `spine/above-fraction` already
+  assumes about mass along a segment, and this is the value that makes the two
+  together land the trunk's centre of mass exactly at `trunk-com-frac`:
+
+      m_l x_l + m_t x_t = (m_l + m_t) x_trunk     (x measured from L5/S1, in
+                                                   units of L5/S1 -> C7)
+
+  It comes out about 0.553, i.e. the thorax's centre of mass a little above the
+  middle of the thorax.
+
+  ⚠ AND IT IS NOT WINTER'S EITHER, for the reason `trunk-com-frac` gives. Winter
+  puts the thorax's centre of mass at 0.82 of C7-T1 -> T12-L1 from C7, i.e. 0.18
+  from T12-L1 — LOW in the thorax, near the diaphragm, which is where the liver
+  and the heart are. 0.553 is far from that. The discrepancy is entirely inherited
+  from `trunk-com-frac`'s 0.50: preserving a trunk centre of mass that is too high
+  forces the thorax's to be too high as well, and the split puts all of the error
+  in the thorax because the lumbar took the uniform value. Anything this model
+  says about a LORDOTIC posture is sensitive to it, because that is the posture in
+  which the two segments stop being collinear. Stated rather than hidden."
+  (let [{:keys [lumbar thorax]} trunk-mass-split
+        total (+ lumbar thorax)
+        x-lumbar (* 0.5 lumbar-span)
+        x-thorax (/ (- (* trunk-com-frac total) (* lumbar x-lumbar)) thorax)]
+    (/ (- x-thorax lumbar-span) thorax-span)))
+
 ;; Winter (4e) Table 4.1 — segment mass as a fraction of total body mass M.
 (def ^:private mass-frac
   {;; --- the cervical spine, split three ways 2026-09-07 ------------------------
@@ -206,7 +346,12 @@
    "lower_cervical" (:lower cervical-mass-frac)
    "upper_cervical" (:upper cervical-mass-frac)
    "head" (:head cervical-mass-frac)
-   "thorax_abdomen" 0.355
+   ;; --- the trunk, split in two at T12/L1 on 2026-09-08 -----------------------
+   ;; Winter's OWN two rows, which sum to the 0.355 this model was using. See
+   ;; `trunk-mass-split` for the citation and for the one level of mismatch at the
+   ;; bottom that the split inherits.
+   "thorax" (:thorax trunk-mass-split)
+   "lumbar" (:lumbar trunk-mass-split)
    "pelvis" 0.142
    "upper_arm" 0.028
    "forearm" 0.016
@@ -240,7 +385,11 @@
    "lower_cervical" (* head-neck-len-frac lower-cervical-span)
    "upper_cervical" (* head-neck-len-frac upper-cervical-span)
    "head" (* head-neck-len-frac head-span)
-   "thorax_abdomen" 0.288
+   ;; The two trunk segments partition the SAME 0.288 H that `thorax_abdomen`
+   ;; occupied — L5/S1 to C7 — at the boundary `lumbar-span` states. Their lengths
+   ;; therefore sum to 0.288 and nothing above or below the trunk moved.
+   "thorax" (* trunk-len-frac thorax-span)
+   "lumbar" (* trunk-len-frac lumbar-span)
    "pelvis" 0.095
    "upper_arm" 0.186
    "forearm" 0.146
@@ -261,7 +410,11 @@
    "lower_cervical" 0.50
    "upper_cervical" 0.50
    "head" head-com-frac
-   "thorax_abdomen" 0.50
+   ;; The lumbar segment is a uniform cylinder (0.50); the thorax's is DERIVED so
+   ;; that the two together keep the centre of mass the single trunk segment had —
+   ;; see `thorax-com-frac`.
+   "thorax" thorax-com-frac
+   "lumbar" 0.50
    "pelvis" 0.50
    "upper_arm" 0.436
    "forearm" 0.430
@@ -274,7 +427,7 @@
 ;; The Python _MASS_FRAC dict iteration order (insertion order) drives build_body's loop;
 ;; preserve it so the segments map matches Python exactly.
 (def segment-order
-  ["lower_cervical" "upper_cervical" "head" "thorax_abdomen" "pelvis"
+  ["lower_cervical" "upper_cervical" "head" "thorax" "lumbar" "pelvis"
    "upper_arm" "forearm" "hand" "thigh" "shank" "foot"])
 
 (defn weight-n
@@ -337,6 +490,17 @@
                              :paired (contains? paired-set name)}])
                     segment-order))]
      {:total-mass-kg total-mass-kg :stature-m stature-m :segments segments})))
+
+(def trunk-bases
+  "The two segments that used to be `thorax_abdomen`, distal to proximal.
+
+  Anything that asked for `thorax_abdomen` wanted one of two different things, and
+  the split makes it say which: the WHOLE trunk between L5/S1 and C7 (this
+  vector), or the part of it a shoulder girdle rides on (`\"thorax\"`).
+  `load/trunk-borne-bases` wants the first; `girdle/thoracic-surface` wants the
+  second — and the surface still spans both, because a scapula slides on a rib
+  cage whose height this model measures from L5/S1."
+  ["thorax" "lumbar"])
 
 (def cervical-bases
   "The three segments that used to be `head_neck`, proximal to distal.

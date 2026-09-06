@@ -63,16 +63,32 @@
 
   The three cervical shares are `pose/cervical-partition`, so the exported
   articulation bends the same way the solver's chain does rather than carrying a
-  second copy of the rule."
-  [["lumbosacral" "pelvis" "thorax_abdomen" :trunk-flexion-deg 1.0]
-   ["cervicothoracic" "thorax_abdomen" "lower_cervical" :head-flexion-deg
-    (:lower pose/cervical-partition)]
-   ["c2c3" "lower_cervical" "upper_cervical" :head-flexion-deg
-    (:upper pose/cervical-partition)]
-   ["atlanto-occipital" "upper_cervical" "head" :head-flexion-deg
-    (:head pose/cervical-partition)]
-   ["shoulder" "thorax_abdomen" "upper_arm" :shoulder-flexion-deg 1.0]
-   ["elbow" "upper_arm" "forearm" :elbow-flexion-deg 1.0]])
+  second copy of the rule.
+
+  A ROW CARRIES SEVERAL TERMS SINCE 2026-09-08, and it had to. When the trunk was
+  split at T12/L1 the lumbosacral joint stopped being a function of one posture
+  input: the lumbar spine's tilt is `trunk-flexion + pelvic-tilt/2` and the
+  pelvis it hangs off is itself rotated by `-pelvic-tilt`, so the angle BETWEEN
+  them is `trunk-flexion + 1.5 x pelvic-tilt`. With one `[key share]` per row the
+  only way to export that would have been to drop the pelvic term, which is the
+  shape of defect this file already caught once — an exported articulation that
+  bends differently from the solver's chain and nothing comparing them. A row is
+  now a seq of `[key share]` pairs summed, so the export follows
+  `pose/lumbar-chord-tilt-deg` instead of approximating it."
+  [["lumbosacral" "pelvis" "lumbar" [[:trunk-flexion-deg 1.0]
+                                     [:pelvic-tilt-deg 1.5]]]
+   ;; the thorax relative to the lumbar spine: MINUS half the pelvic tilt, because
+   ;; the lumbar chord takes half of it and the thorax takes none. This is the
+   ;; lordosis, seen from the joint that carries it.
+   ["thoracolumbar" "lumbar" "thorax" [[:pelvic-tilt-deg -0.5]]]
+   ["cervicothoracic" "thorax" "lower_cervical"
+    [[:head-flexion-deg (:lower pose/cervical-partition)]]]
+   ["c2c3" "lower_cervical" "upper_cervical"
+    [[:head-flexion-deg (:upper pose/cervical-partition)]]]
+   ["atlanto-occipital" "upper_cervical" "head"
+    [[:head-flexion-deg (:head pose/cervical-partition)]]]
+   ["shoulder" "thorax" "upper_arm" [[:shoulder-flexion-deg 1.0]]]
+   ["elbow" "upper_arm" "forearm" [[:elbow-flexion-deg 1.0]]]])
 
 (defn to-articulation
   "Build the kami-genesis / Isaac articulation spec for a posed body."
@@ -86,9 +102,16 @@
         angles {:trunk-flexion-deg (:trunk-flexion-deg posture)
                 :head-flexion-deg (:head-flexion-deg posture)
                 :shoulder-flexion-deg (:shoulder-flexion-deg posture)
-                :elbow-flexion-deg (:elbow-flexion-deg posture)}
-        joints (mapv (fn [[name parent child ang-key share]]
-                       (kami-joint name parent child (* share (get angles ang-key))))
+                :elbow-flexion-deg (:elbow-flexion-deg posture)
+                ;; optional, and defaulted HERE rather than at the row, so that a
+                ;; posture written before the pelvis could rotate exports exactly
+                ;; the articulation it exported before.
+                :pelvic-tilt-deg (or (:pelvic-tilt-deg posture) 0.0)}
+        joints (mapv (fn [[name parent child terms]]
+                       (kami-joint name parent child
+                                   (reduce (fn [a [k share]]
+                                             (+ a (* share (get angles k))))
+                                           0.0 terms)))
                      chain-joints)]
     {:links links :joints joints :gravity-mps2 segment/gravity}))
 

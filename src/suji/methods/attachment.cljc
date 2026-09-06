@@ -34,7 +34,8 @@
 
   NON-DIAGNOSTIC (G1): a moment arm is a length."
   (:require [suji.methods.math :as math]
-            [suji.methods.pose :as pose]))
+            [suji.methods.pose :as pose]
+            [suji.methods.segment :as segment]))
 
 ;; --- attachment sites --------------------------------------------------------
 ;; :segment  — the bone it rides on
@@ -50,6 +51,27 @@
 ;; half the biacromial breadth (see `pose/biacromial-frac`) put a site on the
 ;; acromion; smaller ones sit between there and the midline.
 
+(defn- trunk-frac->lumbar
+  "Re-express a site stated as a fraction of the OLD single trunk segment
+  (L5/S1 -> C7) as a fraction of the `lumbar` segment that now carries its lower
+  0.35.
+
+  The world point is unchanged at the neutral posture, where the two trunk
+  segments are collinear. The derivation is written out rather than the quotient
+  pasted in, so the number the site was actually CHOSEN as — a fraction of the
+  whole trunk, which is how every one of these was reasoned about — stays
+  readable, and so that moving `segment/lumbar-span` moves the sites with it
+  instead of silently leaving them behind."
+  [trunk-along]
+  (/ trunk-along segment/lumbar-span))
+
+(defn- trunk-frac->thorax
+  "The same re-expression for a site on the upper 0.65 — see
+  `trunk-frac->lumbar`. A site past 1.0 stays past 1.0: `trapezius`'s origin runs
+  onto the nuchal ligament above C7 and is stated that way deliberately."
+  [trunk-along]
+  (/ (- trunk-along segment/lumbar-span) segment/thorax-span))
+
 (def muscles
   "Line-of-action model for the muscle groups this actor already solved. PCSA
   values are unchanged from `muscle/specs` — this namespace changes where the
@@ -63,7 +85,7 @@
    {:name "cervical_extensors" :pcsa-cm2 12.0
     :acts-about :c7 :task :cervical-extension
     ;; posterior to the neck axis, running from the upper thorax to the occiput
-    :origin {:segment "thorax_abdomen" :along 0.90 :ant -0.01965 :lat 0.0}
+    :origin {:segment "thorax" :along (trunk-frac->thorax 0.90) :ant -0.01965 :lat 0.0}
     :insertion {:segment "lower_cervical" :along 0.16666666666666669 :ant -0.00982 :lat 0.0}
     ;; the cervical vertebrae. The extensors lie ON them, so their leverage floors
     ;; at the column's radius instead of thinning toward zero as the head folds —
@@ -206,7 +228,7 @@
     ;; 0.48 of `head_neck` is 148 mm above C7, about 19 mm above the occipito-atlantal
     ;; joint the model's own level spacing puts at 0.42 — the nuchal lines are on the
     ;; occipital squama, above the foramen magnum.
-    :origin {:segment "thorax_abdomen" :along 0.85 :ant -0.0168 :lat 0.0}
+    :origin {:segment "thorax" :along (trunk-frac->thorax 0.85) :ant -0.0168 :lat 0.0}
     :insertion {:segment "head" :along 0.10344827586206896 :ant -0.0191 :lat 0.0}
     ;; THE CERVICAL COLUMN — the same surface `cervical_extensors` declares, at the
     ;; same 0.012 m, because it is the same column and this file's rule is one bone
@@ -242,7 +264,7 @@
     ;; the lateral third of the superior nuchal line. Superficial to semispinalis
     ;; capitis, so its origin sits further posterior (the spinous process tips rather
     ;; than the transverse processes) and its extension arm is the larger of the two.
-    :origin {:segment "thorax_abdomen" :along 0.90 :ant -0.0230 :lat 0.0}
+    :origin {:segment "thorax" :along (trunk-frac->thorax 0.90) :ant -0.0230 :lat 0.0}
     :insertion {:segment "head" :along 0.05172413793103453 :ant -0.0206 :lat 0.0}
     ;; the same cervical column, the same radius — see the note above.
     :wrap {:radius-m 0.012 :sign 1.0}
@@ -275,7 +297,7 @@
     ;; like the other two, so its lateral flexion and axial rotation are absent: those
     ;; would need it paired and in `:cervical-lateral-flexion`, and a muscle belongs to
     ;; one task here.
-    :origin {:segment "thorax_abdomen" :along 0.96 :ant 0.0260 :lat 0.0}
+    :origin {:segment "thorax" :along (trunk-frac->thorax 0.96) :ant 0.0260 :lat 0.0}
     :insertion {:segment "head" :along 0.03448275862068969 :ant -0.0040 :lat 0.0}
     :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 3.72 cm2 per side x 2 = 7.44 cm2 bilateral (measured; N=9, range 1.81-5.26). No double count to decide: the lumped cervical_extensors is an extensor group and this is the antagonist, which was absent from the model entirely. Neutral arm -0.036 m, a FLEXION arm about C7; Vasavada chapter 3 Figure 3-14 puts the sternocleidomastoid's lower-cervical flexion moment arm between about -2 and -4 cm and has it increasing in flexed postures."}
 
@@ -489,7 +511,7 @@
     :crosses {:joint :c7}
     ;; occiput/nuchal line → lateral clavicle-acromion; suspends the girdle
     :origin {:segment "lower_cervical" :along 0.33333333333333337 :ant -0.0170 :lat 0.0180}
-    :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0090 :lat 0.1225}
+    :insertion {:segment "thorax" :along (trunk-frac->thorax 0.93) :ant -0.0090 :lat 0.1225}
     :source "representative; suspension line. The insertion rides on the THORAX, not on the humerus: the acromion belongs to the shoulder girdle, and a girdle that rotated with the arm would swing its own suspension line horizontal under abduction and report that the trapezius cannot lift"}
 
    "levator_scapulae"
@@ -502,14 +524,14 @@
     ;; upper cervical transverse processes → superior medial scapula: shorter,
     ;; more vertical, and closer to the midline than the trapezius
     :origin {:segment "lower_cervical" :along 0.7333333333333334 :ant -0.0120 :lat 0.0125}
-    :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0120 :lat 0.0750}
+    :insertion {:segment "thorax" :along (trunk-frac->thorax 0.93) :ant -0.0120 :lat 0.0750}
     :source "representative; suspension line, on the thorax for the same reason as upper_trapezius — the scapula is not the humerus"}
 
    "anterior_deltoid"
    {:name "anterior_deltoid" :paired? true :pcsa-cm2 10.0
     :acts-about :shoulder :task :shoulder-flexion
     ;; clavicle → deltoid tuberosity, anterior to the humeral axis
-    :origin {:segment "thorax_abdomen" :along 1.0 :ant 0.01811 :lat 0.1225}
+    :origin {:segment "thorax" :along (trunk-frac->thorax 1.0) :ant 0.01811 :lat 0.1225}
     :insertion {:segment "upper_arm" :along 0.42 :ant 0.0 :lat 0.0}
     ;; the humeral head. Without it the straight chord crosses the joint centre at
     ;; 90° of shoulder flexion and the arm goes to zero; with it the arm plateaus
@@ -556,8 +578,8 @@
    "middle_trapezius"
    {:name "middle_trapezius" :paired? true :pcsa-cm2 8.0
     :acts-about :shoulder :task :scapular-suspension
-    :origin {:segment "thorax_abdomen" :along 1.0 :ant -0.0180 :lat 0.0}
-    :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0090 :lat 0.1225}
+    :origin {:segment "thorax" :along (trunk-frac->thorax 1.0) :ant -0.0180 :lat 0.0}
+    :insertion {:segment "thorax" :along (trunk-frac->thorax 0.93) :ant -0.0090 :lat 0.1225}
     :source "representative; thoracic-spine origin, acromial insertion. Both sites are on the thorax because this model has no scapula, so its length ratio is 1.0 at every posture and its force-length factor and passive tension are constants by construction — see the note above."}
 
    ;; --- the posterior ligamentous system ---------------------------------------
@@ -577,7 +599,7 @@
     :ref-stretch 1.25
     :force-at-ref 4200.0
     :origin {:segment "pelvis" :along 0.15 :ant -0.0330 :lat 0.0}
-    :insertion {:segment "thorax_abdomen" :along 0.34 :ant -0.0520 :lat 0.0}
+    :insertion {:segment "lumbar" :along (trunk-frac->lumbar 0.34) :ant -0.0520 :lat 0.0}
     :source "representative; the posterior ligamentous system, slack in neutral and engaging in deep flexion"}
 
    "nuchal_ligament"
@@ -589,7 +611,7 @@
     :slack-frac 1.20
     :ref-stretch 1.60
     :force-at-ref 150.0
-    :origin {:segment "thorax_abdomen" :along 0.97 :ant -0.0200 :lat 0.0}
+    :origin {:segment "thorax" :along (trunk-frac->thorax 0.97) :ant -0.0200 :lat 0.0}
     :insertion {:segment "lower_cervical" :along 0.23333333333333336 :ant -0.0130 :lat 0.0}
     :source "representative; the cervical counterpart, engaging in sustained forward head posture"}
 
@@ -603,7 +625,7 @@
    {:name "biceps_brachii" :paired? true :pcsa-cm2 9.0
     :acts-about :elbow :task :elbow-flexion
     ;; scapula (supraglenoid / coracoid) → radial tuberosity
-    :origin {:segment "thorax_abdomen" :along 0.97 :ant 0.0080 :lat 0.1150}
+    :origin {:segment "thorax" :along (trunk-frac->thorax 0.97) :ant 0.0080 :lat 0.1150}
     :insertion {:segment "forearm" :along 0.11 :ant 0.0135 :lat 0.0}
     ;; the trochlea. Without it the chord crosses the joint near full extension
     ;; and the flexor is reported as an extensor.
@@ -691,7 +713,7 @@
     ;; being above the head rather than one fitted to a target curve. `:along` is
     ;; a fraction of the trunk's length, which is 0.4896 m at reference stature,
     ;; so 0.020 m of it is 0.0408.
-    :origin {:segment "thorax_abdomen" :along 1.0408 :ant 0.0 :lat 0.1345}
+    :origin {:segment "thorax" :along (trunk-frac->thorax 1.0408) :ant 0.0 :lat 0.1345}
     :insertion {:segment "upper_arm" :along 0.42 :ant 0.0 :lat 0.0180}
     ;; THE HUMERAL HEAD — the same bone the anterior deltoid wraps, so the same
     ;; radius. It was not: this entry said 0.022 m and the anterior deltoid says
@@ -729,7 +751,7 @@
     :acts-about :l5s1 :task :trunk-lateral-flexion
     ;; iliac crest → 12th rib / upper lumbar transverse processes
     :origin {:segment "pelvis" :along 0.30 :ant -0.0120 :lat 0.0450}
-    :insertion {:segment "thorax_abdomen" :along 0.30 :ant -0.0120 :lat 0.0330}
+    :insertion {:segment "lumbar" :along (trunk-frac->lumbar 0.30) :ant -0.0120 :lat 0.0330}
     :source "representative; the principal lateral flexor of the lumbar spine"}
 
    "obliques"
@@ -737,14 +759,14 @@
     :acts-about :l5s1 :task :trunk-lateral-flexion
     ;; iliac crest → lower ribs, further from the midline than QL
     :origin {:segment "pelvis" :along 0.20 :ant 0.0060 :lat 0.0800}
-    :insertion {:segment "thorax_abdomen" :along 0.42 :ant 0.0060 :lat 0.0700}
+    :insertion {:segment "thorax" :along (trunk-frac->thorax 0.42) :ant 0.0060 :lat 0.0700}
     :source "representative; external + internal oblique as one lateral-flexion group"}
 
    "scalenes"
    {:name "scalenes" :paired? true :pcsa-cm2 5.0 :axis :frontal
     :acts-about :c7 :task :cervical-lateral-flexion
     ;; first and second ribs → cervical transverse processes
-    :origin {:segment "thorax_abdomen" :along 0.93 :ant 0.0040 :lat 0.0250}
+    :origin {:segment "thorax" :along (trunk-frac->thorax 0.93) :ant 0.0040 :lat 0.0250}
     :insertion {:segment "lower_cervical" :along 0.5333333333333333 :ant 0.0040 :lat 0.0150}
     :source "representative; lateral flexor of the cervical spine"}
 
@@ -796,7 +818,7 @@
     ;; because the tendon crosses the pelvic brim and the front of the femoral
     ;; head: that is a wrapping surface, and it is why the psoas moment arm is
     ;; famously flat through flexion where other muscles' are not.
-    :origin {:segment "thorax_abdomen" :along 0.05 :ant 0.0100 :lat 0.0200}
+    :origin {:segment "lumbar" :along (trunk-frac->lumbar 0.05) :ant 0.0100 :lat 0.0200}
     :insertion {:segment "thigh" :along 0.10 :ant -0.0050 :lat 0.0050}
     :wrap {:radius-m 0.035 :sign 1.0}
     :source "PCSA Ward et al. 2009 Table 3, psoas 7.7 + iliacus 9.9 = 17.6 cm2. Wrap radius representative (~0.035 m, the reported flexion arm near neutral)."}
@@ -887,7 +909,7 @@
     :acts-about :l5s1 :task :trunk-extension
     ;; sacrum/ilium → thoracic spinous processes, posterior to the trunk axis
     :origin {:segment "pelvis" :along 0.20 :ant -0.0291 :lat 0.0}
-    :insertion {:segment "thorax_abdomen" :along 0.25 :ant -0.0485 :lat 0.0}
+    :insertion {:segment "lumbar" :along (trunk-frac->lumbar 0.25) :ant -0.0485 :lat 0.0}
     :source "representative; lumbar insertion, kept low and well posterior for the same reason as the cervical group — a straight line to a HIGH thoracic insertion swings in front of L5/S1 near 55 deg of trunk flexion and would report erector spinae as a flexor"}))
 
 ;; --- placing an attachment ---------------------------------------------------

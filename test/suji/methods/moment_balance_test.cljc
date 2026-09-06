@@ -121,15 +121,15 @@
         (str "an unsupported " base " hangs off the body"))
     (is (not (load/body-carries? {:arms-supported true} base))
         (str "a rested " base " is carried by the desk")))
-  (doseq [base (into ["upper_arm" "thorax_abdomen" "thigh"] segment/cervical-bases)]
+  (doseq [base (into ["upper_arm" "thorax" "lumbar" "thigh"] segment/cervical-bases)]
     (is (load/body-carries? {:arms-supported true} base)
         (str "the desk does not take the " base)))
   ;; and the lumbar list is DERIVED from that answer rather than being a second
   ;; copy of it — it was a map keyed by support state until 2026-09-07
-  (is (= (into ["thorax_abdomen"]
+  (is (= (into (vec segment/trunk-bases)
                (concat segment/cervical-bases ["upper_arm" "forearm" "hand"]))
          (load/lumbar-borne-bases {:arms-supported false})))
-  (is (= (into ["thorax_abdomen"] (conj segment/cervical-bases "upper_arm"))
+  (is (= (into (vec segment/trunk-bases) (conj segment/cervical-bases "upper_arm"))
          (load/lumbar-borne-bases {:arms-supported true}))))
 
 (deftest supporting-the-forearms-reduces-the-frontal-shoulder-moment

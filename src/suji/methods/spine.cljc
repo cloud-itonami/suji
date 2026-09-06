@@ -95,11 +95,26 @@
   L5/S1 is at 0.0 of the trunk and C7/T1 at 0.0 of the neck. `:disc-area-cm2` is a
   representative adult cross-section at reference stature; it scales with
   stature² because an area does."
-  [{:name "L5/S1" :region :lumbar :segment "thorax_abdomen" :along 0.00 :disc-area-cm2 18.0}
-   {:name "L4/L5" :region :lumbar :segment "thorax_abdomen" :along 0.07 :disc-area-cm2 17.0}
-   {:name "L3/L4" :region :lumbar :segment "thorax_abdomen" :along 0.14 :disc-area-cm2 16.0}
-   {:name "L2/L3" :region :lumbar :segment "thorax_abdomen" :along 0.21 :disc-area-cm2 15.0}
-   {:name "L1/L2" :region :lumbar :segment "thorax_abdomen" :along 0.28 :disc-area-cm2 14.0}
+  ;; --- the lumbar levels, re-based 2026-09-08 ----------------------------------
+  ;; These five used to sit on `thorax_abdomen`, which ran L5/S1 to C7, at 0.00 /
+  ;; 0.07 / 0.14 / 0.21 / 0.28 of it. They now sit on `lumbar`, which spans exactly
+  ;; 0.00-0.35 of that old segment, so each `:along` is the old one divided by 0.35
+  ;; and every level is in the same place on the same body at the neutral posture.
+  ;; Their disc areas are unchanged.
+  ;;
+  ;; WHAT MOVED IS THEIR ORIENTATION, and that is the whole reason for the split.
+  ;; All five still share ONE segment's frame — `lumbar` is L5/S1 to T12/L1 and is
+  ;; one rigid body — so a reader should not take five lumbar rows as five
+  ;; independently oriented joints. What is no longer true is that the frame is the
+  ;; THORAX's: the pelvis can rotate now, the lumbar spine's lower end turns with
+  ;; it, and these five levels tilt with the lordosis that produces. Sitting and
+  ;; standing can differ above L5/S1, which is what `lumbar-cross-check` needed and
+  ;; could not have.
+  [{:name "L5/S1" :region :lumbar :segment "lumbar" :along 0.0 :disc-area-cm2 18.0}
+   {:name "L4/L5" :region :lumbar :segment "lumbar" :along 0.2 :disc-area-cm2 17.0}
+   {:name "L3/L4" :region :lumbar :segment "lumbar" :along 0.4 :disc-area-cm2 16.0}
+   {:name "L2/L3" :region :lumbar :segment "lumbar" :along 0.6 :disc-area-cm2 15.0}
+   {:name "L1/L2" :region :lumbar :segment "lumbar" :along 0.8 :disc-area-cm2 14.0}
    ;; --- the cervical levels, re-based 2026-09-07 --------------------------------
    ;; These five used to sit on ONE segment, `head_neck`, at 0.00 / 0.06 / 0.12 /
    ;; 0.18 / 0.24 of it. They now sit on `lower_cervical`, which spans exactly

@@ -148,14 +148,23 @@
 (defn thoracic-surface
   "The thoracic contact surface for a solved pose, in world coordinates.
 
-  `:origin` is the thorax's proximal point (L5/S1) and `:long`/`:ant`/`:lat` are
-  its frame, so the surface rotates with the trunk. `:s-ref` is the axial distance
-  at which the semi-axes take their reference values; above it they shrink."
+  `:origin` is L5/S1 and `:long`/`:ant`/`:lat` are the THORAX's frame, so the
+  surface rotates with the trunk. `:s-ref` is the axial distance at which the
+  semi-axes take their reference values; above it they shrink.
+
+  IT SPANS BOTH TRUNK SEGMENTS since the trunk was split on 2026-09-08, and it is
+  built that way on purpose. `contact-level-frac` is stated as a fraction of the
+  whole L5/S1 -> C7 length (0.75 of it, the upper thorax where a scapula lies), so
+  the surface has to start at L5/S1 and be that long, which is one segment's
+  proximal point and two segments' lengths. Its ORIENTATION is the thorax's alone,
+  because a scapula slides on a rib cage and the rib cage is the thorax: giving it
+  the lumbar's frame would make a lordosis rotate the shoulder girdle."
   [pose-data stature-m]
-  (let [t (pose/seg-at pose-data "thorax_abdomen")
+  (let [l (pose/seg-at pose-data "lumbar")
+        t (pose/seg-at pose-data "thorax")
         {:keys [long ant lat]} (:frame t)
-        len (:length-m t)]
-    {:origin (:proximal t)
+        len (+ (:length-m l) (:length-m t))]
+    {:origin (:proximal l)
      :long long :ant ant :lat lat
      :length-m len
      :s-ref (* contact-level-frac len)

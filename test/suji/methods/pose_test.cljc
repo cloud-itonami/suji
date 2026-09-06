@@ -31,7 +31,9 @@
         elbow (:elbow/left joints)
         wrist (:wrist/left joints)
         shoulder (:shoulder/left joints)]
-    (is (= c7 (:distal (pose/seg-at p "thorax_abdomen"))))
+    (is (= (:t12l1 joints) (:distal (pose/seg-at p "lumbar"))))
+    (is (= (:t12l1 joints) (:proximal (pose/seg-at p "thorax"))))
+    (is (= c7 (:distal (pose/seg-at p "thorax"))))
     (is (= c7 (:proximal (pose/seg-at p "lower_cervical"))))
     ;; the neck is a chain of three since 2026-09-07, and the two new joints have
     ;; to be shared the same way
@@ -145,8 +147,8 @@
   [pose-data supported?]
   (let [w (pose/segment-weights body pose-data)
         bases (if supported?
-                (into ["thorax_abdomen"] (conj segment/cervical-bases "upper_arm"))
-                (into ["thorax_abdomen"]
+                (into (vec segment/trunk-bases) (conj segment/cervical-bases "upper_arm"))
+                (into (vec segment/trunk-bases)
                       (concat segment/cervical-bases ["upper_arm" "forearm" "hand"])))]
     (pose/gravitational-moment
      (get-in pose-data [:joints :l5s1])

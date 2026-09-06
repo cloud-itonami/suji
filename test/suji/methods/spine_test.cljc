@@ -277,7 +277,7 @@
   (let [es (attachment/instance "erector_spinae")
         crossed (mapv :name (spine/levels-crossed lap-pose es))]
     (is (= "pelvis" (:segment (:origin es))) "it originates below the junction")
-    (is (= "thorax_abdomen" (:segment (:insertion es))) "and inserts above it")
+    (is (= "lumbar" (:segment (:insertion es))) "and inserts above it")
     (is (= ["L5/S1" "L4/L5" "L3/L4" "L2/L3"] crossed)
         (str "so it crosses every lumbar level below its insertion at 0.25: " crossed))
     (let [l5s1 (first (filter #(= "L5/S1" (:name %)) (:rows (run lap))))]
@@ -305,7 +305,7 @@
         ;; 0.00-0.30 of it — the same place on the same body, restated on the
         ;; segment the split put there
         spinal (assoc arm
-                      :origin {:segment "thorax_abdomen" :along 0.97}
+                      :origin {:segment "thorax" :along 0.9538461538461539}
                       :insertion {:segment "lower_cervical" :along 0.667})]
     (is (= [] (mapv :name (spine/levels-crossed lap-pose arm))))
     (is (= ["C7/T1" "C6/C7" "C5/C6" "C4/C5"]
@@ -340,7 +340,7 @@
   ;; quietly treated as a root
   (let [d (refusal-data #(spine/levels-crossed
                           lap-pose {:origin {:segment "tail" :along 0.5}
-                                    :insertion {:segment "thorax_abdomen" :along 0.5}}))]
+                                    :insertion {:segment "thorax" :along 0.5}}))]
     (is (= :value-error (:type d)) (str "an unknown bone is refused: " (pr-str d)))
     (is (= "tail" (:segment d)) "and the refusal names it")))
 
@@ -831,7 +831,7 @@
   moment arm about it that moves — and the answer does not depend on their values,
   only on which segments the ends ride."
   [{:name "semispinalis_cervicis"
-    :origin {:segment "thorax_abdomen" :along 0.88 :ant -0.0141 :lat 0.0}
+    :origin {:segment "thorax" :along 0.8153846153846154 :ant -0.0141 :lat 0.0}
     :insertion {:segment "upper_cervical" :along 0.20 :ant -0.0106 :lat 0.0}}
    {:name "multifidus_cervicis"
     :origin {:segment "lower_cervical" :along 0.88 :ant -0.0088 :lat 0.0}
