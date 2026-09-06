@@ -20,7 +20,13 @@
   (let [body (segment/build-body 70.0 1.70)
         total (reduce + 0.0 (map :mass-kg (vals (:segments body))))]
     (is (< (* 0.7 70) total (* 0.85 70)))
-    (is (> (:mass-kg (segment/seg (segment/build-body 70) "head_neck")) 0))))
+    (doseq [b segment/cervical-bases]
+      (is (> (:mass-kg (segment/seg (segment/build-body 70) b)) 0)
+          (str b " must have a mass")))
+    ;; and the three together are still Winter's single head-and-neck row, which is
+    ;; the property the Hansraj anchor rests on
+    (is (math/nearly= (* 0.081 70.0) (segment/head-mass-kg 70.0) 1e-12)
+        "the split must not have moved the mass above C7")))
 
 (deftest test-head-mass-matches-hansraj-head
   ;; Hansraj uses a ~12 lb (5.44 kg) head; Winter's 8.1% at 67 kg ≈ 5.4 kg.
@@ -82,7 +88,7 @@
                         w (pose/segment-weights body p)]
                     (pose/gravitational-moment
                      (get-in p [:joints :c7])
-                     (for [s (pose/segments-on p ["head_neck"])] [s (get w (:name s))]))))
+                     (for [s (pose/segments-on p segment/cervical-bases)] [s (get w (:name s))]))))
           ts [(truth 60.0 0.0) (truth 30.0 30.0) (truth 0.0 60.0)]]
       (is (math/nearly= (first ts) (second ts) 1e-9))
       (is (math/nearly= (first ts) (nth ts 2) 1e-9)))))
@@ -144,7 +150,7 @@
                        :arms-supported false :trunk-lateral-bend-deg bend})
         tilt (fn [bend] (load/head-tilt-from-vertical-deg (pose/solve-pose body (at bend))))
         true-deg (fn [bend]
-                   (let [d (:dir (pose/seg-at (pose/solve-pose body (at bend)) "head_neck"))]
+                   (let [d (:dir (pose/seg-at (pose/solve-pose body (at bend)) "head"))]
                      (* (/ 180.0 math/pi) (Math/acos (nth d 1)))))
         frontal (fn [bend] (:cervical-nm (load/frontal-moments body (at bend))))]
     (is (math/nearly= 30.0 (tilt 0.0) 1e-9) "trunk + head, with no bend")

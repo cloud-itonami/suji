@@ -42,6 +42,7 @@
   NON-DIAGNOSTIC (G1): %MVC is a force ratio, not a diagnosis.
   G10 anti-pseudoscience: Hill-model muscles only; NO 経絡/気/波動."
   (:require [suji.methods.attachment :as attachment]
+            [suji.methods.load :as load]
             [suji.methods.math :as math]
             [suji.methods.pose :as pose]
             [suji.methods.recruit :as recruit]
@@ -391,32 +392,33 @@
         by-joint (into {} (map (juxt :joint identity)) (:joints loads))
         side-load (fn [n side] (get-in by-joint [n :per-side side] 0.0))
         shoulder-per-side (:per-side (joint "shoulder"))
+        ;; THE C7 EQUILIBRIUM IS SOLVED FIRST AND ON PURPOSE. Two of its muscles,
+        ;; semispinalis capitis and splenius capitis, insert on the occiput and
+        ;; therefore also pull on the atlanto-occipital joint; the suboccipital
+        ;; equilibrium below is given what is LEFT of that joint's moment once
+        ;; their contribution is counted, not the whole of it. Every other task in
+        ;; this list is independent of every other, and these two are not, so the
+        ;; order is stated here rather than left to the shape of a `concat`.
+        cervical-shared (recruit/share (candidates :cervical-extension nil coeffs)
+                                       (get-in loads [:cervical :extensor-moment-nm]))
+        ao (load/atlanto-occipital-moment
+            body posture
+            (into {} (for [x cervical-shared
+                           :when (contains? load/capitis-groups (:name x))]
+                       [(:name x) (:force-n x)])))
         task-list
         (concat
-         [[[:cervical-extension :midline]
-           (recruit/share (candidates :cervical-extension nil coeffs)
-                          (get-in loads [:cervical :extensor-moment-nm]))]
+         [[[:cervical-extension :midline] cervical-shared]
           ;; THE ATLANTO-OCCIPITAL EQUILIBRIUM, new on 2026-09-07 and the one the
-          ;; cervical split exists to make possible. Its load is the moment the
-          ;; SKULL alone exerts about the occipital condyles, computed from the
-          ;; placed chain rather than from a fitted lever — see
-          ;; `load/atlanto-occipital-moment`.
-          ;;
-          ;; ⚠ THE CAPITIS MUSCLES CROSS THIS JOINT TOO AND ARE NOT IN IT.
-          ;; Semispinalis capitis and splenius capitis run from the thorax to the
-          ;; occiput, so they generate a moment about the atlanto-occipital joint
-          ;; as well as about C7 — and a muscle belongs to ONE task here, because
-          ;; `recruit`'s closed form solves one constraint. They are solved at C7,
-          ;; where they are the principal actors, and this equilibrium is therefore
-          ;; charged entirely to the suboccipitals. That OVERSTATES what the
-          ;; suboccipitals must do, by exactly the moment the two capitis muscles
-          ;; are already exerting here. It is the same approximation
-          ;; `attachment/secondary-arm` states for the two-joint muscles of the
-          ;; lower limb, and `load/atlanto-occipital-moment` reports the size of it
-          ;; at every posture rather than leaving it as a sentence.
+          ;; cervical split exists to make possible. Its load is `:residual-nm` —
+          ;; see `load/atlanto-occipital-moment` for why that is the honest number
+          ;; and for what its usually being zero means. A zero load IS a placed
+          ;; load: the suboccipitals come back at 0 N rather than refused, which is
+          ;; the difference between "nothing is asked of them here" and "this model
+          ;; could not answer".
           [[:atlanto-occipital-extension :midline]
            (recruit/share (candidates :atlanto-occipital-extension nil coeffs)
-                          (get-in loads [:atlanto-occipital :moment-nm]))]
+                          (:residual-nm ao))]
           [[:trunk-extension :midline]
            (recruit/share (candidates :trunk-extension nil coeffs)
                           (:moment-nm (joint "lumbosacral")))]

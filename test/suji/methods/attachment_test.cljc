@@ -56,23 +56,22 @@
   ["semispinalis_capitis" "splenius_capitis" "sternocleidomastoid"])
 
 (deftest the-head-muscles-run-between-two-different-bones
-  ;; THE FIRST WAY TO GET THIS WRONG, and the reason the suboccipitals are absent.
-  ;; A suboccipital runs from C1 or C2 to the occiput; this model has ONE rigid
-  ;; `head_neck` segment and no atlanto-occipital joint, so both of its ends would
-  ;; ride on that segment and
+  ;; THE FIRST WAY TO GET THIS WRONG, and the reason the suboccipitals were absent
+  ;; until the neck had joints. A muscle with both ends on one bone cannot have an
+  ;; angle-dependent arm —
   ;; `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm` names
-  ;; that shape as the error that produced a constant-looking arm. It would BE that
-  ;; error here rather than the exception `middle_trapezius` earned, because a
-  ;; suboccipital is solved as a MOMENT about an axis the segment carries, not as a
-  ;; suspension cosine against the world vertical which it does not.
+  ;; that shape as the error that produced a constant-looking arm, and
+  ;; `exactly-one-muscle-has-both-ends-on-one-segment-and-it-is-a-suspender` forbids
+  ;; it globally. This says the positive half for these three: each runs thorax →
+  ;; skull, so its arm CAN move, and it does.
   ;;
-  ;; `exactly-one-muscle-has-both-ends-on-one-segment-and-it-is-a-suspender` already
-  ;; forbids the shape globally. This says the positive half for these three: each
-  ;; runs thorax → head, so its arm CAN move, and it does.
+  ;; The insertion segment is `head` since 2026-09-07, which is the SAME PLACE it
+  ;; was — `head` is the part of the old `head_neck` above the occipital condyles,
+  ;; and the `:along` values were rescaled onto it.
   (doseq [m cranial]
     (let [spec (att/instance m)]
       (is (= "thorax_abdomen" (get-in spec [:origin :segment])) (str m " origin"))
-      (is (= "head_neck" (get-in spec [:insertion :segment])) (str m " insertion"))
+      (is (= "head" (get-in spec [:insertion :segment])) (str m " insertion"))
       (let [arms (mapv #(math/round-to (arm (at :head-flexion-deg (double %)) m) 9)
                        [0 15 30])]
         (is (< 1 (count (distinct arms)))
@@ -85,13 +84,25 @@
   ;; 15.5 mm above C7 and below C6/C7 at 18.6 mm — and that sentence is why nobody
   ;; looked for the gap. So the claim is checked against `spine/levels` rather than
   ;; against a comment.
-  (let [c34 (:along (first (filter #(= "C3/C4" (:name %)) spine/levels)))]
-    (is (= 0.24 c34) "the premise: C3/C4 is at 0.24 of the head_neck segment")
+  ;;
+  ;; It is asked of the SKELETON now rather than of two numbers on one segment,
+  ;; because since 2026-09-07 the insertion and the level are not on the same bone:
+  ;; `spine/levels-crossed` walks the attachment tree, so an insertion that landed
+  ;; below C3/C4 would fail to cross it and be reported here.
+  (let [p (pose/solve-pose body neutral)
+        c34 (first (filter #(= "C3/C4" (:name %)) spine/levels))]
+    (is (= "lower_cervical" (:segment c34))
+        "the premise: C3/C4 sits on the lower cervical segment")
+    (is (= 0.8 (:along c34))
+        "at 0.8 of it, which is the 0.24 of the old head_neck segment it always was")
     (doseq [m cranial]
-      (is (> (get-in (att/instance m) [:insertion :along]) c34)
-          (str m " must insert above C3/C4 at " c34)))
+      (is (some #(= "C3/C4" (:name %)) (spine/levels-crossed p (att/instance m)))
+          (str m " must cross C3/C4 — it inserts on the skull, above every level")))
     ;; and the lumped group, whose source string used to claim the skull, does not
-    (is (< (get-in (att/instance "cervical_extensors") [:insertion :along]) 0.06)
+    (is (= "lower_cervical" (get-in (att/instance "cervical_extensors") [:insertion :segment]))
+        "cervical_extensors inserts on the lower cervical column, not on the skull")
+    (is (not (some #(= "C6/C7" (:name %))
+                   (spine/levels-crossed p (att/instance "cervical_extensors"))))
         "cervical_extensors inserts below C6/C7 — it is not, and never was, occipital")))
 
 (deftest the-head-extensors-stay-extensors-through-a-forward-head-posture
@@ -173,7 +184,9 @@
   ;; bone hangs from which, so this is a test of the anatomy and not of a list.
   (let [p (pose/solve-pose body (merge neutral {:head-flexion-deg 30.0}))
         cerv (mapv :name (filter #(= :cervical (:region %)) spine/levels))]
-    (is (= 5 (count cerv)) "the premise: five cervical levels")
+    ;; six since 2026-09-07: C2/C3 became expressible when the neck was split, and
+    ;; these three cross it too, because all three insert above it on the skull
+    (is (= 6 (count cerv)) "the premise: six cervical levels")
     (doseq [m cranial]
       (is (= cerv (mapv :name (spine/levels-crossed p (att/instance m))))
           (str m " must span every cervical level")))
@@ -669,14 +682,30 @@
 (def ^:private awaiting-muscles
   "Joints the kinematics places and the kinetics does not solve YET.
 
-  EMPTY, as of 2026-09-07. It held the six lower-limb joints for exactly as long
-  as it took to give them muscles. It used to be the sentence `the hip is
-  deliberately unsolved, because a seated model has no thigh` — true when it was
+  It held the six lower-limb joints for exactly as long as it took to give them
+  muscles, and was empty for part of one day. It used to be the sentence `the hip
+  is deliberately unsolved, because a seated model has no thigh` — true when it was
   written, false the moment `segment/build-body` grew a thigh, and it would have
   gone on reading as a decision. A set that has to be emptied is harder to forget
-  than a paragraph that has to be reread; leaving it here, empty, is what makes
-  the next gap cheap to state."
-  #{})
+  than a paragraph that has to be reread; that is what makes the next gap cheap to
+  state, and here it is.
+
+  `:c2c3` is the joint between the atlas-axis block and the lower cervical column,
+  placed by `pose` when the neck was split on 2026-09-07 and solved by nobody.
+  Three muscles CROSS it — semispinalis capitis and splenius capitis, which run
+  past it from the thorax to the skull, and the lumped `cervical_extensors`, which
+  stops below it — but none of them is solved AT it: each belongs to one task, and
+  their task is `:cervical-extension` about C7. Filling it needs the muscles that
+  act on the upper cervical spine specifically (rectus capitis anterior and
+  lateralis, longus capitis, the semispinalis and multifidus cervicis fascicles
+  that end on C2), none of which this model has.
+
+  WHAT ITS ABSENCE COSTS. The C2/C3 level in `spine/profile` carries a weight term
+  and the muscle lines that happen to cross it, and no force from any muscle whose
+  job is to hold that joint — so its compression is a LOWER bound. It is the one
+  place in the cervical profile where the model is knowingly short of a muscle
+  rather than short of a measurement."
+  #{:c2c3})
 
 (deftest every-placed-joint-has-an-equilibrium-or-is-named-as-a-gap
   ;; The coverage question, asked of the data rather than of a comment: which
