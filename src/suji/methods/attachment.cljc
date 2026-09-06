@@ -223,6 +223,16 @@
     ;; of the force and of the compression that follows from it. Stated rather than
     ;; corrected by a factor nobody measured.
     :wrap {:radius-m 0.012 :sign 1.0}
+    ;; TWO-JOINT, and it always was — it runs from the thorax to the OCCIPUT, so it
+    ;; crosses the atlanto-occipital joint as well as the cervicothoracic junction
+    ;; it is solved at. Until 2026-09-08 that second joint was named only in
+    ;; `load/capitis-groups`, a set in another namespace, because there was no
+    ;; solver that could use it: `recruit`'s closed form takes one constraint, so
+    ;; the fact was a correction term rather than a coupling. It is declared here
+    ;; now because `recruit/solve` builds its constraint matrix from `spans?`, and
+    ;; a muscle whose second joint is not in its own entry is a muscle the coupled
+    ;; solve will not feed.
+    :crosses {:joint :atlanto-occipital}
     :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 5.40 cm2 per side x 2 sides = 10.80 cm2 bilateral (measured; N=9 cadavers, range 3.93-7.32). ADDED ALONGSIDE the lumped cervical_extensors rather than carved out of it, and the arithmetic is this: the lump is 12.00 cm2 and its insertion sits 15.5 mm above C7, below C6/C7, so it crosses one level and contains nothing cranial; total modelled cervical extensor cross-section therefore goes 12.00 -> 12.00 + 10.80 + 8.52 = 31.32 cm2, a factor of 2.61. WHAT THAT COSTS IF THE LUMP WAS MEANT AS THE WHOLE NECK: this model then overstates neck extensor capacity by 12.00 cm2 and every cervical %MVC it reports is correspondingly low. That reading cannot be settled from inside the model, because the 12.00 has no provenance to check - it is :representative with no citation, and Kamibayashi & Richmond do not measure the deep cervical group it places (semispinalis cervicis, multifidus, longissimus and spinalis cervicis are absent from their table). The one-line change that would settle it the other way is muscle/specs \"cervical_extensors\" :pcsa-cm2 12.0 -> 3.356, which is 12.0 x 7.50/26.82, the suboccipital residual's share of the measured bilateral total 10.80 + 8.52 + 7.50 = 26.82 cm2. It is NOT made here: muscle.cljc is landed, and this is reported instead. Neutral extension arm calibrated to a representative 0.030 m."}
 
    "splenius_capitis"
@@ -236,6 +246,9 @@
     :insertion {:segment "head" :along 0.05172413793103453 :ant -0.0206 :lat 0.0}
     ;; the same cervical column, the same radius — see the note above.
     :wrap {:radius-m 0.012 :sign 1.0}
+    ;; TWO-JOINT for the same reason as semispinalis capitis above — thorax to
+    ;; occiput, so it crosses the atlanto-occipital joint too.
+    :crosses {:joint :atlanto-occipital}
     :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, splenius 4.26 cm2 per side x 2 = 8.52 cm2 bilateral (measured; N=9, range 2.57-5.48). ⚠ THAT ENTRY IS THE WHOLE SPLENIUS: the table gives one mass and one PCSA for splenius capitis and splenius cervicis together and separates them only by fascicle length (12.3 cm and 14.7 cm). This entry therefore stands for both, which puts a share of splenius cervicis's cross-section on a cranial insertion it does not have - cervicis runs to the C1-C3 transverse processes. It crosses the same six levels either way, so the error is in WHERE the force is applied on the skull and not in which levels carry it. Neutral extension arm calibrated to a representative 0.038 m, larger than semispinalis capitis's because Vasavada (chapter 3, p.68) states the semispinalis capitis has the smaller of the two."}
 
    "sternocleidomastoid"
@@ -1116,27 +1129,70 @@
                              (axis-of muscle))]
       (* (get task-sense (:task muscle) 1.0) a))))
 
+(defn spans?
+  "Does this muscle cross `joint` — that is, does its line of action have a moment
+  about it at all?
+
+  THE ANSWER IS DECLARED AND NOT DERIVED, and it has to be. `straight-moment-arm`
+  will return a number about ANY point, including a joint the muscle's line does
+  not span, and that number is not a moment: a muscle wholly above a joint exerts
+  no moment about it, because both of its attachments ride on the same free body.
+  Reading a straight-line arm off such a joint would invent a constraint
+  coefficient out of geometry that says nothing. So the joints a muscle acts about
+  are exactly `:acts-about` plus `:crosses`, and adding a joint to a muscle's
+  reach is an edit to its entry in `muscles` rather than a consequence of where
+  the joint happens to sit.
+
+  This is the predicate `recruit/solve` builds its constraint matrix from."
+  [muscle joint]
+  (boolean (or (= joint (:acts-about muscle))
+               (= joint (get-in muscle [:crosses :joint])))))
+
+(defn coupled-arms
+  "{joint signed-moment-arm} for every joint in `joints` this muscle spans.
+
+  RAW SIGNED ARMS, in `moment-arm`'s one convention (positive opposes flexion) —
+  NOT `effectiveness`, which applies `task-sense`. A coupled group is one solve
+  over several equilibria, so there is one sign convention across the whole
+  constraint matrix and the loads are stated in it; `task-sense` exists to let a
+  SINGLE task state its load as a magnitude, and a magnitude is exactly what a
+  coupled load cannot be. The atlanto-occipital flexors' arms are negative here
+  and the solve reads that as `these muscles flex this joint`, which is the fact;
+  `task-sense` negated them so that `share` could distribute an unsigned surplus."
+  [pose-data stature-m muscle joints]
+  (into (array-map)
+        (for [j joints :when (spans? muscle j)]
+          [j (moment-arm pose-data stature-m muscle
+                         (get-in pose-data [:joints j])
+                         (axis-of muscle))])))
+
 (defn secondary-arm
   "The moment arm a TWO-JOINT muscle has at the joint its own task does not solve,
   or nil for a muscle that crosses one joint.
 
-  WHAT THIS IS HONEST ABOUT. A muscle that spans two joints appears in two
-  equilibria at once, and the two are coupled: the force that balances the knee is
-  the same force that appears at the hip. Solving that needs an optimisation with
-  two equality constraints, and the Crowninshield–Brand form `recruit` uses is the
-  closed solution for ONE. There is no closed form of that shape for two, so this
-  model does not have one.
+  WHAT IT MEANT UNTIL 2026-09-08, AND WHAT IT MEANS NOW. A muscle that spans two
+  joints appears in two equilibria at once, and the two are coupled: the force
+  that balances the knee is the same force that appears at the hip. `recruit`'s
+  closed form is the solution for ONE equality constraint, so each two-joint
+  muscle was solved where it was primary and the moment it simultaneously exerted
+  at its other joint was computed here and reported as `:secondary-moment-nm` — a
+  real moment, in the model's own numbers, that the other joint's equilibrium had
+  NOT been told about. It reached 3.63 N·m at the hip in a deep squat.
 
-  What it does instead is state the consequence rather than hide it. Each
-  two-joint muscle is solved in the equilibrium where it is the primary actor, and
-  the moment it simultaneously exerts at its other joint is computed here and
-  reported as `:secondary-moment-nm` — a real moment, in the model's own numbers,
-  that the other joint's equilibrium was NOT told about.
-  `muscle/tension-summary` totals it per joint as `:two-joint-unfed-nm` so the
-  size of the approximation is visible at every posture instead of being a
-  sentence in a docstring.
+  `recruit/solve` now satisfies those constraints simultaneously (see
+  `muscle/coupled-groups`), so for the joints inside a coupled group the secondary
+  moment IS fed — it is part of the equilibrium that was solved, not a remainder
+  from one that was not. This function still computes it, because the number is
+  worth showing either way, and `muscle/solve-muscle-tensions` marks the row
+  `:secondary-fed?` when the crossing joint was one of the constraints. What
+  `:two-joint-unfed-nm` totals is only the joints that were NOT: today that is
+  `:c2c3`, which `longus_capitis` crosses and which has no equilibrium in this
+  model at all — see `spine-test/nothing-is-solved-at-c2c3-and-the-reason-is-provenance`.
 
-  WHICH JOINT IS PRIMARY, and why:
+  WHICH JOINT IS PRIMARY. Inside a coupled group this decides nothing about the
+  forces — all of the group's constraints are solved at once, so the phrase
+  `where it is solved` no longer names anything — but it still names the joint whose task the
+  muscle is emitted under, and therefore which joint is called secondary here:
 
     rectus femoris   knee. It shares the patellar tendon with the vasti and is
                      part of the same extensor mechanism; its hip flexion is

@@ -339,18 +339,6 @@
                tk))
           (range (count loads)) loads)))
 
-(defn- dual-objective
-  "q(λ). Maximised, concave, and its gradient is the negated residual — so an
-  ascent on it is a descent on the equilibrium error, which is what makes the line
-  search below able to be monotone in something."
-  [actives loads lambda]
-  (- (dot lambda loads)
-     (reduce + 0.0
-             (map (fn [{:keys [a32 cvec]}]
-                    (let [s (price cvec lambda)]
-                      (if (pos? s) (* (/ 2.0 (* 3.0 sqrt3)) a32 s (Math/sqrt s)) 0.0)))
-                  actives))))
-
 (defn- hessian-neg
   "−∇²q = Σ_{s_i>0} (a_i^{3/2} / (2√3 √s_i)) C_·i C_·iᵀ, positive semidefinite."
   [actives m lambda]
@@ -389,18 +377,31 @@
                 0.0))))
         (range (count loads)) loads))
 
+(defn- norm2 [v] (reduce (fn [a x] (+ a (* x x))) 0.0 v))
+
 (defn- newton
-  "Damped Newton ascent on the concave dual. Returns
+  "Levenberg–Marquardt on the residual C F(λ) − T. Returns
   {:lambda :iterations :converged? :residual}.
 
-  DAMPED AND LINE-SEARCHED, for a reason that is in the mathematics rather than in
-  caution. The Hessian is Σ a^{3/2}/(2√3 √s) C Cᵀ, so it grows without bound as a
-  muscle approaches the edge of the active set (s → 0⁺) and is merely singular
-  when the active columns do not span. Levenberg–Marquardt damping handles the
-  second — a step is always defined — and the Armijo backtrack on q handles the
-  first, because q is concave and every damped Newton direction is an ascent
-  direction, so a short enough step always improves it. That is what makes this
-  terminate rather than oscillate across the kink where the active set changes."
+  DAMPED, for a reason that is in the mathematics rather than in caution. The
+  Jacobian is Σ a^{3/2}/(2√3 √s) C_·i C_·iᵀ — positive semidefinite, so the raw
+  Newton direction is always a descent direction for ‖g‖² — but it grows without
+  bound as a muscle approaches the edge of the active set (s → 0⁺) and is merely
+  singular when the active columns do not span. The damping handles both: a step
+  always exists, and a step that does not reduce the residual is retried shorter.
+  That is what makes this terminate rather than oscillate across the kink where
+  the active set changes.
+
+  IT MINIMISES THE RESIDUAL AND NOT THE DUAL, and that is a measurement rather
+  than a preference. Maximising q directly with an Armijo backtrack — which is the
+  textbook thing to do with a concave function, and was the first implementation —
+  STALLS at a relative residual near 1e-9: q is a difference of two comparable
+  quantities of order 1e-2, so the improvements that remain once the equilibrium
+  is satisfied to nine digits are below what a double can represent in q, and the
+  line search can no longer tell an improving step from a worse one. Measured
+  2026-09-08 at `laptop-on-desk`: the residual sat at 2.574e-9 N·m and did not move
+  again in 2,000 further iterations. ‖g‖² does not have that floor, because it is
+  the quantity being driven to zero rather than a functional of it."
   [actives loads lambda0]
   (let [m (count loads)
         scale (max 1.0 (inf-norm loads))
@@ -417,62 +418,42 @@
           (>= iter max-iterations)
           {:lambda lambda :iterations iter :converged? false :residual g}
 
-          ;; NOTHING IS ACTIVE AND THE LOAD IS NOT PLACED. The Hessian is then
-          ;; identically zero, so the Newton step is whatever the damping says and
-          ;; the damping has no scale to read — the iterate carries a direction and
-          ;; no magnitude, and a line search on a step of the wrong order stalls
-          ;; rather than fails. Restart from the independent closed form, which is
-          ;; the one point in this space whose scale is known without iterating.
-          ;; Each restart costs an iteration, so a solve that keeps landing back
-          ;; where nothing is on runs out of `max-iterations` and REFUSES rather
-          ;; than cycling.
+          ;; NOTHING IS ACTIVE AND THE LOAD IS NOT PLACED. The Jacobian is then
+          ;; identically zero, so the step is whatever the damping says and the
+          ;; damping has no scale to read — the iterate carries a direction and no
+          ;; magnitude. Restart from the independent closed form, which is the one
+          ;; point in this space whose scale is known without iterating. Each
+          ;; restart costs an iteration, so a solve that keeps landing back here
+          ;; runs out of `max-iterations` and REFUSES rather than cycling.
           (and (nothing-on? lambda) (not= lambda independent))
           (recur independent (inc iter) 0.0)
 
           :else
           (let [h (hessian-neg actives m lambda)
                 tr (reduce + 0.0 (map-indexed (fn [k row] (nth row k)) h))
-                ;; a floor under the damping so a step exists even where nothing is
-                ;; active (H = 0) — there the step is along the residual, which is
-                ;; exactly the direction that switches a muscle on
-                mu (max mu (* 1.0e-10 (/ (max tr 1.0e-12) m)) 1.0e-12)
-                dl (loop [mu mu tries 0]
-                     (if (> tries 40)
-                       nil
-                       (if-let [d (solve-linear
-                                   (mapv (fn [k row]
-                                           (mapv (fn [l x] (if (= k l) (+ x mu) x))
-                                                 (range m) row))
-                                         (range m) h)
-                                   (mapv - g))]
-                         d
-                         (recur (* mu 10.0) (inc tries)))))]
-            (if (nil? dl)
-              {:lambda lambda :iterations iter :converged? false :residual g}
-              (let [q0 (dual-objective actives loads lambda)
-                    slope (dot (mapv - g) dl)      ; ∇q · Δ, positive for an ascent
-                    step (loop [alpha 1.0 n 0]
-                           (let [cand (mapv (fn [x d] (+ x (* alpha d))) lambda dl)
-                                 q1 (dual-objective actives loads cand)]
-                             (cond
-                               (>= q1 (+ q0 (* 1.0e-4 alpha slope))) [cand alpha]
-                               (> n 60) nil
-                               :else (recur (* 0.5 alpha) (inc n)))))]
-                (if (nil? step)
-                  ;; no ascent along a direction that is provably an ascent
-                  ;; direction means the step is below what the doubles can
-                  ;; resolve — the iterate is as converged as it is going to get,
-                  ;; and whether that is good enough is the residual's answer and
-                  ;; not this loop's
-                  {:lambda lambda :iterations iter
-                   :converged? (<= (inf-norm g) tol) :residual g}
-                  (recur (first step) (inc iter)
-                         ;; the damping tracks how hard the last step was to take,
-                         ;; and is capped against the curvature actually present so
-                         ;; a run of backtracks cannot compound it into a step of
-                         ;; zero length that then reports itself as convergence
-                         (min (if (< (second step) 1.0) (* 4.0 mu) (* 0.25 mu))
-                              (* 1.0e8 (/ (max tr 1.0e-12) m)))))))))))))
+                base (max (* 1.0e-12 (/ (max tr 1.0e-12) m)) 1.0e-300)
+                m0 (norm2 g)
+                step (loop [mu (max mu base) tries 0]
+                       (if (> tries 60)
+                         nil
+                         (if-let [d (solve-linear
+                                     (mapv (fn [k row]
+                                             (mapv (fn [l x] (if (= k l) (+ x mu) x))
+                                                   (range m) row))
+                                           (range m) h)
+                                     (mapv - g))]
+                           (let [cand (mapv + lambda d)]
+                             (if (< (norm2 (residual-vec actives loads cand)) m0)
+                               [cand mu]
+                               (recur (* 8.0 mu) (inc tries))))
+                           (recur (* 8.0 mu) (inc tries)))))]
+            (if (nil? step)
+              ;; no shorter step reduces the residual either: the iterate is as
+              ;; converged as these doubles allow, and whether that is good enough
+              ;; is the residual's answer and not this loop's
+              {:lambda lambda :iterations iter
+               :converged? (<= (inf-norm g) tol) :residual g}
+              (recur (first step) (inc iter) (max base (/ (second step) 3.0))))))))))
 
 (defn- coeff-vec
   "One candidate's row of C, over the group's joints in order. A joint the muscle
@@ -565,7 +546,12 @@
                                 (and (> (math/abs* (nth t k)) 1.0e-12)
                                      (not-any? #(pos? (math/abs* (nth (:cvec %) k))) actives)))
                               (range m))
-         base {:joints joints :loads (zipmap joints t)}]
+         ;; a group whose every load is zero to within rounding asks nothing of
+         ;; anybody, and "the optimum switches this muscle off" is the wrong thing
+         ;; to say about a muscle nothing was asked of. Cf. `share`, where a zero
+         ;; load produces zero forces rather than a refusal.
+         asked? (some #(> (math/abs* %) 1.0e-12) t)
+         base {:joints joints :loads (zipmap joints t) :raw-loads (zipmap joints raw)}]
      (cond
        (seq unreachable)
        (assoc base
@@ -629,6 +615,12 @@
                               (< best min-coeff)
                               {:name name :refused :coefficient-below-floor :coeff pc
                                :coeffs coeffs
+                               ;; kept on the refusal so `coupled-residual` can
+                               ;; account for it: its passive moment WAS subtracted
+                               ;; from the load, so leaving it off the row would
+                               ;; make the equilibrium check disagree with the
+                               ;; equilibrium that was solved
+                               :passive-n passive
                                :note (str "leverage " (math/fmt-fixed best 5)
                                           " at every joint this muscle spans is below the "
                                           "floor " min-coeff
@@ -644,7 +636,7 @@
                                          :active-n active :passive-n passive
                                          :force-n (+ active passive)
                                          :price s}
-                                  (not (pos? s))
+                                  (and asked? (not (pos? s)))
                                   (assoc :inactive? true
                                          :note (str "the coupled optimum switches this "
                                                     "muscle off here: its price at the "
@@ -656,16 +648,44 @@
                         candidates))))))))
 
 (defn coupled-residual
-  "Σ c_ki F_i − T_k per joint, over the entries that got a force. Zero to floating
-  point when the solve converged — which is the point of it: `share`'s `residual`
-  could only ever be zero for the one constraint it solved, and the moment at the
-  other joint was reported as unfed."
-  [{:keys [entries joints loads]}]
-  (into {}
+  "Σ c_ki F_i − T_k per joint against the ORIGINAL loads, counting passive tension.
+
+  Zero to floating point when the solve converged, at EVERY joint — which is the
+  point of it. `share`'s `residual` could only ever be zero for the one constraint
+  it solved, and the moment the same muscle exerted at its other joint was
+  reported as unfed rather than balanced.
+
+  Against the raw loads and not the passive-adjusted ones, because the statement
+  worth checking is mechanical: what the muscles and the passive tissue together
+  produce at this joint equals what the posture demands there. A refused entry
+  contributes its passive term, which is still real."
+  [{:keys [entries joints raw-loads]}]
+  (into (array-map)
         (for [j joints]
           [j (- (reduce + 0.0
-                        (keep (fn [{:keys [coeffs force-n]}]
-                                (when (and coeffs force-n (number? (get coeffs j)))
-                                  (* (get coeffs j) force-n)))
+                        (keep (fn [{:keys [coeffs force-n passive-n]}]
+                                (let [c (get coeffs j)
+                                      f (if (number? force-n) force-n passive-n)]
+                                  (when (and (number? c) (number? f)) (* c f))))
                               entries))
-                (get loads j 0.0))])))
+                (get raw-loads j 0.0))])))
+
+(defn cost
+  "Σ (F_i / a_i)³ over the ACTIVE forces — the value of the criterion itself.
+
+  WHY IT IS WORTH REPORTING. A single-constraint optimum is a LOWER BOUND on the
+  cost of a coupled one over the same muscles: every point feasible for the
+  coupled problem is feasible for each of its constraints taken alone, so
+  satisfying more constraints cannot lower the minimum. That inequality is the
+  reason %MVC generally RISES when a task joins a coupled group, and having the
+  number makes it a check (`recruit-test/coupling-cannot-lower-the-cost`) rather
+  than an argument.
+
+  Passive tension is excluded: it was subtracted from the load before anything was
+  distributed, so it is not part of what the criterion chose."
+  [entries]
+  (reduce + 0.0
+          (keep (fn [{:keys [active-n f-max-n]}]
+                  (when (and (number? active-n) (number? f-max-n) (pos? f-max-n))
+                    (let [r (/ active-n f-max-n)] (* r r r))))
+                entries)))
