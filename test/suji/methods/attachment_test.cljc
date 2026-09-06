@@ -13,6 +13,7 @@
             [suji.methods.muscle :as muscle]
             [suji.methods.load]
             [suji.methods.pose :as pose]
+            [suji.methods.posture :as posture]
             [suji.methods.segment :as segment]))
 
 (def ^:private body (segment/build-body 70.0 1.70))
@@ -312,3 +313,109 @@
         "the larger muscle carries more force")
     (is (< (:mvc-pct (by "brachialis/left")) (:mvc-pct (by "biceps_brachii/left")))
         "and is nonetheless working at a lower fraction of its maximum")))
+
+;; --- the wrist ---------------------------------------------------------------
+
+(deftest every-placed-joint-except-the-hip-has-an-equilibrium
+  ;; The coverage question, asked of the data rather than of a comment: which
+  ;; joints does the kinematics place, and which does the kinetics solve? The hip
+  ;; is the one exception and it is not an oversight — this is a SEATED model whose
+  ;; base is the pelvis, and a hip moment would need a thigh segment that
+  ;; `segment/build-body` does not have. An absent segment, not a forgotten
+  ;; equilibrium.
+  (let [p (pose/solve-pose body (merge neutral {:elbow-flexion-deg 90.0}))
+        placed (set (keys (:joints p)))
+        acted (set (map :acts-about att/instances))
+        skeletal (disj placed :hip :vertex)]
+    (doseq [j skeletal]
+      (is (contains? acted j) (str j " is placed by the kinematics and must be solved")))
+    (is (not (contains? acted :hip)) "the hip is deliberately unsolved; see the docstring")))
+
+(deftest a-held-out-hand-loads-the-wrist-extensors
+  ;; palm down, forearm horizontal: gravity drops the hand, and the muscles that
+  ;; hold it up are the EXTENSORS. This is the muscle group a keyboard posture
+  ;; loads, and getting the side wrong would put the load on the idle one.
+  (let [posture (merge neutral {:shoulder-flexion-deg 15.0 :elbow-flexion-deg 90.0
+                                :wrist-extension-deg 15.0 :arms-supported false})
+        l (suji.methods.load/solve-posture-loads body posture)
+        by (into {} (map (juxt :name identity)) (muscle/solve-muscle-tensions body posture l))
+        wrist (first (filter #(= "wrist" (:joint %)) (:joints l)))]
+    (is (> (:moment-nm wrist) 0.1) "a held-out hand is a real wrist moment")
+    (is (pos? (:mvc-pct (by "wrist_extensors/left"))) "the extensors carry it")
+    (is (:antagonist? (by "wrist_flexors/left")) "and the flexors are the antagonist")))
+
+(deftest resting-the-forearms-rests-the-hands
+  (let [posture (merge neutral {:shoulder-flexion-deg 15.0 :elbow-flexion-deg 90.0
+                                :arms-supported true})
+        l (suji.methods.load/solve-posture-loads body posture)
+        wrist (first (filter #(= "wrist" (:joint %)) (:joints l)))]
+    (is (math/nearly= 0.0 (:moment-nm wrist) 1e-12))))
+
+(deftest the-wrist-actually-articulates
+  ;; THE GAP THIS CLOSES, and it is the mirror of the elbow's. The hand used to
+  ;; continue the forearm rigidly, so the wrist had kinetics and no kinematics.
+  ;; The joint moves now — and the MOMENT moves with it, which is where the
+  ;; ergonomics lives. The moment ARMS do not, and that is the anatomy rather
+  ;; than a missing joint: see `the-retinaculum-pins-the-arm`.
+  (let [hand-y #(nth (:com (pose/seg-at (at :shoulder-flexion-deg 15.0 :elbow-flexion-deg 90.0
+                                            :wrist-extension-deg (double %))
+                                        "hand/left")) 1)]
+    (is (> (hand-y 40) (hand-y 0))
+        "extension lifts the hand relative to the forearm"))
+  (let [moment #(let [l (suji.methods.load/solve-posture-loads
+                         body (merge neutral {:shoulder-flexion-deg 15.0 :elbow-flexion-deg 90.0
+                                              :wrist-extension-deg (double %) :arms-supported false}))]
+                  (:left (:per-side (first (filter (fn [j] (= "wrist" (:joint j))) (:joints l))))))
+        ms (mapv moment [0 15 30 45])]
+    (is (apply distinct? ms) (str "the wrist moment must change with the angle: " ms))))
+
+(deftest the-retinaculum-pins-the-arm
+  ;; A wrapping surface the tendon passes OVER floors the moment arm and lets the
+  ;; chord win when the chord gives more. A retinaculum straps the tendon against
+  ;; the bone, so the arm is pinned in BOTH directions — which is why the wrist's
+  ;; moment arms are near-constant through its range where the elbow's are not.
+  ;; Without the distinction the extensor arm grew from 11 mm to 29 mm across 45°
+  ;; of extension, which no retinaculum would allow.
+  (doseq [nm ["wrist_extensors" "wrist_flexors"]]
+    (let [spec (att/instance (str nm "/left"))
+          r (get-in spec [:wrap :radius-m])
+          arms (mapv #(arm (at :shoulder-flexion-deg 15.0 :elbow-flexion-deg 90.0
+                               :wrist-extension-deg (double %))
+                           (str nm "/left"))
+                     [0 15 30 45 60])]
+      (is (:retinaculum (:wrap spec)) (str nm " is held by a retinaculum"))
+      (is (apply = (mapv #(math/round-to (math/abs* %) 9) arms))
+          (str nm ": a pinned arm does not vary: " arms))
+      (is (math/nearly= r (math/abs* (first arms)) 1e-9)
+          (str nm ": and it is pinned at the stated radius"))))
+  ;; the elbow is NOT pinned — its wrapping surface only floors the arm
+  (let [bi (mapv #(arm (at :shoulder-flexion-deg 15.0 :elbow-flexion-deg (double %))
+                       "biceps_brachii/left")
+                 [0 30 60 90])]
+    (is (not (apply = bi)) (str "the elbow's arms still vary: " bi))))
+
+(deftest the-extensors-carry-and-the-flexors-do-not
+  (doseq [we [0 15 30]]
+    (let [posture (merge neutral {:shoulder-flexion-deg 15.0 :elbow-flexion-deg 90.0
+                                  :wrist-extension-deg (double we) :arms-supported false})
+          l (suji.methods.load/solve-posture-loads body posture)
+          by (into {} (map (juxt :name identity)) (muscle/solve-muscle-tensions body posture l))]
+      (is (pos? (:mvc-pct (by "wrist_extensors/left")))
+          (str we "°: the extensors hold the hand up"))
+      (is (:antagonist? (by "wrist_flexors/left"))
+          (str we "°: and the flexors are idle")))))
+
+(deftest the-workstation-model-supplies-a-wrist-angle
+  ;; the input existed nowhere until the wrist had an equilibrium to spend it on
+  (doseq [w posture/reference-workstations]
+    (let [p (posture/posture-from-workstation w)]
+      (is (number? (:wrist-extension-deg p)) (str (:name w) " must state a wrist angle"))
+      (is (<= 0.0 (:wrist-extension-deg p) 35.0))))
+  ;; a keyboard above elbow height extends the wrist further
+  (let [high (posture/posture-from-workstation
+              {:name "high" :screen-below-eye-cm 20.0 :keyboard-above-elbow-cm 12.0
+               :back-supported true :arms-supported true})
+        level (posture/posture-from-workstation
+               {:name "level" :screen-below-eye-cm 20.0 :keyboard-above-elbow-cm 0.0
+                :back-supported true :arms-supported true})]
+    (is (> (:wrist-extension-deg high) (:wrist-extension-deg level)))))

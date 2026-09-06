@@ -141,6 +141,30 @@
                    (for [seg (pose/segments-on p carried side)]
                      [seg (get w (:name seg))]))]))))
 
+(defn wrist-moment
+  "Gravitational moment about each wrist from the hand.
+
+  The last joint this chain placed and did not solve. The hand is small — about
+  0.6% of body mass — but a keyboard posture holds it out horizontally for hours,
+  and the wrist extensors holding it there are the muscles a typist complains
+  about. Resting the forearms rests the hands with them.
+
+  NOT THE HIP. `pose` also places a hip, and there is deliberately no moment about
+  it: this is a SEATED model whose base is the pelvis, and a hip moment would need
+  a thigh segment that `segment/build-body` does not have. That is an absent
+  segment, not a forgotten equilibrium, and it is said here so the two cannot be
+  confused."
+  [body posture]
+  (let [p (pose/solve-pose body posture)
+        w (pose/segment-weights body p)
+        carried (if (:arms-supported posture) [] ["hand"])]
+    (into {}
+          (for [side [:left :right]]
+            [side (pose/gravitational-moment
+                   (get-in p [:joints (keyword "wrist" (name side))])
+                   (for [seg (pose/segments-on p carried side)]
+                     [seg (get w (:name seg))]))]))))
+
 (defn lumbosacral-moment
   "Gravitational moment about L5/S1 from the leaned trunk + head-arm load above it."
   [body trunk-flexion-deg head]
@@ -206,6 +230,12 @@
                                 (if (:arms-supported posture)
                                   "forearms rest on the desk"
                                   "forearm + hand held out")
+                                per-side))
+                (let [per-side (wrist-moment body posture)]
+                  (->joint-load "wrist" (+ (:left per-side) (:right per-side))
+                                (if (:arms-supported posture)
+                                  "hands rest with the forearms"
+                                  "hand held out")
                                 per-side))
                 (lumbosacral-moment body (:trunk-flexion-deg posture) cerv)]]
     {:cervical cerv :joints joints :frontal (frontal-moments body posture)}))

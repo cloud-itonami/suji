@@ -28,7 +28,7 @@
   ;; forgetting it here is the obvious mistake, so the fallback derives the
   ;; keyword instead of returning nothing.
   {"cervicothoracic" ":cervicothoracic" "shoulder" ":shoulder"
-   "elbow" ":elbow" "lumbosacral" ":lumbosacral"})
+   "elbow" ":elbow" "wrist" ":wrist" "lumbosacral" ":lumbosacral"})
 
 (defn- muscle-kw [name]
   (str ":" (str/replace name "_" "-")))

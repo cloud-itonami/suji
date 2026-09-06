@@ -20,17 +20,23 @@
     - trunk flexion: 5° if supported, else 20° self-supported slump.
     - shoulder flexion ≈ 0.8° per cm keyboard-above-elbow + a 15° forward-reach base.
     - scapular elevation ≈ 1.2° per cm keyboard-above-elbow.
-    - elbow ~ 90° neutral typing (kept fixed; forearm horizontal)."
+    - elbow ~ 90° neutral typing (kept fixed; forearm horizontal).
+    - wrist extension ≈ 12° + 0.9° per cm the keyboard sits above elbow height,
+      capped at 35°. A keyboard the hands must reach UP to is the classic cause of
+      sustained wrist extension, and it is the input this model was missing until
+      the wrist had an equilibrium to spend it on."
   [ws]
   (let [head (clamp (+ 5.0 (* 1.1 (:screen-below-eye-cm ws))) 0.0 60.0)
         trunk (if (:back-supported ws) 5.0 20.0)
         shoulder (clamp (+ 15.0 (* 0.8 (max 0.0 (:keyboard-above-elbow-cm ws)))) 0.0 90.0)
-        elevation (clamp (* 1.2 (max 0.0 (:keyboard-above-elbow-cm ws))) 0.0 45.0)]
+        elevation (clamp (* 1.2 (max 0.0 (:keyboard-above-elbow-cm ws))) 0.0 45.0)
+        wrist-ext (clamp (+ 12.0 (* 0.9 (max 0.0 (:keyboard-above-elbow-cm ws)))) 0.0 35.0)]
     {:head-flexion-deg head
      :trunk-flexion-deg trunk
      :shoulder-flexion-deg shoulder
      :elbow-flexion-deg 90.0
      :shoulder-elevation-deg elevation
+     :wrist-extension-deg wrist-ext
      :arms-supported (:arms-supported ws)}))
 
 ;; Three reference laptop scenarios — the answer to "what does a laptop posture do".

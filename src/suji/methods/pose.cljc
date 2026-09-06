@@ -144,7 +144,8 @@
   (+Z) and −1 for the right; it mirrors both the lateral offset of the shoulder and
   the sense of abduction, so that abduction always carries each arm AWAY from the
   midline rather than both of them the same way."
-  [body {:keys [shoulder-flexion-deg elbow-flexion-deg]} c7 lat-axis abduct side side-sign stature-m]
+  [body {:keys [shoulder-flexion-deg elbow-flexion-deg wrist-extension-deg]}
+   c7 lat-axis abduct side side-sign stature-m]
   (let [ua (segment/seg body "upper_arm")
         fa (segment/seg body "forearm")
         hand (segment/seg body "hand")
@@ -161,9 +162,17 @@
         fa-frame (segment-frame fa-tilt (* (- side-sign) abduct) 0.0 false)
         fa-seg (place "forearm" side elbow fa-frame (:length-m fa) (:com-frac fa) fa-tilt false)
         wrist (:distal fa-seg)
-        ;; no wrist flexion in this model: the hand continues the forearm
-        hand-seg (place "hand" side wrist fa-frame (:length-m hand) (:com-frac hand)
-                        fa-tilt false)]
+        ;; WRIST EXTENSION, added 2026-09-06. The hand used to continue the forearm
+        ;; rigidly, which gave the wrist muscles a moment arm that could not change
+        ;; with the joint — the joint had kinetics and no kinematics, which is the
+        ;; mirror of the gap the elbow had. Extension lifts the hand relative to
+        ;; the forearm (the direction a keyboard puts it), so it SUBTRACTS from the
+        ;; tilt measured down from vertical.
+        wrist-ext (or wrist-extension-deg 0.0)
+        hand-tilt (+ fa-tilt wrist-ext)
+        hand-frame (segment-frame hand-tilt (* (- side-sign) abduct) 0.0 false)
+        hand-seg (place "hand" side wrist hand-frame (:length-m hand) (:com-frac hand)
+                        hand-tilt false)]
     {:shoulder shoulder :elbow elbow :wrist wrist
      :segments [ua-seg fa-seg hand-seg]}))
 
@@ -187,7 +196,9 @@
   Out-of-plane angles are optional and default to zero:
     :trunk-lateral-bend-deg   trunk away from the midline (about X)
     :shoulder-abduction-deg   arms away from the midline, each on its own side
-    :head-rotation-deg        axial rotation of the head on the neck"
+    :head-rotation-deg        axial rotation of the head on the neck
+    :wrist-extension-deg      hand lifted relative to the forearm (a keyboard's
+                              usual 15-25 deg)"
   [body posture]
   (let [{:keys [head-flexion-deg trunk-flexion-deg]} posture
         lateral (or (:trunk-lateral-bend-deg posture) 0.0)
