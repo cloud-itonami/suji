@@ -124,9 +124,19 @@
     (is (pos? (:ratio x)))
     (is (> (:ratio x) 1.0)
         (str "the two paths really do still disagree, and by how much is the point: " x))
-    (is (math/nearly= 1.699 (:ratio x) 0.01)
+    ;; ⚠ RE-MEASURED AGAIN ON 2026-09-07, when the muscles that reach the SKULL were
+    ;; added (semispinalis capitis, splenius capitis, sternocleidomastoid). The
+    ;; level side moved 464.92 -> 470.74 N against an unchanged 273.62 N lumped, so
+    ;; the ratio went 1.699 -> 1.720. IT MOVED AWAY FROM 1, not toward it, and
+    ;; neither direction would have been evidence: the lumped side is the one
+    ;; Hansraj anchors, and a profile that agreed with it exactly would still be
+    ;; unvalidated. What moved is the C7/T1 muscle term, 401.56 -> 407.38 N, and it
+    ;; moved only a little because the new muscles took a share of the SAME cervical
+    ;; extensor moment rather than adding a second one. The upper levels are where
+    ;; the change is; see `the-top-cervical-level-is-crossed-by-what-reaches-the-skull`.
+    (is (math/nearly= 1.720 (:ratio x) 0.01)
         (str "today's disagreement, measured rather than banded: " x))
-    (is (math/nearly= 464.92 (:level-force-n x) 0.01)
+    (is (math/nearly= 470.74 (:level-force-n x) 0.01)
         (str "the C7/T1 force with only the muscles that reach a neck in it: " x))
     (is (math/nearly= 273.62 (:lumped-force-n x) 0.01)
         "the lumped side did not move; this repair is on the profile side only")))
@@ -605,49 +615,72 @@
     (is (false? (:above-hazardous? b))
         "but not the higher one, which this model reaches only past 650 kgf")))
 
-(deftest the-top-cervical-level-has-no-muscle-crossing-it-at-all
-  ;; ⚠ THIS TEST WAS CALLED `no-level-is-left-with-exactly-no-muscle-force` AND
-  ;; ITS CLAIM WAS FALSE. It asserted `(every? #(pos? (:muscle-n %)) rows)` under
-  ;; the sentence `passive tension keeps every level carrying SOME muscle force`.
-  ;; It passed, and what was holding C3/C4 above zero was `wrist_extensors/left`
-  ;; and `wrist_extensors/right` — 61.4 N of a 61.4 N muscle term, i.e. all of it —
-  ;; admitted by a `crosses?` that compared HEIGHTS. Passive tension was not the
-  ;; reason; a defect was.
+(deftest the-top-cervical-level-is-crossed-by-what-reaches-the-skull
+  ;; ⚠ THIS TEST HAS BEEN WRONG TWICE AND IS NOW ASSERTING THE OPPOSITE OF WHAT IT
+  ;; FIRST DID. The history is the point, because each version was pinning the
+  ;; state of a defect as though it were a property of a neck.
   ;;
-  ;; What is true, measured 2026-09-07 at laptop-on-lap after the repair: this
-  ;; model has NOTHING that spans C3/C4. Its most cranial muscle attachment is
-  ;; `levator_scapulae` at 0.22 of the head_neck segment and C3/C4 sits at 0.24, so
-  ;; every muscle in the set attaches below it and the cut separates none of them.
+  ;; (1) It was called `no-level-is-left-with-exactly-no-muscle-force` and asserted
+  ;;     `(every? #(pos? (:muscle-n %)) rows)` under the sentence `passive tension
+  ;;     keeps every level carrying SOME muscle force`. It passed, and what was
+  ;;     holding C3/C4 above zero was `wrist_extensors/left` and
+  ;;     `wrist_extensors/right` — 61.4 N of a 61.4 N muscle term, i.e. all of it —
+  ;;     admitted by a `crosses?` that compared HEIGHTS. A defect was the reason.
+  ;; (2) `crosses?` became a path test, C3/C4 emptied, and this test was renamed
+  ;;     `the-top-cervical-level-has-no-muscle-crossing-it-at-all` and asserted the
+  ;;     emptiness. That was honest about the model and it named the gap: the most
+  ;;     cranial attachment in the whole set was `levator_scapulae` at 0.22 of
+  ;;     `head_neck` and C3/C4 sits at 0.24, so nothing spanned it.
+  ;; (3) 2026-09-07: the muscles that hold the head up were added, so the gap is
+  ;;     closed and the assertion inverts rather than disappearing — the same move
+  ;;     `a-frontal-load-is-now-carried` made when the frontal muscles landed.
   ;;
-  ;; THAT IS A GAP IN THIS MODEL'S ANATOMY, NOT A STATEMENT ABOUT A NECK. A real
-  ;; upper cervical spine is spanned by muscles that reach the skull — this set has
-  ;; none of them, so C3/C4 reports the weight above it and nothing else. Saying so
-  ;; is the whole difference between a model that admits what it does not have and
-  ;; one that fills the hole with a wrist extensor.
+  ;; Measured at laptop-on-lap, 70 kg / 1.70 m, before -> after:
+  ;;
+  ;;     C7/T1  401.56 -> 407.38 N   +   semispinalis, splenius
+  ;;     C6/C7   68.66 -> 276.11 N   +   semispinalis, splenius
+  ;;     C5/C6   34.51 -> 241.96 N   +   semispinalis, splenius
+  ;;     C4/C5   34.51 -> 241.96 N   +   semispinalis, splenius
+  ;;     C3/C4    0.00 -> 207.44 N   +   semispinalis, splenius
   (let [rows (:rows (run lap))
         by-name #(first (filter (fn [r] (= % (:name r))) rows))
-        top (by-name "C3/C4")]
-    (is (= [] (:muscle-crossing top))
-        (str "no muscle in this set spans C3/C4: " top))
-    (is (zero? (:muscle-n top)) "so its muscle term is exactly zero, not nearly zero")
-    (is (math/nearly= (:force-n top) (:weight-n top) 1e-9)
-        "and the whole force at that level is the weight above it")
-    ;; the discriminating half: every OTHER level does carry muscle force, so this
-    ;; is a statement about one level and not about the profile having gone quiet
-    (doseq [r rows :when (not= "C3/C4" (:name r))]
+        top (by-name "C3/C4")
+        crossing (set (map first (:muscle-crossing top)))]
+    (is (= #{"semispinalis_capitis" "splenius_capitis"} crossing)
+        (str "C3/C4 is spanned by the muscles that reach the skull, and only those: "
+             top))
+    (is (pos? (:muscle-n top)) "so its muscle term is no longer zero")
+    (is (> (:force-n top) (* 5.0 (:weight-n top)))
+        (str "and the level is now dominated by muscle rather than by the weight "
+             "above it — 226.30 N of which 18.86 N is weight: " top))
+    ;; the discriminating half, unchanged in shape: every level carries muscle
+    ;; force, so this is a statement about the whole cervical profile and not about
+    ;; one row having been made loud
+    (doseq [r rows]
       (is (pos? (:muscle-n r))
-          (str (:name r) " still carries muscle force: " (:muscle-n r))))
-    ;; and the highest attachment in the whole muscle set really is below it, which
-    ;; is the REASON — read off the attachments rather than asserted about them
-    (let [neck-alongs (for [m attachment/instances
-                            site [(:origin m) (:insertion m)]
-                            :when (= "head_neck" (:segment site))]
-                        (:along site))
-          c34 (first (filter #(= "C3/C4" (:name %)) spine/levels))]
-      (is (seq neck-alongs) "the muscle set does attach to the neck at all")
-      (is (< (apply max neck-alongs) (:along c34))
-          (str "and its most cranial attachment, at " (apply max neck-alongs)
-               " of the head_neck segment, is below C3/C4 at " (:along c34))))))
+          (str (:name r) " carries muscle force: " (:muscle-n r))))
+    ;; and the REASON, read off the attachments rather than asserted about them:
+    ;; the muscle set now attaches ABOVE C3/C4, on the occiput and the mastoid.
+    (let [neck-along (fn [ms] (for [m ms
+                                    site [(:origin m) (:insertion m)]
+                                    :when (= "head_neck" (:segment site))]
+                                (:along site)))
+          c34 (:along (first (filter #(= "C3/C4" (:name %)) spine/levels)))
+          all (neck-along attachment/instances)
+          ;; the gap version (2) of this test pinned, kept as a live measurement
+          ;; rather than as prose: WITHOUT the three cranial muscles nothing in the
+          ;; set still reaches, so the C3/C4 row would empty again. That is what
+          ;; makes this a test of the new anatomy and not of the profile in general.
+          cranial #{"semispinalis_capitis" "splenius_capitis" "sternocleidomastoid"}
+          without (neck-along (remove #(cranial (:group %)) attachment/instances))]
+      (is (seq all) "the muscle set does attach to the neck at all")
+      (is (> (apply max all) c34)
+          (str "its most cranial attachment, at " (apply max all)
+               " of the head_neck segment, is above C3/C4 at " c34))
+      (is (< (apply max without) c34)
+          (str "and remove the three muscles that reach the skull and the highest "
+               "attachment left is " (apply max without) ", below C3/C4 at " c34
+               " — which is exactly the gap this test used to assert")))))
 
 (deftest the-profile-steps-and-the-detector-says-where
   ;; THE FINDING. `attachment-steps` required `:muscle-n` to be exactly 0.0, which
