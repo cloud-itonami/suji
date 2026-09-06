@@ -769,8 +769,10 @@ solution for ONE equality constraint, and there is no closed form of that shape 
 two. So each is solved where it is the primary actor, and the moment it is
 simultaneously exerting at its other joint is computed and reported — per muscle as
 `:secondary-moment-nm`, per joint as `tension-summary`'s `:two-joint-unfed-nm`. In
-the deep squat that is 4.2 N·m of hip flexion the hip's equilibrium was never told
-about. A test asserts it is non-zero somewhere, because a reported approximation
+the deep squat that is 3.6 N·m of hip flexion the hip's equilibrium was never told
+about — and this sentence carried 4.2 N·m for a few hours after the squat's trunk
+angle moved, which is the reason to ask the model rather than the README:
+`(:two-joint-unfed-nm (muscle/tension-summary tensions loads))`. A test asserts it is non-zero somewhere, because a reported approximation
 that is always zero means a coupled model and an uncoupled one produce identical
 output.
 
