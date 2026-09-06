@@ -861,13 +861,37 @@
       contributes nothing here — the same `W` appears on both sides.
 
     :lumbosacral-moment-on-the-neutral-geometry
-      Tilting the lumbar chord translates everything above L5/S1 anteriorly,
-      because L5/S1 is the ROOT of this chain and does not move. That creates a
-      flexion moment out of nothing — 0 N.m sitting, 21.4 N.m standing — and the
-      erector spinae has to hold it. Priced at the NEUTRAL posture's moment arm
-      and the NEUTRAL posture's line projection, so this term is the moment alone.
-      This is the dominant one and it is an artefact: a real pelvis rotates about
-      the hips and carries L5/S1 backward.
+      Tilting the lumbar chord carries everything above L5/S1 anteriorly, so the
+      erector spinae has a flexion moment to hold — 0 N.m sitting, 21.4 N.m
+      standing. Priced at the NEUTRAL posture's moment arm and the NEUTRAL
+      posture's line projection, so this term is the moment alone. It is the
+      dominant one, at 115% of the whole difference.
+
+      ⚠ THIS ENTRY BLAMED THE ROOT UNTIL 2026-09-10 AND THAT WAS WRONG. It said
+      the moment exists `because L5/S1 is the ROOT of this chain and does not
+      move`, and that `a real pelvis rotates about the hips and carries L5/S1
+      backward`. Both claims are false, and the second is false in its sign as
+      well: anterior tilt carries the sacral base ANTERIOR to the hip axis, not
+      posterior, because L5/S1 sits above the axis the pelvis turns about.
+      The chain is now rooted at the feet when standing (`pose/support-landmarks`)
+      and this term did not move by more than one unit in the last place —
+      `re-rooting-the-chain-moves-no-moment` is the measurement. It could not
+      have: every joint angle in this model is measured from the WORLD vertical,
+      so re-rooting is a rigid translation, and a moment is a sum of
+      `weight x (x_com - x_joint)` in which both x's move together.
+
+      WHAT IT ACTUALLY IS. `pose/lumbar-chord-tilt-deg` puts the lumbar chord at
+      `trunk + lordosis/2` — the mean of its two end tangents, which is where a
+      circular arc's chord lies. At Wilke's standing posture that is 23.25 deg on
+      a vertical thorax, so T12/L1 sits `L_lumbar x sin 23.25 = 6.685 cm` anterior
+      to L5/S1 and the whole 367.9 N above the level rides out there on a 5.818 cm
+      lever. That is a consequence of giving the lumbar spine 46.5 deg of lordosis
+      under a thorax held vertical, and it is what a repair has to argue with: a
+      lordotic lumbar spine really does put its top end anterior to its bottom
+      one. The 46.5 deg itself comes from this model equating lumbar lordosis with
+      a RIGID rotation of the whole pelvis (`pose/lumbar-lordosis-deg`), so Cho's
+      46.5 deg of lordosis change is spent as 46.5 deg of pelvic rotation — which
+      is the assumption to test next, and is not tested here.
 
     :pelvis-origin-moment-arms
       Then swap the moment arm for the tilted posture's. Eight muscle groups
@@ -966,8 +990,12 @@
          {:name :lumbosacral-moment-on-the-neutral-geometry
           :newtons (- es-moment es-sit)
           :how (str "the standing lumbosacral moment divided by the SITTING arm "
-                    "and projected on the SITTING axis")
-          :sourced :artefact-of-rooting-the-chain-at-l5s1}
+                    "and projected on the SITTING axis. The moment is the lumbar "
+                    "CHORD's tilt carrying the mass above L5/S1 anteriorly — "
+                    "L_lumbar x sin(lordosis/2) — and NOT an artefact of where "
+                    "the chain is rooted, which was this entry's claim until "
+                    "2026-09-10 and is measurably false")
+          :sourced :consequence-of-the-lumbar-chord-tilt}
          {:name :pelvis-origin-moment-arms
           :newtons (- es-arm es-moment)
           :how "then swap the erector spinae's moment arm for the tilted one"

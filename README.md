@@ -2727,18 +2727,19 @@ postures. The terms sum to the difference with a residual of **5.7 × 10⁻¹⁴
 | `:other-crossing-muscles` | **+1.217** | +0.4% | everything crossing L4/L5 that is not the erector spinae — here, the two obliques |
 | `:trunk-mass-split` | **0.000** | 0.0% | exactly zero: both postures carry the same weight above L4/L5 (348.86176710 N either way), so the 2.0251 N the T12/L1 split took off this level cancels |
 
-**One term is larger than the whole difference, and it is an artefact.** The 21.407 N·m does
-not come from the lordosis being large; it comes from L5/S1 being the root of the chain and not
-moving, so tilting the lumbar chord carries everything above L5/S1 6.7 cm anteriorly and
-invents a flexion moment a relaxed standing person does not have. A real pelvis rotates about
-the hips and carries L5/S1 backward.
+**One term is larger than the whole difference.** ⚠ **This paragraph blamed the chain's rooting
+until 2026-09-10 and that attribution was wrong** — see *The root was not the defect* below,
+which measures it. What the 21.407 N·m actually is: `pose/lumbar-chord-tilt-deg` puts the lumbar
+chord at `trunk + lordosis/2`, so 46.5° of lordosis under a vertical thorax tilts it 23.25° and
+puts T12/L1 `L_lumbar × sin 23.25° = 6.685 cm` anterior to L5/S1, with the whole 367.945 N above
+the level riding out on a 5.818 cm lever.
 
-**The counterfactual runs the other way from Wilke, and that is the finding.** Take the artefact
-out — leave the lordosis, remove the moment it invents — and what is left of standing is its
-weight term alone, **320.531 N, which is *below* sitting's 348.862 N**. So this model's
-agreement with Wilke's *direction* is produced by the artefact: without it the model says
+**The counterfactual runs the other way from Wilke, and that is the finding.** Take that term
+out — leave the lordosis, remove the moment its chord creates — and what is left of standing is
+its weight term alone, **320.531 N, which is *below* sitting's 348.862 N**. So this model's
+agreement with Wilke's *direction* is produced by that one term: without it the model says
 standing **unloads** L4/L5, and Wilke says it loads it.
-`the-dominant-term-of-the-7x-is-the-chain-being-rooted-at-l5s1` asserts that sign.
+`the-dominant-term-of-the-7x-is-the-lumbar-chord-and-not-the-root` asserts that sign.
 
 **The second path is 7% and negative, not the story.** Eight muscle groups originate on the
 pelvis (`posterior_lumbar_ligaments`, `erector_spinae`, `latissimus_dorsi`,
@@ -2787,10 +2788,11 @@ fudge factor, no fitted constant was added on this branch.
   (36.2° ± 8.4°) and *90°-angled chair* (17.7° ± 4.4°) are both plausible readings of the
   library's one boolean, and reading either one onto it would be choosing. The bracket is
   recorded instead.
-- **How much of the 10.27 cm of translation a real standing pelvis would remove.** The split
-  between the chord path (≈3.2 cm) and the pelvis path (≈7.1 cm) is measured; what a correctly
-  hinged pelvis would leave is not, because this model has no hip-rooted chain to measure it
-  with. That is the one contribution in this section that is named and **not sized**.
+- ~~**How much of the 10.27 cm of translation a real standing pelvis would remove.**~~ **Sized
+  on 2026-09-10: none of it.** The hip-rooted chain now exists and the answer is that re-rooting
+  is a rigid translation, so it removes nothing. The split is also exact now —
+  `pose/line-of-gravity` gives 6.279 cm sacrum-over-feet, 3.156 cm trunk-over-sacrum and
+  0.832 cm below L5/S1 — without the counterfactual the ≈7.1/≈3.2 estimate needed. See below.
 - **Wilke's own subject's lordosis**, in either posture — unchanged from 2026-09-08, and still
   the reason both entries carry `:parameter-not-in-source`.
 
@@ -2810,6 +2812,178 @@ red with a message naming the claim it broke; every file was restored byte-ident
   direction-agreement control green — now fails `the-direction-agreeing-with-wilke-is-not-
   evidence`, all four of the new decomposition tests, and four clauses of the
   line-of-gravity contradiction.
+
+## The root was not the defect (2026-09-10)
+
+The chain is rooted at the support now — the feet when standing, the pelvis when seated. **It
+changed no moment, no muscle force and no compression, and that is the result.** The 2026-09-09
+section above blamed this model's largest disagreement with Wilke on where the chain was rooted;
+that attribution was wrong, and this section is the measurement that says so.
+
+### What was rooted where, and the argument from the kinematics
+
+`pose/solve-pose` still *builds* the chain from L5/S1 outward — `spine/levels` states every level
+as a fraction measured from L5/S1 upward, and that reading has to stay in one frame. What is new
+is that the finished chain is then translated so the point **the world holds still** sits at the
+origin (`pose/support-landmarks`, `pose/rooted-at`, recorded in the pose's `:root`).
+
+| support | root | why that point |
+|---|---|---|
+| `:standing` | midpoint of the two ankles | the world holds the **feet**. The foot is a rigid segment whose tilt is set by world-referenced joint angles, so holding the ankle holds the whole sole — contact patch, `ground-y` and `base-of-support` with it. The ankle is also the joint the entire ground reaction passes through on its way up the leg |
+| `:seated` | base of the pelvis | `posture/support-mode` already said in words that the chair takes the trunk through the **ischial tuberosities**, and that the load reaches the seat without passing through hip, knee or ankle. This model has no ischium; the hip axis stands in for them, and the substitution costs nothing measurable because the offset between the two is a constant vector inside one rigid bone |
+
+An unrecognised support mode is **refused**, not defaulted back to L5/S1: a chain nothing holds
+and a chain whose support was not recognised must not be the same value.
+
+**What that repaired.** Rooted at L5/S1, tilting the pelvis moved the **floor**. At Cho's standing
+lordosis the soles travelled 11.7 cm posteriorly and 5.0 cm upward — the model saying a person who
+arches their back slides their feet backwards and lifts off the ground. `ground-y` and
+`base-of-support` are now byte-identical across a 46.5° pelvic tilt, with a control asserting that
+something *did* move (the sacrum, 11.7 cm anteriorly) so the assertion is not a no-op.
+
+### What it did not repair, and why it could not
+
+**Every joint angle in this model is measured from the world vertical.** The chain's shape is
+therefore complete before anything is anchored, and changing the anchor is a *rigid translation*.
+A moment is `Σ weight × (x_com − x_joint)`; under a translation both x's move together. No moment,
+no lever, no muscle force, no compression and no line of gravity can change.
+
+`re-rooting-the-chain-moves-no-moment` measures it rather than asserting it: the same standing
+posture rooted at `:l5s1`, `:pelvis-base` and `:mid-ankle` gives the same **22.513 N·m** lumbosacral
+moment and the same line of gravity, with a control first that the three chains really are in
+visibly different places, and a check that the summed segments are the ones
+`load/lumbosacral-moment` sums rather than a hand-assembled lookalike.
+
+**So the +115% term is not a rooting artefact.** It is the lumbar chord: `lumbar-chord-tilt-deg`
+puts the chord at `trunk + lordosis/2`, which is where a circular arc's chord lies between its two
+end tangents. At 46.5° of lordosis under a vertical thorax that is 23.25°, so T12/L1 sits
+`L_lumbar × sin 23.25° = 6.685 cm` anterior to L5/S1 and the 367.945 N above the level rides out
+on a 5.818 cm lever. **A lordotic lumbar spine really does put its top end in front of its bottom
+one.** What is open is whether 46.5° of *lordosis* should be spent as 46.5° of *rigid pelvic
+rotation*, which is what `pose/lumbar-lordosis-deg` makes it — and that is not tested here.
+
+The old claim was also wrong in its **sign**: it said *"a real pelvis rotates about the hips and
+carries L5/S1 backward"*. L5/S1 sits **above** the axis a pelvis turns about, so an anterior tilt
+carries it **anterior** to the hip. `the-pelvis-actually-rotates` now derives the separation as
+`L_pelvis × sin(tilt)` from the segment table instead of writing it, and asserts which end moves.
+
+### The decomposition, before and after, term by term
+
+| term | 2026-09-09 | 2026-09-10 | moved by |
+|---|---|---|---|
+| `:lumbar-chord-cosine` | −28.330641931507728 | −28.330641931507728 | **0** |
+| `:lumbosacral-moment-on-the-neutral-geometry` | 384.37536398936294 | 384.37536398936305 | **1 ulp** (3 × 10⁻¹⁶ relative) |
+| `:pelvis-origin-moment-arms` | −25.775144221675873 | −25.775144221675873 | **0** |
+| `:level-axis-under-the-muscle-line` | 2.073382586920559 | 2.073382586920559 | **0** |
+| `:other-crossing-muscles` | 1.2169405131731992 | 1.2169405131733129 | **1 ulp** |
+| `:trunk-mass-split` | 0.0 | 0.0 | **0** |
+
+The two that moved did so because the standing chain is now rooted at the ankles, whose x is not
+zero, and `(a+t) − (b+t)` is not bit-for-bit `a − b`. **That drift is the evidence the translation
+ran at all** — a re-rooting that changed literally nothing would be indistinguishable from one
+that was never applied. Its `:sourced` tag is `:consequence-of-the-lumbar-chord-tilt` now, and
+the entry says what it used to claim and why that was false.
+
+### Does the model still agree with Wilke's direction? Yes, unchanged, and for the same reason
+
+| | 2026-09-09 | 2026-09-10 | |
+|---|---|---|---|
+| Wilke `sitting relaxed, no backrest` | 348.86176709999995 N | **348.86176709999995 N** | **byte-identical**, pinned with `=`. A seated chain re-roots along y alone — its pelvis base sits at x = 0 — so every x is untouched |
+| Wilke `relaxed standing` | 682.4216680362731 N | 682.4216680362733 N | **2 ulp** |
+| standing − sitting | 333.55990093627315 N | 333.5599009362734 N | ratio 6.949164602839024 → 6.949164602839029 |
+| `:same-direction?` | true | **true** | the model still says standing loads L4/L5 more than sitting, still about **seven times** too much, and still only because of the term above |
+| Hansraj cervical anchor | `1.0 / 2.260021051801672 / 3.366025403784438 / 4.242640687119285 / 4.830127018922192` | **byte-identical** | probed on `3e4efb3` in a separate worktree and on this branch, not assumed. `cervical-load` is a function of an angle and a mass; no coordinate reaches it |
+
+`the-two-wilke-cross-checks-are-pinned-at-full-precision` is new, and it closes a gap this README
+created: **both entries have been called byte-identical through four waves of change and nothing
+enforced it.** The assertions in place were `ratio < 1 < ratio` and `difference-ratio > 5`, which
+would not have noticed a 10 N move in either.
+
+### The four leg/balance quantities: unchanged, to within 4 ulp
+
+This is the check the task set for whether the fix is real rather than a re-parameterisation, and
+**it says the change is a re-parameterisation.** No quantity moved toward its measured range.
+
+| quantity | lumbar neutral before → after | Cho's 46.5° before → after | measured |
+|---|---|---|---|
+| line of gravity ahead of ankle | 0.03703697189273052 → …54 | 0.13970138699304935 → …43 | 0.02–0.06 m |
+| ankle moment, per side | −12.0692894805646 → −12.069289480564604 | −47.307079002588544 → −47.30707900258857 | 10–20 N·m |
+| knee moment, per side | −0.42553777096251155 → −0.4255377709625161 | −35.66332729298645 → −35.66332729298649 | standing is unloaded |
+| soleus vs gastrocnemius | 159.3203987394856 > 71.24916196814029 → 159.32039873948565 > 71.24916196814036 | 444.2919447834063 < 459.6954265419417 → 444.2919447834064 < 459.6954265419423 | soleus carries more |
+| L4/L5 at quiet standing | — | 696.5922364394459 → 696.5922364394462 N | no reference at this posture |
+
+So **`cho-s-standing-lordosis-and-the-measured-line-of-gravity-cannot-both-hold` still holds, and
+this change did not resolve it.** It could not: the contradiction is a statement about the chain's
+*shape*, and the root does not touch the shape.
+
+### What the hip-rooted chain did make measurable
+
+2026-09-09 recorded one contribution as *named and not sized*: how much of the 10.27 cm of trunk
+travel a correctly hinged pelvis would remove. **The answer is none of it**, and the reason is the
+invariance above.
+
+The split itself is now exact and shipped. `pose/line-of-gravity` decomposes the line of gravity
+into three travels that sum to it as an identity (residual < 10⁻¹⁶), where 2026-09-09 had to break
+`lumbar-chord-tilt-deg`, run the model and revert to approximate two of them:
+
+| term | quiet standing, lumbar neutral | Cho's 46.5° | difference |
+|---|---|---|---|
+| line of gravity ahead of ankle | 0.0370370 m | 0.1397014 m | **+0.1026644 m** |
+| `:sacrum-over-the-feet-m` | 0.0195364 | 0.0823277 | **+0.0627913** (was estimated ≈7.1 cm) |
+| `:trunk-over-the-sacrum-m` | 0.0012398 | 0.0327954 | **+0.0315556** (was estimated ≈3.2 cm) |
+| `:everything-below-l5s1-m` | 0.0162608 | 0.0245783 | **+0.0083175** (was not separated at all) |
+
+`:sacrum-over-the-feet-m` is the sacrum's travel discounted by the fraction of body weight that
+rides on it — the legs are below L5/S1 and do not follow it — which is what makes the three terms
+add up. Both the sums and every term's absolute size are pinned, in both postures.
+
+### Breaks, including the one that produced no failure
+
+Nine breaks, each restored byte-identically (sha256 checked against the pre-break file).
+
+| break | result |
+|---|---|
+| standing rooted at `:l5s1` | 11 failures — the floor moves, the base of support moves, the ankle moves |
+| `rooted-at` translates segment CoMs by 0.9 d (non-rigid) | 32 failures, including the moment invariance and the line-of-gravity identity |
+| `rooted-at` made a no-op (`d = [0 0 0]`) | 11 failures, including the control that the three rootings differ |
+| `:sacrum-over-the-feet-m` drops its weight fraction | 5 failures — the residual, in every posture |
+| **a constant 1 cm moved from the trunk term into the sacrum term** | **0 failures** — see below |
+| `lumbar-chord-tilt-deg` ignores the pelvic tilt | 36 failures, including both Wilke pins and the derived 6.685 cm |
+| seated rooted at the ankles | 3 failures naming the seated root |
+| `trunk-mass-split` `:lumbar` 0.139 → 0.140 | 39 failures, including the sitting entry's exact `=` |
+| the pelvis rotation's sign flipped | 34 failures, including the derived `L_pelvis × sin(tilt)` |
+
+**The fifth produced no failure, and the reason is worth more than the fix.** Two checks that both
+look like per-term checks were blind to the same defect: the residual could not see it because the
+sum is unchanged *by construction*, and the per-term pins could not either because they were
+pinned on the **difference** between two postures, and a constant offset appears in both and
+cancels. That is 2026-09-09's lesson about the erector-spinae chain — *closure is a weaker check
+than it looks* — arriving by a different route in a split whose terms do not telescope. **A
+difference of two pinned quantities is not two pinned quantities.** Both postures' terms are
+pinned absolutely now, and the same break then fails four assertions naming the two terms it moved.
+
+### What could not be done
+
+- **Make the root change anything.** It is a rigid translation and the model is invariant under
+  it. If that reads as a null result, it is a null result that removes a wrong explanation from
+  four places in this repo.
+- **Fix the contradiction between Cho's lordosis and the measured line of gravity.** It survives
+  intact. The next thing to test is the identity `lumbar lordosis == a rigid rotation of the whole
+  pelvis` (`pose/lumbar-lordosis-deg`), which is what spends 46.5° of Cho's lordosis change as
+  46.5° of pelvic rotation and produces both travels above. Nothing here measures whether a real
+  stool-to-standing pelvis rotates that far.
+- **Say whether 21.407 N·m is the right standing lumbosacral moment.** Nothing in this repo
+  answers it. What is now established is only that it is a consequence of the chord's tilt and not
+  of the chain's rooting.
+- **Give the seated chain a real ischial tuberosity.** The model has no ischium. The hip axis
+  stands in for it, and because the offset is rigid this costs nothing measurable *today* — it
+  will stop being free the moment a seat reaction is applied at a point rather than assumed to
+  take the whole thigh.
+- **Nothing was installed.** No divisor, no fudge factor, no fitted constant. Dividing the chord's
+  sensitivity by 8 still brings the difference ratio to 1.03 and still lives nowhere.
+
+**Counts.** 342 → **346** tests / 11925 → **11990** assertions on the JVM; 312 → **316** tests /
+2708 → **2773** assertions on ClojureScript; lint **0 errors / 13 warnings**, unchanged.
 
 **Honest R0**: design + runnable physics + a cervical model validated **along one line**.
 Anthropometry / muscle / endurance parameters are `:representative` (G7); the cervical leg is

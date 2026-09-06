@@ -341,3 +341,169 @@
               (:tilt-deg (pose/seg-at p "upper_cervical")))]
     (is (> (Math/abs ao) 5.0)
         (str "and it does ask for something: " ao " deg at 60 deg of head flexion"))))
+
+;; --- where the world holds the body ------------------------------------------
+
+(deftest the-standing-chain-is-rooted-at-the-feet-and-the-seated-one-at-the-pelvis
+  ;; WHAT THE ROOT IS FOR. Until 2026-09-10 this chain was rooted at L5/S1, a
+  ;; point nothing in the world holds, and the visible cost was that tilting the
+  ;; pelvis moved the FLOOR: at Cho's standing lordosis the soles travelled 11.7 cm
+  ;; posteriorly and 5.0 cm upward, which is the model saying a person who arches
+  ;; their back slides their feet backwards and lifts off the ground.
+  (let [pst {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0 :shoulder-flexion-deg 0.0
+             :elbow-flexion-deg 0.0 :support :standing
+             :hip-flexion-deg 0.0 :knee-flexion-deg 0.0 :ankle-dorsiflexion-deg 0.0}
+        flat (pose/solve-pose body pst)
+        tilted (pose/solve-pose body (assoc pst :pelvic-tilt-deg 46.5))]
+    (is (= :mid-ankle (:landmark (:root flat))) "standing roots at the feet")
+    ;; the root landmark is AT the origin, which is what `rooted-at` means
+    (doseq [[nm p] [["flat" flat] ["tilted" tilted]]]
+      (is (math/nearly= 0.0 (first (pose/landmark-point p :mid-ankle)) 1e-15)
+          (str nm ": the mid-ankle sits at the origin in x"))
+      (is (math/nearly= 0.0 (second (pose/landmark-point p :mid-ankle)) 1e-15)
+          (str nm ": and in y")))
+    ;; the floor and the base of support are the same in both, to the bit
+    (is (= (pose/ground-y flat) (pose/ground-y tilted))
+        "the ground does not move when the pelvis rotates")
+    (is (= (pose/base-of-support flat) (pose/base-of-support tilted))
+        "and neither does the base of support")
+    ;; the control: something DID move, or this test is asserting a no-op
+    (is (> (- (first (get-in tilted [:joints :l5s1]))
+              (first (get-in flat [:joints :l5s1])))
+           0.10)
+        (str "the sacrum travelled anteriorly instead: "
+             (- (first (get-in tilted [:joints :l5s1]))
+                (first (get-in flat [:joints :l5s1]))) " m")))
+  ;; seated, the seat takes the trunk through the ischial tuberosities, and this
+  ;; model's stand-in for them is the base of the pelvis
+  (let [p (pose/solve-pose body (posture/seated-posture))]
+    (is (= :pelvis-base (:landmark (:root p))))
+    (is (= [0.0 0.0 0.0] (mapv double (get-in p [:joints :pelvis-base])))
+        "the seated chain sits on its own pelvis base"))
+  ;; and a support mode with no landmark is REFUSED rather than rooted at L5/S1 by
+  ;; default — an unrecognised support and a chain nothing holds must not be the
+  ;; same value
+  (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+               (pose/support-landmark {:support :hanging-from-a-bar}))
+      "an unknown support mode is refused"))
+
+(deftest re-rooting-the-chain-moves-no-moment
+  ;; THE FINDING OF 2026-09-10, and it is a negative one. Every joint angle in
+  ;; this model is measured from the WORLD vertical, so the chain's shape is
+  ;; complete before anything is anchored; changing the anchor is a rigid
+  ;; translation. A moment is a sum of `weight x (x_com - x_joint)` and both x's
+  ;; move together, so no moment, force, lever or line of gravity can change.
+  ;;
+  ;; WHY IT IS WORTH A TEST RATHER THAN A SENTENCE. `spine/standing-sitting-
+  ;; decomposition` attributed its dominant term — 384 N of a 334 N difference —
+  ;; to the chain being rooted at L5/S1, and `pose/lumbar-chord-tilt-deg` said the
+  ;; same. Both were wrong, and this is the measurement that says so: root the
+  ;; same standing posture three different ways and the lumbosacral moment does
+  ;; not move.
+  (let [p (pose/solve-pose body posture/quiet-standing)
+        rootings (into {} (for [lm [:l5s1 :pelvis-base :mid-ankle]]
+                            [lm (pose/rooted-at p lm)]))
+        w (pose/segment-weights body p)
+        moment-about (fn [pd joint bases]
+                       (pose/gravitational-moment
+                        (get-in pd [:joints joint])
+                        (for [s (pose/segments-on pd bases)] [s (get w (:name s))])))
+        trunk ["lumbar" "thorax" "head" "upper_cervical" "lower_cervical"
+               "upper_arm" "forearm" "hand"]
+        reference (moment-about (:l5s1 rootings) :l5s1 trunk)]
+    ;; the control FIRST: the three rootings really are different chains in space,
+    ;; or the invariance below is asserting nothing
+    (is (> (math/abs* (- (first (get-in (:l5s1 rootings) [:joints :l5s1]))
+                         (first (get-in (:mid-ankle rootings) [:joints :l5s1]))))
+           0.10)
+        "the three rootings put L5/S1 in visibly different places")
+    (doseq [[lm pd] rootings]
+      ;; the translation is rigid: every point moved by the same vector
+      (let [d (:translation (:root pd))]
+        (doseq [k [:l5s1 :c7 :ankle/left :toe/right]]
+          (is (math/nearly= 0.0
+                            (math/vlen (math/v- (math/v- (get-in pd [:joints k])
+                                                         (get-in p [:joints k]))
+                                                d))
+                            1e-15)
+              (str lm ": " k " moved by the root translation and by nothing else"))))
+      ;; and the moment it was blamed on did not move
+      (is (math/nearly= reference (moment-about pd :l5s1 trunk) 1e-12)
+          (str lm ": the lumbosacral moment is " (moment-about pd :l5s1 trunk)
+               " N·m, and rooting cannot change it"))
+      ;; nor did the line of gravity, which is a difference of two x's
+      (is (math/nearly= (:ahead-of-ankle-m (pose/line-of-gravity body p))
+                        (:ahead-of-ankle-m (pose/line-of-gravity body pd))
+                        1e-12)
+          (str lm ": the line of gravity ahead of the ankle is unchanged")))
+    ;; the size of the thing rooting cannot touch, pinned so a reader does not
+    ;; have to take `it is not the root` on trust. 22.51 N·m on a 70 kg / 1.70 m
+    ;; body; `spine`'s 21.41 N·m is the same quantity on Wilke's smaller subject
+    (is (math/nearly= 22.512908211478976 reference 1e-9)
+        (str "the standing lumbosacral moment is " reference
+             " N·m under every rooting"))
+    ;; and it is the SHIPPED quantity, not a hand-assembled lookalike: the bases
+    ;; above are the ones `load` carries at L5/S1, checked rather than trusted
+    (is (math/nearly= reference
+                      (:moment-nm (load/lumbosacral-moment body posture/quiet-standing))
+                      1e-12)
+        "the segments summed here are the ones load/lumbosacral-moment sums")))
+
+(deftest the-line-of-gravity-splits-into-three-travels-that-sum-to-it
+  ;; WHAT THE PREVIOUS AGENT HAD TO BREAK THE MODEL TO MEASURE. On 2026-09-09 the
+  ;; split between `the pelvis path` and `the chord path` was obtained by editing
+  ;; `lumbar-chord-tilt-deg` to ignore the pelvic tilt, running the model and
+  ;; reverting — a counterfactual that could not ship and could not be tested.
+  ;; It is an identity over the placed chain, so it needs no counterfactual: the
+  ;; line of gravity is the sacrum's travel over the feet, plus the trunk's lean
+  ;; over the sacrum, plus what is below L5/S1 about its own ankles.
+  (doseq [p [posture/standing-neutral posture/quiet-standing-lumbar-neutral
+             posture/quiet-standing posture/deep-squat]]
+    (let [g (pose/line-of-gravity body (pose/solve-pose body p))]
+      (is (< (math/abs* (:residual-m g)) 1e-12)
+          (str (:name p) ": the three travels must sum to the line of gravity, "
+               "residual " (:residual-m g) " m"))))
+  ;; and the sizes, pinned per term rather than only as a sum — a residual cannot
+  ;; catch a term being mis-priced, because the terms telescope
+  (let [neutral (pose/line-of-gravity body (pose/solve-pose body posture/quiet-standing-lumbar-neutral))
+        cho (pose/line-of-gravity body (pose/solve-pose body posture/quiet-standing))
+        d (fn [k] (- (k cho) (k neutral)))]
+    (is (math/nearly= 0.03703697189273054 (:ahead-of-ankle-m neutral) 1e-9)
+        "lumbar-neutral quiet standing: 3.70 cm, inside the measured 2-6 cm")
+    (is (math/nearly= 0.13970138699304943 (:ahead-of-ankle-m cho) 1e-9)
+        "Cho's standing lordosis: 13.97 cm, far outside it")
+    ;; EACH TERM PINNED ABSOLUTELY, IN BOTH POSTURES, AND NOT ONLY AS A DIFFERENCE.
+    ;; Measured while writing this: moving a constant 1 cm from the trunk term into
+    ;; the sacrum term produced NO FAILURE at all. The residual could not see it —
+    ;; the sum is unchanged by construction — and the difference pins below could
+    ;; not either, because a constant offset appears in both postures and cancels
+    ;; when they are subtracted. Two checks that both look like per-term checks and
+    ;; are both blind to the same defect. These are the ones that see it.
+    (doseq [[nm g expected]
+            [["lumbar-neutral" neutral {:sacrum-over-the-feet-m 0.019536412946749866
+                                        :trunk-over-the-sacrum-m 0.0012397936122427468
+                                        :everything-below-l5s1-m 0.016260765333737916}]
+             ["Cho's lordosis" cho {:sacrum-over-the-feet-m 0.08232771999905754
+                                    :trunk-over-the-sacrum-m 0.0327953964350415
+                                    :everything-below-l5s1-m 0.024578270558950316}]]]
+      (doseq [[k v] expected]
+        (is (math/nearly= v (k g) 1e-9)
+            (str nm ": " k " is " (k g) " m, pinned at " v))))
+    ;; the 10.27 cm, split three ways and each one pinned
+    (is (math/nearly= 0.1026644151003189 (d :ahead-of-ankle-m) 1e-9))
+    (is (math/nearly= 0.06279130705230768 (d :sacrum-over-the-feet-m) 1e-9)
+        "6.28 cm of it is the sacrum travelling forward over the feet")
+    (is (math/nearly= 0.031555602822798755 (d :trunk-over-the-sacrum-m) 1e-9)
+        "3.16 cm is the trunk leaning forward over the sacrum")
+    (is (math/nearly= 0.0083175052252124 (d :everything-below-l5s1-m) 1e-9)
+        "and 0.83 cm is the pelvis and legs moving about their own ankles")
+    ;; the mechanism, derived rather than pinned: the sacrum's own travel is
+    ;; L_pelvis x sin(tilt), and the term is that discounted by the fraction of
+    ;; body weight above L5/S1
+    (let [travel (* (:length-m (segment/seg body "pelvis"))
+                    (Math/sin (math/radians (:pelvic-tilt-deg posture/quiet-standing))))]
+      (is (< (d :sacrum-over-the-feet-m) travel)
+          (str "the sacrum travels " travel " m and the term is less, because the "
+               "legs are below L5/S1 and do not follow it"))
+      (is (> (d :sacrum-over-the-feet-m) (* 0.5 travel))
+          "but most of the body is above L5/S1, so most of the travel counts"))))
