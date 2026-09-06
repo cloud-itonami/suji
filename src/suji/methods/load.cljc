@@ -542,20 +542,28 @@
 
   SO THE RESIDUAL IS USUALLY NEGATIVE, AND THAT IS A RESULT RATHER THAN A BUG. The
   big superficial extensors, sized by the load at C7, over-extend the joint above
-  them; what a real neck balances that with is its upper cervical FLEXORS — longus
-  capitis, rectus capitis anterior and lateralis — and this model has none of them.
-  `:over-supplied-nm` is that surplus, reported at every posture. The suboccipitals
-  are given `:residual-nm`, which is the surplus floored at zero, so in an ordinary
-  desk posture they carry nothing and the model says why.
+  them. `:over-supplied-nm` is that surplus, reported at every posture. The
+  suboccipitals are given `:residual-nm`, which is the surplus floored at zero, so
+  in an ordinary desk posture they carry nothing and the model says why.
 
-  ⚠ IT IS AN UNCOUPLED SOLVE AND THE SURPLUS IS PARTLY AN ARTEFACT OF THAT. A
-  simultaneous solve over both constraints would have chosen smaller capitis forces
-  and non-zero suboccipital ones. This model does not have one — the same
-  limitation `attachment/secondary-arm` states for the two-joint muscles of the leg
-  — so the surplus is an upper bound on the real disagreement, not a measurement of
-  it. What can be said without the coupled solve is the direction: the model is
-  short an upper cervical flexor, and until it has one this joint's equilibrium
-  cannot close from both sides.
+  ⚠ IT IS AN UNCOUPLED SOLVE AND THE SURPLUS IS AN ARTEFACT OF THAT, AND SINCE
+  2026-09-08 THAT IS MEASURED RATHER THAN SUSPECTED. A simultaneous solve over both
+  constraints would have chosen smaller capitis forces and non-zero suboccipital
+  ones. This model does not have one — the same limitation
+  `attachment/secondary-arm` states for the two-joint muscles of the leg.
+
+  THIS PARAGRAPH USED TO END: the model is short an upper cervical flexor, and
+  until it has one this joint's equilibrium cannot close from both sides. It has
+  two now — `longus_capitis` and `rectus_capitis_anterior`, in
+  `:atlanto-occipital-flexion` — and the equilibrium STILL does not close from both
+  sides, for a reason the flexors made visible rather than removed: carrying the
+  surplus would take 185% and 116% of what those two muscles can produce at
+  `laptop-on-lap`, 1.85 times the anatomy that would have to absorb it. So the
+  surplus is not a small residual that a missing muscle was hiding. It is a
+  decomposition error bigger than the muscles it is charged against, and what it
+  needs is a coupled solve and not another muscle.
+
+  That is why `:over-supplied-nm` is split below rather than handed to the flexors.
 
   `capitis-forces` is `{muscle-name force-n}`; without it only the gravitational
   terms are computed, because the demand does not depend on who carries it."
