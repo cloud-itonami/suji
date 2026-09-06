@@ -25,8 +25,9 @@
 
 (deftest neutral-arms-reproduce-the-constants-they-replaced
   ;; the anchor. ±3% — the offsets are stated to 4 decimals, not fitted exactly.
-  (doseq [m ["cervical_extensors" "anterior_deltoid" "erector_spinae"]]
-    (let [want (:moment-arm-m (get muscle/specs m))
+  (doseq [m ["cervical_extensors" "anterior_deltoid/left" "anterior_deltoid/right"
+             "erector_spinae"]]
+    (let [want (:moment-arm-m (get muscle/specs (:group (att/instance m))))
           got (arm (at) m)]
       (is (math/nearly= want got (* 0.03 want))
           (str m ": neutral arm " got " must reproduce the tabulated " want)))))
@@ -66,9 +67,9 @@
   ;; that at 90° of shoulder flexion — an ordinary posture — and `recruit` had to
   ;; decline it. A muscle lying on bone wraps instead, and every tangent to a
   ;; circle of radius R is R from its centre, so the arm floors at R.
-  (let [spec (get att/muscles "anterior_deltoid")
+  (let [spec (att/instance "anterior_deltoid/left")
         r (get-in spec [:wrap :radius-m])
-        arms (mapv #(arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid")
+        arms (mapv #(arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid/left")
                    (range 0 181 10))]
     (is (some? r) "the deltoid must declare a wrapping surface")
     (is (every? #(>= % (- r 1e-12)) arms)
@@ -81,16 +82,16 @@
   ;; or it would flatten the whole curve and hide the variation it exists to keep
   (doseq [d [0 15 30 45]]
     (let [det (att/moment-arm-detail (at :shoulder-flexion-deg (double d)) 1.70
-                                     (get att/muscles "anterior_deltoid")
-                                     (get-in (at :shoulder-flexion-deg (double d)) [:joints :shoulder]))]
+                                     (att/instance "anterior_deltoid/left")
+                                     (get-in (at :shoulder-flexion-deg (double d)) [:joints :shoulder/left]))]
       (is (not (:wrapped? det)) (str d "°: the chord still has the better leverage here"))
       (is (= (:arm det) (:straight det))))))
 
 (deftest the-two-branches-agree-where-they-meet
   ;; a discontinuity here would be a step change in required force at one angle
-  (let [spec (get att/muscles "anterior_deltoid")
+  (let [spec (att/instance "anterior_deltoid/left")
         step (fn [a b] (Math/abs (- a b)))
-        arms (mapv #(arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid")
+        arms (mapv #(arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid/left")
                    (range 40 80 2))]
     (is (every? #(< % 1e-3) (map (fn [[a b]] (step a b)) (partition 2 1 arms)))
         (str "crossing into the wrap must not jump: " arms))))
@@ -102,13 +103,13 @@
   ;; straight-line arm with the sign flipped. Measured 2026-09-06: the anterior
   ;; deltoid became an extensor at 130° of shoulder flexion.
   (doseq [d [100 110 120 130 150 180]]
-    (let [a (arm (at :shoulder-flexion-deg (double d)) "anterior_deltoid")]
+    (let [a (arm (at :shoulder-flexion-deg (double d)) "anterior_deltoid/left")]
       (is (pos? a) (str d "°: a wrapped flexor stays a flexor, got " a)))))
 
 (deftest a-muscle-with-no-wrap-declared-is-left-alone
   ;; erector spinae has no wrapping surface in this model; its arm must be the
   ;; straight-line arm, unfloored, so that a future regression there is visible
-  (let [spec (get att/muscles "erector_spinae")]
+  (let [spec (att/instance "erector_spinae")]
     (is (nil? (:wrap spec)))
     (doseq [d [0 20 40 60]]
       (let [p (at :trunk-flexion-deg (double d))
@@ -120,17 +121,18 @@
   ;; stated as a test because it is the error that produced a constant-looking arm
   ;; from geometry that was supposed to vary: a line whose endpoints both ride on
   ;; the same segment rotates rigidly with it.
-  (let [same-bone {:acts-about :shoulder :task :shoulder-flexion
+  (let [same-bone {:acts-about :shoulder/left :task :shoulder-flexion
+                   :side :left
                    :origin {:segment "upper_arm" :along 0.0 :ant 0.018 :lat 0.0}
                    :insertion {:segment "upper_arm" :along 0.42 :ant 0.006 :lat 0.0}}
         arms (mapv (fn [d]
                      (let [p (at :shoulder-flexion-deg (double d))]
-                       (att/moment-arm p 1.70 same-bone (get-in p [:joints :shoulder]))))
+                       (att/moment-arm p 1.70 same-bone (get-in p [:joints :shoulder/left]))))
                    [0 30 60])]
     (is (apply = (mapv #(math/round-to % 9) arms))
         (str "both ends on one bone => a constant arm, which is the bug: " arms))
     ;; and the real anterior deltoid, whose origin is on the trunk, does vary
-    (is (not (apply = (mapv #(math/round-to (arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid") 9)
+    (is (not (apply = (mapv #(math/round-to (arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid/left") 9)
                             [0 30 60]))))))
 
 (deftest suspension-muscles-are-not-given-a-moment-arm
@@ -138,21 +140,21 @@
   ;; and at neutral it is NEGATIVE — it would claim these muscles flex the joint
   ;; they are holding up. `effectiveness` must hand back the cosine instead.
   (let [p (at)]
-    (doseq [m ["upper_trapezius" "levator_scapulae"]]
-      (let [spec (get att/muscles m)
-            moment (att/moment-arm p 1.70 spec (get-in p [:joints :shoulder]))
+    (doseq [m ["upper_trapezius/left" "levator_scapulae/left"]]
+      (let [spec (att/instance m)
+            moment (att/moment-arm p 1.70 spec (get-in p [:joints :shoulder/left]))
             cosine (att/effectiveness p 1.70 spec)]
         (is (neg? moment) (str m ": the moment-arm reading is the wrong question, and negative"))
         (is (<= 0.0 cosine 1.0) (str m ": a direction cosine, in [0,1]"))
         (is (= cosine (arm p m)) (str m ": `arms` must report the cosine, not the moment"))))
     ;; levator scapulae runs more vertically than upper trapezius, so it is the
     ;; better suspender — this is what makes the two distinguishable at all
-    (is (> (arm p "levator_scapulae") (arm p "upper_trapezius")))))
+    (is (> (arm p "levator_scapulae/left") (arm p "upper_trapezius/left")))))
 
 (deftest attachments-ride-on-the-bones
   ;; an attachment stated in local coordinates has to move when the bone moves,
   ;; and stay at a fixed distance from its own segment's proximal joint
-  (let [spec (get att/muscles "cervical_extensors")
+  (let [spec (att/instance "cervical_extensors")
         d (fn [posture]
             (let [p (pose/solve-pose body posture)
                   site (att/site-point p 1.70 (:insertion spec))
