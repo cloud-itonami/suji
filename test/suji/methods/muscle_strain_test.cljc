@@ -38,7 +38,21 @@
         s-long (strain/muscle-strain high 120.0)]
     (is (<= 0 (:stiffness-index s-short)))
     (is (<= (:stiffness-index s-short) (:stiffness-index s-long)))
-    (is (< (:stiffness-index s-long) 1.0))))
+    ;; The index is bounded above by 1 and mathematically never reaches it, but in
+    ;; double precision it rounds to exactly 1.0 once the dose passes ~37 — which
+    ;; this posture does. So the bound is <=, and the saturation must be REPORTED:
+    ;; a ceiling presented as a measurement cannot be told apart from a value.
+    (is (<= (:stiffness-index s-long) 1.0))
+    (is (:saturated? s-long)
+        "a load this high for two hours saturates the index and has to say so")))
+
+(deftest test-saturation-is-flagged-only-when-it-happens
+  ;; the flag has to discriminate, or it is decoration
+  (let [low (strain/muscle-strain {:name "x" :mvc-pct 9.0} 30.0)
+        high (strain/muscle-strain {:name "x" :mvc-pct 60.0} 240.0)]
+    (is (< (:stiffness-index low) 1.0))
+    (is (not (:saturated? low)) "a light load must not be reported as saturated")
+    (is (:saturated? high))))
 
 (deftest test-stiffness-band-thresholds
   (is (= (strain/stiffness-band 0.1) "low"))
