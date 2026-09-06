@@ -583,7 +583,37 @@
        capitis-forces
        (assoc :capitis-nm capitis
               :residual-nm (max 0.0 (- m capitis))
-              :over-supplied-nm (max 0.0 (- capitis m)))))))
+              :over-supplied-nm (max 0.0 (- capitis m))
+              ;; --- THE TWO HALVES OF THE FLEXION SIDE, SPLIT 2026-09-08 ---------
+              ;; `:over-supplied-nm` is one number made of two things that must not
+              ;; be spent alike, and until the joint had flexors nothing had to tell
+              ;; them apart because nothing could carry either.
+              ;;
+              ;; `:gravitational-flexion-nm` is what GRAVITY asks the flexors for:
+              ;; it is non-zero exactly when the skull's centre of mass sits BEHIND
+              ;; the occipital condyles, which is a head tipped back — looking up, or
+              ;; held against a headrest. It is computed from the placed chain with
+              ;; no muscle force in it, so it is free of every decomposition this
+              ;; model makes. At `head-flexion -15 deg` on a 70 kg / 1.70 m body it
+              ;; is 0.766 N·m and the capitis term is exactly zero.
+              ;;
+              ;; `:decomposition-surplus-nm` is the rest: the moment the two capitis
+              ;; muscles exert here IN EXCESS of what this joint's own gravity
+              ;; demands, which exists because they were sized by the equilibrium at
+              ;; C7 and `recruit`'s closed form takes one constraint. It is not a
+              ;; load on anybody. It is the size of this model's own inconsistency,
+              ;; and `muscle/solve-muscle-tensions` reports what carrying it WOULD
+              ;; cost the flexors rather than charging them for it — because the
+              ;; answer, measured 2026-09-08, is that carrying it takes 1.85x every
+              ;; newton the modelled flexors can produce. A surplus larger than the
+              ;; anatomy that would have to absorb it is evidence about the
+              ;; decomposition, not about a neck.
+              ;;
+              ;; The two sum to `:over-supplied-nm` by construction, which
+              ;; `the-atlanto-occipital-flexion-load-is-gravity-and-not-the-surplus`
+              ;; asserts rather than assumes.
+              :gravitational-flexion-nm (max 0.0 (- m))
+              :decomposition-surplus-nm (- (max 0.0 (- capitis m)) (max 0.0 (- m))))))))
 
 (defn solve-posture-loads
   "Full static inverse-dynamics solve for a posture (the RNEA gravity term).

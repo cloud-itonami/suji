@@ -358,6 +358,102 @@
     :wrap {:radius-m 0.012 :sign 1.0}
     :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 1.03 cm2 per side x 2 = 2.06 cm2 bilateral (measured; N=8, range 0.29-1.59). Offsets representative. MODELLED MIDLINE AND THEREFORE SAGITTAL ONLY, which costs more here than it does for the other two: the real obliquus capitis superior runs from a TRANSVERSE process, 25 mm lateral, and its lateral flexion and its contribution to steadying the head in rotation are absent. What is modelled is the sagittal component of a bilateral pair."}
 
+   ;; --- the upper cervical FLEXORS ----------------------------------------------
+   ;; Added 2026-09-08, and the gap they close was named by the file that created
+   ;; it. `load/atlanto-occipital-moment` has said since 2026-09-07:
+   ;;
+   ;;     "The big superficial extensors, sized by the load at C7, over-extend the
+   ;;      joint above them; what a real neck balances that with is its upper
+   ;;      cervical FLEXORS — longus capitis, rectus capitis anterior and lateralis
+   ;;      — and this model has none of them."
+   ;;
+   ;; It had none. Measured 2026-09-08 before this block existed: every muscle whose
+   ;; `:acts-about` is `:atlanto-occipital` was one of the three suboccipital
+   ;; EXTENSORS, every one of them belonged to `:atlanto-occipital-extension`, and
+   ;; the model contained no task whose load was a flexion moment about any cervical
+   ;; joint. So the joint could not express co-contraction, could not balance the
+   ;; capitis surplus, and could not represent a head held back against a headrest —
+   ;; at `head-flexion -15 deg` the skull's centre of mass sits BEHIND the condyles,
+   ;; gravity extends the head, the moment about the condyles is -0.766 N·m, and
+   ;; nothing in the model could resist it.
+   ;;
+   ;; WHY IT IS A SECOND TASK AND NOT A MIRROR-PAIRED ONE. The elbow, the wrist and
+   ;; the knee state their agonist and antagonist in a single `share-signed` task,
+   ;; and the sign of the load picks the side. That shape would work here and it was
+   ;; not chosen, because it would take something away: `share-signed` REFUSES the
+   ;; idle side, and `atlanto-occipital-moment` deliberately hands the extensors a
+   ;; load of zero rather than a refusal — "A zero load IS a placed load: the
+   ;; suboccipitals come back at 0 N rather than refused, which is the difference
+   ;; between 'nothing is asked of them here' and 'this model could not answer'".
+   ;; Two tasks with complementary loads (`:residual-nm` and `:over-supplied-nm`,
+   ;; exactly one of which is non-zero) give the same forces AND keep that
+   ;; distinction on both sides of the joint.
+   ;;
+   ;; ⚠ WHAT THE FLEXORS ARE ASKED TO CARRY IS MOSTLY NOT GRAVITY. Measured over the
+   ;; three reference workstations and a head-flexion sweep, the net moment about the
+   ;; condyles is a FLEXION demand at every posture except exact neutral, and at a
+   ;; desk posture almost all of it is `:over-supplied-nm` — the surplus the
+   ;; uncoupled solve leaves when the two capitis muscles, sized by the load at C7,
+   ;; are counted at a joint their own equilibrium was not solved for. The flexors
+   ;; therefore report over-MVC in ordinary postures. That is not a claim about a
+   ;; person and it is not clamped: it is this model measuring, in newtons of muscle
+   ;; the anatomy actually has, how big its own decomposition error is. See
+   ;; `muscle/solve-muscle-tensions`, which reports the gravitational and the
+   ;; decomposition halves of that load separately on every flexor row so the two
+   ;; cannot be read as one.
+   ;;
+   ;; ⚠ STERNOCLEIDOMASTOID WAS CONSIDERED AND REJECTED ON THE GEOMETRY. It is the
+   ;; model's existing neck flexor and the obvious candidate to re-task, and it is
+   ;; the wrong muscle: it inserts on the MASTOID PROCESS, which is BEHIND the
+   ;; occipital condyles, so about the atlanto-occipital joint it is an EXTENSOR.
+   ;; Measured 2026-09-08 on a 70 kg / 1.70 m body, its moment arm about that joint
+   ;; is +4.90 mm at head -15 deg, +4.54 mm at neutral and +4.36 mm at the
+   ;; `laptop-on-lap` head tilt — positive (extension) at every posture, and BELOW
+   ;; `recruit/min-coeff` (5 mm) at all of them. So re-tasking it to
+   ;; `:atlanto-occipital-flexion` would give it a negative coefficient and it would
+   ;; be refused for acting the wrong way; re-tasking it to the EXTENSION task would
+   ;; give it a coefficient below the floor and it would be refused for that. It is
+   ;; not a flexor here and not usable as one, which is why the joint needed muscles
+   ;; of its own rather than a re-labelling. This is also the mechanism of the
+   ;; forward-head posture it is famous for: lower cervical flexion with upper
+   ;; cervical EXTENSION, which is exactly the shape `pose/cervical-partition`
+   ;; produces.
+
+   "longus_capitis"
+   {:name "longus_capitis" :pcsa-cm2 1.84
+    :acts-about :atlanto-occipital :task :atlanto-occipital-flexion
+    ;; anterior tubercles of the transverse processes of C3-C6 -> the basilar part
+    ;; of the occipital bone. Vasavada, chapter 3: "the longus capitis runs from the
+    ;; anterior surface of transverse processes to the baso-occiput ... Because it
+    ;; lies close to the vertebral bodies, it has only a small flexion moment arm."
+    ;; The origin is placed at the MIDPOINT of the C3-C6 span in this model's own
+    ;; level spacing (`spine/levels` puts C6/C7 at 0.2 and C3/C4 at 0.8 of
+    ;; `lower_cervical`), 10 mm anterior to the column axis, which is about where an
+    ;; anterior tubercle sits relative to the centre of a cervical body. The
+    ;; insertion is 15 mm anterior to the condyles and 8 mm up the skull's long axis,
+    ;; because the clivus rises as it runs forward.
+    :origin {:segment "lower_cervical" :along 0.50 :ant 0.0058824 :lat 0.0}
+    :insertion {:segment "head" :along 0.045 :ant 0.0088235 :lat 0.0}
+    ;; NO WRAPPING SURFACE, and the absence is checked rather than assumed. The
+    ;; posterior cervical muscles declare the column's 0.012 m radius because their
+    ;; chords swing THROUGH the joint as the head folds; this one runs down the front
+    ;; of the same column and its chord moves 0.8 mm across the model's whole range
+    ;; (-14.65 mm at head -15 deg to -13.83 mm at 63.5 deg). A floor here would bind
+    ;; at nothing and would only look like diligence.
+    :crosses {:joint :c2c3}
+    :source "PCSA Kamibayashi LK, Richmond FJR, Morphometry of human neck muscles, Spine 23(12):1314-1323, 1998, Table 3-3 as reprinted in Vasavada AN, Architectural Design and Function of Human Back Muscles, Rothman-Simeone The Spine ch.3 p.65: 0.92 (0.35) cm2 per side, range 0.54-1.63, N=7 -> x2 sides = 1.84 cm2 bilateral (MEASURED). Full text fetched 2026-09-08 from https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf and read with pdftotext -layout, not an abstract; the same row also gives mass 3.7 (1.2) g, muscle length 7.8-11.1 cm mean 9.2 (1.4), NF length 3.8 (1) cm. ATTACHMENT OFFSETS ARE REPRESENTATIVE LANDMARK DISTANCES and are NOT calibrated to a moment arm, for the same reason as the suboccipitals: no measured moment arm about the atlanto-occipital joint was obtained, and inventing a target to calibrate to would be a number pretending to be an anchor. They are checked against the MEASURED LENGTH instead - the modelled line is 91.7 mm at neutral against 78-111 mm measured, mean 92 - and the moment arm is whatever the geometry gives, -14.5 mm at neutral. TWO-JOINT: it also crosses C2/C3, and that moment is reported as :secondary-moment-nm rather than solved, because recruit's closed form takes one constraint. Modelled midline, so its ipsilateral rotation - which Vasavada attributes to the superomedial fascicle orientation - is absent."}
+
+   "rectus_capitis_anterior"
+   {:name "rectus_capitis_anterior" :pcsa-cm2 1.00
+    :acts-about :atlanto-occipital :task :atlanto-occipital-flexion
+    ;; anterior surface of the lateral mass of the atlas -> the basilar occiput just
+    ;; behind and below the longus capitis insertion. It is the direct anterior
+    ;; counterpart of rectus capitis posterior minor: both connect C1 to the skull
+    ;; and neither crosses any intervertebral disc.
+    :origin {:segment "upper_cervical" :along 0.72 :ant 0.0052941 :lat 0.0}
+    :insertion {:segment "head" :along 0.030 :ant 0.0070588 :lat 0.0}
+    :source "PCSA 0.50 cm2 per side x 2 = 1.00 cm2 bilateral - REPRESENTATIVE, NOT MEASURED. Kamibayashi & Richmond do NOT measure this muscle: their Table 3-3 has fourteen rows and rectus capitis anterior is not one of them, which was checked in the fetched full text rather than assumed. Vasavada's chapter names it only qualitatively - \"On the ventral side, the rectus capitis anterior and rectus capitis lateralis are very small muscles that connect the skull to C1, presumably with (small) moment arms for flexion and lateral bending\" (p.66). The 0.50 cm2 per side is taken to EQUAL the measured value of its direct posterior counterpart, rectus capitis posterior minor (0.50 (0.19) cm2 per side, N=9, same table), which is a stated basis rather than a free choice but is still not a measurement of this muscle. WHAT IT COSTS: longus_capitis's PCSA is measured, and once these two share the flexion task by Crowninshield-Brand the measured muscle's force depends on this representative number. The one-line change that removes that dependence is to delete this entry; the joint then has one flexor, which also crosses C2/C3, so the model would be unable to express any purely atlanto-occipital flexion at all. Offsets are representative landmark distances (atlas lateral mass 9 mm anterior to the column axis; basiocciput insertion 12 mm anterior to the condyles and 5 mm up the skull axis, behind and below the longus capitis insertion because the clivus rises as it runs forward). Modelled midline, so its lateral bending is absent."}
+
    "upper_trapezius"
    {:name "upper_trapezius" :paired? true :pcsa-cm2 9.0
     :acts-about :shoulder :task :scapular-suspension
@@ -971,16 +1067,54 @@
     ;; surface fixes a muscle that is pulling the other way.
     (when dir (math/vdot dir vertical))))
 
+(def task-sense
+  "Which direction a task counts as RESISTING its load, per task.
+
+  `straight-moment-arm` returns a signed arm about the sagittal axis in which
+  POSITIVE means extension, and `recruit/share` distributes only across positive
+  coefficients — correctly, a muscle cannot push. A task whose load is stated as a
+  positive FLEXION moment therefore needs its muscles' arms negated before the
+  criterion sees them, or every one of them is refused for acting the wrong way at
+  every posture.
+
+  IT IS A PROPERTY OF THE TASK AND NOT OF THE MUSCLE, which is why it is a table
+  here rather than a field on each entry in `muscles`. Every muscle in a task shares
+  one equilibrium and therefore one sign convention; putting the sign on the muscle
+  would let two members of the same task disagree about which way their shared load
+  points, and nothing would notice.
+
+  Only tasks that differ from the default appear. `:atlanto-occipital-flexion` is
+  the only one today: its load is `load/atlanto-occipital-moment`'s
+  `:over-supplied-nm`, a magnitude, so its members' coefficients are the negated
+  arm and a muscle that is an EXTENSOR there gets a negative coefficient and is
+  refused — which is exactly what happens to the sternocleidomastoid, and why it is
+  not in this task.
+
+  This is NOT how the mirror-paired tasks work. `:elbow-flexion`, `:wrist-flexion`,
+  `:hip-extension`, `:knee-extension`, `:ankle-plantarflexion` and the two
+  lateral-flexion tasks hold BOTH sides of the joint in ONE task and are shared by
+  `muscle/share-signed`, which flips the load and every coefficient together when
+  the load changes sign. They keep the default +1 here; the flip is per-posture and
+  belongs to the solve, not to the anatomy."
+  {:atlanto-occipital-flexion -1.0})
+
 (defn effectiveness
   "The coefficient this muscle contributes to its task's equilibrium: a moment arm
   in metres for a moment task, a dimensionless direction cosine for a suspension
-  task. Returns nil when the line of action is degenerate."
+  task. Returns nil when the line of action is degenerate.
+
+  Signed by `task-sense`, so a task whose load is a flexion moment gets flexion
+  coefficients. `moment-arm` itself is untouched and keeps the one convention —
+  positive is extension — because `load/atlanto-occipital-moment` and every test
+  that inspects the geometry read it directly and must not have to know which task
+  a muscle happens to be in."
   [pose-data stature-m muscle]
   (if (= :scapular-suspension (:task muscle))
     (suspension-effectiveness pose-data stature-m muscle)
-    (moment-arm pose-data stature-m muscle
-                (get-in pose-data [:joints (:acts-about muscle)])
-                (axis-of muscle))))
+    (when-let [a (moment-arm pose-data stature-m muscle
+                             (get-in pose-data [:joints (:acts-about muscle)])
+                             (axis-of muscle))]
+      (* (get task-sense (:task muscle) 1.0) a))))
 
 (defn secondary-arm
   "The moment arm a TWO-JOINT muscle has at the joint its own task does not solve,

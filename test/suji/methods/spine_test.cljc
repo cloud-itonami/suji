@@ -662,11 +662,20 @@
   ;;     C5/C6   34.51 -> 241.96 N   +   semispinalis, splenius
   ;;     C4/C5   34.51 -> 241.96 N   +   semispinalis, splenius
   ;;     C3/C4    0.00 -> 207.44 N   +   semispinalis, splenius
+  ;; (4) 2026-09-08: the upper cervical FLEXORS were added, and `longus_capitis`
+  ;;     runs from the C3-C6 anterior tubercles to the basiocciput, so it reaches
+  ;;     the skull too and joins this set. It is the first ANTERIOR line to cross a
+  ;;     cervical level in this model. Its force at this posture is near zero — the
+  ;;     flexion side of the atlanto-occipital joint is loaded by gravity only when
+  ;;     the head is tipped BACK, and at `laptop-on-lap` it is tipped forward — so
+  ;;     the newtons at C3/C4 barely move (207.44 -> 207.44 N) while the set that
+  ;;     spans it grows by one. Membership and magnitude are different questions and
+  ;;     this test asks the first.
   (let [rows (:rows (run lap))
         by-name #(first (filter (fn [r] (= % (:name r))) rows))
         top (by-name "C3/C4")
         crossing (set (map first (:muscle-crossing top)))]
-    (is (= #{"semispinalis_capitis" "splenius_capitis"} crossing)
+    (is (= #{"semispinalis_capitis" "splenius_capitis" "longus_capitis"} crossing)
         (str "C3/C4 is spanned by the muscles that reach the skull, and only those: "
              top))
     (is (pos? (:muscle-n top)) "so its muscle term is no longer zero")
@@ -690,7 +699,8 @@
           ;; rather than as prose: WITHOUT the three cranial muscles nothing in the
           ;; set still reaches, so the C3/C4 row would empty again. That is what
           ;; makes this a test of the new anatomy and not of the profile in general.
-          cranial #{"semispinalis_capitis" "splenius_capitis" "sternocleidomastoid"}
+          cranial #{"semispinalis_capitis" "splenius_capitis" "sternocleidomastoid"
+                    "longus_capitis"}
           suboccipital #{"rectus_capitis_posterior_major" "rectus_capitis_posterior_minor"
                          "obliquus_capitis_superior"}
           reaching (filter crosses-c34? attachment/instances)
@@ -698,7 +708,7 @@
                           (remove #(cranial (:group %)) attachment/instances))]
       (is (seq reaching) "something in the muscle set does span C3/C4")
       (is (every? #(cranial (:group %)) reaching)
-          (str "and it is exactly the three that reach the skull: "
+          (str "and it is exactly the four that reach the skull: "
                (mapv :name reaching)))
       (is (empty? without)
           (str "remove them and nothing spans C3/C4 at all, which is exactly the "
