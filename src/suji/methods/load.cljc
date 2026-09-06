@@ -122,6 +122,62 @@
                               (load-at (- head-flexion-deg delta-deg)))
                            (* 2.0 delta-deg))})))
 
+
+;; --- what the desk carries ---------------------------------------------------
+;;
+;; ONE PLACE DECIDES, and this is it. `:arms-supported` used to be read at five
+;; call sites in this namespace with the answer written out by hand at each, and
+;; not at all in `frontal-moments` or in `spine/above-fraction`. Five copies of a
+;; two-element list is five places for the answer to drift, and it had already
+;; drifted: measured 2026-09-07 at shoulder 20 deg / elbow 90 deg / abduction
+;; 40 deg on a 70 kg / 1.70 m body, the SAGITTAL shoulder moment moved 9.9226 ->
+;; 1.8126 N*m when the forearms were rested, while the FRONTAL shoulder moment
+;; (-3.9184 N*m) and the L5/S1 weight-above (367.9455 N) were byte-identical
+;; supported and unsupported. In the frontal plane and in the spine profile, a
+;; forearm resting on a desk was still hanging in mid-air.
+
+(def desk-borne-bases
+  "The anthropometric segments a desk takes when the forearms rest on it.
+
+  It is the forearm and the hand, and it is not the upper arm: a forearm lying on
+  a desk still hangs off the shoulder girdle at its proximal end, and the upper
+  arm above it is carried by the body in both support states. That is why
+  `arms-supported` lowers the shoulder moment without abolishing it, and why the
+  girdle still has something to suspend (`muscle/suspended-weight-n`)."
+  #{"forearm" "hand"})
+
+(defn body-carries?
+  "Does the BODY still carry this anthropometric segment in this posture, or has
+  the desk taken it?
+
+  THE ONE QUESTION `:arms-supported` ASKS, so that every equilibrium in this model
+  asks it of the same function. `arm-moment-about`, `elbow-moment`,
+  `wrist-moment`, `lumbar-borne-bases` and `frontal-moments` all route through
+  here, and `spine`'s `above-fraction` — which decides what loads each trunk
+  level — is written to call it too.
+
+  THE SUPPORTED CASE IS AN IDEALISATION, and it is the same one everywhere
+  because it is stated once. The desk's upward reaction is taken to act AT the
+  forearm and hand centres of mass, so those segments drop out of the free body
+  entirely rather than leaving the small residual couple a real forearm resting on
+  its ulnar border at one point leaves. It is the bound in which the desk takes
+  everything it can; the true answer is between it and the unsupported one.
+
+  `base` is the anthropometric segment name (`pose`'s `:base`), not the placed
+  segment's unique `:name` — a bilateral pose has two `upper_arm`s and the desk
+  does not distinguish them."
+  [posture base]
+  (not (and (:arms-supported posture) (contains? desk-borne-bases base))))
+
+(defn carried-bases
+  "Those of `bases` the body still carries in this posture, in the order given."
+  [posture bases]
+  (filterv #(body-carries? posture %) bases))
+
+(def arm-bases
+  "The arm, proximal to distal — everything hanging off one shoulder girdle."
+  ["upper_arm" "forearm" "hand"])
+
 ;; --- Generic static joint moment (RNEA gravity term) -------------------------
 (defn- ->joint-load
   ([joint moment-nm] (->joint-load joint moment-nm "" nil))
@@ -131,13 +187,12 @@
      per-side (assoc :per-side per-side))))
 
 (defn- arm-moment-about
-  "Sagittal moment about one shoulder from the arm segments hanging off it."
-  [body p side arms-supported]
+  "Sagittal moment about one shoulder from the arm segments the BODY is carrying —
+  which is the whole arm, or the upper arm alone when the forearms rest on a desk.
+  Which it is, is `body-carries?`'s answer and not a second copy of it."
+  [body p side posture]
   (let [w (pose/segment-weights body p)
-        carried (if arms-supported
-                  ;; forearm + hand rest on the desk; the girdle carries the upper arm only
-                  ["upper_arm"]
-                  ["upper_arm" "forearm" "hand"])
+        carried (carried-bases posture arm-bases)
         joint (get-in p [:joints (keyword "shoulder" (name side))])]
     (pose/gravitational-moment
      joint
@@ -167,7 +222,7 @@
    (let [p (pose/solve-pose body posture)
          sup (:arms-supported posture)
          per-side (into {} (for [side [:left :right]]
-                             [side (arm-moment-about body p side sup)]))]
+                             [side (arm-moment-about body p side posture)]))]
      (->joint-load "shoulder" (+ (:left per-side) (:right per-side))
                    (if sup "forearms supported" "arms unsupported (hanging)")
                    per-side))))
@@ -186,7 +241,7 @@
   [body posture]
   (let [p (pose/solve-pose body posture)
         w (pose/segment-weights body p)
-        carried (if (:arms-supported posture) [] ["forearm" "hand"])]
+        carried (carried-bases posture ["forearm" "hand"])]
     (into {}
           (for [side [:left :right]]
             [side (pose/gravitational-moment
@@ -210,7 +265,7 @@
   [body posture]
   (let [p (pose/solve-pose body posture)
         w (pose/segment-weights body p)
-        carried (if (:arms-supported posture) [] ["hand"])]
+        carried (carried-bases posture ["hand"])]
     (into {}
           (for [side [:left :right]]
             [side (pose/gravitational-moment
@@ -218,29 +273,25 @@
                    (for [seg (pose/segments-on p carried side)]
                      [seg (get w (:name seg))]))]))))
 
-(def lumbar-borne-bases
-  "What the lumbar spine carries at L5/S1, by support state.
+(def trunk-borne-bases
+  "Everything above L5/S1 that the lumbar spine has to hold up, before the desk is
+  asked what it is taking: the trunk above the level, the head on top of it, and
+  both arms — which hang from the shoulder girdle, and the girdle is carried by
+  the thorax, so every gram of arm reaches the ground through the lumbar spine."
+  (into ["thorax_abdomen" "head_neck"] arm-bases))
 
-  The trunk above the level, the head on top of the trunk, and both arms — which
-  hang from the shoulder girdle, and the girdle is carried by the thorax, so every
-  gram of arm reaches the ground through the lumbar spine. Resting the forearms
-  moves the forearm and the hand onto the desk and off the spine, exactly as it
-  does at the shoulder in `arm-moment-about`; the upper arm still hangs from the
-  girdle either way.
+(defn lumbar-borne-bases
+  "What the lumbar spine carries at L5/S1 in this posture.
 
-  IT IS STATED AS DATA because `spine/above-fraction` answers the same question
-  for the compression at every trunk level, and until 2026-09-07 the two answered
-  it differently: the spine counted the arms as loading every trunk level (which
-  they do) and this moment counted no arm at all. One model, two answers, and
-  nothing that compared them.
+  IT WAS A MAP KEYED BY SUPPORT STATE until 2026-09-07, which is to say it was a
+  second, hand-written copy of the answer `body-carries?` gives — and a copy is
+  where two paths drift apart. It is derived now, so the desk cannot take the
+  forearm out of this moment and leave it in the frontal one.
 
-  THE SUPPORTED CASE IS AN IDEALISATION, in the same direction and for the same
-  reason as `arm-moment-about`'s: the desk's upward reaction is taken to act at
-  the forearm and hand centres of mass, so those segments drop out entirely rather
-  than leaving the small residual couple a real forearm resting at one point
-  leaves. It is the bound in which the desk takes everything it can."
-  {:supported ["thorax_abdomen" "head_neck" "upper_arm"]
-   :unsupported ["thorax_abdomen" "head_neck" "upper_arm" "forearm" "hand"]})
+  The idealisation, and the fact that the upper arm still hangs from the girdle
+  either way, are stated once in `body-carries?` and hold here unchanged."
+  [posture]
+  (carried-bases posture trunk-borne-bases))
 
 (defn lumbosacral-moment
   "Gravitational moment about L5/S1 from everything the lumbar spine carries: the
@@ -275,7 +326,7 @@
   (let [p (pose/solve-pose body posture)
         w (pose/segment-weights body p)
         supported (boolean (:arms-supported posture))
-        bases (lumbar-borne-bases (if supported :supported :unsupported))
+        bases (lumbar-borne-bases posture)
         m (pose/gravitational-moment
            (get-in p [:joints :l5s1])
            (for [seg (pose/segments-on p bases)] [seg (get w (:name seg))]))]
@@ -294,9 +345,13 @@
   that arm's frontal moment to cancel against and this number was an artefact of
   the modelling rather than of the posture.
 
-  These are reported, not solved, until a muscle exists that can carry them: see
-  `muscle/tension-summary`, which refuses to call an answer complete while any of
-  this is unassigned."
+  `muscle/solve-muscle-tensions` CARRIES these now — `:shoulder-per-side` is the
+  load of its `:shoulder-abduction` task and `:lumbosacral-nm` and `:cervical-nm`
+  are the loads of its two lateral-flexion tasks — where until 2026-09-06 there
+  was no frontal-plane musculature at all and this docstring said they were
+  reported and not solved. What `muscle/tension-summary` still refuses to call
+  complete is a REFUSAL, which is a different thing: a muscle whose leverage this
+  model cannot resolve at this posture."
   [body posture]
   (let [p (pose/solve-pose body posture)
         w (pose/segment-weights body p)
@@ -304,7 +359,18 @@
                   (nth (pose/gravitational-moment-vec
                         joint-point (for [seg segs] [seg (get w (:name seg))]))
                        0))
-        arm-bases ["upper_arm" "forearm" "hand"]]
+        ;; THE DESK REACHES THE FRONTAL PLANE TOO, since 2026-09-07. This line
+        ;; used to be the literal `["upper_arm" "forearm" "hand"]`, the one place
+        ;; in this namespace that never read `:arms-supported` at all, and the
+        ;; consequence was that `arms-supported` moved the sagittal shoulder
+        ;; moment from 9.9226 to 1.8126 N*m while leaving the frontal one at
+        ;; -3.9184 N*m to the last bit. A forearm cannot rest on a desk in one
+        ;; plane and hang in mid-air in the other; it is the same forearm and the
+        ;; same desk. `middle_deltoid`, which carries this moment in
+        ;; `muscle/solve-muscle-tensions`, therefore reported the identical %MVC
+        ;; supported and unsupported — the flag reached the abduction equilibrium
+        ;; nowhere at all.
+        carried-arm-bases (carried-bases posture arm-bases)]
     {;; PER SIDE, not summed. The two shoulders are different joints with
      ;; different muscles; a symmetric abduction gives each of them a real frontal
      ;; moment, and adding them cancels to zero and reports that abducting both
@@ -312,16 +378,17 @@
      ;; because there is one spine and the two arms load it about the same axis.
      :shoulder-per-side (into {} (for [side [:left :right]]
                                    [side (frontal (get-in p [:joints (keyword "shoulder" (name side))])
-                                                  (pose/segments-on p arm-bases side))]))
+                                                  (pose/segments-on p carried-arm-bases side))]))
      :shoulder-nm (reduce max 0.0
                           (for [side [:left :right]]
                             (math/abs* (frontal (get-in p [:joints (keyword "shoulder" (name side))])
-                                                (pose/segments-on p arm-bases side)))))
+                                                (pose/segments-on p carried-arm-bases side)))))
      :cervical-nm (frontal (get-in p [:joints :c7])
                            (pose/segments-on p ["head_neck"]))
+     ;; the same list `lumbosacral-moment` uses, from the same function: what the
+     ;; lumbar spine is holding up does not depend on which plane you ask about it in
      :lumbosacral-nm (frontal (get-in p [:joints :l5s1])
-                              (concat (pose/segments-on p ["thorax_abdomen" "head_neck"])
-                                      (pose/segments-on p arm-bases)))}))
+                              (pose/segments-on p (lumbar-borne-bases posture)))}))
 
 (def lower-limb-chain
   "Each lower-limb joint, the segments DISTAL to it, and the name it is reported

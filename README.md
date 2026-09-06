@@ -464,6 +464,100 @@ namespaces read repo files off disk and stay `.clj`, named for what they are.
 
 ## Corrections
 
+**`:arms-supported` reached the sagittal moments and nothing else (2026-09-07).** The flag means
+the forearms rest on a desk, so the desk carries the forearm and the hand and the body carries
+only the upper arm. It is one of the three reference workstations' distinguishing features and it
+is what the advice line in `analyze`'s report points at. It was read at five call sites in
+`load.cljc` with the two-element answer **written out by hand at each**, and `frontal-moments` did
+not read it at all.
+
+Measured on the 70 kg / 1.70 m body at shoulder 20° / elbow 90° / **abduction 40°**, before and
+after:
+
+| quantity | unsupported | supported (was) | supported (now) |
+|---|---|---|---|
+| shoulder moment, sagittal | 9.922588 N·m | 1.812620 | 1.812620 |
+| shoulder moment, **frontal** (left) | −3.9184149037422804 N·m | **−3.9184149037422804** | **−1.600583792781923** |
+| `middle_deltoid/left` | 21.56177777831644 %MVC | **21.56177777831644** | **8.843874638150753** |
+| L5/S1 weight-above (`spine`) | 367.945508 N | **367.945508** | **367.945508** — see below |
+
+The supported column was **byte-identical** to the unsupported one in the frontal plane. In the
+sagittal plane a forearm rested on a desk; in the frontal plane the same forearm, of the same arm,
+in the same posture, was still hanging in mid-air. `middle_deltoid` is fed entirely by
+`:frontal :shoulder-per-side`, so the abduction equilibrium never heard about the desk at all.
+
+With a laterally-bent trunk the same defect appears one joint down: at 25° of bend the frontal
+L5/S1 moment was −54.91992161403256 N·m in both states and is now −48.67019441729147 N·m
+supported, and `quadratus_lumborum/right` goes 27.882735608784447 → 24.577900226844537 %MVC.
+
+**One place decides now.** `load/body-carries?` answers "does the body still carry this segment,
+or has the desk taken it", `load/desk-borne-bases` is `#{"forearm" "hand"}`, and
+`arm-moment-about`, `elbow-moment`, `wrist-moment`, `lumbar-borne-bases` and `frontal-moments` all
+route through it. `lumbar-borne-bases` **was a map keyed by support state** — a second
+hand-written copy of the same two-element answer — and is derived now; the frontal L5/S1 term
+asks it for its segment list rather than concatenating its own. The idealisation is stated once,
+in `body-carries?`, and therefore holds identically everywhere: *the desk's upward reaction is
+taken to act at the forearm and hand centres of mass, so those segments drop out of the free body
+entirely rather than leaving the small residual couple a real forearm resting on its ulnar border
+at one point leaves.*
+
+**Why nothing noticed.** All three reference workstations are purely sagittal — no abduction, no
+lateral bend — so every frontal term is 0.0 in both support states and the defect is invisible at
+exactly the three postures this README publishes. `clojure -M -m suji.methods.analyze` produces
+**byte-identical output** before and after this change (diffed against `origin/main`'s `src`).
+The tests were the same shape: every test of the flag was a sagittal test. There are seven new
+ones, and `test-every-quantity-the-support-flag-reaches-responds-to-it` is a coverage test rather
+than a physics test — it asserts that each of six quantities MOVES when the flag flips, at a
+posture chosen so that all six are non-zero. Three of the six did not move by a single bit.
+
+**Neither published cross-check moved.** `lumbar-cross-check` holds Wilke's posture, which is
+`:arms-supported false` (model force 350.88684032499987 N, ratio 0.6356645658061592,
+`:within-reference-spread? false` — unchanged to the bit). `cervical-cross-check` at the three
+workstations is unchanged too (ratios 2.379664 / 1.666824 / 1.766411), because the arms load
+trunk levels only and never reached a cervical one.
+
+### What the spine still owes the desk, and the function it can call
+
+`spine/above-fraction` decides how much of each segment sits above a level, and its "a segment the
+rank table does not know is an ARM, which hangs from the girdle and therefore loads every trunk
+level" branch is **right and incomplete**: an arm hangs from the girdle *unless it is lying on a
+desk*. `weight-above-n` is therefore identical in both support states — 367.945508 N at the
+posture above — and `spine.cljc` is the last place in this model where the desk does not exist.
+
+`spine.cljc` already `:require`s `load`, so the call is available with no new dependency:
+
+```clojure
+(load/body-carries? posture (:base seg))   ;; false for "forearm"/"hand" when :arms-supported
+```
+
+It needs the POSTURE, which `above-fraction` and `weight-above-n` do not currently take.
+`profile` has it, and threading it through `level-compression` → `weight-above-n` →
+`above-fraction` is the whole change. Measured with that thread in place and then reverted
+byte-identical, on the same 70 kg / 1.70 m body:
+
+| posture | level | weight-above now | with the flag honoured | force-n now | with the flag |
+|---|---|---|---|---|---|
+| audit, supported | L5/S1 | 367.9455 N | **337.7410** | 400.1093 N | **369.9048** |
+| audit, supported | L4/L5 | 350.8868 | **320.6824** | 383.0506 | **352.8461** |
+| `laptop-on-desk` | L5/S1 | 366.5454 | **336.4558** | 660.4416 | **630.3521** |
+| `laptop-on-desk` | L4/L5 | 349.5516 | **319.4621** | 643.4479 | **613.3583** |
+
+The drop is the same at every lumbar level, because `above-fraction` gives an arm 1.0 at all of
+them: **30.2045 N** at the audit posture and **30.0896 N** at `laptop-on-desk`. Both are the
+weight of two forearms and two hands — 30.204482 N — times the level axis's vertical component,
+which is 1.0 for an upright trunk and cos 5° for that workstation's. Both cross-checks are unmoved by
+it: `lumbar-cross-check` because Wilke's posture is unsupported, `cervical-cross-check` because no
+cervical level ever counted an arm. That is measured, not predicted: 350.8868 N / 0.6357 and
+2.3797 / 1.6668 / 1.7664 with the thread in and with it out.
+
+**An audit finding that did not reproduce.** The same audit reported that
+`muscle/suspended-weight-n` read the flag from `(meta p)` and that `pose` never calls `with-meta`,
+so supported and unsupported both returned 34.32 N. That is fixed on `main` already — the flag is
+an argument and `attachment-test`'s `supporting-the-forearms-unloads-the-girdle` pins
+34.323274999999995 N against 19.221034 N. Putting the metadata read back makes that test fail with
+`resting the forearms transfers two segments to the desk: 34.323274999999995 N`, which is the
+audit's own number, so the guard discriminates for the reason it names.
+
 **Two joint moments that computed their own answer (2026-09-07).** `pose/gravitational-moment`
 is the RNEA gravity term read off the placed chain — the honest answer — and two functions in
 `load.cljc` derived their own instead, by hand, and got it wrong. They are the same defect twice,
@@ -871,7 +965,9 @@ moments they create. This actor has no frontal-plane musculature — no scalenes
 no latissimus, no gluteus medius — so there is nobody to assign them to, and
 `muscle/tension-summary` reports `:unassigned-frontal-nm` and refuses to call the
 answer complete. 40° of shoulder abduction at a desk creates 7.9 N·m that nothing
-in this model carries. The alternative, which this actor did until 2026-09-06, is
+in this model carries. (That 7.9 N·m is both shoulders' whole arms; it was computed
+before `frontal-moments` read `:arms-supported`, and at a desk — where the forearms
+are rested — the same posture now reports 3.2 N·m, carried by the middle deltoids.) The alternative, which this actor did until 2026-09-06, is
 to accept the input, move the picture with it, and quietly leave the load out of
 every number on the page.
 
