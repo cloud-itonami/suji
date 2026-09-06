@@ -76,11 +76,31 @@
         (str "the two paths really do disagree, and by how much is the point: " x))
     (is (< (:ratio x) 4.0) "but not by an order of magnitude")))
 
-(deftest point-attachments-leave-steps-and-the-model-names-them
+(deftest the-step-detector-reports-steps-and-only-steps
   ;; A real muscle attaches over a range of vertebrae; this one attaches at a
-  ;; point, so a level just past it loses the whole force at once. Reporting the
-  ;; steps is the difference between a reader seeing an artefact and a reader
+  ;; point, so a level just past it can lose the whole force at once. Reporting
+  ;; those is the difference between a reader seeing an artefact and a reader
   ;; believing a spine.
-  (let [steps (spine/attachment-steps (:rows (run lap)))]
-    (is (seq steps) "this model has such steps and must say so")
-    (doseq [s steps] (is (:after s)) (is (:at s)))))
+  ;;
+  ;; This used to assert that the CURRENT model has such steps, and it did until
+  ;; passive tension landed: a stretched muscle now contributes across levels
+  ;; where it previously contributed exactly zero, and the steps filled in. That
+  ;; is a real improvement and not a reason to keep asserting the artefact — so
+  ;; what is tested is the DETECTOR, on inputs that do and do not contain one.
+  (let [with-step [{:name "A" :muscle-n 100.0} {:name "B" :muscle-n 0.0}
+                   {:name "C" :muscle-n 50.0} {:name "D" :muscle-n 0.0}]
+        without [{:name "A" :muscle-n 100.0} {:name "B" :muscle-n 60.0}
+                 {:name "C" :muscle-n 20.0} {:name "D" :muscle-n 5.0}]]
+    (is (= [{:after "A" :at "B"} {:after "C" :at "D"}] (spine/attachment-steps with-step)))
+    (is (empty? (spine/attachment-steps without)))
+    (is (empty? (spine/attachment-steps [])))
+    (is (empty? (spine/attachment-steps [{:name "A" :muscle-n 0.0}])))))
+
+(deftest passive-tension-smoothed-the-profile
+  ;; the measured consequence, kept so that losing it would be visible
+  (let [rows (:rows (run lap))]
+    (is (empty? (spine/attachment-steps rows))
+        (str "no level loses its whole muscle term any more: "
+             (mapv (juxt :name :muscle-n) rows)))
+    (is (every? #(pos? (:muscle-n %)) (remove #(= "C3/C4" (:name %)) rows))
+        "every level below the top of the neck carries some muscle force")))

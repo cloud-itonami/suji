@@ -76,6 +76,53 @@
     (let [ratio (/ (double length) (double optimal-length))]
       (max 0.0 (- 1.0 (* 4.0 (- ratio 1.0) (- ratio 1.0)))))))
 
+(def passive-slack-frac
+  "Below this fraction of optimal length a muscle's passive tissue is slack and
+  carries nothing. A muscle at or under its optimal length does not pull on its
+  own — the elastic elements are not stretched."
+  1.0)
+
+(def passive-at-stretch
+  "Passive force as a fraction of PEAK active force at 1.5x optimal length, where
+  the active curve has already reached zero. Representative: passive tension is
+  the reason a fully stretched muscle still resists at all."
+  0.8)
+
+(defn passive-force-n
+  "Force this muscle's PASSIVE elastic tissue produces at its current length.
+
+  WHY THIS IS NOT OPTIONAL IN A STATIC MODEL. Passive tension needs no activation
+  and costs nothing metabolically — it is the tissue itself resisting being
+  stretched. In a static posture it is carried by whichever muscles the posture has
+  lengthened, and the nervous system only has to supply the REST. Ignoring it, as
+  this actor did until 2026-09-06, assigns the whole load to active contraction and
+  therefore overstates the effort of every posture that stretches a muscle.
+
+  IT IS NOT, BY ITSELF, FLEXION-RELAXATION — and the first draft of this docstring
+  said it was. Measured after writing it: at 60 deg of trunk flexion the erector
+  spinae reaches 1.27x its optimal length and its own passive tissue supplies
+  151 N of the 3,379 N the posture demands, about 4%. Real flexion-relaxation is
+  the POSTERIOR LIGAMENTOUS SYSTEM taking over — the supraspinous and
+  interspinous ligaments and the thoracolumbar fascia — and those are separate
+  structures this model does not contain. A muscle's own passive tension is one
+  term of that story and the smaller one; claiming it explains the phenomenon
+  would be claiming a mechanism the numbers do not support.
+
+  Exponential above slack, zero below, and expressed relative to the PEAK active
+  force rather than the available one — passive tissue does not care what the
+  contractile machinery can do at this length."
+  [spec length optimal-length]
+  (if (or (nil? length) (nil? optimal-length) (<= optimal-length 0.0))
+    0.0
+    (let [ratio (/ (double length) (double optimal-length))]
+      (if (<= ratio passive-slack-frac)
+        0.0
+        ;; normalised so that ratio = 1.5 gives `passive-at-stretch` of peak
+        (let [x (/ (- ratio passive-slack-frac) (- 1.5 passive-slack-frac))
+              k 5.0]
+          (* (peak-force-n spec) passive-at-stretch
+             (/ (- (Math/exp (* k x)) 1.0) (- (Math/exp k) 1.0))))))))
+
 (defn available-force-n
   "What this muscle can actually produce AT THIS POSTURE.
 
@@ -119,6 +166,13 @@
 ;; emission order — midline groups, then each side, matching `attachment/instances`
 (def emit-order (mapv :name attachment/instances))
 
+(defn passive-of
+  "Passive force for one instance at this posture."
+  [inst lengths optimals]
+  (passive-force-n (get specs (:group inst))
+                   (get lengths (:name inst))
+                   (get optimals (:name inst))))
+
 (defn f-max-of
   "Force available to one instance at this posture. `lengths` and `optimals` are
   `attachment/lengths` / `attachment/optimal-lengths`; passing neither falls back
@@ -158,7 +212,8 @@
   (for [m attachment/instances
         :when (and (= task (:task m))
                    (or (nil? side) (= side (:side m))))]
-    {:name (:name m) :f-max-n (f-max-of m lengths optimals) :coeff (get coeffs (:name m))}))
+    {:name (:name m) :f-max-n (f-max-of m lengths optimals) :coeff (get coeffs (:name m))
+     :passive-n (passive-of m lengths optimals)}))
 
 (defn- share-signed
   "Share a load whose SIGN says which side has to resist it.

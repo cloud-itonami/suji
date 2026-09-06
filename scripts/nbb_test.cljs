@@ -28,6 +28,7 @@
             [suji.methods.math-test]
             [suji.methods.moment-balance-test]
             [suji.methods.muscle-strain-test]
+            [suji.methods.passive-test]
             [suji.methods.pose-test]
             [suji.methods.recruit-test]
             [suji.methods.spine-test]
@@ -43,6 +44,7 @@
     suji.methods.math-test
     suji.methods.moment-balance-test
     suji.methods.muscle-strain-test
+    suji.methods.passive-test
     suji.methods.pose-test
     suji.methods.recruit-test
     suji.methods.spine-test
