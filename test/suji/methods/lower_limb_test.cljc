@@ -136,7 +136,17 @@
   ;; control demonstrates: with the chain stacked perfectly vertically the model
   ;; reports almost nothing, because a body balanced over its ankles needs almost
   ;; nothing from its calves.
-  (let [lean (pose/solve-pose body posture/quiet-standing)
+  ;;
+  ;; ⚠ IT IS ASSERTED ON `quiet-standing-lumbar-neutral` SINCE 2026-09-09, and the
+  ;; move is a result rather than an accommodation. A real quiet stance has BOTH
+  ;; this 2-6 cm offset and Cho's 47.1 deg of lumbar lordosis; this model cannot
+  ;; hold the two together, because L5/S1 is the root of its chain, so tilting the
+  ;; lumbar spine translates the whole body forward instead of rotating the pelvis
+  ;; under it. Installing Cho's lordosis moves this offset to 13.97 cm. The
+  ;; contradiction is pinned, with all four of the quantities it moves, in
+  ;; `cho-s-standing-lordosis-and-the-measured-line-of-gravity-cannot-both-hold`;
+  ;; widening this range to admit 13.97 cm would have deleted the evidence.
+  (let [lean (pose/solve-pose body posture/quiet-standing-lumbar-neutral)
         flat (pose/solve-pose body posture/standing-neutral)
         offset (fn [p] (- (first (:point (pose/whole-body-com body p)))
                           (first (get-in p [:joints :ankle/left]))))]
@@ -147,12 +157,12 @@
         (str "and a perfect vertical stack puts it over the ankle, got " (offset flat) " m"))
     ;; the moment follows, and its SIGN is the claim: a negative sagittal moment
     ;; about the ankle is the one a posterior muscle resists
-    (let [m (:left (:per-side (joint (at posture/quiet-standing) "ankle")))]
+    (let [m (:left (:per-side (joint (at posture/quiet-standing-lumbar-neutral) "ankle")))]
       (is (neg? m) (str "the demand is on the muscles BEHIND the ankle, got " m " N·m"))
       (is (< 5.0 (math/abs* m) 25.0)
           (str "and is a real, low, non-zero load — 10-20 N·m per ankle is what "
                "quiet standing is measured to cost. Got " m " N·m")))
-    (is (> (math/abs* (:left (:per-side (joint (at posture/quiet-standing) "ankle"))))
+    (is (> (math/abs* (:left (:per-side (joint (at posture/quiet-standing-lumbar-neutral) "ankle"))))
            (* 10.0 (math/abs* (:left (:per-side (joint (at posture/standing-neutral) "ankle"))))))
         "and the lean is where it comes from")))
 
@@ -180,8 +190,12 @@
   ;;
   ;; The control is that STANDING IS LOW — asserted on the standing number, not
   ;; inferred from the squat being high.
+  ;; `quiet` is the lumbar-neutral control since 2026-09-09: with Cho's standing
+  ;; lordosis installed the trunk translates 10 cm forward and the standing knee
+  ;; carries -35.66 N·m, which is not a fact about a knee. See
+  ;; `cho-s-standing-lordosis-and-the-measured-line-of-gravity-cannot-both-hold`.
   (let [squat (:left (:per-side (joint (at posture/deep-squat) "knee")))
-        quiet (:left (:per-side (joint (at posture/quiet-standing) "knee")))
+        quiet (:left (:per-side (joint (at posture/quiet-standing-lumbar-neutral) "knee")))
         p (pose/solve-pose body posture/deep-squat)]
     (is (< (math/abs* quiet) 5.0)
         (str "quiet standing barely loads the knee at all: " quiet " N·m"))
@@ -254,7 +268,12 @@
   ;; Without that control this test would pass against a model that gave soleus a
   ;; floor, which is the cheapest way to make this number come out non-zero and
   ;; the one that would mean nothing.
-  (let [quiet (:by (tensions-at posture/quiet-standing))
+  ;; `quiet` is the lumbar-neutral control since 2026-09-09, for the reason given
+  ;; in `quiet-standing-carries-the-line-of-gravity-in-front-of-the-ankle`: with
+  ;; Cho's lordosis the soleus/gastrocnemius ORDER reverses, which is one of the
+  ;; four measured facts about quiet standing this model loses when it is told
+  ;; how lordotic a standing lumbar spine is.
+  (let [quiet (:by (tensions-at posture/quiet-standing-lumbar-neutral))
         flat (:by (tensions-at posture/standing-neutral))
         sol (quiet "soleus/left")]
     (is (number? (:mvc-pct sol))
@@ -584,3 +603,75 @@
   ;; the overrides do what they say
   (is (= 45.0 (:trunk-flexion-deg (posture/seated-posture :trunk-flexion-deg 45.0))))
   (is (true? (:arms-supported (posture/seated-posture :arms-supported true)))))
+
+;; --- what installing the measured standing lordosis costs the leg -------------
+
+(deftest cho-s-standing-lordosis-and-the-measured-line-of-gravity-cannot-both-hold
+  ;; THE MOST USEFUL RESULT ON THIS BRANCH, and it arrives from a completely
+  ;; independent measurement from the one that produced the sevenfold overshoot at
+  ;; L4/L5.
+  ;;
+  ;; A real person standing still has BOTH of these things at once: about 47 deg of
+  ;; lumbar lordosis (Cho et al. 2015, 30 volunteers) and a line of gravity 2-6 cm
+  ;; anterior to the ankle, which is why the plantarflexors never switch off. This
+  ;; model can produce either one and not the two together, because L5/S1 is the
+  ;; ROOT of its chain: tilting the lumbar spine translates the whole body forward
+  ;; instead of rotating the pelvis under a trunk that stays where it is.
+  ;;
+  ;; FOUR SEPARATELY MEASURED QUANTITIES MOVE, all in the same direction, and all
+  ;; out of the range the literature puts them in. They are asserted here rather
+  ;; than accommodated in the four tests that used to hold them, because a range
+  ;; widened to admit 13.97 cm would have deleted the evidence and left a green
+  ;; suite saying the model reproduced quiet standing.
+  ;;
+  ;; IT IS ALSO THE CONTROL ON THE FIX. If somebody removes the lordosis from
+  ;; `quiet-standing` to make the leg tests pass again, this goes red: it asserts
+  ;; that the lordosis IS installed and that it DOES break these four things.
+  (let [lord posture/quiet-standing
+        flat posture/quiet-standing-lumbar-neutral
+        com (fn [p] (- (first (:point (pose/whole-body-com body (pose/solve-pose body p))))
+                       (first (get-in (pose/solve-pose body p) [:joints :ankle/left]))))
+        ankle (fn [p] (:left (:per-side (joint (at p) "ankle"))))
+        knee (fn [p] (:left (:per-side (joint (at p) "knee"))))
+        f (fn [p nm] (:force-n ((:by (tensions-at p)) nm)))]
+    ;; the lordosis is really there, and it is really Cho's
+    (is (math/nearly= (posture/pelvic-tilt-for :standing)
+                      (:pelvic-tilt-deg lord) 1e-12)
+        "quiet standing carries the standing lordosis Cho measured")
+    (is (zero? (:pelvic-tilt-deg flat)) "and the control carries none")
+    (is (= (dissoc lord :name :pelvic-tilt-deg) (dissoc flat :name :pelvic-tilt-deg))
+        (str "and the two differ in NOTHING else, so every difference below is "
+             "the lordosis and not a second edit"))
+
+    ;; 1. the line of gravity leaves the measured band
+    (is (< 0.02 (com flat) 0.06)
+        (str "without the lordosis the model is inside the measured 2-6 cm: "
+             (com flat) " m"))
+    (is (> (com lord) 0.10)
+        (str "with it the whole body has translated forward to " (com lord)
+             " m, which no standing person's does"))
+    (is (> (- (com lord) (com flat)) 0.09)
+        (str "the spurious translation is " (- (com lord) (com flat))
+             " m — the trunk swinging out about a root that should have moved"))
+
+    ;; 2. the ankle moment leaves the measured band
+    (is (< 5.0 (math/abs* (ankle flat)) 25.0)
+        (str "without it the ankle carries a plausible " (ankle flat) " N·m"))
+    (is (> (math/abs* (ankle lord)) 40.0)
+        (str "with it the ankle carries " (ankle lord) " N·m, about triple what "
+             "quiet standing is measured to cost"))
+
+    ;; 3. the knee stops being unloaded, which is the thing that separates
+    ;;    standing from a squat
+    (is (< (math/abs* (knee flat)) 5.0)
+        (str "without it standing barely loads the knee: " (knee flat) " N·m"))
+    (is (> (math/abs* (knee lord)) 30.0)
+        (str "with it the standing knee carries " (knee lord) " N·m, which is a "
+             "squat's load at a squat's sign"))
+
+    ;; 4. the calf pair reverses order
+    (is (> (f flat "soleus/left") (f flat "gastrocnemius/left"))
+        "without it soleus carries more of quiet standing than gastrocnemius")
+    (is (< (f lord "soleus/left") (f lord "gastrocnemius/left"))
+        (str "with it the order reverses — soleus " (f lord "soleus/left")
+             " N against gastrocnemius " (f lord "gastrocnemius/left") " N"))))
