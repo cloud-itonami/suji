@@ -137,6 +137,73 @@
     (is (not (apply = (mapv #(math/round-to (arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid/left") 9)
                             [0 30 60]))))))
 
+(def ^:private posture-grid
+  "Postures spanning every degree of freedom `pose` accepts, two or three values
+  each. Small enough to run on both hosts, and it moves EVERY joint — a grid that
+  held one still would report the muscles crossing it as constant and be reporting
+  its own gaps."
+  (for [hf [0.0 30.0] tf [0.0 45.0] sf [0.0 90.0] ab [0.0 60.0] ef [0.0 90.0]
+        lb [-20.0 20.0] we [0.0 30.0] hr [0.0 30.0]
+        hip [0.0 60.0] knee [0.0 60.0] ank [-20.0 20.0]]
+    {:head-flexion-deg hf :trunk-flexion-deg tf :shoulder-flexion-deg sf
+     :elbow-flexion-deg ef :shoulder-abduction-deg ab :trunk-lateral-bend-deg lb
+     :wrist-extension-deg we :head-rotation-deg hr
+     :hip-flexion-deg hip :knee-flexion-deg knee :ankle-dorsiflexion-deg ank}))
+
+(deftest exactly-one-muscle-has-both-ends-on-one-segment-and-it-is-a-suspender
+  ;; THE VERDICT ON A SUSPECTED DEFECT, pinned so it stays answered.
+  ;; `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm`
+  ;; names this shape as the error that produced a constant-looking arm, and
+  ;; `middle_trapezius` has it: both of its sites are on `thorax_abdomen`, so its
+  ;; length is 1.0000 × optimal at every posture and its passive tension is
+  ;; identically zero.
+  ;;
+  ;; It is NOT the error, for one reason and one reason only: a moment arm is
+  ;; taken about a joint the segment carries, and a suspension coefficient is a
+  ;; cosine against the world vertical, which it does not. So this test allows the
+  ;; shape for a suspension muscle and forbids it for everything else — a MOMENT
+  ;; muscle that acquired both ends on one bone is the bug, and would be caught
+  ;; here rather than showing up as a suspiciously flat column.
+  (let [same-bone (filterv #(= (get-in % [:origin :segment]) (get-in % [:insertion :segment]))
+                           att/instances)]
+    (is (= #{"middle_trapezius"} (set (map :group same-bone)))
+        (str "only the middle trapezius may have both ends on one segment: "
+             (mapv :name same-bone)))
+    (doseq [m same-bone]
+      (is (= :scapular-suspension (:task m))
+          (str (:name m) ": both ends on one bone is only defensible for a "
+               "suspension task, whose coefficient is not a moment arm")))))
+
+(deftest the-middle-trapezius-length-is-constant-and-the-file-says-why
+  ;; The measured half of the verdict above. Both are asserted, because either one
+  ;; alone is misleading: that the length never moves (a limitation), and that the
+  ;; coefficient does (which is why the muscle is still worth having).
+  (let [opt (att/optimal-lengths (pose/solve-pose body att/reference-posture) 1.70)
+        ratios (mapv (fn [p]
+                       (let [ls (att/lengths (pose/solve-pose body p) 1.70)]
+                         (/ (get ls "middle_trapezius/left")
+                            (get opt "middle_trapezius/left"))))
+                     posture-grid)
+        cosines (mapv #(att/effectiveness (pose/solve-pose body %) 1.70
+                                          (att/instance "middle_trapezius/left"))
+                      posture-grid)]
+    ;; an evidence floor: a grid that quietly emptied must not pass by having
+    ;; nothing to check
+    (is (< 100 (count ratios)) (str "the grid has to have postures in it: " (count ratios)))
+    (is (every? #(math/nearly= 1.0 % 1e-9) ratios)
+        (str "this model cannot move the middle trapezius: it has no scapula. "
+             "ratios spanned " [(apply min ratios) (apply max ratios)]))
+    ;; therefore its force-length factor is 1 and its passive tension 0, always,
+    ;; and its reported %MVC is a lower bound rather than an estimate
+    (is (every? #(= 1.0 (muscle/force-length-factor % 1.0)) ratios)
+        "so the length can never reduce its available force")
+    ;; and the coefficient it is actually solved with DOES move, which is what
+    ;; makes it a muscle rather than a column of the same number
+    (is (< 1 (count (distinct (mapv #(math/round-to % 6) cosines))))
+        "but its suspension coefficient varies, because the vertical is not on the thorax")
+    (is (> (- (apply max cosines) (apply min cosines)) 0.1)
+        (str "and by enough to matter: " [(apply min cosines) (apply max cosines)]))))
+
 (deftest supporting-the-forearms-unloads-the-girdle
   ;; A BRANCH THAT COULD NOT FIRE, until 2026-09-07. `muscle/suspended-weight-n`
   ;; read the flag from `(meta p)`, and `pose` calls `with-meta` nowhere and never
@@ -239,6 +306,69 @@
       (is (every? #(or (:force-n %) (:antagonist? %)) lateral)
           "and whoever does not is the antagonist, not an unanswered load")
       (is (:complete? (:summary r))))))
+
+(deftest the-abduction-arm-is-not-a-constant
+  ;; THE DEFECT THIS CATCHES, and it is the one this whole namespace exists to
+  ;; prevent. `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm`
+  ;; asserts that the ANTERIOR deltoid varies; the same assertion for the middle
+  ;; deltoid was never written, and until 2026-09-07 it would have failed. Its
+  ;; wrap radius was 0.022 m, which is not a bone radius at all — it is the top of
+  ;; the `~20-25 mm` moment-arm range its own `:source` quoted, used as a floor.
+  ;; A floor taken from the arm's own target sits ABOVE the arm, so it binds
+  ;; everywhere: measured over 3,072 postures the wrap was in force 3,072 times
+  ;; and the arm was −0.022 m at all of them. A moment arm that never moves is a
+  ;; table, and a table is what this file replaced.
+  (let [arms (mapv #(arm (at :shoulder-abduction-deg (double %)) "middle_deltoid/left")
+                   [0 15 30 45 60 75 90])]
+    (is (< 1 (count (distinct (mapv #(math/round-to % 9) arms))))
+        (str "the middle deltoid's abduction arm must move with the joint: " arms))
+    ;; and by enough to matter — a variation of a few microns would satisfy the
+    ;; line above while still being a constant to any consumer
+    (is (> (/ (apply max (map math/abs* arms)) (apply min (map math/abs* arms))) 1.2)
+        (str "and by enough that a constant would not have done: " arms))))
+
+(deftest the-abduction-floor-is-the-humeral-head-and-it-is-a-floor
+  ;; A wrapping surface is a FLOOR the chord can beat (`moment-arm-detail`). A
+  ;; floor that is in force at every posture is not a floor, it is a tabulated
+  ;; value wearing one — which is exactly what 0.022 m produced. Both halves are
+  ;; asserted here: the radius is the humeral head's, shared with the anterior
+  ;; deltoid because it is the same bone; and the chord actually beats it
+  ;; somewhere, so the wrap is doing the job it claims.
+  (let [md (att/instance "middle_deltoid/left")
+        ad (att/instance "anterior_deltoid/left")
+        r (get-in md [:wrap :radius-m])
+        dets (mapv (fn [d]
+                     (let [p (at :shoulder-abduction-deg (double d))]
+                       (att/moment-arm-detail p 1.70 md (get-in p [:joints :shoulder/left])
+                                              att/frontal-axis)))
+                   (range 0 181 5))]
+    (is (= r (get-in ad [:wrap :radius-m]))
+        (str "one bone, one radius: the two deltoids wrap the same humeral head, "
+             "and declared " r " and " (get-in ad [:wrap :radius-m])))
+    (is (some (complement :wrapped?) dets)
+        "the chord must beat the floor somewhere, or the floor is a table")
+    (is (some :wrapped? dets)
+        "and the floor must bind somewhere, or it is not doing anything")
+    ;; the floor is a floor: nothing may be reported closer to the joint than the
+    ;; bone the tendon lies on
+    (is (every? #(>= (math/abs* (:arm %)) (- r 1e-12)) dets)
+        (str "no arm may fall below the head radius " r ": "
+             (mapv #(math/round-to (:arm %) 5) dets)))))
+
+(deftest the-abductor-does-not-become-an-adductor-in-its-own-range
+  ;; WHAT THE CONSTANT WAS HIDING. With the acromion at the joint's own height the
+  ;; chord's abduction leverage was largest at 0° and fell through zero near 78°,
+  ;; so the model's principal abductor was an ADDUCTOR through the top half of its
+  ;; range. Nobody could see it, because the floor was above the chord's whole
+  ;; range and reported ±22 mm at every posture. Sign, then shape.
+  (doseq [d [0 30 60 90 120 150 180]]
+    (let [a (arm (at :shoulder-abduction-deg (double d)) "middle_deltoid/left")]
+      (is (neg? a) (str d "°: the left middle deltoid abducts, got " a))))
+  ;; and the shape: leverage is poorest at the extremes and best in mid-range,
+  ;; which is the opposite of what an origin level with the joint produced
+  (let [mag #(math/abs* (arm (at :shoulder-abduction-deg (double %)) "middle_deltoid/left"))]
+    (is (> (mag 45) (mag 0)) "leverage rises off the side of the body")
+    (is (> (mag 45) (mag 120)) "and falls again toward the top of the range")))
 
 (deftest the-abductor-and-the-adductor-are-opposites
   ;; They share a task precisely because they act in opposite senses; if both came
