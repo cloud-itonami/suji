@@ -80,8 +80,24 @@
       (is (math/nearly= (first ms) m 1e-9)
           (str "the same head placement must be the same cervical load, got " ms)))
     (is (> (first ms) 4.0) (str "and it is not zero: " ms))
-    ;; and the true moment the placed head exerts about C7 is the same in all
-    ;; three, which is what makes the claim above physics rather than arithmetic
+    ;; ⚠ AND THE POSE-DERIVED MOMENT IS NO LONGER IDENTICAL IN ALL THREE, since
+    ;; 2026-09-07. That used to be the second half of this test and it was true of a
+    ;; RIGID neck: one block tilted `trunk + head` from vertical is in the same
+    ;; place however the two are divided. With three cervical segments it is not,
+    ;; and the difference is the thing the split was for — `:head-flexion-deg` bends
+    ;; the column and `:trunk-flexion-deg` does not, so a person bent 60 deg at the
+    ;; waist with the neck IN LINE has a straight neck and a person flexing their
+    ;; head 60 deg has a curved one. Measured on a 70 kg / 1.70 m body:
+    ;;
+    ;;     head 60 / trunk  0   8.3348 N.m   the neck bends through the whole 60
+    ;;     head 30 / trunk 30   8.2693 N.m
+    ;;     head  0 / trunk 60   8.1944 N.m   the neck is straight; the old value
+    ;;
+    ;; 1.7% apart, and the third is bit-identical to what all three used to be,
+    ;; which is the control: with no head flexion there is no intra-cervical bend
+    ;; and the split changes nothing. The CERVICAL LOAD above is still identical in
+    ;; all three, because it reads the head\'s tilt from vertical and that is
+    ;; unchanged — which is the claim this test is named for.
     (let [truth (fn [head trunk]
                   (let [p (pose/solve-pose body (merge base {:head-flexion-deg head
                                                              :trunk-flexion-deg trunk}))
@@ -90,8 +106,15 @@
                      (get-in p [:joints :c7])
                      (for [s (pose/segments-on p segment/cervical-bases)] [s (get w (:name s))]))))
           ts [(truth 60.0 0.0) (truth 30.0 30.0) (truth 0.0 60.0)]]
-      (is (math/nearly= (first ts) (second ts) 1e-9))
-      (is (math/nearly= (first ts) (nth ts 2) 1e-9)))))
+      (is (math/nearly= 8.3348 (first ts) 1e-4) (str "head 60 / trunk 0: " ts))
+      (is (math/nearly= 8.2693 (second ts) 1e-4) (str "head 30 / trunk 30: " ts))
+      (is (math/nearly= 8.1944 (nth ts 2) 1e-4) (str "head 0 / trunk 60: " ts))
+      ;; ordered, and by little: the more of the angle that is HEAD flexion, the
+      ;; further forward the bent column carries the mass above C7
+      (is (> (first ts) (second ts) (nth ts 2))
+          (str "head flexion must cost more about C7 than the same trunk lean: " ts))
+      (is (< (/ (- (first ts) (nth ts 2)) (nth ts 2)) 0.02)
+          (str "and only by about 2 percent, because the partition is small: " ts)))))
 
 (deftest test-a-leaning-trunk-is-not-a-cervical-holiday
   ;; the monotone form of the same defect: at a FIXED head angle, leaning the trunk

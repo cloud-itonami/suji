@@ -219,7 +219,8 @@
   ;; `:joint` and `:moment-nm`, and must not need to know a lower limb was added.
   (let [loads (at posture/quiet-standing)
         names (mapv :joint (:joints loads))]
-    (is (= ["cervicothoracic" "shoulder" "elbow" "wrist" "lumbosacral" "hip" "knee" "ankle"]
+    (is (= ["cervicothoracic" "atlanto-occipital" "shoulder" "elbow" "wrist"
+            "lumbosacral" "hip" "knee" "ankle"]
            names)
         (str "the lower limb appends to the same vector, in chain order: " names))
     (doseq [j (:joints loads)]

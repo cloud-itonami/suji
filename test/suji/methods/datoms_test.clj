@@ -187,7 +187,11 @@
     (doseq [j [":hip" ":knee" ":ankle"]]
       (is (contains? joints j) (str j " must appear in the emitted load datoms")))
     (is (contains? joints ":cervicothoracic") "and the old ones are still there")
-    (is (= 8 (count (filter #(contains? % ":load/joint") ds)))
+    ;; nine since 2026-09-07: the atlanto-occipital joint appeared when the neck
+    ;; was split, and it reaches the log like every other joint
+    (is (contains? joints ":atlanto-occipital")
+        "and the joint the cervical split created is one of them")
+    (is (= 9 (count (filter #(contains? % ":load/joint") ds)))
         (str "every joint the solver reports must be emitted exactly once, got "
              (mapv #(get % ":load/joint") (filter #(contains? % ":load/joint") ds))))))
 

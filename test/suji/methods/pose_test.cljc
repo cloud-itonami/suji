@@ -32,7 +32,14 @@
         wrist (:wrist/left joints)
         shoulder (:shoulder/left joints)]
     (is (= c7 (:distal (pose/seg-at p "thorax_abdomen"))))
-    (is (= c7 (:proximal (pose/seg-at p "head_neck"))))
+    (is (= c7 (:proximal (pose/seg-at p "lower_cervical"))))
+    ;; the neck is a chain of three since 2026-09-07, and the two new joints have
+    ;; to be shared the same way
+    (is (= (:c2c3 joints) (:distal (pose/seg-at p "lower_cervical"))))
+    (is (= (:c2c3 joints) (:proximal (pose/seg-at p "upper_cervical"))))
+    (is (= (:atlanto-occipital joints) (:distal (pose/seg-at p "upper_cervical"))))
+    (is (= (:atlanto-occipital joints) (:proximal (pose/seg-at p "head"))))
+    (is (= (:vertex joints) (:distal (pose/seg-at p "head"))))
     (is (= shoulder (:proximal (pose/seg-at p "upper_arm/left"))))
     (is (= elbow (:distal (pose/seg-at p "upper_arm/left"))))
     (is (= elbow (:proximal (pose/seg-at p "forearm/left"))))
@@ -138,8 +145,9 @@
   [pose-data supported?]
   (let [w (pose/segment-weights body pose-data)
         bases (if supported?
-                ["thorax_abdomen" "head_neck" "upper_arm"]
-                ["thorax_abdomen" "head_neck" "upper_arm" "forearm" "hand"])]
+                (into ["thorax_abdomen"] (conj segment/cervical-bases "upper_arm"))
+                (into ["thorax_abdomen"]
+                      (concat segment/cervical-bases ["upper_arm" "forearm" "hand"])))]
     (pose/gravitational-moment
      (get-in pose-data [:joints :l5s1])
      (for [s (pose/segments-on pose-data bases)] [s (get w (:name s))]))))
@@ -169,12 +177,21 @@
   ;; the line of gravity when the trunk is upright — and returned exactly 0.
   (let [pst (neutral :head-flexion-deg 45.0)
         p (pose/solve-pose body pst)
-        head (pose/seg-at p "head_neck")
-        lever (pose/anterior-lever (get-in p [:joints :l5s1]) head)
+        ;; three segments since 2026-09-07, so the head's moment is a SUM over the
+        ;; complex rather than one segment's lever — and the three are no longer
+        ;; collinear, which is exactly what the split was for
+        necks (pose/segments-on p segment/cervical-bases)
+        w (pose/segment-weights body p)
+        lever (pose/anterior-lever (get-in p [:joints :l5s1])
+                                   (pose/seg-at p "head"))
         got (:moment-nm (load/lumbosacral-moment body pst))]
-    (is (> lever 0.10) (str "the premise: the head's CoM is anterior of L5/S1, got " lever))
-    (is (math/nearly= (* (segment/weight-n (segment/seg body "head_neck")) lever) got 1e-9)
-        (str "and the whole moment is that lever, got " got))
+    (is (> lever 0.10) (str "the premise: the skull's CoM is anterior of L5/S1, got " lever))
+    (is (math/nearly= (reduce + 0.0
+                              (for [s necks]
+                                (* (get w (:name s))
+                                   (pose/anterior-lever (get-in p [:joints :l5s1]) s))))
+                      got 1e-9)
+        (str "and the whole moment is those levers, got " got))
     (is (> got 6.0) (str "which is not zero, and was: " got))))
 
 (deftest test-the-arms-load-the-lumbar-spine-and-resting-them-unloads-it
