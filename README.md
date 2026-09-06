@@ -448,7 +448,7 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 233 tests / 6689 assertions
+clojure -M:test                                   # JVM   — 242 tests / 9322 assertions
 nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 215 tests / 1639 assertions
 clojure -M:lint                                   # 0 errors (13 pre-existing warnings)
 clojure -M -m suji.methods.analyze                # the laptop-posture report (works again)
@@ -924,6 +924,72 @@ deliberately does not clamp. Neither answer changed; both are now labelled
 consumer can tell an answer from a guess, which was previously impossible from the
 value alone. Twenty of the forty-eight muscle entries in `laptop-on-lap` are on
 the unbounded side of that line.
+
+**The published lexicons described data the emitter had stopped producing
+(2026-09-07).** `data/lex/muscleTension.edn` and `strainReport.edn` declared a
+five-value `group` enum. Measured on the reference scenarios that day, the emitter
+produced **48 distinct group values, none of them in that enum** — every paired
+group carried a `/left` or `/right` suffix, two ligaments had been added, and even
+the four midline groups were written as EDN keyword literals (`:erector-spinae`)
+against an enum of bare strings. It emitted a `:not-computed` band the enum did not
+list, omitted two `required` properties on 28 records each, and emitted four
+properties in `postureScenario` plus one in `jointLoad` that records declaring
+`additionalProperties false` say are structurally unrepresentable.
+
+None of that was detectable, because **nothing compared an emitted value against a
+lexicon.** `charter-invariants-test` had a test whose message called any difference
+"drift", but what it compared was the lexicon file against a five-element set typed
+into the test file; the emitter was not one of its inputs. Worse, the assertion was
+an EQUALITY against that snapshot, so correcting the lexicon to describe the real
+model FAILED the test whose stated purpose was to catch the lexicon being wrong.
+That is why the drift was never fixed.
+
+`lexicon-conformance-test` replaces it with the invariant worth holding: **every
+value the emitter produces is admitted by the lexicon**, checked by emitting from
+the reference scenarios and validating against the file
+(`datoms/validate-datoms`, portable `.cljc`; only the slurping is JVM). It also
+pins the closed vocabularies in the other direction, because an enum that admits
+everything emitted can still be a stale superset — which is exactly how a five-name
+list survived a twenty-six-group model. What stayed in the charter test is the half
+a conformance check cannot hold: the enum may contain only MECHANICAL names (G10 —
+no 経絡/気/波動). If a meridian were added to `attachment/instances`, conformance
+would report "not admitted" and the obvious fix — add it to the enum — would turn
+conformance green with the charter gone.
+
+**The structure and the side are two facts.** `:muscle/group` used to be
+`:upper-trapezius/left`. That made the published enum a list of modelled INSTANCES
+rather than a vocabulary of mechanical structures: it grew by two every time a
+muscle was made bilateral, so a purely mechanical change became a breaking change
+to a published enum, and the field's grammar varied by value, because the four
+midline groups carried no suffix and nothing in the schema said when to expect one.
+The anatomy layer had already separated them — `attachment/instances` sets `:group`
+and `:side` as distinct keys — and the emitter was re-joining what it had taken
+apart. `group` now names the structure, `side` is `:left`/`:right`/`:midline`, and
+"compare left against right" is an equality instead of string surgery.
+
+**The `-1.0` sentinel is gone.** `:strain/endurance-min` wrote `-1.0` for two
+OPPOSITE facts: 101 of 144 records where the %MVC is below the model's endurance
+floor and the fit returns ∞ (endurance effectively unlimited — the safest case),
+and 28 where the model refused the muscle and there is no dose at all. A consumer
+sorting that column numerically ranks the least-loaded muscles next to the ones
+nobody solved: the same failure as a band function returning the LOWEST band for a
+nil. `:strain/stiffness` wrote `-1.0` too, outside the `minimum 0, maximum 1` its
+own lexicon declared. Both fields are now **absent** when there is no number, and
+`:strain/endurance-limit` (`:finite` / `:unbounded` / `:not-computed`) says which
+kind of absence it is, in a field that cannot be sorted or averaged —
+`:strain/band` already did this for stiffness with `:not-computed`, and this is the
+same idiom at the third site to learn it. `:strain/endurance-position` carries the
+caveat next to the finite numbers, six of which are extrapolated below the fitted
+range.
+
+**Still open:** `suji.cells.strain-accumulate.state-machine` is a SECOND producer
+of the same published `strainReport` record, and it emits a different shape —
+bare keys (`"strain/id"`, not `":strain/id"`), bare band and group values, no
+`side`, no `enduranceLimit`, and it still builds a `-1.0` for an infinite endurance
+at `transition-rohmert-dose`. `validate-datoms` rejects all of it as
+`:no-identity-attribute`. Its `solve` throws (R0 scaffold), so it is not a live
+producer, but two projections of one published record disagreeing is the same class
+of defect one layer over.
 
 **The lower limb (2026-09-07), and the support mode that is the whole of it.**
 Thigh, shank and foot, bilateral, with muscles at the hip, knee and ankle. The

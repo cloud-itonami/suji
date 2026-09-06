@@ -45,7 +45,14 @@
  ;; ── muscle tension (Hill-type moment-arm; %MVC = 緊張) ─────────────────────────
  {:db/ident :muscle/id            :db/valueType :db.type/string  :db/cardinality :db.cardinality/one :db/unique :db.unique/identity}
  {:db/ident :muscle/posture       :db/valueType :db.type/ref     :db/cardinality :db.cardinality/one}
- {:db/ident :muscle/group         :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; :cervical-extensors :upper-trapezius :levator-scapulae :anterior-deltoid :erector-spinae
+ ;; ── the structure and the side are two facts (2026-09-07) ──
+ ;; :group used to carry both (:upper-trapezius/left), which made the published
+ ;; `group` enum a list of INSTANCES that grew by two every time a muscle was
+ ;; modelled bilaterally, and gave the field a grammar that varied by value
+ ;; (midline groups carried no suffix). attachment/instances had already separated
+ ;; them. See suji.methods.datoms/instance-group+side.
+ {:db/ident :muscle/group         :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; the anatomical structure, no side
+ {:db/ident :muscle/side          :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; :left | :right | :midline
  {:db/ident :muscle/force-n       :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}
  {:db/ident :muscle/mvc-pct       :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}
  ;; a muscle the model DECLINED to give a force. Present instead of force-n/mvc-pct,
@@ -58,9 +65,19 @@
  {:db/ident :strain/id            :db/valueType :db.type/string  :db/cardinality :db.cardinality/one :db/unique :db.unique/identity}
  {:db/ident :strain/posture       :db/valueType :db.type/ref     :db/cardinality :db.cardinality/one}
  {:db/ident :strain/group         :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}
+ {:db/ident :strain/side          :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; :left | :right | :midline
  {:db/ident :strain/session-min   :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}
- {:db/ident :strain/endurance-min :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}   ;; inf encoded as -1
- {:db/ident :strain/stiffness     :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}   ;; [0,1) 強張り index
+ ;; ── absent is absent (2026-09-07) ──
+ ;; :endurance-min used to be written as -1 both for "the model refused this muscle"
+ ;; and for "the load is below the endurance floor, so the model returns ∞" — the
+ ;; worst case and the safest case with the same value, in a field a consumer sorts.
+ ;; Now the number is present only when it IS one, and :endurance-limit says which
+ ;; kind of absence it is. :stiffness the same: -1 was outside its own [0,1] range,
+ ;; and :band already carried :not-computed for exactly that case.
+ {:db/ident :strain/endurance-limit    :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; :finite | :unbounded | :not-computed
+ {:db/ident :strain/endurance-min      :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}   ;; present iff :endurance-limit = :finite
+ {:db/ident :strain/endurance-position :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; where the %MVC sat relative to the fitted range
+ {:db/ident :strain/stiffness     :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}   ;; [0,1] 強張り index; absent when not computed
  {:db/ident :strain/saturated     :db/valueType :db.type/boolean :db/cardinality :db.cardinality/one}   ;; the index reached 1.0 in double precision and has no resolution left
  {:db/ident :strain/band          :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; :low :moderate :high :very-high
  {:db/ident :strain/as-of         :db/valueType :db.type/long    :db/cardinality :db.cardinality/one}]  ;; trajectory stamp (非終末論)
