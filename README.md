@@ -87,7 +87,8 @@ laptop workstation ──▶ posture (joint angles)        posture.cljc
                    ──▶ A/B/C ergonomic comparison      analyze.cljc
 ```
 
-The **skeleton** is a sagittal articulated segment chain — head → cervical → thorax → lumbar,
+The **skeleton** is a sagittal articulated segment chain — head → cervical → thorax → lumbar
+→ pelvis (the trunk was one segment until 2026-09-08 and is two now, hinged at T12/L1),
 with an arm branch (shoulder → elbow → wrist) and, since 2026-09-07, a leg branch
 (hip → knee → ankle) on each side — built from Winter (4e) Table 4.1 anthropometry — exactly the `PlanarChain` articulation kami-genesis
 solves (ADR-2605311500/1800). The **bones load** is the static special case of Featherstone RNEA
@@ -192,7 +193,7 @@ them is comparable**, and the other three say why not:
 | sitting relaxed, without backrest | **0.46 MPa** (0.45–0.50, p.758) | **yes** — p.758 also states the posture: "Relaxed sitting on a stool with a **normally straight back**" |
 | sitting with maximum flexion | 0.83 MPa | no — the paper gives the pressure but **not the trunk angle** |
 | standing, bent forward | 1.10 MPa | no — same, no angle |
-| relaxed standing | 0.50 MPa (0.48–0.50) | no — but **the reason changed on 2026-09-07 and is worth reading.** It used to be "this model cannot stand": no thigh segment, no support mode. It has both now. It still returns **the same 351 N at L4/L5 for standing and for sitting** — measured, not assumed — because in this model sitting and standing differ only BELOW L5/S1, and the lumbar spine cannot tell. What separates Wilke's two figures (0.50 vs 0.46) is pelvic tilt and the lordosis that goes with it, and this model's pelvis does not rotate. A missing segment became a missing degree of freedom; the entry stays refused either way |
+| relaxed standing | 0.50 MPa (0.48–0.50) | **yes, since 2026-09-08** — and it was refused twice before that, each time for a reason that was true when it was written. First "this model cannot stand": no thigh segment, no support mode. Then "it returns **the same 351 N** for standing and for sitting", because sitting and standing differed only BELOW L5/S1 and the lumbar spine could not tell. What separates Wilke's two figures is pelvic tilt and the lordosis that goes with it; **the pelvis rotates now and the lumbar spine tilts with it**, so the model can hold the two apart. It carries `:parameter-not-in-source` — the lordosis is Cho's, not Wilke's — and it **overshoots**. See "The pelvis had no rotation" below |
 
 Refusing the last three is the point. To compare against "maximum flexion" the
 model would have to **choose** a trunk angle, and choosing it is exactly the move
@@ -232,11 +233,13 @@ Reference, from the two published sources above and nothing else:
 0.50 MPa × 1800 mm² ÷ 1.5  =  600 N        (high: the other way round)
 ```
 
-**The model reads about 351 N** at that posture on Wilke's own body — **below the
+**The model reads about 349 N** at that posture on Wilke's own body — **below the
 reference's own spread, at roughly two thirds of the measured value** (measured
-2026-09-07; the model side moves whenever the muscle set moves, which is why
+2026-09-08; the model side moves whenever the muscle set moves, which is why
 `spine-test` pins the ratio into 0.5–0.8 rather than to a number, and why you
-should ask rather than quote):
+should ask rather than quote. It read 350.887 N until the trunk was split at
+T12/L1 and Winter's own non-uniform mass rows replaced an assumed uniform trunk;
+that took 2.025 N off it and moved it **further from** Wilke):
 
 ```clojure
 (spine/lumbar-cross-check)
@@ -253,12 +256,15 @@ side in both.
 ### Why it is short, named rather than fixed
 
 At zero trunk flexion this model's extensor moment is zero, so its tissue term is
-**exactly zero** and the whole 351 N is the weight stacked above L4/L5 — nothing
+**exactly zero** and the whole 349 N is the weight stacked above L4/L5 — nothing
 else. A real spine at rest is not unloaded: it has lordosis, resting muscle tone
-and intra-abdominal pressure, and `spine.cljc`'s own docstring already says it has
-none of the three ("There is no curvature: the model's spine is two straight
-segments"). `the-disagreement-is-the-absent-tissue-term-not-the-weight` asserts
-that decomposition, so the explanation is a computation rather than a story.
+and intra-abdominal pressure. **One of those three arrived on 2026-09-08**, and it
+does not close this gap, because Cho measures the lordosis of *this* posture —
+relaxed sitting on a stool — at **0.6° ± 3.6°**, i.e. straight. The model's
+neutral IS this posture, so the lordosis term is zero here for a measured reason
+rather than a missing one. Resting tone and intra-abdominal pressure are still
+absent. `the-disagreement-is-the-absent-tissue-term-not-the-weight` asserts that
+decomposition, so the explanation is a computation rather than a story.
 
 **The crossing repair of 2026-09-07 did not move this number, and it could not.**
 When `crosses?` stopped being a half-space test on height, every cervical row fell
@@ -2432,6 +2438,207 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   activation dynamics — a coupled static optimum predicts *less* co-contraction than a body
   produces, not more.
 
+## The pelvis had no rotation (2026-09-08)
+
+`spine/lumbar-cross-check` refused Wilke's `relaxed standing` entry, and the reason
+recorded here was precise: the model returned **the same 351 N at L4/L5 for standing
+and for sitting**, because sitting and standing differed only *below* L5/S1 and the
+lumbar spine could not tell. What separates Wilke's two figures is pelvic tilt and the
+lordosis that goes with it, and this model's pelvis did not rotate. **A missing segment
+had become a missing degree of freedom.**
+
+Two more limitations were named in the same breath: the five lumbar levels shared one
+orientation, and `spine.cljc`'s own docstring said *"There is no curvature: the model's
+spine is four straight segments and no arc, so it has no lordosis and no shear
+component."*
+
+### The trunk is two segments now, hinged at T12/L1
+
+| segment | spans | length (1.70 m) | mass (70 kg) | CoM from proximal |
+|---|---|---|---|---|
+| `lumbar` | L5/S1 disc → T12/L1 disc | 171.4 mm | 9.73 kg | 0.500 |
+| `thorax` | T12/L1 disc → C7 | 318.2 mm | 15.12 kg | 0.553 |
+
+`thorax_abdomen` is gone. New `:base` names for a renderer: **`lumbar`, `thorax`**, and a
+new joint `:t12l1`.
+
+**Why two and not five.** Five lumbar segments would give each level its own orientation,
+which is anatomically better and is not honest here: it needs a mass and a centre of mass
+*per vertebra*, which nothing publishes, and an angle for each of five joints where the
+posture supplies one number. That is the argument `cervical-split` made against
+per-vertebra necks and it is not weaker one region down. Said plainly: **the five lumbar
+levels still share one orientation.** It is the lumbar's own rather than the thorax's, and
+that is the whole change.
+
+**Where the mass split came from: Winter, unlike the cervical one.** The neck split needed
+`head-share-of-complex = 0.80` because three standard tables were checked and none of them
+divides head from neck. This one did not have that problem — Winter divides the trunk at
+exactly the place the split needs it:
+
+| Winter 4e Table 4.1 | definition | mass frac |
+|---|---|---|
+| Thorax | C7–T1 / T12–L1 and diaphragm | **0.216** |
+| Abdomen | T12–L1 / L4–L5 | **0.139** |
+| Thorax and abdomen | C7–T1 / L4–L5 | 0.355 ← the row this model was already using |
+
+and 0.216 + 0.139 = 0.355 exactly. Full text read 2026-09-08 from
+<https://courses.grainger.illinois.edu/me481/sp2021/Anthro-Winter.pdf>.
+
+The **boundary** at 0.35 of L5/S1→C7 is this model's own 0.07 lumbar level spacing
+continued upward past L1/L2 at 0.28 — the same derivation as `lower-cervical-span`. It puts
+the lumbar spine at 171 mm at 1.70 m stature against about 170 mm in an adult: a
+plausibility check, not a measurement.
+
+⚠ **One level of mismatch, inherited rather than created.** Winter's abdomen ends at L4–L5
+and his pelvis begins there; this model's trunk ends at L5/S1. The model has always applied
+Winter's 0.355 to a span one level longer than his and now applies his 0.139 the same way.
+
+⚠ **And a discrepancy the split surfaced and deliberately did not fix.** Winter's own rows
+put the trunk's centre of mass at **0.37** from the bottom; this model has used **0.50**
+since it existed. `thorax-com-frac` is therefore *solved* to preserve the 0.50 (coming out
+at 0.553, where Winter's thorax row says 0.18) rather than taken from Winter, for the same
+reason `head-com-frac` was solved: correcting it would move every moment in the library at
+once and make the lordosis result below unattributable. It is recorded in
+`segment/trunk-com-frac` with the direction — a trunk CoM that high **over-states** every
+trunk moment — so the next reader can take it.
+
+### The pelvic tilt, and the lordosis that follows from it
+
+`:pelvic-tilt-deg` (anterior positive, defaulting to 0.0) rotates the pelvis and turns the
+lumbar spine's **lower endplate** with it. The upper endplate is held by the thorax. So:
+
+```
+lumbar lordosis  =  pelvic-tilt                    (the angle between the two ends,
+                                                    which is what a Cobb L1–S1 measures)
+lumbar chord     =  trunk-flexion + pelvic-tilt/2  (a circular arc's chord bisects its
+                                                    two end tangents)
+pelvis segment   = -pelvic-tilt                    (tipping the sacrum forward carries
+                                                    the femoral heads back)
+```
+
+Nothing is chosen there. **Constant curvature is the assumption**, and it is stated.
+
+**The neutral is measured, not convenient.** The model's neutral is a straight lumbar spine,
+and Wilke's one comparable posture is *"relaxed sitting on a stool with a normally straight
+back"*. Cho, Park, Park, Kim, Jung & Lee, *"The Effect of Standing and Different Sitting
+Positions on Lumbar Lordosis: Radiographic Study of 30 Healthy Volunteers"*, **Asian Spine J
+2015;9(5):762–769** (full text read 2026-09-08 from
+<https://www.asianspinejournal.org/journal/view.php?doi=10.4184%2Fasj.2015.9.5.762>)
+radiographed 30 healthy volunteers — 31.1 y, **73.6 kg, 175 cm**, close in build to Wilke's
+45-year-old, 70 kg, 168 cm subject — and measured Cobb L1–S1:
+
+| posture | lordosis |
+|---|---|
+| standing | **47.1° ± 10.5°** |
+| chair with lumbar support | 36.2° ± 8.4° |
+| 90°-angled chair | 17.7° ± 4.4° |
+| **stool** | **0.6° ± 3.6°** |
+| chair with anterior support | −4.9° ± 3.3° |
+| cross-legged | −7.4° ± 3.5° |
+
+**A stool is straight to inside its own scatter.** So the model's neutral *is* Wilke's
+posture, measured, and standing is 46.5° from it.
+
+### What that did to Wilke — with the direction stated
+
+| | before | after | direction |
+|---|---|---|---|
+| **sitting relaxed, no backrest** (the comparable entry) | 350.887 N, ratio 0.6357 | **348.862 N, ratio 0.6320** | **AWAY** from the reference — and it is *not* the lordosis, which is zero at this posture. It is the trunk mass split: Winter's abdomen is 20% denser per unit length than his thorax, so less mass sits above L4/L5 than an assumed-uniform trunk put there. `70 × 9.80665 × (0.93×0.355 − (0.8×0.139 + 0.216)) = 2.0251 N`, to five figures |
+| **relaxed standing** | refused | **682.422 N, ratio 1.1374** | the entry produces a ratio for the first time, and **OVERSHOOTS** |
+
+Neither is inside the reference's own spread. **The model brackets the measurement** — below
+it when the spine is straight, above it when the spine is lordotic:
+
+```
+standing − sitting :   model 333.560 N        Wilke 48.0 N        ratio 6.95
+lordosis that would reproduce Wilke's 48 N :  5.736°   (Cho measured 46.5°)
+```
+
+Dividing the chord's sensitivity by 8 brings the difference ratio to 1.03 — the same
+statement from the other end. **That number is a diagnostic and is installed nowhere.** A
+fudge factor of 1/8 would make this section read like a validation and would be worth
+nothing; this repo has now recorded that five times.
+
+The dominant cause is stated in `pose/lumbar-chord-tilt-deg`: **L5/S1 is the root of this
+chain and does not move**, so tilting the lumbar chord translates the whole trunk anteriorly,
+where a real pelvis rotates about the *hips* and L5/S1 itself moves back.
+
+### The direction agreeing with Wilke is not evidence — and the first version of that control passed for the wrong reason
+
+The model says standing loads L4/L5 more. So does Wilke. **That agreement is worth nothing**,
+and finding out *why* took a break that produced no failure — which is the most valuable
+result on this branch.
+
+The control asserted that lordosis of either sign raises the compression, and explained it as
+*"either sign carries the mass above the level off the load line"*. Breaking
+`lumbar-chord-tilt-deg` so that it ignored the pelvic tilt entirely left the control **green**.
+It should have gone red. What it was hiding:
+
+- **The lordosis path is signed.** Freeze the pelvis so that only the chord follows the input:
+  −46.5° gives **320.531 N against 348.862 N flat**. A posterior lordosis *unloads* the level,
+  because all it does there is take a cosine.
+- **A second path is not lordosis at all.** Eight muscle groups here originate on the **pelvis**
+  — erector spinae, quadratus lumborum, latissimus dorsi, obliques, the posterior lumbar
+  ligaments, and three of the lower limb — so rotating the pelvis moves their origins whatever
+  the lumbar spine does. Posteriorly it swings them under L5/S1 and their moment arms collapse:
+  lumbar held straight, −46.5° reports **2121.6 N**.
+
+Path two swamps path one, so the model answers *"the tilted posture loads more"* for either
+sign, and would have said *"sitting loads more"* just as confidently had Cho's two numbers gone
+the other way. **The model's agreement with Wilke's direction is mostly a moment-arm
+degeneracy.** It does not contaminate the standing figure, where the tilt is anterior and
+lengthens the same arms rather than collapsing them.
+
+The control now asserts the counterfactual at the real magnitude and goes red when the pelvis
+is frozen; `pelvic-tilt-reaches-l4l5-by-a-second-path-that-is-not-lordosis` names the second
+path.
+
+### A limitation the degree of freedom created
+
+A tilted level takes only `w × cos(chord tilt)` of the weight above it, and **this model
+carries no shear**. At 46.5° of lordosis the weight term at L4/L5 falls 348.862 N → 320.531 N,
+so **28.3 N of real load leaves the model and arrives nowhere** — a load on the facet joints
+and the anulus, which this model does not have.
+`a-tilted-level-drops-its-shear-and-nothing-carries-it` derives it from the chord rule rather
+than pinning the number. `spine.cljc` used to say *"no curvature … so no lordosis and no
+shear"*; half of that stopped being true and the other half got worse.
+
+### What could not be sourced
+
+- **How lordosis divides between the sacrum and the lumbar discs.** Cho reports the
+  correlations (r = 0.731 with sacral slope, r = −0.842 with pelvic tilt) and **not the
+  partition**. This model has no vertebral wedging, so the pelvis carries all of it, which
+  **over-rotates the hips and both legs** in a lordotic posture. Named in
+  `posture/pelvic-tilt-for` with the direction of the error rather than split by a guess.
+- **Pelvic incidence.** The morphological constant that fixes how much sacral slope a
+  particular pelvis has needs a sacral endplate and a femoral-head geometry; this model has a
+  rod from L5/S1 to the hip axis. So `:pelvic-tilt-deg` is a **change** from the straight-lumbar
+  neutral, not an absolute pelvic tilt, and the model can compare two postures without being
+  able to state either one's SS or PT. Wilke's comparison is a difference too.
+- **Wilke's own subject's lordosis, in either posture.** Both reference entries now carry
+  `:parameter-not-in-source`. The sitting one's is zero and measured, which is why it stays
+  comparable; the standing one's is 46.5° from a different cohort with an SD of 10.5°, and the
+  entry says so rather than letting a ratio imply that one paper supplied both halves.
+
+### What did not move
+
+| | |
+|---|---|
+| **Hansraj 2014 cervical anchor** | `1.0 / 2.260021051801672 / 3.366025403784438 / 4.242640687119285 / 4.830127018922192` — **byte-identical**, measured on both trees. `load/cervical-load` is a function of head tilt from vertical and the mass above C7, and the trunk split preserved the trunk's mass, length and centre of mass while the pelvis defaults to zero rotation. |
+| cervical load, 3 reference workstations | 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N — **byte-identical** |
+| L5/S1 moment, 3 reference workstations | 58.5355504960427 / 16.140935480849357 / 12.253319657291728 N·m — 1 ulp, from a two-term sum replacing one term |
+| every reference posture in the repo | still `:pelvic-tilt-deg 0.0`. `posture/quiet-standing` therefore carries **zero** lordosis where Cho measures 47.1°, which is wrong and is deliberately left wrong here: changing it would move every standing number in this README and make the lordosis result unattributable. It is the next thing to do. |
+
+### The repo's own guard found the joint I had not named
+
+`every-placed-joint-has-an-equilibrium-or-is-named-as-a-gap` refused the new `:t12l1`: the
+split placed a joint and nothing acts about it. It is named now, beside `:c2c3`, with the
+reason — this model states trunk extension as **one** equilibrium at `:l5s1`, its single
+lumped erector spinae inserts *below* T12/L1 and does not even cross it, and carving segmental
+fascicles out of a 34.0 cm² lump that is itself `:representative` would need a number to divide
+it by that this repo does not have. Its absence makes no number wrong; what is unavailable is
+any statement about the thoracolumbar junction at all.
+
 **Honest R0**: design + runnable physics + a cervical model validated **along one line**.
 Anthropometry / muscle / endurance parameters are `:representative` (G7); the cervical leg is
 validated at `trunk = 0`, which is how Hansraj measured it and therefore all the anchor can say —
@@ -2445,5 +2652,10 @@ with the Hansraj-calibrated cervical model by about 70%, and with Wilke's in-viv
 pressure by about a factor of two thirds in the other direction. Both disagreements are computed by
 `cervical-cross-check` / `lumbar-cross-check` and asserted by tests, so neither can quietly stop
 being true. The cervical figure was `about a factor of two` until the crossing rule was repaired
-later the same day; the lumbar one did not move at all, and why it could not is stated below. No hardware, no live member scan, no live kami-genesis backend. Cells `.solve()` raise
+later the same day. **The lumbar one moved on 2026-09-08, twice and in the same direction: away.**
+The trunk was split at T12/L1 onto Winter's own non-uniform mass rows (350.887 → 348.862 N,
+ratio 0.6357 → 0.6320), and the pelvis learned to rotate, which made Wilke's `relaxed standing`
+entry comparable for the first time — where the model **overshoots**, at ratio 1.137. It now
+brackets the measurement rather than matching either end, and separates the two postures by about
+**seven times** too much. See "The pelvis had no rotation" above. No hardware, no live member scan, no live kami-genesis backend. Cells `.solve()` raise
 at R0; `load_solve` transitions are unit-tested.
