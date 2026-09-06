@@ -26,9 +26,28 @@
   WHAT IT IS NOT. Disc areas are representative adult values scaled with stature,
   not measurements of anybody (G7). Mass above a level is taken as uniform along
   the segment; the segment's own centre of mass is NOT uniform, and this is stated
-  rather than hidden — it biases levels near a segment's ends. There is no
-  curvature: the model's spine is four straight segments and no arc, so it has no
-  lordosis and no shear component. NON-DIAGNOSTIC (G1): a stress is a stress.
+  rather than hidden — it biases levels near a segment's ends. NON-DIAGNOSTIC
+  (G1): a stress is a stress.
+
+  ⚠ THERE IS A LORDOSIS SINCE 2026-09-08 AND STILL NO SHEAR, and the second half
+  of that got worse when the first half became true. This paragraph used to say
+  `there is no curvature: the model's spine is four straight segments and no arc,
+  so it has no lordosis and no shear component`, and the two clauses were
+  consistent — a spine stacked vertically under a vertical gravity has nothing to
+  shear it. `:pelvic-tilt-deg` tilts the lumbar levels now, so the weight above one
+  of them no longer acts along its axis: `weight-above-n` takes the component that
+  does, `w x (axis . up)`, and the transverse component is SHEAR that nothing here
+  carries. Measured on Wilke's body at 46.5 deg of lordosis, the weight term at
+  L4/L5 falls 348.862 N -> 320.531 N, so 28.3 N of real load leaves the model at
+  that level and arrives nowhere. It is named rather than absorbed because the
+  missing term is a load on structures this model does not have — the facet joints
+  and the anulus. `a-tilted-level-drops-its-shear-and-nothing-carries-it` derives
+  it from the chord rule rather than pinning the number.
+
+  THE SPINE IS STILL FIVE STRAIGHT SEGMENTS AND NO ARC. Lordosis enters as the
+  CHORD of an arc (`pose/lumbar-chord-tilt-deg`), so the lumbar spine tilts as one
+  rigid body and the five lumbar levels still share one orientation. What changed
+  is whose orientation it is: it was the thorax's and it is the lumbar's own.
 
   ⚠ TWO THINGS ABOUT THE CERVICAL ROWS, since 2026-09-07 changed one of them and
   not the other.
@@ -95,11 +114,26 @@
   L5/S1 is at 0.0 of the trunk and C7/T1 at 0.0 of the neck. `:disc-area-cm2` is a
   representative adult cross-section at reference stature; it scales with
   stature² because an area does."
-  [{:name "L5/S1" :region :lumbar :segment "thorax_abdomen" :along 0.00 :disc-area-cm2 18.0}
-   {:name "L4/L5" :region :lumbar :segment "thorax_abdomen" :along 0.07 :disc-area-cm2 17.0}
-   {:name "L3/L4" :region :lumbar :segment "thorax_abdomen" :along 0.14 :disc-area-cm2 16.0}
-   {:name "L2/L3" :region :lumbar :segment "thorax_abdomen" :along 0.21 :disc-area-cm2 15.0}
-   {:name "L1/L2" :region :lumbar :segment "thorax_abdomen" :along 0.28 :disc-area-cm2 14.0}
+  ;; --- the lumbar levels, re-based 2026-09-08 ----------------------------------
+  ;; These five used to sit on `thorax_abdomen`, which ran L5/S1 to C7, at 0.00 /
+  ;; 0.07 / 0.14 / 0.21 / 0.28 of it. They now sit on `lumbar`, which spans exactly
+  ;; 0.00-0.35 of that old segment, so each `:along` is the old one divided by 0.35
+  ;; and every level is in the same place on the same body at the neutral posture.
+  ;; Their disc areas are unchanged.
+  ;;
+  ;; WHAT MOVED IS THEIR ORIENTATION, and that is the whole reason for the split.
+  ;; All five still share ONE segment's frame — `lumbar` is L5/S1 to T12/L1 and is
+  ;; one rigid body — so a reader should not take five lumbar rows as five
+  ;; independently oriented joints. What is no longer true is that the frame is the
+  ;; THORAX's: the pelvis can rotate now, the lumbar spine's lower end turns with
+  ;; it, and these five levels tilt with the lordosis that produces. Sitting and
+  ;; standing can differ above L5/S1, which is what `lumbar-cross-check` needed and
+  ;; could not have.
+  [{:name "L5/S1" :region :lumbar :segment "lumbar" :along 0.0 :disc-area-cm2 18.0}
+   {:name "L4/L5" :region :lumbar :segment "lumbar" :along 0.2 :disc-area-cm2 17.0}
+   {:name "L3/L4" :region :lumbar :segment "lumbar" :along 0.4 :disc-area-cm2 16.0}
+   {:name "L2/L3" :region :lumbar :segment "lumbar" :along 0.6 :disc-area-cm2 15.0}
+   {:name "L1/L2" :region :lumbar :segment "lumbar" :along 0.8 :disc-area-cm2 14.0}
    ;; --- the cervical levels, re-based 2026-09-07 --------------------------------
    ;; These five used to sit on ONE segment, `head_neck`, at 0.00 / 0.06 / 0.12 /
    ;; 0.18 / 0.24 of it. They now sit on `lower_cervical`, which spans exactly
@@ -570,11 +604,30 @@
     :pressure-range-mpa [0.45 0.50]
     :posture {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0 :shoulder-flexion-deg 0.0
               :elbow-flexion-deg 0.0 :shoulder-elevation-deg 0.0
-              :wrist-extension-deg 0.0 :arms-supported false}
+              :wrist-extension-deg 0.0 :arms-supported false
+              :support :seated :hip-flexion-deg 90.0 :knee-flexion-deg 90.0
+              :ankle-dorsiflexion-deg 0.0
+              :pelvic-tilt-deg 0.0}
     :posture-basis (str "p.758 `Relaxed sitting on a stool with a normally straight "
                         "back` — a straight back is zero trunk flexion. The paper does "
                         "not state where the arms were; they hang, which is what a "
-                        "stool with no armrests leaves them doing.")}
+                        "stool with no armrests leaves them doing.")
+    ;; ADDED 2026-09-08, and it is a confession as much as a field. Until the
+    ;; lumbar spine could have a lordosis, this posture was fully determined by
+    ;; Wilke's own words. It is not any more: the model needs a lordosis, and
+    ;; Wilke does not state one. What makes this entry stay comparable is that the
+    ;; number is ZERO and is measured — Cho et al. 2015 radiograph a stool at
+    ;; 0.6 deg (SD 3.6) — so the model's own neutral is the posture, and nothing
+    ;; here was chosen to make the comparison come out anywhere.
+    :parameter-not-in-source
+    {:parameter :pelvic-tilt-deg
+     :value 0.0
+     :measured-lordosis-deg 0.6
+     :from :cho-2015-stool
+     :note (str "Wilke states the posture but no lumbar lordosis. Cho et al. 2015 "
+                "measure a stool at 0.6 deg (SD 3.6) in 30 healthy volunteers of "
+                "similar build — straight to inside its own scatter, which is this "
+                "model's neutral.")}}
    {:id :wilke-1999-sitting-maximum-flexion
     :label "sitting with maximum flexion"
     :pressure-mpa 0.83
@@ -592,13 +645,46 @@
     :pressure-mpa 0.50
     ;; p.758: `In relaxed standing, intradiscal pressure was reproducibly 0.48 to 0.50 MPa.`
     :pressure-range-mpa [0.48 0.50]
-    :not-comparable :standing-is-not-representable
-    :not-comparable-note
-    (str "This is a SEATED model whose base is the pelvis and which has no thigh "
-         "segment, so it cannot tell standing from sitting: it would return the same "
-         "force for both. Wilke measures them apart (0.50 standing, 0.46 sitting), and "
-         "the model's inability to reproduce that difference is a property of the model "
-         "worth saying out loud rather than a number worth producing.")}])
+    ;; COMPARABLE SINCE 2026-09-08, AND ITS HISTORY IS THE POINT. It has been
+    ;; refused twice for two different reasons, each true when it was written:
+    ;;
+    ;;   until 2026-09-07  `this model cannot stand` — no thigh segment, no support
+    ;;                     mode. It got both.
+    ;;   until 2026-09-08  `it returns the same 351 N for standing and for sitting`,
+    ;;                     because sitting and standing differed only BELOW L5/S1
+    ;;                     and the lumbar spine could not tell. A missing segment
+    ;;                     had become a missing degree of freedom.
+    ;;
+    ;; The trunk is split at T12/L1 now and the pelvis rotates, so what separates
+    ;; the two postures — pelvic tilt and the lordosis that goes with it — is
+    ;; something the model can hold. The angles below L5/S1 are `quiet-standing`'s
+    ;; and they are IRRELEVANT to this level, which is measured rather than
+    ;; asserted: `the-lower-limb-does-not-reach-l4l5` shows sitting and standing at
+    ;; the same lordosis give the same force to the bit. The whole difference is
+    ;; the lordosis.
+    :posture {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0 :shoulder-flexion-deg 0.0
+              :elbow-flexion-deg 0.0 :shoulder-elevation-deg 0.0
+              :wrist-extension-deg 0.0 :arms-supported false
+              :support :standing :hip-flexion-deg 0.0 :knee-flexion-deg 5.0
+              :ankle-dorsiflexion-deg 5.0
+              :pelvic-tilt-deg 46.5}
+    :posture-basis (str "Table 1 p.757 / p.758 `relaxed standing`. The upper body is "
+                        "held at exactly the angles the sitting entry holds it at, so "
+                        "that the only thing that differs between the two comparisons "
+                        "is the lordosis. The lower limb is `posture/quiet-standing`.")
+    :parameter-not-in-source
+    {:parameter :pelvic-tilt-deg
+     :value 46.5
+     :measured-lordosis-deg 47.1
+     :from :cho-2015-standing
+     :note (str "Wilke states the posture and no lumbar lordosis. Cho et al. 2015 "
+                "measure standing at 47.1 deg (SD 10.5) and a stool at 0.6, so the "
+                "tilt from this model's straight neutral is 46.5. It is READ from a "
+                "published measurement of the same named posture, not chosen — but "
+                "it is read from a DIFFERENT paper and a different cohort from the "
+                "pressure it is compared against, and the SD is 10.5 deg. Both "
+                "entries carry an imported lordosis now; this one is the one where "
+                "it is not zero.")}}])
 
 (defn reference-by-id
   "The entry in `lumbar-references` with this id, or nil."
@@ -676,6 +762,10 @@
          (assoc base
                 :posture posture
                 :posture-basis (:posture-basis reference)
+                ;; the input the reference does not state, carried out with the
+                ;; answer rather than left in the table for somebody to find
+                :parameter-not-in-source (:parameter-not-in-source reference)
+                :lumbar-lordosis-deg (pose/lumbar-lordosis-deg posture)
                 :model-force-n model-n
                 :model-weight-n (:weight-n row)
                 :model-muscle-n (:muscle-n row)
@@ -689,6 +779,95 @@
                 :direction (cond (< model-n lo-n) :model-below-reference
                                  (> model-n hi-n) :model-above-reference
                                  :else :within-reference-spread)))))))
+
+(defn sitting-standing-comparison
+  "Wilke measured relaxed standing and relaxed sitting APART — 0.50 MPa against
+  0.46 — and until 2026-09-08 this model returned the same force for both. This
+  reports what it returns now, and whether that is an improvement.
+
+  IT IS NOT A VALIDATION AND THE ARITHMETIC BELOW IS WHY. Three things are
+  reported and they answer different questions:
+
+    :model-difference-n      standing minus sitting, this model
+    :reference-difference-n  standing minus sitting, Wilke, through the same
+                             pressure index the rest of this namespace uses
+    :difference-ratio        the first over the second
+
+  THE DIRECTION AGREEING IS NOT EVIDENCE, and this is the most important sentence
+  in the function. In this model ANY lordosis, of either sign, moves the mass above
+  a lumbar level off the load line and therefore raises the compression there. The
+  straighter of two postures is the lighter one whichever posture that is. So the
+  model was going to say `standing loads L4/L5 more than sitting` the moment it was
+  told standing is the more lordotic posture — and it would have said `sitting loads
+  it more` just as confidently had the two measurements been the other way round.
+  A mechanism that cannot produce the opposite answer has not predicted this one.
+
+  WHAT IS EVIDENCE IS THE SIZE, and the size is wrong by most of an order of
+  magnitude. See `lordosis-matching-reference-difference-deg`.
+
+  BOTH SIDES CARRY AN IMPORTED LORDOSIS (`:parameter-not-in-source` on each), so
+  `:model-validated?` is false here exactly as it is everywhere else in this
+  namespace."
+  []
+  (let [sit (lumbar-cross-check (reference-by-id :wilke-1999-sitting-relaxed-no-backrest))
+        stand (lumbar-cross-check (reference-by-id :wilke-1999-relaxed-standing))
+        d-model (- (:model-force-n stand) (:model-force-n sit))
+        d-ref (- (:reference-force-n stand) (:reference-force-n sit))]
+    {:sitting sit
+     :standing stand
+     :model-difference-n d-model
+     :reference-difference-n d-ref
+     :difference-ratio (when-not (zero? d-ref) (/ d-model d-ref))
+     :same-direction? (or (and (pos? d-model) (pos? d-ref))
+                          (and (neg? d-model) (neg? d-ref)))
+     :direction-is-not-evidence
+     (str "any lordosis of either sign raises compression in this model, so the "
+          "sign of this difference follows from which posture was given the "
+          "smaller lordosis and could not have come out the other way")
+     :validated :reference
+     :model-validated? false}))
+
+(defn lordosis-matching-reference-difference-deg
+  "How much lordosis this model needs at L4/L5 to reproduce Wilke's own
+  standing-minus-sitting difference — a DIAGNOSTIC, and deliberately not a
+  constant anything uses.
+
+  Bisected on `:pelvic-tilt-deg` against the standing reference's own posture,
+  everything else held. Put beside the 46.5 deg Cho measured, it says how far off
+  this model's sensitivity to lordosis is; that quotient is the finding, and
+  installing the answer as the model's lordosis would be the fudge factor this
+  repo has refused four times.
+
+  Returns nil if the difference is not bracketed within the interval searched,
+  rather than returning an endpoint — an answer that could not be obtained must
+  not look like one that was."
+  []
+  (let [ref (reference-by-id :wilke-1999-relaxed-standing)
+        sit (reference-by-id :wilke-1999-sitting-relaxed-no-backrest)
+        {:keys [subject]} wilke-1999
+        body (segment/build-body (:mass-kg subject) (:stature-m subject))
+        at (fn [tilt]
+             (let [pst (assoc (:posture ref) :pelvic-tilt-deg tilt)
+                   loads (load/solve-posture-loads body pst)
+                   tensions (muscle/solve-muscle-tensions body pst loads)]
+               (:force-n (first (filter #(= "L4/L5" (:name %))
+                                        (profile body pst tensions))))))
+        base (at 0.0)
+        target (- (pressure->compressive-force-n (:pressure-mpa ref)
+                                                 (:disc-area-mm2 wilke-1999)
+                                                 (:mean nachemson-pressure-index))
+                  (pressure->compressive-force-n (:pressure-mpa sit)
+                                                 (:disc-area-mm2 wilke-1999)
+                                                 (:mean nachemson-pressure-index)))
+        hi 46.5]
+    (when (and (< (- (at 0.0) base) target) (>= (- (at hi) base) target))
+      (loop [lo 0.0 hi hi n 0]
+        (if (> n 60)
+          (* 0.5 (+ lo hi))
+          (let [mid (* 0.5 (+ lo hi))]
+            (if (< (- (at mid) base) target)
+              (recur mid hi (inc n))
+              (recur lo mid (inc n)))))))))
 
 (def niosh-1981-compression-criteria
   "The two lumbar compressive forces NIOSH names for workplace DESIGN.

@@ -377,3 +377,59 @@
             (str m " is not REFUSED there — a zero load is a placed load, and the "
                  "difference is between `nothing is asked of it here` and `this "
                  "model could not answer`: " (dby m)))))))
+
+;; --- the trunk split at T12/L1 (2026-09-08) ----------------------------------
+
+(deftest the-trunk-split-keeps-the-trunk-centre-of-mass
+  ;; `segment/thorax-com-frac` is DERIVED from this rather than chosen, exactly as
+  ;; `head-com-frac` is, so this is the equation it was solved from asserted back.
+  ;; At the neutral posture the two trunk segments are collinear, so their combined
+  ;; centre of mass has to land where the single `thorax_abdomen` segment's did —
+  ;; 0.50 of L5/S1→C7 from L5/S1. That is what keeps every moment about L5/S1
+  ;; unchanged for an unflexed, unrotated trunk.
+  (let [b (segment/build-body 70.0 1.70)
+        p (pose/solve-pose b {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0
+                              :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0})
+        l5s1 (get-in p [:joints :l5s1])
+        w (pose/segment-weights b p)
+        segs (pose/segments-on p segment/trunk-bases)
+        total (reduce + 0.0 (map #(get w (:name %)) segs))
+        com-y (/ (reduce + 0.0 (for [s segs] (* (get w (:name s))
+                                                (- (second (:com s)) (second l5s1)))))
+                 total)
+        want (* segment/trunk-com-frac segment/trunk-len-frac 1.70)]
+    (is (= 2 (count segs)) "two segments, L5/S1 to C7")
+    (is (math/nearly= (* segment/trunk-mass-frac 70.0 segment/gravity) total 1e-12)
+        (str "their weights must be Winter's 0.355 of body mass: "
+             (mapv #(get w (:name %)) segs)))
+    (is (math/nearly= (* segment/trunk-len-frac 1.70)
+                      (reduce + 0.0 (map :length-m segs)) 1e-12)
+        (str "and their lengths the 0.288 H the one segment had: "
+             (mapv :length-m segs)))
+    (is (math/nearly= want com-y 1e-12)
+        (str "the two together must sit where the one segment did: " com-y
+             " vs " want))))
+
+(deftest winters-trunk-is-not-uniform-and-that-is-what-moved-the-lumbar-weight
+  ;; THE COST OF PREFERRING A MEASURED SPLIT TO AN ASSUMED UNIFORM ONE, derived
+  ;; rather than pinned. `spine/above-fraction` treats mass as uniform WITHIN a
+  ;; segment, so before the split it was uniform along the whole trunk and L4/L5
+  ;; carried 0.93 of 0.355. Winter's two rows are not uniform — the abdomen is
+  ;; 0.139 over 0.35 of the length against the thorax's 0.216 over 0.65 — so L4/L5
+  ;; now carries 0.8 of the lumbar plus all of the thorax, which is LESS.
+  ;;
+  ;; The difference is the whole of the movement in `lumbar-cross-check` reported
+  ;; on 2026-09-08 (350.887 N → 348.862 N), and it is not the lordosis: at Wilke's
+  ;; posture the lordosis is zero.
+  (let [{:keys [lumbar thorax]} segment/trunk-mass-split
+        uniform (* (- 1.0 0.07) segment/trunk-mass-frac)
+        split (+ (* (- 1.0 0.2) lumbar) thorax)
+        g (* 70.0 segment/gravity)]
+    (is (math/nearly= 0.355 (+ lumbar thorax) 1e-12)
+        "Winter's two rows sum to the row this model was already using")
+    (is (< split uniform)
+        (str "the lower trunk is denser, so less mass sits above L4/L5: "
+             split " vs " uniform))
+    (is (math/nearly= 2.02507 (* g (- uniform split)) 1e-4)
+        (str "and the difference is the 2.025 N `lumbar-cross-check` moved: "
+             (* g (- uniform split))))))

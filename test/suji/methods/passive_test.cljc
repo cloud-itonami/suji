@@ -163,11 +163,17 @@
         lig-moment (* (:coeff lig) (:force-n lig))
         ;; the pre-2026-09-07 formula, written out: thorax lever + head weight
         ;; placed AT C7, no arms.
-        thorax (segment/seg body "thorax_abdomen")
+        ;; the trunk was ONE segment when that formula was written; it is two
+        ;; since 2026-09-08, so the old formula is restated over the pair —
+        ;; the same trunk mass at the same centre of mass and the same length.
+        lumbar (segment/seg body "lumbar")
+        thorax (segment/seg body "thorax")
+        trunk-len (+ (:length-m lumbar) (:length-m thorax))
+        trunk-w (+ (segment/weight-n lumbar) (segment/weight-n thorax))
         head-w (* (segment/head-mass-kg 70.0) segment/gravity)
         s (Math/sin (math/radians 60.0))
-        old-demand (+ (* (segment/weight-n thorax) (:length-m thorax) (:com-frac thorax) s)
-                      (* head-w (:length-m thorax) s))
+        old-demand (+ (* trunk-w trunk-len segment/trunk-com-frac s)
+                      (* head-w trunk-len s))
         new-demand (:moment-nm (first (filter #(= "lumbosacral" (:joint %)) (:joints loads))))]
     (is (> lig-moment old-demand)
         (str "the ligament alone (" lig-moment " N·m) exceeded the old demand ("

@@ -290,8 +290,11 @@
   the thorax, so every gram of arm reaches the ground through the lumbar spine.
 
   `head_neck` became three segments on 2026-09-07 and all three are here: the
-  lumbar spine carries the whole complex above C7 exactly as it carried the block."
-  (into (into ["thorax_abdomen"] segment/cervical-bases) arm-bases))
+  lumbar spine carries the whole complex above C7 exactly as it carried the block.
+  `thorax_abdomen` became two on 2026-09-08 and both are here for the same reason —
+  the lumbar segment is BELOW most of the lumbar levels but it is not below L5/S1,
+  and `above-fraction` is what decides how much of it any given level carries."
+  (into (into (vec segment/trunk-bases) segment/cervical-bases) arm-bases))
 
 (defn lumbar-borne-bases
   "What the lumbar spine carries at L5/S1 in this posture.

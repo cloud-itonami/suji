@@ -71,7 +71,9 @@
   ;; and the `:along` values were rescaled onto it.
   (doseq [m cranial]
     (let [spec (att/instance m)]
-      (is (= "thorax_abdomen" (get-in spec [:origin :segment])) (str m " origin"))
+      ;; `thorax` is the part of the old `thorax_abdomen` above T12/L1, and the
+      ;; `:along` values were rescaled onto it when the trunk was split 2026-09-08.
+      (is (= "thorax" (get-in spec [:origin :segment])) (str m " origin"))
       (is (= "head" (get-in spec [:insertion :segment])) (str m " insertion"))
       (let [arms (mapv #(math/round-to (arm (at :head-flexion-deg (double %)) m) 9)
                        [0 15 30])]
@@ -402,7 +404,7 @@
   ;; THE VERDICT ON A SUSPECTED DEFECT, pinned so it stays answered.
   ;; `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm`
   ;; names this shape as the error that produced a constant-looking arm, and
-  ;; `middle_trapezius` has it: both of its sites are on `thorax_abdomen`, so its
+  ;; `middle_trapezius` has it: both of its sites are on `thorax`, so its
   ;; length is 1.0000 × optimal at every posture and its passive tension is
   ;; identically zero.
   ;;
@@ -782,8 +784,38 @@
   and the muscle lines that happen to cross it, and no force from any muscle whose
   job is to hold that joint — so its compression is a LOWER bound. It is the one
   place in the cervical profile where the model is knowingly short of a muscle
-  rather than short of a measurement."
-  #{:c2c3})
+  rather than short of a measurement.
+
+  --- :t12l1 -----------------------------------------------------------------
+
+  ADDED 2026-09-08, WHEN THE TRUNK WAS SPLIT AT T12/L1 so that the lumbar spine
+  could have an orientation the thorax does not give it. This test is what found
+  it: the split placed a new joint and nothing named it, and the guard refused to
+  let a placed joint go unsolved and unmentioned.
+
+  WHY NO MUSCLE ACTS ABOUT IT HERE. This model states trunk extension as ONE
+  equilibrium, about `:l5s1` — `erector_spinae` is `:acts-about :l5s1` and it is
+  the only trunk extensor there is. The real thoracolumbar junction is held by the
+  segmental fascicles of longissimus, iliocostalis and multifidus, each spanning a
+  few levels, and this model has none of them: it has one lumped erector spinae
+  standing for all of it, inserting at 0.25 of the old trunk — BELOW T12/L1 — so
+  it does not even cross this joint.
+
+  IT IS THE SAME KIND OF BLOCKER AS `:c2c3` AND NOT THE SAME BLOCKER. There the
+  segmentation could express the muscles and no source publishes their
+  cross-sections. Here the segmentation could express them too, and what is
+  missing is the SEGMENTATION OF THE MUSCLE rather than of the bone: carving
+  fascicles out of a 34.0 cm2 lump that is itself `:representative` would need a
+  number to divide it by that this repo does not have. Adding a second trunk
+  extensor without one would double-count against the lump, exactly as carving
+  `cervical_extensors` would.
+
+  WHAT ITS ABSENCE COSTS. Nothing this actor reports today is a T12/L1 moment, so
+  no number is wrong because of it — what is unavailable is any statement about
+  the thoracolumbar junction at all, which is where a lifted load is usually said
+  to be carried. The lumbar levels below it are unaffected: their compression comes
+  from the muscles that cross THEM, solved at the joints those muscles act about."
+  #{:c2c3 :t12l1})
 
 (deftest every-placed-joint-has-an-equilibrium-or-is-named-as-a-gap
   ;; The coverage question, asked of the data rather than of a comment: which

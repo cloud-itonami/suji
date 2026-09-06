@@ -234,6 +234,72 @@
      :upper (* forward (/ c2c3-rom-deg flexing))
      :head (- reversal)}))
 
+(defn lumbar-chord-tilt-deg
+  "Tilt from vertical of the LUMBAR segment, given the thorax's tilt and the
+  pelvic tilt — `trunk-flexion + pelvic-tilt/2`.
+
+  THIS IS THE DEGREE OF FREEDOM THE TRUNK SPLIT EXISTS FOR, so it is worth being
+  exact about what is derived and what is assumed.
+
+  WHAT THE PELVIS DOES TO THE LUMBAR SPINE. The lumbar spine runs between two
+  endplates. Its lower end is the S1 endplate, which is part of the pelvis and
+  turns with it; its upper end is the L1/T12 endplate, which this model gives to
+  the thorax. Rotating the pelvis anteriorly by `p` therefore rotates the LOWER
+  end anteriorly by `p` and leaves the upper end where the thorax put it. The
+  angle between the two ends — which is what a radiologist calls lumbar lordosis,
+  measured Cobb between the L1 and S1 endplates — becomes exactly `p`.
+
+  WHY THE CHORD IS THE MEAN. A rigid segment between two ends that differ by `p`
+  has to be given ONE direction, and the model has one lumbar segment. For a
+  circular arc — constant curvature, the simplest curve with those two tangents —
+  the chord bisects the two end tangents, so its tilt is their mean:
+  `((trunk + p) + trunk) / 2 = trunk + p/2`. Nothing is chosen here; a different
+  curve would give a different chord, and constant curvature is the assumption,
+  stated.
+
+  ZERO PELVIC TILT IS A STRAIGHT LUMBAR SPINE, AND THAT NEUTRAL IS MEASURED
+  RATHER THAN CONVENIENT. The model's neutral has the lumbar collinear with the
+  thorax, i.e. zero lordosis, and the posture this actor has to answer for at
+  L4/L5 is Wilke's `relaxed sitting on a stool with a normally straight back`.
+  Cho et al. 2015 radiographed 30 healthy volunteers in five sitting positions and
+  measured lumbar lordosis ON A STOOL at 0.6 deg (SD 3.6) — straight to inside its
+  own scatter. So the model's neutral IS the reference posture, and
+  `spine/lumbar-cross-check` at Wilke's own posture does not move because the
+  pelvis exists. See `posture/lumbar-lordosis` for the citation and for the
+  standing figure.
+
+  WHAT IT CANNOT DO. This model has no PELVIC INCIDENCE — the morphological
+  constant that fixes how much sacral slope a particular pelvis has — because it
+  has no sacral endplate and no femoral-head geometry, only a rod from L5/S1 to
+  the hip axis. So `:pelvic-tilt-deg` is a CHANGE in pelvic orientation away from
+  the straight-lumbar neutral, not an absolute pelvic tilt in the
+  Duval-Beaupere sense, and the model can compare two postures without being able
+  to state either one's SS or PT. Wilke's comparison is a difference too, so this
+  is the quantity the cross-check needs and not a lesser substitute for it.
+
+  AND THE ONE THING IT GETS OBVIOUSLY WRONG. L5/S1 is the root of this chain and
+  does not move, so tilting the lumbar chord carries the whole body above it
+  forward or back through space. A real body compensates elsewhere and keeps its
+  line of gravity over its feet; this one does not, and `load/lower-limb-loads`
+  will report `:cop-inside-base? false` for a standing posture given enough
+  lordosis. That is the model failing to state a posture, and it says so."
+  [trunk-flexion-deg pelvic-tilt-deg]
+  (+ trunk-flexion-deg (* 0.5 pelvic-tilt-deg)))
+
+(defn lumbar-lordosis-deg
+  "The angle between the lumbar spine's two ends, in degrees — the quantity a
+  radiograph reports as lumbar lordosis (Cobb, L1 superior endplate to S1
+  superior endplate).
+
+  It IS `:pelvic-tilt-deg`, because the thorax holds the upper end and the pelvis
+  turns the lower one. Reported as its own function rather than left implicit so
+  that a consumer can compare it against a published lordosis without having to
+  know that the two are the same number in this model — and so that the day the
+  thorax stops holding the upper end, this stops being the identity and the
+  callers do not have to be found."
+  [posture]
+  (or (:pelvic-tilt-deg posture) 0.0))
+
 (defn- cervical-chain
   "Place the three cervical segments, from C7 upward.
 
@@ -262,7 +328,7 @@
         lc-seg (hangs-from (place "lower_cervical" :midline c7
                                   (segment-frame lc-tilt lateral 0.0 true)
                                   (:length-m lc) (:com-frac lc) lc-tilt true)
-                           "thorax_abdomen" 1.0)
+                           "thorax" 1.0)
         c2c3 (:distal lc-seg)
         uc-seg (hangs-from (place "upper_cervical" :midline c2c3
                                   (segment-frame uc-tilt lateral 0.0 true)
@@ -306,10 +372,10 @@
         ua-frame (segment-frame shoulder-flexion-deg (* (- side-sign) abduct) 0.0 false)
         ;; the arm hangs from the GIRDLE, which this model rides on the top of the
         ;; trunk: the shoulder is c7 offset laterally, so the upper arm attaches to
-        ;; `thorax_abdomen` at 1.0 of its length and to nothing cervical at all.
+        ;; `thorax` at 1.0 of its length and to nothing cervical at all.
         ua-seg (hangs-from (place "upper_arm" side shoulder ua-frame (:length-m ua)
                                   (:com-frac ua) shoulder-flexion-deg false)
-                           "thorax_abdomen" 1.0)
+                           "thorax" 1.0)
         elbow (:distal ua-seg)
         ;; Elbow flexion is the angle BETWEEN the forearm and the upper arm (0° =
         ;; straight arm hanging, 90° = right angle), so the forearm's tilt from
@@ -453,6 +519,17 @@
     :wrist-extension-deg      hand lifted relative to the forearm (a keyboard's
                               usual 15-25 deg)
 
+  THE PELVIS ROTATES, added 2026-09-08, and it too defaults to zero so that every
+  number this actor produced before it existed is unchanged:
+
+    :pelvic-tilt-deg          ANTERIOR pelvic tilt. It rotates the pelvis (and so
+                              the hips, and so both legs) and it rotates the
+                              lumbar spine's lower end, which gives the lumbar
+                              spine a lordosis equal to it and an orientation that
+                              is no longer the thorax's. See
+                              `lumbar-chord-tilt-deg`, which is where all of that
+                              is derived, and `lumbar-lordosis-deg`.
+
   THE LOWER LIMB, added 2026-09-07, is likewise optional and defaults to zero, so
   a posture that names none of it places both legs straight down and every number
   this actor produced before it existed is unchanged:
@@ -470,22 +547,41 @@
         head-rot (or (:head-rotation-deg posture) 0.0)
         stature-m (:stature-m body)
         pelvis (segment/seg body "pelvis")
-        thorax (segment/seg body "thorax_abdomen")
+        lumbar (segment/seg body "lumbar")
+        thorax (segment/seg body "thorax")
+        pelvic-tilt (or (:pelvic-tilt-deg posture) 0.0)
         l5s1 [0.0 0.0 0.0]
-        ;; The trunk is the ROOT of this chain and the pelvis hangs off its
-        ;; proximal end. Both start at L5/S1, so either could have been called the
-        ;; root; the trunk is, because `spine/levels` states every level as a
-        ;; fraction of a segment measured from L5/S1 upward, and rooting the chain
-        ;; anywhere else would make that reading depend on a convention stated
-        ;; somewhere the levels cannot see.
-        p-seg (hangs-from (place "pelvis" :midline l5s1 (segment-frame 0.0 0.0 0.0 false)
-                                 (:length-m pelvis) (:com-frac pelvis) 0.0 false)
-                          "thorax_abdomen" 0.0)
+        ;; The LUMBAR segment is the ROOT of this chain and the pelvis hangs off
+        ;; its proximal end. Both start at L5/S1, so either could have been called
+        ;; the root; the lumbar spine is, because `spine/levels` states every level
+        ;; as a fraction of a segment measured from L5/S1 upward, and rooting the
+        ;; chain anywhere else would make that reading depend on a convention
+        ;; stated somewhere the levels cannot see.
+        ;;
+        ;; THE PELVIS ROTATES SINCE 2026-09-08. It used to be placed straight down
+        ;; at every posture, which is what made sitting and standing identical
+        ;; above L5/S1. An ANTERIOR pelvic tilt tips the top of the sacrum forward
+        ;; and therefore carries the femoral heads BACKWARD, which is why the
+        ;; segment's flexion is the negative of the input: this segment runs from
+        ;; L5/S1 DOWN to the hip axis, so it is the line Duval-Beaupere's pelvic
+        ;; tilt is measured along, with the opposite sign convention.
+        p-seg (hangs-from (place "pelvis" :midline l5s1
+                                 (segment-frame (- pelvic-tilt) 0.0 0.0 false)
+                                 (:length-m pelvis) (:com-frac pelvis)
+                                 (- pelvic-tilt) false)
+                          "lumbar" 0.0)
+        lumbar-tilt (lumbar-chord-tilt-deg trunk-flexion-deg pelvic-tilt)
+        l-frame (segment-frame lumbar-tilt lateral 0.0 true)
+        l-seg (hangs-from (place "lumbar" :midline l5s1 l-frame
+                                 (:length-m lumbar) (:com-frac lumbar)
+                                 lumbar-tilt true)
+                          nil nil)
+        t12l1 (:distal l-seg)
         t-frame (segment-frame trunk-flexion-deg lateral 0.0 true)
-        t-seg (hangs-from (place "thorax_abdomen" :midline l5s1 t-frame
+        t-seg (hangs-from (place "thorax" :midline t12l1 t-frame
                                  (:length-m thorax) (:com-frac thorax)
                                  trunk-flexion-deg true)
-                          nil nil)
+                          "lumbar" 1.0)
         c7 (:distal t-seg)
         ;; THREE cervical segments since 2026-09-07, hinged at C2/C3 and at the
         ;; atlanto-occipital joint. `:head-flexion-deg` is unchanged in meaning and
@@ -511,6 +607,9 @@
               ;; a hip joint and never was: the femoral heads are `:hip/left` and
               ;; `:hip/right`, half of `interhip-frac` to either side of it.
               :pelvis-base (:distal p-seg)
+              ;; the joint the trunk split created: the T12/L1 disc, where the
+              ;; lumbar spine ends and the thorax begins.
+              :t12l1 t12l1
               :c7 c7
               :shoulder/left (:shoulder left)
               :shoulder/right (:shoulder right)
@@ -537,7 +636,7 @@
               :c2c3 (:c2c3 neck)
               :atlanto-occipital (:atlanto-occipital neck)
               :vertex (:vertex neck)}
-     :segments (vec (concat (into [p-seg t-seg] (:segments neck))
+     :segments (vec (concat (into [p-seg l-seg t-seg] (:segments neck))
                             (:segments left) (:segments right)
                             (:segments leg-left) (:segments leg-right)))}))
 
