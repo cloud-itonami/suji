@@ -126,18 +126,49 @@
        (add! "| muscle | tension %MVC | endurance | stiffness (強張り) | band |")
        (add! "|---|---|---|---|---|")
        (doseq [s (stable-sort-by-neg-stiffness (:strains r))]
-         (let [end (cond
-                     (nil? (:endurance-minutes s)) "—"
-                     (math/infinite? (:endurance-minutes s)) "∞"
-                     :else (str (fmt-f 0 (:endurance-minutes s)) " min"))]
-           (add! (str "| " (:name s) " | " (fmt-f 0 (:mvc-pct s)) "% | " end " | "
-                      (fmt-f 2 (:stiffness-index s)) " | "
-                      (strain/stiffness-band (:stiffness-index s)) " |"))))
-       (let [w (worst-stiffness (:strains r))]
-         (add! "")
-         (add! (str "- worst: **" (:name w) "** stiffness " (fmt-f 2 (:stiffness-index w))
-                    " (" (strain/stiffness-band (:stiffness-index w)) ")"))
-         (add! "")))
+         ;; A row without a %MVC is rendered AS a refusal, with its reason, the way
+         ;; the browser table does it. Printing a dash would let a reader take the
+         ;; row for a small number; the reason is the answer.
+         ;;
+         ;; The branch is `numeric-mvc?`, not `:refused`. There are two ways to
+         ;; have no %MVC — the model declined to compute a force, and the entry is
+         ;; a LIGAMENT, which cannot contract and so has no maximum voluntary
+         ;; contraction to be a fraction of. That helper's own docstring calls this
+         ;; "the question every emit site should ask, and the one three of them got
+         ;; wrong in a row"; this was the fourth, and the only one a user could
+         ;; reach from the README.
+         (if-not (muscle/numeric-mvc? s)
+           (add! (str "| " (:name s) " | 適用範囲外"
+                      (when (:refused s) (str "（" (name (:refused s)) "）"))
+                      " | — | — | " (strain/stiffness-band nil) " |"))
+           (let [;; The endurance figure carries WHERE it sits relative to the
+                 ;; range the published curve was fitted over. A bare `∞` for a
+                 ;; muscle at 6 %MVC is a modelling choice — the model's own floor
+                 ;; — and nothing in the report said so; a reader took it for a
+                 ;; measured result. `strain` computes the position; this only
+                 ;; declines to drop it.
+                 pos (case (:endurance-position s)
+                       :below-endurance-floor "（モデルの床未満）"
+                       :below-fitted-range "（適合域より下）"
+                       :above-maximum-voluntary-contraction "（MVC 超）"
+                       nil)
+                 end (cond
+                       (nil? (:endurance-minutes s)) "—"
+                       (math/infinite? (:endurance-minutes s)) (str "∞" pos)
+                       :else (str (fmt-f 0 (:endurance-minutes s)) " min" pos))]
+             (add! (str "| " (:name s) " | " (fmt-f 0 (:mvc-pct s)) "% | " end " | "
+                        (fmt-f 2 (:stiffness-index s)) " | "
+                        (strain/stiffness-band (:stiffness-index s)) " |")))))
+       ;; `worst-stiffness` already returns nil when every muscle was refused —
+       ;; and then there is no worst, which is a statement rather than a gap.
+       (if-let [w (worst-stiffness (:strains r))]
+         (do (add! "")
+             (add! (str "- worst: **" (:name w) "** stiffness " (fmt-f 2 (:stiffness-index w))
+                        " (" (strain/stiffness-band (:stiffness-index w)) ")"))
+             (add! ""))
+         (do (add! "")
+             (add! "- worst: none — the model computed no stiffness for any muscle in this posture.")
+             (add! ""))))
      ;; Comparison / Wellbecoming guidance
      (let [base (first (filter #(= (:workstation %) "laptop-on-lap") results))
            best (reduce (fn [a b]

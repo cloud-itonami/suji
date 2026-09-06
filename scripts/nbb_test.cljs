@@ -20,6 +20,7 @@
   to `namespaces` below — a test that is never run is not coverage."
   (:require [cljs.test]
             [suji.cells.state-machines-test]
+            [suji.methods.analyze-test]
             [suji.methods.articulation-dict-test]
             [suji.methods.attachment-test]
             [suji.methods.load-sensitivity-test]
@@ -39,6 +40,7 @@
 
 (def namespaces
   '[suji.cells.state-machines-test
+    suji.methods.analyze-test
     suji.methods.articulation-dict-test
     suji.methods.attachment-test
     suji.methods.load-sensitivity-test
