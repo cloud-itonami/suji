@@ -646,7 +646,13 @@
                      straight-line model with no wrapping surface. Fixed by
                      wrapping surfaces, not by more muscles.
     :antagonists     a mirror-paired task's other side, refused because a static
-                     optimum does not co-contract. NOT a gap.
+                     optimum does not co-contract. NOT a gap. Only the tasks still
+                     on `share` produce these; a coupled group answers for every
+                     muscle it can price — see `:inactive`.
+    :inactive        a muscle a COUPLED group switched off: force 0 N, %MVC 0, and
+                     the reason is its KKT price. Neither a gap nor a refusal — the
+                     model computed the force and it is zero, which is a different
+                     statement from declining to compute it.
     :over-mvc        the load was placed, and placing it needs more force than the
                      muscle can produce. Also not a gap — a finding.
     :two-joint-unfed-nm
@@ -682,6 +688,16 @@
               ;; optimum rather than an unanswered load
               :refused (count (remove :antagonist? (filter :refused tensions)))
               :antagonists (count (filter :antagonist? tensions))
+              ;; NOT A GAP AND NOT AN ANTAGONIST, and it needs its own count
+              ;; because it is neither. A muscle in a coupled group that the
+              ;; optimum switched off is ANSWERED — force 0, %MVC 0 — so it does
+              ;; not appear in `:refused`, and `:antagonist?` is kept for the
+              ;; refusals it has always meant. Without this line the number of
+              ;; muscles doing nothing would simply have fallen out of the summary
+              ;; when the lower limb and the neck stopped refusing their idle
+              ;; sides: 11 antagonists at `laptop-on-lap` became 4, and the other
+              ;; seven went nowhere visible.
+              :inactive (count (filter :inactive? tensions))
               :over-mvc (count (over-mvc tensions))
               :complete? (not-any? #(and (:refused %) (not (:antagonist? %))) tensions)
               :max-mvc-pct (let [xs (keep :mvc-pct tensions)] (when (seq xs) (apply max xs)))}

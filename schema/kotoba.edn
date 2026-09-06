@@ -60,6 +60,9 @@
  ;; indistinguishable from an absent one, and a zero would be a claim.
  {:db/ident :muscle/refused       :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; :acts-the-wrong-way :coefficient-below-floor :no-line-of-action
  {:db/ident :muscle/antagonist    :db/valueType :db.type/boolean :db/cardinality :db.cardinality/one}   ;; refused because its opposite number is carrying this instant's load
+ ;; a muscle the coupled optimum switched OFF: force-n 0, mvc-pct 0, and the reason
+ ;; is the KKT price rather than a refusal. Present only when true.
+ {:db/ident :muscle/inactive      :db/valueType :db.type/boolean :db/cardinality :db.cardinality/one}
 
  ;; ── strain (Rohmert sustained-isometric dose; stiffness index = 強張り) ─────────
  {:db/ident :strain/id            :db/valueType :db.type/string  :db/cardinality :db.cardinality/one :db/unique :db.unique/identity}
