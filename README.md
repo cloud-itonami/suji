@@ -31,6 +31,8 @@ laptop workstation ──▶ posture (joint angles)        posture.cljc
                    ──▶ hip / knee / ankle moment      load.cljc     ← + the ground reaction,
                        + the weight each transmits                    at the line of gravity
                    ──▶ cervical compressive load      load.cljc     ← VALIDATED vs Hansraj 2014
+                       (a function of head tilt                          — but only along trunk = 0,
+                        from VERTICAL = trunk + head)                     which is how Hansraj measured
                    ──▶ muscle moment arms             attachment.cljc ← from the anatomy,
                        (geometric, angle-dependent)                    not a constant table
                    ──▶ load sharing between synergists recruit.cljc  ← Crowninshield-Brand
@@ -50,22 +52,46 @@ sustained-isometric dose accumulated over a work session.
 
 ### The answer (`bb -m suji.methods.analyze`)
 
-| workstation | head flexion | neck load | ×head-weight | worst-muscle stiffness |
+| workstation | head tilt from vertical | neck load | ×head-weight | worst-muscle stiffness |
 |---|---|---|---|---|
-| laptop-on-lap | 44° | **23.6 kgf** | 4.2× | cervical-extensors **1.00** (very-high) |
-| laptop-on-desk | 27° | 17.9 kgf | 3.2× | cervical-extensors 1.00 |
-| external-monitor + keyboard @ eye level | 5° | **8.1 kgf** | 1.4× | anterior-deltoid **0.05** (low) |
+| laptop-on-lap | 64° | **27.9 kgf** | 4.9× | cervical-extensors **1.00** (very-high) |
+| laptop-on-desk | 32° | 19.8 kgf | 3.5× | cervical-extensors 1.00 (very-high) |
+| external-monitor + keyboard @ eye level | 10° | **10.5 kgf** | 1.9× | erector-spinae **0.98** (very-high) |
 
-→ raising the screen to eye level cuts the cervical compressive load **−66%** and drops every
-muscle to *low* stiffness. (Self-referenced Wellbecoming, G3 — the same body across setups, not a
-ranking of people. Mechanism only; a clinician owns any health interpretation.)
+→ raising the screen to eye level cuts the cervical compressive load **−62%**. (Self-referenced
+Wellbecoming, G3 — the same body across setups, not a ranking of people. Mechanism only; a
+clinician owns any health interpretation.)
+
+**THE COLUMN IS HEAD TILT FROM VERTICAL, not head flexion** (changed 2026-09-07). The cervical
+model is a function of the head's angle from vertical, which is trunk flexion plus head flexion,
+and every workstation here leans the trunk: laptop-on-lap is 43.5° at the neck and 63.5° from
+vertical. Until 2026-09-07 this column printed the neck angle beside a load computed as though
+the trunk were upright — see **Two joint moments that computed their own answer** below.
+
+**THE LAST ROW NO LONGER SAYS "and drops every muscle to low stiffness".** It used to, and the
+sentence is now false: with the lumbar spine correctly carrying the head and both arms, an
+upright supported sit at an eye-level monitor still asks the erector spinae for 11.3 %MVC held
+for two hours, and the Rohmert dose reads 0.98 rather than 0.04. That is a knife-edge and it is
+worth saying so: the endurance curve is very steep through 10 %MVC, so a few newton-metres at
+L5/S1 move the dose from *low* to *very-high* while the underlying moment goes only from
+7.6 N·m to 12.2 N·m. **The screen height still does what it did to the NECK**; the change is that
+the trunk was never as cheap as this table said.
 
 ## Empirical anchor — Hansraj (2014)
 
 The cervical leg reproduces the published forward-head-posture loads of Hansraj, *Surgical
 Technology International* 25 (the "60-lb tech-neck" study): neutral ≈ head weight, rising to ~5× at
-60° flexion. `src/suji/methods/test_load.cljc::test_reproduces_hansraj_table` asserts the multipliers track the
-published table (0°→1× … 60°→5×) within 10%.
+60° flexion. `test/suji/methods/load_test.cljc`'s `test-reproduces-hansraj-table` asserts the
+multipliers track the published table (0°→1× … 60°→5×) within 10%, and
+`test-the-hansraj-multipliers-are-unchanged-to-the-bit` pins them at full precision, because a
+10% band would not notice the anchor moving.
+
+⚠ **HANSRAJ'S TABLE IS MEASURED WITH THE TRUNK UPRIGHT**, so it constrains this model along one
+line only — `trunk = 0` — and says nothing about a leaning trunk. That matters because the
+2026-09-07 correction below changes which angle the cervical model is handed everywhere ELSE, and
+the anchor is the reason it could not simply be re-fitted. The multipliers at trunk = 0 are
+unchanged to the last bit (1.000 / 2.260021051801672 / 3.366025403784438 / 4.242640687119285 /
+4.830127018922192, measured on the commit before the correction and again after it).
 
 ## The lumbar spine against the literature — and it disagrees
 
@@ -232,8 +258,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 201 tests / 6313 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 183 tests / 1263 assertions
+clojure -M:test                                   # JVM   — 208 tests / 6340 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 190 tests / 1290 assertions
 clojure -M:lint                                   # 0 errors (14 pre-existing warnings)
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -248,6 +274,68 @@ namespaces read repo files off disk and stay `.clj`, named for what they are.
 
 ## Corrections
 
+**Two joint moments that computed their own answer (2026-09-07).** `pose/gravitational-moment`
+is the RNEA gravity term read off the placed chain — the honest answer — and two functions in
+`load.cljc` derived their own instead, by hand, and got it wrong. They are the same defect twice,
+and both were understatements, so nothing downstream ever looked alarming enough to check.
+
+*`lumbosacral-moment` omitted the arms and the head's own lever.* It placed the head's weight
+**at C7** (`L_thorax × sin(trunk)`), so a head flexed on an upright trunk contributed exactly
+nothing, and it had **no arm term at all** and never read `:arms-supported` — although its
+docstring said "head-arm load". Measured on the 70 kg / 1.70 m body, head/trunk/shoulder/elbow:
+
+| posture | was | now | thorax | head | arms |
+|---|---|---|---|---|---|
+| 0/0/0/0 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
+| 45/0/0/0 | **0.000** | **6.691** | 0.000 | 6.691 | 0.000 |
+| 0/60/0/0 | 75.240 | 112.541 | 51.664 | 31.771 | 29.107 |
+| 43.5/20/15/90 | 29.715 | 58.500 | 20.404 | 17.779 | 20.317 |
+
+Row 2 is the control that names its own reason: trunk upright, head flexed 45°, the head's centre
+of mass 12 cm anterior of L5/S1, and the model returned zero. The last row is `laptop-on-lap`,
+understated by 49%. **The internal contradiction that makes this a defect and not a modelling
+choice**: `spine/above-fraction` already counted the arms as loading every trunk level. One model,
+two answers, and nothing that compared them.
+
+This moment is the ENTIRE load of the `:trunk-extension` equilibrium, so it set erector spinae
+%MVC and, through `spine`, every lumbar compression here. At L5/S1 in `laptop-on-lap` the total
+went **950 N → 1,542 N** (0.53 → 0.86 MPa), of which the muscle term is 483 → 1,075 N.
+
+*`cervical-load` was blind to trunk flexion.* It took `head-flexion-deg` and computed `sin` of
+it — but gravity is world-fixed and `pose` places the head at trunk + head, so the head's tilt
+from vertical is the SUM. Three postures that place the head identically (pose-derived moment
+about C7 = 8.194 N·m in all three):
+
+| head / trunk | was | now |
+|---|---|---|
+| 60 / 0 | 4.815 | 4.815 |
+| 30 / 30 | 2.780 | 4.815 |
+| **0 / 60** | **0.000** | 4.815 |
+
+A person bent 60° at the waist with the head in line has a head hanging well in front of C7, and
+the cervical extensors were given a load of exactly zero. All three reference workstations have
+non-zero trunk flexion, so every cervical number this actor ever produced was understated. The
+moment-ARM side was already correct and rotation-invariant; only the load side was wrong.
+`solve-posture-loads` now passes `load/head-tilt-from-vertical-deg`, read off the placed segment
+so it cannot drift from `pose`, and the `:cervical` map's `:head-flexion-deg` key is **renamed
+`:head-tilt-deg`** — deliberately rather than silently, because a consumer printing it under the
+heading "head flexion" would now be printing a different quantity.
+
+**The model still reads 4.815 N·m where the placed head exerts 8.194.** That gap is the Hansraj
+calibration — `head-com-lever-m` is a fitted 0.10 m where the head's own CoM sits 0.170 m along
+the segment — and closing it would break the one quantity in this library that answers to a
+published measurement. `spine/cervical-cross-check` computes the same disagreement from the other
+end rather than hiding it.
+
+**What let both of these survive.** `pose-test`'s "the pose and the moment solver are the same
+geometry" test called `lumbosacral-moment` with a synthetic `{:head-weight-n 0.0}` and compared it
+against a **thorax-only** pose lever, so it checked the one term that was already right.
+`moment_balance_test` had the same shape and tested monotonicity, which cannot see a missing
+segment: a model that drops the head's lever and both arms is still monotone in trunk flexion, it
+just answers 75.2 where the chain says 112.5. Both now compare against the full pose-derived
+moment, with the list of carried segments written out **in the test** rather than read from the
+implementation.
+
 **Shoulder geometry (2026-09-06).** `shoulder-moment` placed the forearm and hand at
 `(90° − elbow-flexion)` from vertical. That is inverted at both ends of the range: a
 straight hanging arm came out horizontal, and the 90° elbow of a typing posture came
@@ -259,7 +347,9 @@ the upper arm loads the girdle there. The chain is now placed once by `pose/solv
 and the moment read off it as Σ weight × anterior lever. `pose-test` states the control
 that names its own reason: a mass under its joint has no lever.
 
-**The cervical leg is untouched** and still reproduces the Hansraj (2014) table.
+**The cervical leg was untouched by that change** and still reproduces the Hansraj (2014) table.
+(It was NOT untouched on 2026-09-07 — see the entry above — but the table it reproduces is,
+because Hansraj measured with the trunk upright and that is where the anchor lives.)
 
 **Moment arms, redundancy and refusal (2026-09-06).** Every moment arm used to be a
 constant in `muscle/specs`, which asserts that a muscle's leverage does not change
@@ -316,11 +406,46 @@ contract, they have no %MVC, and they are slack until the joint has already carr
 past them. They are stated as a force at a stretch rather than a cross-section,
 because a ligament has no contractile machinery for a specific tension to describe.
 
-**Flexion-relaxation is now reproduced.** Erector spinae active force across trunk
-flexion: 473 N at 20°, 267 N at 40°, **0 N at 60°** — while the ligament goes
-124 N → 1,068 N → 3,989 N and takes the load. Without ligaments the model reports
-3,228 N of active force at 60°, i.e. the muscle working hardest exactly where it is
-measured to be working least.
+**Flexion-relaxation is PARTLY reproduced, and the part that was advertised was an
+artefact (revised 2026-09-07).** This paragraph used to read "Flexion-relaxation is
+now reproduced. Erector spinae active force across trunk flexion: 473 N at 20°,
+267 N at 40°, **0 N at 60°**." Those three numbers were real outputs of the model
+and the zero was not the phenomenon: `lumbosacral-moment` omitted the head's own
+lever and both arms (see **Two joint moments that computed their own answer**), so
+the demand at 60° came out **75.24 N·m** where the placed chain says **121.36**.
+The posterior ligamentous system's moment there is **108.18 N·m** — *more than the
+whole understated demand* — so the remainder went negative and `recruit` clamped
+the muscle at exactly 0.0. It was the model running out of load, not the tissue
+taking over.
+
+With the corrected demand, erector spinae ACTIVE force and %MVC:
+
+| trunk | was | now | %MVC now | ligament |
+|---|---|---|---|---|
+| 20° | 473 N | 977 N | 51.7% | 124 N |
+| 40° | 267 N | 1,296 N | 80.6% | 1,068 N |
+| 60° | **0 N** | **441 N** | 40.8% | 3,989 N |
+| 61° | — | 393 N | 38.0% | 4,196 N ← the minimum |
+| 62° | — | 604 N | 53.2% | 4,200 N (clamped) |
+
+**So the relaxation survives and the silence does not.** The muscle peaks near 40°
+and gives up about 70% of its force by 61° while the ligament force triples — that
+is the shape of flexion-relaxation and it is what `passive-test/flexion-relaxation`
+now asserts, together with an explicit assertion that the muscle is NOT silent, so
+a future change that restores the zero has to come here and say why.
+
+⚠ **The ligament was deliberately not re-tuned.** `:force-at-ref 4200.0` was
+calibrated when the demand was understated, and it is very likely that the 60°
+crossover it produced was fitted to that understatement — the crossover now lands
+at 61°, one degree before the calibration clamp, which is a suspicious coincidence
+rather than a result. Re-fitting it to restore a 0 would be fitting the tissue to a
+bug. **Flexion-relaxation is a real, measured phenomenon in humans, and this model
+now reproduces its shape but not its endpoint.** Deciding whether a correct model
+of THIS body should reach silence needs surface EMG of a real erector spinae across
+trunk flexion, which this repository does not have and does not pretend to.
+
+Without ligaments at all the model reports the muscle working hardest exactly where
+it is measured to be working least, which is why they were added and remains true.
 
 Each structure is calibrated over its OWN stretch range. They do not stretch alike:
 60° of trunk flexion takes the lumbar band to 1.25× its neutral length, while 15° of
@@ -336,7 +461,10 @@ has no failure law and holds the last value it can defend.
 ⚠ **A muscle's own passive tension is not, by itself, flexion-relaxation** — and the first draft of the
 docstring said it was. Measured after writing it: at 60° of trunk flexion the
 erector spinae reaches 1.27× its optimal length and its own passive tissue supplies
-151 N of the 3,379 N the posture demands, about 4%. Real flexion-relaxation is the
+151 N of the 5,450 N the posture demands, about 3%. (Re-measured 2026-09-07 against
+the corrected L5/S1 moment; the passive force is unchanged because it is a function
+of length, and the denominator grew from 3,379 N, so the share fell from 4% to 3% —
+the paragraph's point got stronger, not weaker.) Real flexion-relaxation is the
 posterior ligamentous system taking over — supraspinous and interspinous ligaments,
 thoracolumbar fascia — and those are separate structures this model does not have.
 `the-passive-term-is-small-here-and-the-model-says-so` pins the fraction, so making
@@ -416,12 +544,16 @@ every muscle force crossing it, and divides by that level's disc area — becaus
 disc's tolerance is a stress, and 500 N through a cervical disc and 500 N through
 a lumbar one are not the same event.
 
-The tissue term dominates: at L5/S1 in the laptop-on-lap posture it is 605 N —
-483 N of muscle and 122 N of ligament — against 346 N of weight, because an
+The tissue term dominates: at L5/S1 in the laptop-on-lap posture it is 1,196 N —
+1,075 N of muscle and 122 N of ligament — against 346 N of weight, because an
 extensor works at a short moment arm and all of the force it needs presses the
 joint together. (Measured 2026-09-07. This paragraph said "the muscle term … is
 612 N", which was the figure from before the tissue term was split; the split
-made the sentence name the wrong structure as well as the wrong number.)
+made the sentence name the wrong structure as well as the wrong number. The
+numbers moved AGAIN later the same day, 605 → 1,196 N of tissue and 950 → 1,542 N
+in total, when `lumbosacral-moment` stopped omitting the head's own lever and both
+arms — the weight term is untouched, because `above-fraction` was already counting
+what the moment was not.)
 
 ⚠ **The level profile is NOT validated and disagrees with the leg that is.** At the
 cervical spine it disagrees with the Hansraj-calibrated lumped model by roughly a
@@ -431,7 +563,8 @@ published measurement to answer to, and it disagrees with that too — in the ot
 direction. See **The lumbar spine against the literature** below.
 
 **The ratio is not written here on purpose.** It moves whenever the muscle set
-moves — it was 2.24 when the level profile landed and 2.44 after the ligaments —
+moves — it was 2.24 when the level profile landed, 2.44 after the ligaments, and
+2.38 after the cervical load stopped ignoring trunk flexion —
 and a number in a standing document gets quoted with its date dropped. Ask for it:
 
 ```clojure
@@ -616,8 +749,10 @@ line with no anterior-posterior offsets, so the small characteristic knee and hi
 moments of quiet standing come out near zero where a real body has them. A seated
 person's feet are unloaded.
 
-**Honest R0**: design + runnable physics + a validated cervical model. Anthropometry / muscle /
-endurance parameters are `:representative` (G7); the cervical leg is validated, the muscle %MVC and
+**Honest R0**: design + runnable physics + a cervical model validated **along one line**.
+Anthropometry / muscle / endurance parameters are `:representative` (G7); the cervical leg is
+validated at `trunk = 0`, which is how Hansraj measured it and therefore all the anchor can say —
+its response to trunk flexion is geometry the anchor does not constrain. The muscle %MVC and
 Rohmert strain legs are mechanistically grounded but illustrative. The per-level spinal profile is
 **not** validated, and since 2026-09-07 that is a measurement rather than a disclaimer: it disagrees
 with the Hansraj-calibrated cervical model by about a factor of two, and with Wilke's in-vivo lumbar

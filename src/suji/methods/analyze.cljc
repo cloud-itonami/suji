@@ -97,11 +97,18 @@
      ;; Cervical (tech-neck) headline table
      (add! "## Cervical spine load (forward head / tech-neck)")
      (add! "")
-     (add! "| workstation | head flexion | neck load | ×head-weight |")
+     ;; HEAD TILT, not head flexion, since 2026-09-07. The cervical model is a
+     ;; function of the head's angle from VERTICAL, which is trunk + head, and this
+     ;; column used to print the neck angle alone beside a load computed from — as
+     ;; of that date — the sum. Every workstation here leans the trunk, so the two
+     ;; are never the same number: laptop-on-lap is 43.5° at the neck and 63.5°
+     ;; from vertical. The posture's own head and trunk angles are printed per
+     ;; scenario below, where they say which of the two a reader is looking at.
+     (add! "| workstation | head tilt from vertical | neck load | ×head-weight |")
      (add! "|---|---|---|---|")
      (doseq [r results]
        (let [c (get-in r [:loads :cervical])]
-         (add! (str "| " (:workstation r) " | " (fmt-f 0 (:head-flexion-deg c)) "° | "
+         (add! (str "| " (:workstation r) " | " (fmt-f 0 (:head-tilt-deg c)) "° | "
                     (fmt-f 1 (:compressive-load-kgf c)) " kgf | "
                     (fmt-f 1 (:multiplier-vs-head c)) "× |"))))
      (add! "")
