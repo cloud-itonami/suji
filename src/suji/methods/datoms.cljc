@@ -19,6 +19,7 @@
   (:require [clojure.string :as str]
             [suji.methods.analyze :as analyze]
             [suji.methods.math :as math]
+            [suji.methods.muscle :as muscle]
             [suji.methods.strain :as strain]
             #?(:clj [clojure.java.io :as io])))
 
@@ -72,11 +73,13 @@
                           ;; this far. The datom carries the reason instead —
                           ;; omitting the muscle would make an unanswered load
                           ;; indistinguishable from an absent one.
-                          (if (:refused t)
+                          ;; branch on whether the number is THERE, not on why
+                          ;; it is not — a ligament has no %MVC and is not refused
+                          (if-not (muscle/numeric-mvc? t)
                             (array-map
                              ":muscle/id" (str pid "-musc-" (:name t)) ":muscle/posture" pid
                              ":muscle/group" (muscle-kw (:name t))
-                             ":muscle/refused" (str ":" (name (:refused t)))
+                             ":muscle/refused" (if (:refused t) (str ":" (name (:refused t))) ":none")
                              ":muscle/antagonist" (boolean (:antagonist? t)))
                             (array-map
                              ":muscle/id" (str pid "-musc-" (:name t)) ":muscle/posture" pid

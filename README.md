@@ -99,8 +99,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 146 tests / 4002 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 130 tests /  713 assertions
+clojure -M:test                                   # JVM   — 149 tests / 4205 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 133 tests /  736 assertions
 clojure -M:lint                                   # 0 errors
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -175,7 +175,32 @@ coefficient, and only the remainder is shared: it is determined by length, so th
 criterion must not get to choose it. Passive tissue can carry the whole load, and
 then nothing is asked of the contractile machinery at all.
 
-⚠ **It is not, by itself, flexion-relaxation** — and the first draft of the
+**The posterior ligamentous system (2026-09-06), and flexion-relaxation.** The
+previous wave measured its own claim, found it false, and named what was missing;
+this adds it. The posterior lumbar band (supraspinous and interspinous ligaments
+plus thoracolumbar fascia) and the nuchal ligament are NOT muscles — they cannot
+contract, they have no %MVC, and they are slack until the joint has already carried
+past them. They are stated as a force at a stretch rather than a cross-section,
+because a ligament has no contractile machinery for a specific tension to describe.
+
+**Flexion-relaxation is now reproduced.** Erector spinae active force across trunk
+flexion: 473 N at 20°, 267 N at 40°, **0 N at 60°** — while the ligament goes
+124 N → 1,068 N → 3,989 N and takes the load. Without ligaments the model reports
+3,228 N of active force at 60°, i.e. the muscle working hardest exactly where it is
+measured to be working least.
+
+Each structure is calibrated over its OWN stretch range. They do not stretch alike:
+60° of trunk flexion takes the lumbar band to 1.25× its neutral length, while 15° of
+head flexion already takes the short nuchal ligament to 1.18× and 60° to 1.60×.
+Calibrating both at 1.25× put the entire cervical load on a ligament and reported
+the extensors doing nothing, in the one posture this actor exists to describe.
+
+Beyond the calibrated range the force is CLAMPED and `at-limit?` says so —
+extrapolating the exponential gave the nuchal ligament 52,312 N at an ordinary
+forward-head posture. A real ligament stiffens further and then fails; this model
+has no failure law and holds the last value it can defend.
+
+⚠ **A muscle's own passive tension is not, by itself, flexion-relaxation** — and the first draft of the
 docstring said it was. Measured after writing it: at 60° of trunk flexion the
 erector spinae reaches 1.27× its optimal length and its own passive tissue supplies
 151 N of the 3,379 N the posture demands, about 4%. Real flexion-relaxation is the
