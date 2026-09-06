@@ -149,12 +149,32 @@
     ;; the one Hansraj anchors; a profile that agreed with it exactly would still be
     ;; unvalidated, and this repo has recorded twice already that agreement bought
     ;; by changing something else is not evidence.
-    (is (math/nearly= 1.719 (:ratio x) 0.01)
+    ;; ⚠ RE-MEASURED A FOURTH TIME ON 2026-09-08, when the neck became a COUPLED
+    ;; group — C7 and the atlanto-occipital joint solved together by
+    ;; `recruit/solve` instead of C7 first and the joint above it handed the
+    ;; leftover. The level side moved 470.299 -> 466.143 N against an UNCHANGED
+    ;; 273.619 N lumped, so the ratio went 1.7188 -> 1.7036, a move of 0.9%.
+    ;;
+    ;; WHY IT MOVED AT ALL, since the cervical extensor moment at C7 is the same
+    ;; number: the SHARE of it changed. Semispinalis and splenius capitis have a
+    ;; larger moment arm about the atlanto-occipital joint than about C7, so once
+    ;; that joint is a constraint the optimum stops loading them to hold C7 —
+    ;; splenius fell 87.29 -> 3.81 N and semispinalis 125.25 -> 101.56 N — and
+    ;; puts the work on `cervical_extensors`, whose 138.32 -> 245.48 N is applied
+    ;; at a SHORTER arm and therefore costs more force. The compression at C7/T1
+    ;; is the sum of those forces, and it came out slightly lower.
+    ;;
+    ;; IT MOVED TOWARD 1 AGAIN, BY 0.9%, AND THAT IS STILL NOT A VALIDATION. The
+    ;; lumped side is the one Hansraj anchors; a profile that agreed with it
+    ;; exactly would still be unvalidated. This repo has now recorded that four
+    ;; times, and the fourth is no more evidence than the first three.
+    (is (math/nearly= 1.7036 (:ratio x) 0.001)
         (str "today's disagreement, measured rather than banded: " x))
-    (is (math/nearly= 470.299 (:level-force-n x) 0.01)
-        (str "the C7/T1 force with only the muscles that reach a neck in it: " x))
+    (is (math/nearly= 466.143 (:level-force-n x) 0.01)
+        (str "the C7/T1 force after the coupled neck solve: " x))
     (is (math/nearly= 273.62 (:lumped-force-n x) 0.01)
-        "the lumped side did not move; this repair is on the profile side only")))
+        (str "the lumped side did not move — it does not go through `recruit` at "
+             "all, and that is checked here rather than assumed: " x))))
 
 ;; --- which muscles load a level ----------------------------------------------
 

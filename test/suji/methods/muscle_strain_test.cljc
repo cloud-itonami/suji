@@ -59,6 +59,15 @@
         ;; reported below rather than hidden by moving the assertion quietly.
         ;; erector_spinae is unaffected by the neck (57.4% MVC, dose 165.95) and is
         ;; what "a load this high" means at this posture now.
+        ;;
+        ;; ⚠ AND HALF OF IT CAME BACK ON 2026-09-08, when the neck became a coupled
+        ;; group. Semispinalis and splenius capitis are better levered about the
+        ;; atlanto-occipital joint than about C7, so once that joint is a
+        ;; constraint the optimum stops using them to hold C7 and puts the work on
+        ;; `cervical_extensors` at its shorter arm: 22.08 -> 39.18% MVC, dose
+        ;; 18.41 -> 68.58, and back into double-precision saturation. The direction
+        ;; assertion below is unchanged; the saturation one is inverted, and the
+        ;; number is restated rather than the assertion loosened.
         high (by "erector_spinae")
         s-short (strain/muscle-strain high 10.0)
         s-long (strain/muscle-strain high 120.0)
@@ -79,10 +88,18 @@
     (is (< (:stiffness-index (strain/muscle-strain cerv 10.0))
            (:stiffness-index c-long))
         "the cervical extensors' index still grows with time")
-    (is (not (:saturated? c-long))
-        (str "cervical_extensors no longer saturates at 120 min; its dose fell "
-             "158.35 -> " (:dose c-long) " when the cervical extensor moment was "
-             "split with the muscles that reach the skull"))))
+    (is (:saturated? c-long)
+        (str "cervical_extensors saturates again at 120 min under the coupled neck "
+             "solve; its dose is " (:dose c-long) " (was 18.41 uncoupled, 158.35 "
+             "before the neck was split at all)"))
+    ;; AND THE FLAG STILL DISCRIMINATES AT THIS POSTURE, which is what the old
+    ;; assertion was buying and what an inverted one could quietly stop buying:
+    ;; the same solve produces muscles that are not saturated.
+    (let [unsat (remove :saturated?
+                        (map #(strain/muscle-strain % 120.0)
+                             (filter :mvc-pct tensions)))]
+      (is (seq unsat)
+          "some muscle at this posture must NOT saturate, or the flag says nothing"))))
 
 (deftest test-saturation-is-flagged-only-when-it-happens
   ;; the flag has to discriminate, or it is decoration
