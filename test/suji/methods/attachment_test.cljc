@@ -137,6 +137,73 @@
     (is (not (apply = (mapv #(math/round-to (arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid/left") 9)
                             [0 30 60]))))))
 
+(def ^:private posture-grid
+  "Postures spanning every degree of freedom `pose` accepts, two or three values
+  each. Small enough to run on both hosts, and it moves EVERY joint — a grid that
+  held one still would report the muscles crossing it as constant and be reporting
+  its own gaps."
+  (for [hf [0.0 30.0] tf [0.0 45.0] sf [0.0 90.0] ab [0.0 60.0] ef [0.0 90.0]
+        lb [-20.0 20.0] we [0.0 30.0] hr [0.0 30.0]
+        hip [0.0 60.0] knee [0.0 60.0] ank [-20.0 20.0]]
+    {:head-flexion-deg hf :trunk-flexion-deg tf :shoulder-flexion-deg sf
+     :elbow-flexion-deg ef :shoulder-abduction-deg ab :trunk-lateral-bend-deg lb
+     :wrist-extension-deg we :head-rotation-deg hr
+     :hip-flexion-deg hip :knee-flexion-deg knee :ankle-dorsiflexion-deg ank}))
+
+(deftest exactly-one-muscle-has-both-ends-on-one-segment-and-it-is-a-suspender
+  ;; THE VERDICT ON A SUSPECTED DEFECT, pinned so it stays answered.
+  ;; `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm`
+  ;; names this shape as the error that produced a constant-looking arm, and
+  ;; `middle_trapezius` has it: both of its sites are on `thorax_abdomen`, so its
+  ;; length is 1.0000 × optimal at every posture and its passive tension is
+  ;; identically zero.
+  ;;
+  ;; It is NOT the error, for one reason and one reason only: a moment arm is
+  ;; taken about a joint the segment carries, and a suspension coefficient is a
+  ;; cosine against the world vertical, which it does not. So this test allows the
+  ;; shape for a suspension muscle and forbids it for everything else — a MOMENT
+  ;; muscle that acquired both ends on one bone is the bug, and would be caught
+  ;; here rather than showing up as a suspiciously flat column.
+  (let [same-bone (filterv #(= (get-in % [:origin :segment]) (get-in % [:insertion :segment]))
+                           att/instances)]
+    (is (= #{"middle_trapezius"} (set (map :group same-bone)))
+        (str "only the middle trapezius may have both ends on one segment: "
+             (mapv :name same-bone)))
+    (doseq [m same-bone]
+      (is (= :scapular-suspension (:task m))
+          (str (:name m) ": both ends on one bone is only defensible for a "
+               "suspension task, whose coefficient is not a moment arm")))))
+
+(deftest the-middle-trapezius-length-is-constant-and-the-file-says-why
+  ;; The measured half of the verdict above. Both are asserted, because either one
+  ;; alone is misleading: that the length never moves (a limitation), and that the
+  ;; coefficient does (which is why the muscle is still worth having).
+  (let [opt (att/optimal-lengths (pose/solve-pose body att/reference-posture) 1.70)
+        ratios (mapv (fn [p]
+                       (let [ls (att/lengths (pose/solve-pose body p) 1.70)]
+                         (/ (get ls "middle_trapezius/left")
+                            (get opt "middle_trapezius/left"))))
+                     posture-grid)
+        cosines (mapv #(att/effectiveness (pose/solve-pose body %) 1.70
+                                          (att/instance "middle_trapezius/left"))
+                      posture-grid)]
+    ;; an evidence floor: a grid that quietly emptied must not pass by having
+    ;; nothing to check
+    (is (< 100 (count ratios)) (str "the grid has to have postures in it: " (count ratios)))
+    (is (every? #(math/nearly= 1.0 % 1e-9) ratios)
+        (str "this model cannot move the middle trapezius: it has no scapula. "
+             "ratios spanned " [(apply min ratios) (apply max ratios)]))
+    ;; therefore its force-length factor is 1 and its passive tension 0, always,
+    ;; and its reported %MVC is a lower bound rather than an estimate
+    (is (every? #(= 1.0 (muscle/force-length-factor % 1.0)) ratios)
+        "so the length can never reduce its available force")
+    ;; and the coefficient it is actually solved with DOES move, which is what
+    ;; makes it a muscle rather than a column of the same number
+    (is (< 1 (count (distinct (mapv #(math/round-to % 6) cosines))))
+        "but its suspension coefficient varies, because the vertical is not on the thorax")
+    (is (> (- (apply max cosines) (apply min cosines)) 0.1)
+        (str "and by enough to matter: " [(apply min cosines) (apply max cosines)]))))
+
 (deftest supporting-the-forearms-unloads-the-girdle
   ;; A BRANCH THAT COULD NOT FIRE, until 2026-09-07. `muscle/suspended-weight-n`
   ;; read the flag from `(meta p)`, and `pose` calls `with-meta` nowhere and never

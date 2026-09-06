@@ -102,12 +102,42 @@
    ;; The middle fibres originate on the thoracic spine, which does not follow the
    ;; head, and they carry the girdle in exactly the postures the upper fibres
    ;; cannot. Adding them is why those postures stop being unanswerable.
+   ;;
+   ;; BOTH ENDS ON ONE SEGMENT, and it is the only muscle here of which that is
+   ;; true. `attachment-test` names that shape as the error that produced a
+   ;; constant-looking arm, so it has to be answered rather than left to be
+   ;; rediscovered. It is correct here, and the reason is that the shape is wrong
+   ;; for a MOMENT and right for a SUSPENSION:
+   ;;
+   ;;   a moment arm is taken about a joint the segment itself carries, so a line
+   ;;   whose endpoints both ride on that segment rotates rigidly with the joint
+   ;;   and the arm cannot move — that is the bug;
+   ;;
+   ;;   a suspension coefficient is a direction cosine against the WORLD vertical
+   ;;   (`suspension-effectiveness`), which the segment does not carry. Measured
+   ;;   2026-09-07 over 4,608 postures, this muscle's coefficient spans −0.18 to
+   ;;   +0.49: it varies, and it changes sign, because leaning the trunk changes
+   ;;   how much of its pull is upward.
+   ;;
+   ;; ⚠ WHAT IT COSTS. Its LENGTH is constant — exactly 1.000 × optimal at all
+   ;; 4,608 of those postures, the only muscle in the set for which that is so.
+   ;; That is not an attachment error either: the middle trapezius runs from the
+   ;; thoracic spinous processes to the acromion, and what changes its length in a
+   ;; body is the SCAPULA sliding on the thorax. This model has no scapula and no
+   ;; scapulothoracic degree of freedom, so both of its sites are points on the
+   ;; thorax and no posture this model can express moves them apart. The
+   ;; consequence is arithmetic and one-directional: `force-length-factor` is 1.0
+   ;; at ratio 1.0, so this muscle is always credited with its full available
+   ;; force, and `passive-slack-frac` is 1.0, so its passive tension is always
+   ;; exactly zero. Its reported %MVC is therefore a LOWER bound. The size of the
+   ;; understatement is not measured here and cannot be, because measuring it
+   ;; needs the degree of freedom that is missing.
    "middle_trapezius"
    {:name "middle_trapezius" :paired? true :pcsa-cm2 8.0
     :acts-about :shoulder :task :scapular-suspension
     :origin {:segment "thorax_abdomen" :along 1.0 :ant -0.0180 :lat 0.0}
     :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0090 :lat 0.1225}
-    :source "representative; thoracic-spine origin, acromial insertion"}
+    :source "representative; thoracic-spine origin, acromial insertion. Both sites are on the thorax because this model has no scapula, so its length ratio is 1.0 at every posture and its force-length factor and passive tension are constants by construction — see the note above."}
 
    ;; --- the posterior ligamentous system ---------------------------------------
    ;; NOT MUSCLES. They cannot contract, they have no %MVC, and they engage only
