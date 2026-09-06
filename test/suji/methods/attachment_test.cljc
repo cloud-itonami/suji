@@ -179,21 +179,70 @@
     (is (math/nearly= (/ 2.00 1.70) (/ a-t a-s) 0.05)
         "the arm should scale with stature, not with something else")))
 
-(deftest a-frontal-load-is-reported-as-carried-by-nobody
-  ;; This actor has no frontal-plane musculature. Accepting an abduction input,
-  ;; moving the picture with it, and leaving the load out of every number would be
-  ;; the worst of the three options; the model computes the frontal moment and
-  ;; says nobody is carrying it.
+(deftest a-frontal-load-is-now-carried
+  ;; This test used to assert the opposite. Until the frontal muscles landed, this
+  ;; actor computed the frontal-plane moment and reported that nobody carried it;
+  ;; the honest output then was `:unassigned-frontal-nm`. There are muscles for it
+  ;; now, and the assertion inverts rather than disappearing — a load that used to
+  ;; be unplaceable must be shown to be placed.
   (let [sagittal (merge neutral {:shoulder-flexion-deg 20.0 :elbow-flexion-deg 90.0})
         abducted (assoc sagittal :shoulder-abduction-deg 40.0)
+        bent (assoc sagittal :trunk-lateral-bend-deg 25.0)
         run (fn [posture]
-              (let [l (suji.methods.load/solve-posture-loads body posture)]
-                (muscle/tension-summary (muscle/solve-muscle-tensions body posture l) l)))
-        s (run sagittal)
-        a (run abducted)]
-    (is (math/nearly= 0.0 (:unassigned-frontal-nm s) 1e-12)
-        "a sagittal posture leaves nothing unassigned in the frontal plane")
-    (is (> (:unassigned-frontal-nm a) 1.0)
-        "an abducted posture creates a real frontal moment")
-    (is (not (:complete? a))
-        "and an answer that leaves a load unassigned must not read as complete")))
+              (let [l (suji.methods.load/solve-posture-loads body posture)
+                    ts (muscle/solve-muscle-tensions body posture l)]
+                {:summary (muscle/tension-summary ts l) :tensions ts :loads l}))
+        carrying (fn [r nm] (:mvc-pct (first (filter #(= nm (:name %)) (:tensions r)))))]
+    ;; symmetric: no frontal load at all, and nothing refused for want of one
+    (let [r (run sagittal)]
+      (is (math/nearly= 0.0 (get-in r [:loads :frontal :lumbosacral-nm]) 1e-9))
+      (is (:complete? (:summary r))))
+    ;; abduction: each shoulder gets its own frontal moment, and the deltoids take it
+    (let [r (run abducted)]
+      (is (> (math/abs* (get-in r [:loads :frontal :shoulder-per-side :left])) 1.0))
+      (is (pos? (carrying r "middle_deltoid/left")))
+      (is (pos? (carrying r "middle_deltoid/right")))
+      (is (:complete? (:summary r)) "the abduction load is placed, not reported unassigned"))
+    ;; lateral bend: the spine's frontal moment goes to the lateral flexors on the
+    ;; resisting side, and the other side is an antagonist rather than a gap
+    (let [r (run bent)
+          lateral (filter #(#{"quadratus_lumborum" "obliques"} (:group %)) (:tensions r))]
+      (is (> (math/abs* (get-in r [:loads :frontal :lumbosacral-nm])) 10.0))
+      (is (some :force-n lateral) "somebody carries the lateral-flexion moment")
+      (is (every? #(or (:force-n %) (:antagonist? %)) lateral)
+          "and whoever does not is the antagonist, not an unanswered load")
+      (is (:complete? (:summary r))))))
+
+(deftest the-abductor-and-the-adductor-are-opposites
+  ;; They share a task precisely because they act in opposite senses; if both came
+  ;; out the same sign the equilibrium would have no candidate for one direction.
+  (doseq [ab [0.0 30.0 60.0]]
+    (let [p (at :shoulder-abduction-deg ab)
+          d (arm p "middle_deltoid/left")
+          l (arm p "latissimus_dorsi/left")]
+      (is (neg? (* d l)) (str ab "°: deltoid " d " and latissimus " l " must oppose")))))
+
+(deftest the-two-sides-of-a-frontal-pair-mirror
+  (let [p (at)]
+    (doseq [g ["middle_deltoid" "quadratus_lumborum" "obliques" "scalenes" "latissimus_dorsi"]]
+      (is (math/nearly= (arm p (str g "/left")) (- (arm p (str g "/right"))) 1e-9)
+          (str g ": a frontal moment reverses under the mirror")))))
+
+(deftest a-load-that-is-zero-has-no-resisting-side
+  ;; A symmetric posture computes a frontal moment of -1e-16, not 0.0. Reading the
+  ;; resisting side off those last bits picks one at random and refuses the other
+  ;; as acting the wrong way — for a load that is not there. The muscles of a
+  ;; mirror pair must come out symmetric when the posture is.
+  (let [posture (merge neutral {:shoulder-flexion-deg 20.0 :elbow-flexion-deg 90.0})
+        l (suji.methods.load/solve-posture-loads body posture)
+        ts (muscle/solve-muscle-tensions body posture l)
+        by (into {} (map (juxt :name identity)) ts)]
+    (is (< (math/abs* (get-in l [:frontal :shoulder-per-side :left])) 1e-9)
+        "the premise: this posture's frontal load is zero to within rounding")
+    (doseq [g ["middle_deltoid" "latissimus_dorsi" "quadratus_lumborum" "obliques" "scalenes"]]
+      (let [lft (by (str g "/left")) rgt (by (str g "/right"))]
+        (is (= (boolean (:refused lft)) (boolean (:refused rgt)))
+            (str g ": a symmetric posture must not refuse one side and not the other"))
+        (when (and (:mvc-pct lft) (:mvc-pct rgt))
+          (is (math/nearly= (:mvc-pct lft) (:mvc-pct rgt) 1e-9)
+              (str g ": and must load the two sides equally")))))))

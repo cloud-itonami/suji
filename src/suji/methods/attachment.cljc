@@ -72,7 +72,7 @@
     :acts-about :shoulder :task :scapular-suspension
     ;; occiput/nuchal line → lateral clavicle-acromion; suspends the girdle
     :origin {:segment "head_neck" :along 0.10 :ant -0.0170 :lat 0.0180}
-    :insertion {:segment "thorax_abdomen" :along 0.985 :ant -0.0090 :lat 0.1225}
+    :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0090 :lat 0.1225}
     :source "representative; suspension line. The insertion rides on the THORAX, not on the humerus: the acromion belongs to the shoulder girdle, and a girdle that rotated with the arm would swing its own suspension line horizontal under abduction and report that the trapezius cannot lift"}
 
    "levator_scapulae"
@@ -81,7 +81,7 @@
     ;; upper cervical transverse processes → superior medial scapula: shorter,
     ;; more vertical, and closer to the midline than the trapezius
     :origin {:segment "head_neck" :along 0.22 :ant -0.0120 :lat 0.0125}
-    :insertion {:segment "thorax_abdomen" :along 0.985 :ant -0.0120 :lat 0.0750}
+    :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0120 :lat 0.0750}
     :source "representative; suspension line, on the thorax for the same reason as upper_trapezius — the scapula is not the humerus"}
 
    "anterior_deltoid"
@@ -95,6 +95,78 @@
     ;; at the head's radius, which is what a tendon lying on bone actually does.
     :wrap {:radius-m 0.020 :sign 1.0}
     :source "representative; clavicular origin (NOT on the humerus — both ends on one bone rotate rigidly with it and give a moment arm that cannot change with the joint angle), anterior offset calibrated to the 0.030 m neutral arm"}
+
+   ;; --- the girdle's other suspender ------------------------------------------
+   ;; Upper trapezius originates on the head, so when the head folds past
+   ;; horizontal its origin drops BELOW the acromion and it can no longer lift.
+   ;; The middle fibres originate on the thoracic spine, which does not follow the
+   ;; head, and they carry the girdle in exactly the postures the upper fibres
+   ;; cannot. Adding them is why those postures stop being unanswerable.
+   "middle_trapezius"
+   {:name "middle_trapezius" :paired? true :pcsa-cm2 8.0
+    :acts-about :shoulder :task :scapular-suspension
+    :origin {:segment "thorax_abdomen" :along 1.0 :ant -0.0180 :lat 0.0}
+    :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0090 :lat 0.1225}
+    :source "representative; thoracic-spine origin, acromial insertion"}
+
+   ;; --- the frontal plane ------------------------------------------------------
+   ;; None of these existed before 2026-09-06, which is why every frontal-plane
+   ;; moment this actor computed was reported as carried by nobody.
+
+   "middle_deltoid"
+   {:name "middle_deltoid" :paired? true :pcsa-cm2 12.0 :axis :frontal
+    :acts-about :shoulder :task :shoulder-abduction
+    ;; acromion → deltoid tuberosity. The acromion is LATERAL to the humeral head,
+    ;; not coincident with it: an origin at the joint centre gives a line of action
+    ;; through the joint and therefore an abduction moment arm of identically zero,
+    ;; at every angle. Measured 2026-09-06 — the deltoid could not abduct.
+    :origin {:segment "thorax_abdomen" :along 1.0 :ant 0.0 :lat 0.1345}
+    :insertion {:segment "upper_arm" :along 0.42 :ant 0.0 :lat 0.0180}
+    ;; the humeral head again — the same chord problem, in the other plane
+    :wrap {:radius-m 0.022 :sign -1.0}
+    :source "representative; abduction moment arm ~20-25 mm through mid-range. The sign is stated for the LEFT: a left abductor generates a NEGATIVE moment about +X, because reflecting z reverses the frontal component."}
+
+   "latissimus_dorsi"
+   {:name "latissimus_dorsi" :paired? true :pcsa-cm2 14.0 :axis :frontal
+    :acts-about :shoulder :task :shoulder-abduction
+    ;; thoracolumbar fascia / iliac crest → intertubercular groove of the humerus.
+    ;; It pulls the arm DOWN and IN, so its abduction coefficient is the opposite
+    ;; sign to the middle deltoid's — which is why it belongs in the same task.
+    ;; Without an adductor the abduction equilibrium had exactly one candidate per
+    ;; side, and any posture demanding adduction had nobody to demand it of.
+    :origin {:segment "pelvis" :along 0.10 :ant -0.0200 :lat 0.0350}
+    :insertion {:segment "upper_arm" :along 0.12 :ant -0.0050 :lat -0.0120}
+    ;; it wraps the thorax and the humeral head, which is what keeps it an ADDUCTOR
+    ;; through the range. Without it the straight chord crosses the joint near the
+    ;; neutral arm and the sign flips, so the model briefly has two abductors and
+    ;; no adductor — and a posture demanding adduction then has nobody to demand it
+    ;; of. Sign stated for the LEFT, opposite to the middle deltoid by construction.
+    :wrap {:radius-m 0.015 :sign 1.0}
+    :source "representative; the principal adductor/extensor of the shoulder"}
+
+   "quadratus_lumborum"
+   {:name "quadratus_lumborum" :paired? true :pcsa-cm2 8.0 :axis :frontal
+    :acts-about :l5s1 :task :trunk-lateral-flexion
+    ;; iliac crest → 12th rib / upper lumbar transverse processes
+    :origin {:segment "pelvis" :along 0.30 :ant -0.0120 :lat 0.0450}
+    :insertion {:segment "thorax_abdomen" :along 0.30 :ant -0.0120 :lat 0.0330}
+    :source "representative; the principal lateral flexor of the lumbar spine"}
+
+   "obliques"
+   {:name "obliques" :paired? true :pcsa-cm2 16.0 :axis :frontal
+    :acts-about :l5s1 :task :trunk-lateral-flexion
+    ;; iliac crest → lower ribs, further from the midline than QL
+    :origin {:segment "pelvis" :along 0.20 :ant 0.0060 :lat 0.0800}
+    :insertion {:segment "thorax_abdomen" :along 0.42 :ant 0.0060 :lat 0.0700}
+    :source "representative; external + internal oblique as one lateral-flexion group"}
+
+   "scalenes"
+   {:name "scalenes" :paired? true :pcsa-cm2 5.0 :axis :frontal
+    :acts-about :c7 :task :cervical-lateral-flexion
+    ;; first and second ribs → cervical transverse processes
+    :origin {:segment "thorax_abdomen" :along 0.93 :ant 0.0040 :lat 0.0250}
+    :insertion {:segment "head_neck" :along 0.16 :ant 0.0040 :lat 0.0150}
+    :source "representative; lateral flexor of the cervical spine"}
 
    "erector_spinae"
    {:name "erector_spinae" :pcsa-cm2 34.0
@@ -134,6 +206,20 @@
   "The sagittal flexion/extension axis, in the world frame. Flexion is a rotation
   about Z (see `pose`), so a moment about +Z is what an extensor must resist."
   [0.0 0.0 1.0])
+
+(def frontal-axis
+  "The frontal-plane (lateral flexion / abduction) axis. Lateral bend and abduction
+  are rotations about X, so a muscle resisting them acts about +X."
+  [1.0 0.0 0.0])
+
+(defn axis-of
+  "The axis a muscle's moment is taken about. Sagittal unless it says otherwise —
+  stating it per muscle rather than per call keeps the axis with the anatomy, so a
+  frontal muscle cannot be accidentally solved against the sagittal equilibrium."
+  [muscle]
+  (case (:axis muscle)
+    :frontal frontal-axis
+    flexion-axis))
 
 (defn straight-moment-arm
   "Signed moment arm (metres) of the straight line from insertion to origin, about
@@ -219,6 +305,13 @@
                :group (:name muscle))
         (update :origin flip)
         (update :insertion flip)
+        ;; A wrapping surface's side is stated as a sign, and a moment about the
+        ;; FRONTAL axis reverses under the mirror while a sagittal one does not —
+        ;; reflecting z flips the x-component of every cross product. Leaving the
+        ;; sign alone gave both middle deltoids a positive abduction arm, so one of
+        ;; them was pulling the way gravity already was. Measured 2026-09-06.
+        (cond-> (and (:wrap muscle) (= :frontal (:axis muscle)) (= :right side))
+          (update-in [:wrap :sign] -))
         (cond-> (= :shoulder (:acts-about muscle))
           (assoc :acts-about (keyword "shoulder" (name side)))))))
 
@@ -275,7 +368,8 @@
   (if (= :scapular-suspension (:task muscle))
     (suspension-effectiveness pose-data stature-m muscle)
     (moment-arm pose-data stature-m muscle
-                (get-in pose-data [:joints (:acts-about muscle)]))))
+                (get-in pose-data [:joints (:acts-about muscle)])
+                (axis-of muscle))))
 
 (defn arms
   "Every muscle INSTANCE's task coefficient at this pose, keyed by its unique name

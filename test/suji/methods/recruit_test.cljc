@@ -10,6 +10,19 @@
 
 (defn- c [name f-max coeff] {:name name :f-max-n f-max :coeff coeff})
 
+(deftest carried-is-not-all-placed
+  ;; `complete?` used to mean "every candidate got a force", which is false by
+  ;; construction for a mirror-paired task: exactly one side resists and the other
+  ;; is its antagonist, which a static optimum does not co-contract. Counting the
+  ;; antagonist as an unanswered load made every frontal-plane posture look
+  ;; unanswerable the moment the frontal muscles were added.
+  (let [r (recruit/share [(c "resisting" 600.0 0.05) (c "antagonist" 400.0 -0.04)] 20.0)]
+    (is (recruit/carried? r) "the load WAS placed")
+    (is (not (recruit/all-placed? r)) "and one candidate still got nothing")
+    (is (math/nearly= 0.0 (recruit/residual r 20.0) 1e-9)))
+  (let [none (recruit/share [(c "a" 600.0 -0.05) (c "b" 400.0 -0.04)] 20.0)]
+    (is (not (recruit/carried? none)) "nobody could take it, so it was not placed")))
+
 (deftest the-shared-forces-balance-the-load-exactly
   ;; The closed form is derived, not fitted, so equilibrium must hold to floating
   ;; point for every input — not approximately, and not only for the cases someone
@@ -55,7 +68,8 @@
         good (first (filter #(= "ok" (:name %)) r))]
     (is (= :coefficient-below-floor (:refused bad)))
     (is (nil? (:force-n bad)) "a refused muscle must carry NO force, not a large one")
-    (is (not (recruit/complete? r)) "and the result must not read as complete")
+    (is (not (recruit/all-placed? r)) "and the result must not read as fully placed")
+    (is (recruit/carried? r) "though the load itself was still carried, by the other muscle")
     (is (some? (:force-n good)) "the muscles that can carry it still do")
     ;; the surviving muscle carries the whole load — the answer is incomplete in
     ;; its accounting of WHO carries it, not in the equilibrium
@@ -64,7 +78,8 @@
 (deftest a-missing-line-of-action-is-refused-too
   (let [r (recruit/share [(c "a" 600.0 0.05) (c "nowhere" 200.0 nil)] 30.0)]
     (is (= :no-line-of-action (:refused (second r))))
-    (is (not (recruit/complete? r)))))
+    (is (not (recruit/all-placed? r)))
+    (is (recruit/carried? r))))
 
 (deftest with-no-usable-synergist-nothing-is-invented
   (let [r (recruit/share [(c "a" 600.0 0.0001) (c "b" 200.0 0.0002)] 30.0)]
@@ -99,7 +114,7 @@
     ;; that is not the problem
     (is (not (str/includes? (:note (by "wrong-way")) "wrapping surface here")))
     (is (str/includes? (:note (by "too-little")) "wrapping surface"))
-    (is (not (recruit/complete? r)))
+    (is (not (recruit/all-placed? r)))
     ;; equilibrium still holds over what was placed
     (is (math/nearly= 0.0 (recruit/residual r 30.0) 1e-9))))
 

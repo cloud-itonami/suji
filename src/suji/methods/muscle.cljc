@@ -61,7 +61,16 @@
    "upper_trapezius"    {:name "upper_trapezius"    :pcsa-cm2 9.0  :moment-arm-m 0.025}
    "levator_scapulae"   {:name "levator_scapulae"   :pcsa-cm2 5.0  :moment-arm-m 0.020}
    "anterior_deltoid"   {:name "anterior_deltoid"   :pcsa-cm2 10.0 :moment-arm-m 0.030}
-   "erector_spinae"     {:name "erector_spinae"     :pcsa-cm2 34.0 :moment-arm-m 0.055}))
+   "erector_spinae"     {:name "erector_spinae"     :pcsa-cm2 34.0 :moment-arm-m 0.055}
+   ;; added 2026-09-06 — no legacy constant to calibrate against, because this
+   ;; actor had no muscle for the frontal plane or for the girdle in a folded
+   ;; posture, which is why both were reported as carried by nobody.
+   "middle_trapezius"   {:name "middle_trapezius"   :pcsa-cm2 8.0}
+   "middle_deltoid"     {:name "middle_deltoid"     :pcsa-cm2 12.0}
+   "latissimus_dorsi"   {:name "latissimus_dorsi"   :pcsa-cm2 14.0}
+   "quadratus_lumborum" {:name "quadratus_lumborum" :pcsa-cm2 8.0}
+   "obliques"           {:name "obliques"           :pcsa-cm2 16.0}
+   "scalenes"           {:name "scalenes"           :pcsa-cm2 5.0}))
 
 ;; emission order — midline groups, then each side, matching `attachment/instances`
 (def emit-order (mapv :name attachment/instances))
@@ -97,13 +106,45 @@
                    (or (nil? side) (= side (:side m))))]
     {:name (:name m) :f-max-n (f-max-of m) :coeff (get coeffs (:name m))}))
 
+(defn- share-signed
+  "Share a load whose SIGN says which side has to resist it.
+
+  A frontal-plane moment can go either way, and the muscles that oppose it are a
+  mirror pair: at any instant one side's coefficient is positive and the other's is
+  negative. `recruit` only distributes across positive coefficients — correctly, a
+  muscle cannot push — so the load and the coefficients are flipped together when
+  the load is negative. The muscles on the resisting side then come out positive
+  and carry it, and the muscles on the other side come out negative and are refused
+  as acting the wrong way, which at that instant they are: their antagonist does
+  not co-contract in a static optimum."
+  [cands load]
+  ;; A load that is zero to within rounding has no side. Reading its sign off the
+  ;; last bits — a symmetric posture computes -1e-16, not 0.0 — picks a resisting
+  ;; side at random and refuses the other as acting the wrong way, for a load that
+  ;; is not there. Measured 2026-09-06: symmetric postures reported one deltoid
+  ;; refused and the other carrying 0.0 N.
+  (let [zero? (< (math/abs* load) 1e-9)
+        flip (if (neg? load) -1.0 1.0)]
+    (if zero?
+      (recruit/share (map #(update % :coeff (fn [c] (when c (math/abs* c)))) cands) 0.0)
+      (recruit/share (map #(update % :coeff (fn [c] (when c (* flip c)))) cands)
+                     (math/abs* load)))))
+
 (defn- ->tension
   "Attach %MVC to one shared result. A refusal stays a refusal — there is no
-  %MVC for a force this model declined to compute."
+  %MVC for a force this model declined to compute.
+
+  `:over-mvc?` marks a demand ABOVE maximum voluntary contraction. It is not an
+  error and it is not clamped: it says the posture asks the modelled muscles for
+  more force than they can produce, which is a real mechanical statement — a body
+  in that posture is being held by something this model does not contain
+  (ligaments, passive tissue, the spine in flexion-relaxation, or a different
+  strategy altogether). Clamping it at 100 would erase exactly the finding."
   [shared]
   (if (:refused shared)
     (assoc shared :mvc-pct nil)
-    (assoc shared :mvc-pct (/ (* 100.0 (max 0.0 (:force-n shared))) (:f-max-n shared)))))
+    (let [pct (/ (* 100.0 (max 0.0 (:force-n shared))) (:f-max-n shared))]
+      (assoc shared :mvc-pct pct :over-mvc? (> pct 100.0)))))
 
 (defn solve-muscle-tensions
   "Map a posture's joint loads onto per-muscle force and %MVC.
@@ -124,24 +165,61 @@
         joint (fn [n] (first (filter #(= n (:joint %)) (:joints loads))))
         by-name (fn [xs] (into {} (map (juxt :name identity)) xs))
         shoulder-per-side (:per-side (joint "shoulder"))
-        results
-        (apply merge
-               (by-name (recruit/share (candidates :cervical-extension nil coeffs)
-                                       (get-in loads [:cervical :extensor-moment-nm])))
-               (by-name (recruit/share (candidates :trunk-extension nil coeffs)
-                                       (:moment-nm (joint "lumbosacral"))))
-               (for [side [:left :right]]
-                 (merge
-                  (by-name (recruit/share (candidates :shoulder-flexion side coeffs)
-                                          (get shoulder-per-side side 0.0)))
-                  (by-name (recruit/share (candidates :scapular-suspension side coeffs)
-                                          (girdle-load-n body p side sup))))))
-        instance-by (into {} (map (juxt :name identity)) attachment/instances)]
+        task-list
+        (concat
+         [[[:cervical-extension :midline]
+           (recruit/share (candidates :cervical-extension nil coeffs)
+                          (get-in loads [:cervical :extensor-moment-nm]))]
+          [[:trunk-extension :midline]
+           (recruit/share (candidates :trunk-extension nil coeffs)
+                          (:moment-nm (joint "lumbosacral")))]
+          [[:trunk-lateral-flexion :midline]
+           (share-signed (candidates :trunk-lateral-flexion nil coeffs)
+                         (get-in loads [:frontal :lumbosacral-nm] 0.0))]
+          [[:cervical-lateral-flexion :midline]
+           (share-signed (candidates :cervical-lateral-flexion nil coeffs)
+                         (get-in loads [:frontal :cervical-nm] 0.0))]]
+         (for [side [:left :right]
+               entry [[[:shoulder-flexion side]
+                       (recruit/share (candidates :shoulder-flexion side coeffs)
+                                      (get shoulder-per-side side 0.0))]
+                      [[:scapular-suspension side]
+                       (recruit/share (candidates :scapular-suspension side coeffs)
+                                      (girdle-load-n body p side sup))]
+                      [[:shoulder-abduction side]
+                       (share-signed (candidates :shoulder-abduction side coeffs)
+                                     (get-in loads [:frontal :shoulder-per-side side] 0.0))]]]
+           entry))
+        task-results (into {} task-list)
+        results (into {} (for [[_ shared] task-list, x shared] [(:name x) x]))
+        instance-by (into {} (map (juxt :name identity)) attachment/instances)
+        ;; a task whose load WAS placed has no unanswered load; its refused
+        ;; members are antagonists, and marking them says so rather than leaving a
+        ;; consumer to count them as gaps.
+        ;;
+        ;; Keyed by instance NAME, not by [task side]: a mirror-paired task like
+        ;; lateral flexion is solved once with both sides as candidates, so its
+        ;; members do not share the side its key would carry. Keying by task+side
+        ;; matched nothing, every refusal looked like a gap, and the sweep reported
+        ;; all 3,240 postures incomplete.
+        carried-names (into #{}
+                            (for [[_ shared] task-results
+                                  :when (recruit/carried? shared)
+                                  x shared]
+                              (:name x)))]
     (mapv (fn [n]
-            (let [inst (instance-by n)]
-              (merge (select-keys inst [:group :side])
-                     (->tension (get results n)))))
+            (let [inst (instance-by n)
+                  t (->tension (get results n))]
+              (merge (select-keys inst [:group :side :task])
+                     t
+                     (when (and (:refused t) (contains? carried-names n))
+                       {:antagonist? true}))))
           emit-order)))
+
+(defn over-mvc
+  "Instances demanding more than maximum voluntary contraction at this posture."
+  [tensions]
+  (filterv :over-mvc? tensions))
 
 (defn tension-summary
   "Which parts of the load this solve could place, for a consumer that must not
@@ -153,24 +231,26 @@
     :refused         a muscle exists but its leverage is unresolvable HERE — a
                      straight-line model with no wrapping surface. Fixed by
                      wrapping surfaces, not by more muscles.
-    :unassigned-*    a load exists and no muscle in this model can carry it at
-                     all. This actor has no frontal-plane musculature, so any
-                     frontal moment is unassigned by construction. Fixed by adding
-                     muscles, not by better geometry."
+    :antagonists     a mirror-paired task's other side, refused because a static
+                     optimum does not co-contract. NOT a gap.
+    :over-mvc        the load was placed, and placing it needs more force than the
+                     muscle can produce. Also not a gap — a finding.
+
+  Frontal-plane loads used to appear here as `:unassigned-frontal-nm`, because
+  this actor had no frontal-plane musculature at all. It has since 2026-09-06."
   ([tensions] (tension-summary tensions nil))
   ([tensions loads]
-   (let [frontal (:frontal loads)
-         unassigned (when frontal
-                      (+ (math/abs* (:shoulder-nm frontal 0.0))
-                         (math/abs* (:lumbosacral-nm frontal 0.0))))]
+   (let [frontal (:frontal loads)]
      (cond-> {:total (count tensions)
-              :refused (count (filter :refused tensions))
-              :complete? (not-any? :refused tensions)
+              ;; an antagonist is not a gap: for a mirror-paired task exactly one
+              ;; side resists and the other is refused, which is the static
+              ;; optimum rather than an unanswered load
+              :refused (count (remove :antagonist? (filter :refused tensions)))
+              :antagonists (count (filter :antagonist? tensions))
+              :over-mvc (count (over-mvc tensions))
+              :complete? (not-any? #(and (:refused %) (not (:antagonist? %))) tensions)
               :max-mvc-pct (let [xs (keep :mvc-pct tensions)] (when (seq xs) (apply max xs)))}
-       frontal (assoc :unassigned-frontal-nm unassigned
-                      :frontal frontal
-                      :complete? (and (not-any? :refused tensions)
-                                      (< unassigned 1e-9)))))))
+       frontal (assoc :frontal frontal)))))
 
 (defn fmt-mvc
   "Display helper: a %MVC, or the reason there is not one."

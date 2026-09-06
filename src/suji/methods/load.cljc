@@ -162,6 +162,8 @@
                           (for [side [:left :right]]
                             (math/abs* (frontal (get-in p [:joints (keyword "shoulder" (name side))])
                                                 (pose/segments-on p arm-bases side)))))
+     :cervical-nm (frontal (get-in p [:joints :c7])
+                           (pose/segments-on p ["head_neck"]))
      :lumbosacral-nm (frontal (get-in p [:joints :l5s1])
                               (concat (pose/segments-on p ["thorax_abdomen" "head_neck"])
                                       (pose/segments-on p arm-bases)))}))
