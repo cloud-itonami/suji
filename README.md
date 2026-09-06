@@ -38,7 +38,8 @@ laptop workstation ──▶ posture (joint angles)        posture.cljc
                    ──▶ load sharing between synergists recruit.cljc  ← Crowninshield-Brand
                        (minimum cubed stress, closed form)              min sum (F/Fmax)^3
                    ──▶ muscle %MVC  (緊張 / tension)   muscle.cljc
-                   ──▶ stiffness index (強張り)        strain.cljc   ← Rohmert sustained dose
+                   ──▶ stiffness index (強張り)        strain.cljc   ← sustained-isometric dose,
+                                                                      ANSWERS TO Frey Law & Avin 2010
                    ──▶ A/B/C ergonomic comparison      analyze.cljc
 ```
 
@@ -47,10 +48,12 @@ with an arm branch (shoulder → elbow → wrist) and, since 2026-09-07, a leg b
 (hip → knee → ankle) on each side — built from Winter (4e) Table 4.1 anthropometry — exactly the `PlanarChain` articulation kami-genesis
 solves (ADR-2605311500/1800). The **bones load** is the static special case of Featherstone RNEA
 (the gravity term), computable in stdlib and independently checkable. The **muscles** are a Hill-type
-moment-arm model (force = moment / arm; %MVC = force / F_max). **強張り** is the Rohmert
-sustained-isometric dose accumulated over a work session.
+moment-arm model (force = moment / arm; %MVC = force / F_max). **強張り** is a
+sustained-isometric dose accumulated over a work session, from a power-law endurance
+curve of the family Rohmert's belongs to — *not* Rohmert's own equation, and since
+2026-09-07 it answers to a published meta-analysis of measured endurance times.
 
-### The answer (`bb -m suji.methods.analyze`)
+### The answer (`clojure -M -m suji.methods.analyze`)
 
 | workstation | head tilt from vertical | neck load | ×head-weight | worst-muscle stiffness |
 |---|---|---|---|---|
@@ -58,9 +61,15 @@ sustained-isometric dose accumulated over a work session.
 | laptop-on-desk | 32° | 19.8 kgf | 3.5× | cervical-extensors 1.00 (very-high) |
 | external-monitor + keyboard @ eye level | 10° | **10.5 kgf** | 1.9× | erector-spinae **0.98** (very-high) |
 
-→ raising the screen to eye level cuts the cervical compressive load **−62%**. (Self-referenced
-Wellbecoming, G3 — the same body across setups, not a ranking of people. Mechanism only; a
-clinician owns any health interpretation.)
+→ raising the screen to eye level cuts the cervical compressive load **−62%**.
+(Self-referenced Wellbecoming, G3 — the same body across setups, not a ranking of people.
+Mechanism only; a clinician owns any health interpretation.)
+
+⚠ **This table is a transcript of one run, and it has gone stale twice** — first the last
+column said `anterior-deltoid 0.05` where the report said `erector_spinae 0.04`, which went
+unnoticed because until 2026-09-07 `clojure -M -m suji.methods.analyze` **threw** and nobody
+was reading its output; then, later the same day, every figure in it moved when
+`lumbosacral-moment` and `cervical-load` were corrected. Regenerate rather than trusting it.
 
 **THE COLUMN IS HEAD TILT FROM VERTICAL, not head flexion** (changed 2026-09-07). The cervical
 model is a function of the head's angle from vertical, which is trunk flexion plus head flexion,
@@ -68,11 +77,11 @@ and every workstation here leans the trunk: laptop-on-lap is 43.5° at the neck 
 vertical. Until 2026-09-07 this column printed the neck angle beside a load computed as though
 the trunk were upright — see **Two joint moments that computed their own answer** below.
 
-**THE LAST ROW NO LONGER SAYS "and drops every muscle to low stiffness".** It used to, and the
+**THIS TABLE NO LONGER SAYS "and drops every muscle to low stiffness".** It used to, and the
 sentence is now false: with the lumbar spine correctly carrying the head and both arms, an
-upright supported sit at an eye-level monitor still asks the erector spinae for 11.3 %MVC held
-for two hours, and the Rohmert dose reads 0.98 rather than 0.04. That is a knife-edge and it is
-worth saying so: the endurance curve is very steep through 10 %MVC, so a few newton-metres at
+upright supported sit at an eye-level monitor still asks the erector spinae for 11.3 %MVC
+held for two hours, and the dose reads 0.98 rather than 0.04. That is a knife-edge and it
+is worth saying so: the endurance curve is very steep through 10 %MVC, so a few newton-metres at
 L5/S1 move the dose from *low* to *very-high* while the underlying moment goes only from
 7.6 N·m to 12.2 N·m. **The screen height still does what it did to the NECK**; the change is that
 the trunk was never as cheap as this table said.
@@ -219,6 +228,187 @@ A search engine returned a *paraphrase* of the abstract; **that is not a source
 that was read, so none of its numbers appear anywhere in this repo.** The entry is
 missing, not filled in.
 
+## The dose layer against the endurance literature — and it disagrees
+
+The stiffness index (強張り) is what a reader of this app actually sees: it is the
+number behind the *very-high* / *low* verdict in the comparison table. Until
+2026-09-07 it was graded **力学的だが例示的** — mechanically motivated but
+illustrative — and had nothing behind it at all. It now answers to a published
+meta-analysis of **measured** endurance times, the same way the lumbar profile
+answers to Wilke. **The answer is mixed, and this section exists to say so rather
+than to announce a validation.**
+
+### What the model actually implements
+
+`strain/model-form` states it exactly:
+
+```
+T_end(f) = 0.2 · f^-2.32   minutes        (f = %MVC / 100)
+ET(f)    = 12.0 · f^-2.32  seconds        the same curve, the literature's units
+```
+
+plus a hard floor: **below 8 %MVC it returns ∞**.
+
+**It is not Rohmert's equation.** Rohmert's own 1960 curve is usually reproduced as
+a polynomial in *(f − 0.15)* with a pole at 15 %MVC — a curve that goes to infinity
+*at a stated intensity*. This is a plain power law with no pole, and the floor is
+bolted on to supply the asymptote the functional form does not have. Calling it
+*Rohmert-type* is fair as a statement of family; calling it *Rohmert's* is not, and
+the docstring no longer does.
+
+**The provenance of `0.2` and `−2.32` could not be obtained.** They match no
+published fit that could be read (searched 2026-09-07). `model-form` carries
+`:provenance :could-not-obtain` and `unobtained-references` lists what was looked
+for and not found: El ahrache et al. 2006 (paywalled shell), Rohmert 1960 (not
+online in any form), Sato et al. 1984 (PDF mirror returned zero bytes), Monod &
+Scherrer 1965 (paywalled). **No number from any of those appears anywhere in this
+repo**, and the widely repeated "15 %MVC can be held indefinitely" is *not* quoted
+here, because no source stating it was read.
+
+### What the measurement is
+
+**Frey Law LA & Avin KG, "Endurance time is joint-specific: a modelling and
+meta-analysis investigation", *Ergonomics* 2010;53(1):109–129.** Full text read at
+<https://pmc.ncbi.nlm.nih.gov/articles/PMC2891087/>. **194 publications, 369 data
+points**, fitted to seven power laws — one pooled, one per joint region. Table 2's
+caption, verbatim: *"Power ( Time = bo\*(MVC) b1 ) … coefficients by joint, where
+intensity (% MVC) values are between 0.0 and 1.0; time is in seconds."*
+
+| region | b₀ | b₁ | R² |  | region | b₀ | b₁ | R² |
+|---|---|---|---|---|---|---|---|---|
+| **general** | 21.92 | −1.98 | 0.814 | | grip | 33.55 | −1.61 | 0.748 |
+| ankle | 34.71 | −2.06 | 0.884 | | knee | 19.38 | −1.88 | 0.789 |
+| trunk | 22.69 | −2.27 | 0.885 | | shoulder | 14.86 | −1.83 | 0.897 |
+| elbow | 17.98 | −2.21 | 0.915 | | | | | |
+
+What counted as an endurance time, verbatim: *"isometric tasks performed until
+volitional failure … single-joint involvement (per fatigue task)"*. A held posture
+is not a contraction held to volitional failure, and this repo is not claiming it
+is — what is compared is one endurance-time curve against another.
+
+**The reference's own spread** is quoted from the same first author's follow-up
+(**Frey-Law, Looft & Heitsman, *J Biomech* 2012;45(10):1803–1808**, full text at
+<https://pmc.ncbi.nlm.nih.gov/articles/PMC3397684/>): *"the percent difference
+between the 95% PI curve and the mean expected curve for ET … ranged from 29–47%."*
+That is a **range, not a number**, so both readings are carried and neither is
+presented as the answer — `:within-reference-spread?` uses ±47%,
+`:within-narrow-reference-spread?` uses ±29%. The provenance is stated split: the
+sentence is in the 2012 paper, describing the 2010 one.
+
+**One directly measured point**, so the comparison is not entirely against other
+people's regressions: **Heinzl et al., *Scientific Reports* 2025;15:1250**, full
+text at <https://www.nature.com/articles/s41598-024-83939-7> — handgrip held to
+task failure at 15 %MVC by 14 healthy young men, **455.9 ± 34.1 s (7.60 min)** with
+the forearm at heart level. The same paper measured **389.6 s** at the same
+intensity with the forearm raised 27.5 cm, which bounds how precisely *any* curve
+can be expected to predict a held posture.
+
+### The disagreement
+
+`strain/endurance-cross-check` — same shape as `spine/lumbar-cross-check`, same
+asymmetry: `:validated :reference`, `:model-validated? false`.
+
+**Against the pooled curve the model looks good.** Over 8–47 %MVC it sits inside
+even the tight ±29% reading of the reference's own prediction interval, and it
+stays inside the wide reading across the whole fitted range, running short at the
+top (0.20 min against 0.37 at 100 %MVC).
+
+**Against the joint-specific curves it disagrees, and the sign depends on the
+muscle.** Measured 2026-09-07 on `laptop-on-lap`, of the four muscle groups whose
+%MVC lands inside the fitted range, **two fall outside the reference's own wide
+interval and they fall out on opposite sides**:
+
+| muscle | region | %MVC | model ÷ reference |
+|---|---|---|---|
+| anterior deltoid | shoulder | 27.7 | **1.51×** — model says it can be held longer |
+| wrist extensors | grip *(nearest region)* | 10.4 | **1.78×** — same direction |
+| erector spinae | trunk | 57.4 | **0.54×** — model says shorter |
+| biceps brachii | elbow | 12.1 | 0.84× |
+
+and the groups just below the fitted range go further still — upper trapezius
+2.59×, levator scapulae 2.73×.
+
+(The erector spinae row was **25.7 %MVC / 0.57×** when this table was first
+measured, hours earlier the same day. It moved because `lumbosacral-moment` stopped
+omitting the head's own lever and both arms — see **Two joint moments that computed
+their own answer**. The bucket counts below did not move, and neither did any other
+row: this is the one muscle whose load that correction changed. `session-cross-check`
+re-measured 2026-09-07 after it: 13 of 48 compared, same four refusal reasons, same
+counts.)
+
+**That is not a calibration error, it is the shape of the model.** The reference's
+own between-joint spread at 20 %MVC runs from **4.7 min (shoulder) to 15.9 min
+(ankle), a factor of 3.4** — larger than the model's disagreement with the pooled
+curve anywhere in the fitted range. One curve for every muscle in the body cannot
+be simultaneously right for a deltoid and an erector spinae, whatever its
+coefficients are. `strain/joint-spread` computes that, so the limit is a number
+rather than a caveat.
+
+**The model was not tuned to close any of this.** The tests pin the *disagreement*
+— `against-the-shoulder-curve-the-model-disagrees-and-says-which-way` asserts the
+ratio is above the reference's wide band — so making the layer agree by moving a
+coefficient fails a test and has to be argued for.
+
+### The two extrapolation boundaries
+
+This is the class of error this kind of model usually dies of: a curve fitted
+between 10% and 100% will happily answer at 5% or at 120%, and the answer can be
+absurd. This repo has shipped one exponential that extrapolated to 52,312 N before
+it was clamped. So both boundaries are now **named in the value**, not in a
+comment — `strain/endurance` returns `:position` and `:extrapolated?`, and
+`muscle-strain` carries them through onto every dose.
+
+| `:position` | when | what the model does |
+|---|---|---|
+| `:below-endurance-floor` | ≤ 8 %MVC | returns **∞**; no acute dose accrues |
+| `:below-fitted-range` | 8–10 %MVC | a finite number, but nothing measured covers it |
+| `:within-fitted-range` | 10–100 %MVC | the only regime the reference checks |
+| `:above-maximum-voluntary-contraction` | > 100 %MVC | still answers, and says it is past meaning |
+
+**The low end is where a desk posture lives, and the ∞ is a modelling choice.**
+Below 8 %MVC the model says the load can be held forever; the published fit returns
+**54 min at 8 %MVC and 138 min at 5 %MVC**. Neither side is measured there — the
+fit's own data starts at 10 %MVC and the paper says it is *"concentrated above 25%
+MVC"* — so the cross-check returns `:could-not-obtain
+:model-returns-no-finite-endurance` with `:direction
+:model-unbounded-reference-finite` rather than dividing an infinity into a report.
+It matters: in `laptop-on-lap` **twenty of this actor's forty-eight muscle entries
+sit under the floor** and accrue no acute dose at all.
+
+**The high end arrives because `muscle` deliberately does not clamp %MVC above
+100** — a posture demanding more force than the muscle can give is a mechanical
+fact worth reporting. So this layer receives 111.6 %MVC and a power law prices it
+at 9 seconds. The number is still produced, because clamping would erase the
+finding, but `:above-maximum-voluntary-contraction` says what it is: an endurance
+time is how long a *sub-maximal* load is held, and above maximum there is no such
+quantity to extrapolate to.
+
+### What could not be checked at all
+
+**The muscle that produces this app's headline verdict has no published curve
+here.** The reference's six regions are ankle, knee, trunk, shoulder, elbow and
+hand/grip — **none of them is the neck** — and the *very-high* band in the
+comparison table is produced by the **cervical extensors**. `endurance-cross-check`
+returns `:could-not-obtain :no-published-curve-for-this-region` for them rather
+than quietly holding them to the pooled curve as though it were their own; the
+pooled curve is dominated by the limb data that *is* in the meta-analysis.
+
+The **hip** is missing from the reference too — the paper lists `hip` among its
+search terms and fits no hip curve — but unlike the neck it has a defensible
+nearest region: the reference's own discussion reports the prior review grouping
+models into *"general fatigue models, upper limb (shoulder, elbow, hand) models,
+and trunk/hip models"* and calls that grouping *"consistent with our power ET
+models"*. So `:hip-extension` routes to `:trunk` with `:basis :nearest-region`,
+while `:knee-extension` and `:ankle-plantarflexion` route to regions the reference
+fitted by name.
+
+`session-cross-check` reports the buckets so a reader cannot skim forty rows and
+conclude everything was checked. On `laptop-on-lap` (measured 2026-09-07, after the
+lower limb landed): **13 of 48 entries produced a ratio**; the rest declined for one
+of four distinct, non-interchangeable reasons — no published curve for the neck (3),
+no %MVC because the entry is a ligament (2), the model's own floor (20 — a seated
+posture asks almost nothing of the leg), and a muscle `recruit` refused (10).
+
 ## Isaac Sim / kami-genesis
 
 `wire/wit/kami-biomech.wit` is the articulation contract a kami-genesis `PlanarChain` / nv-compat
@@ -258,10 +448,10 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 208 tests / 6340 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 190 tests / 1290 assertions
-clojure -M:lint                                   # 0 errors (14 pre-existing warnings)
-clojure -M -m suji.methods.analyze                # the laptop-posture report
+clojure -M:test                                   # JVM   — 232 tests / 6683 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 214 tests / 1633 assertions
+clojure -M:lint                                   # 0 errors (13 pre-existing warnings)
+clojure -M -m suji.methods.analyze                # the laptop-posture report (works again)
 ```
 
 **Why two hosts.** Until 2026-09-06 every namespace here was named `.cljc` and four
@@ -360,6 +550,9 @@ them to within 0.2%) and everything away from neutral is now geometry. Measured
 consequence: the cervical extensor arm falls from 20.0 mm at neutral to 6.1 mm at
 60° of head flexion, so the same neck moment costs three times the muscle force —
 which is why laptop-on-lap's cervical extensors read 50 %MVC now and 27 %MVC before.
+(**56 %MVC** since later on 2026-09-07, when `cervical-load` stopped ignoring the
+20° of trunk flexion that posture carries — the arm shortening and the load rising
+are independent corrections that happen to push the same way.)
 
 **Wrapping surfaces (2026-09-06).** A straight chord between two attachment points
 can pass through the joint it acts about; the arm goes to zero and the force needed
@@ -640,6 +833,27 @@ reaches exactly 1.0 in double precision once the dose passes ~37 — roughly 50 
 held for two hours, which is an ordinary posture. Two postures, one twice as bad as
 the other, both read 1.00. `:saturated?` marks them.
 
+**The dose layer was calling itself Rohmert's, and it is not (2026-09-07).** This
+README said "**強張り** is the Rohmert sustained-isometric dose" and `strain.cljc`'s
+docstring said "Rohmert-type". Rohmert's own curve has a pole at 15 %MVC; this one is
+a plain power law with a floor bolted on at 8 %MVC to supply an asymptote the
+functional form does not have — and the coefficients `0.2` and `−2.32` could not be
+traced to any published fit that was obtainable. `model-form` now carries
+`:provenance :could-not-obtain`, `unobtained-references` names the four papers that
+were looked for and not found, and `the-constants-are-not-claimed-to-be-published`
+asserts the honest state, so a later `:provenance :full-text` has to arrive with a
+citation rather than on its own.
+
+**The endurance number answered outside its own range without saying so
+(2026-09-07).** `endurance-minutes` is a power law, so it answers everywhere: ∞ at
+5 %MVC, where the published fit returns 138 minutes, and a confident 9 seconds at
+111.6 %MVC — a holding time for a load the muscle cannot produce, which `muscle`
+deliberately does not clamp. Neither answer changed; both are now labelled
+(`:endurance-position`, `:endurance-extrapolated?`, `:unbounded-endurance?`) so a
+consumer can tell an answer from a guess, which was previously impossible from the
+value alone. Twenty of the forty-eight muscle entries in `laptop-on-lap` are on
+the unbounded side of that line.
+
 **The lower limb (2026-09-07), and the support mode that is the whole of it.**
 Thigh, shank and foot, bilateral, with muscles at the hip, knee and ankle. The
 model covered head, neck, trunk, shoulder, elbow and wrist; for standing, and for
@@ -699,8 +913,10 @@ solution for ONE equality constraint, and there is no closed form of that shape 
 two. So each is solved where it is the primary actor, and the moment it is
 simultaneously exerting at its other joint is computed and reported — per muscle as
 `:secondary-moment-nm`, per joint as `tension-summary`'s `:two-joint-unfed-nm`. In
-the deep squat that is 4.2 N·m of hip flexion the hip's equilibrium was never told
-about. A test asserts it is non-zero somewhere, because a reported approximation
+the deep squat that is 3.6 N·m of hip flexion the hip's equilibrium was never told
+about — and this sentence carried 4.2 N·m for a few hours after the squat's trunk
+angle moved, which is the reason to ask the model rather than the README:
+`(:two-joint-unfed-nm (muscle/tension-summary tensions loads))`. A test asserts it is non-zero somewhere, because a reported approximation
 that is always zero means a coupled model and an uncoupled one produce identical
 output.
 
@@ -749,11 +965,34 @@ line with no anterior-posterior offsets, so the small characteristic knee and hi
 moments of quiet standing come out near zero where a real body has them. A seated
 person's feet are unloaded.
 
+**The report did not run (fixed 2026-09-07).** `clojure -M -m suji.methods.analyze`,
+the command this README advertises, threw a `NullPointerException` out of `fmt-f`.
+`render-report` reached straight for `(:mvc-pct s)` and `(:stiffness-index s)` and
+handed them to a formatter that calls `.doubleValue`; a REFUSED muscle has neither,
+and a LIGAMENT has no %MVC at all because it cannot contract. It had been throwing
+since before 2026-09-06 and **nothing in the suite called `render-report`**, so the
+suite was green and the entry point was dead — the same shape as `.cljc` that only
+claims to be portable, one layer up. The lower limb made it worse rather than
+causing it: every seated scenario now has antagonist refusals in its table.
+
+The fix is the idiom `muscle/numeric-mvc?` was written for, at what is now the
+fourth emit site to learn it: **branch on whether the number is there, not on why
+it is not.** A refused muscle stays in the table with a dash and the
+`not-computed` band, because dropping it would make a muscle the model could not
+solve read as a muscle that was fine. A second unreachable-input path in the same
+function is fixed with it: the comparison baseline was looked up by the literal
+name `laptop-on-lap`, so rendering any other set of results returned nil and threw
+two lines later. `report-test` renders the report and asserts on the parsed table
+cells — not on `includes?` of words the prose above the table also uses.
+
 **Honest R0**: design + runnable physics + a cervical model validated **along one line**.
 Anthropometry / muscle / endurance parameters are `:representative` (G7); the cervical leg is
 validated at `trunk = 0`, which is how Hansraj measured it and therefore all the anchor can say —
-its response to trunk flexion is geometry the anchor does not constrain. The muscle %MVC and
-Rohmert strain legs are mechanistically grounded but illustrative. The per-level spinal profile is
+its response to trunk flexion is geometry the anchor does not constrain (2026-09-07). The muscle
+%MVC leg is mechanistically grounded but illustrative. **The strain / dose leg is no longer "illustrative":
+since 2026-09-07 it answers to Frey Law & Avin's meta-analysis of measured endurance times, and the
+answer is that it agrees with the pooled curve and disagrees with the joint-specific ones — see
+"The dose layer against the endurance literature" above.** The per-level spinal profile is
 **not** validated, and since 2026-09-07 that is a measurement rather than a disclaimer: it disagrees
 with the Hansraj-calibrated cervical model by about a factor of two, and with Wilke's in-vivo lumbar
 pressure by about a factor of two thirds in the other direction. Both disagreements are computed by
