@@ -16,6 +16,47 @@ It is the **physics-simulation sibling of `kizashi` 兆** (which *senses* the bo
 kizashi senses  →  suji simulates the loads  →  mitate diagnoses  →  iyashi treats
 ```
 
+## The nearest repos, and where the boundary runs (2026-09-07)
+
+**`kotoba-lang/biomech` covers the same subject at a different resolution, and this
+README had never named it.** The naming rule (ADR-2608040100) allows one subject on two
+planes only if each README states the boundary with the nearest repo; neither of ours
+did, for a month.
+
+| | resolution | what it holds |
+|---|---|---|
+| `kotoba-lang/biomech` | **tissue** | tissue material properties, Euler–Bernoulli beams, FEM, softbody, hemodynamics, and a lumped Hill muscle with activation dynamics, eccentric enhancement and a series-elastic tendon. Solver backends: `fea`, `kami-vehicle`, `kami-engine-cfd` |
+| **here** | **whole body** | static inverse dynamics, Crowninshield–Brand over several equilibria at once, geometric moment arms, per-level disc compression, Rohmert dose. Every muscle is collapsed to one line of action |
+| `kotoba-lang/kami-app-suji` | **the visible face** | the browser app. It holds no physics and generates no geometry |
+
+`筋` / `biomechanics` / `%MVC` / `moment arm` reach all three through
+`manifest/concept-vocabulary.edn` in the superproject (`:posture-load-biomechanics`).
+
+### The two Hill implementations, measured
+
+Both `force-length-factor` functions were loaded into one JVM and evaluated on the same
+17-point grid from 0.40 to 1.60 × optimal (2026-09-07, biomech `7832c4a`):
+
+- **The active curve is the same closed form** — `1 − 4(L/L₀ − 1)²` clamped at 0 — with a
+  worst absolute difference of **6.7 × 10⁻¹⁶**, i.e. double rounding. The duplication was
+  already deliberate and this file's `muscle.cljc` docstring already said so.
+- **The passive elements are different models, up to 121× apart, and below optimal they
+  disagree in sign.** biomech is a linear *bidirectional* spring about rest length; ours
+  is tension-only and exponential above optimal, normalised to 80% of peak active force
+  at 1.5×. As a fraction of each model's own peak: at 0.70 L₀ biomech −0.0090 against our
+  0.0000; at 1.50 L₀ 0.0150 against 0.8000 (**53×**); at 1.60 L₀ ours returns **2.18× its
+  own peak**, extrapolating past the stretch its exponential was calibrated at.
+- **Force–velocity, activation dynamics and the tendon exist only in biomech.** Static
+  inverse dynamics has no velocity and no activation state, so there is nothing here to
+  compare them against — that is a gap in comparability, not a disagreement.
+
+**Neither repo depends on the other, and this comparison is not automated.** Automating
+it would put this code on biomech's classpath, which is the thing both repos declined.
+biomech pins the same 17 points on its side and its comment says it cannot notice a
+change here. **Which passive model is right is not decided** — that needs a third source,
+and Hansraj and Wilke are not it.
+
+
 ## What it computes
 
 ```
