@@ -191,6 +191,19 @@
   agreement, so this table cannot drift away from the anatomy."
   (array-map
    "cervical_extensors" {:name "cervical_extensors" :pcsa-cm2 12.0 :moment-arm-m 0.020}
+   ;; the muscles that hold the head up, added 2026-09-07 — the first three entries in
+   ;; this table whose PCSA is MEASURED for the neck (Kamibayashi & Richmond 1998
+   ;; Table 3-3, 10 cadavers; provenance and the per-side → bilateral doubling are in
+   ;; `attachment/muscles`, which also states the double-counting decision against the
+   ;; lumped `cervical_extensors` above and the one-line change to THIS line that the
+   ;; opposite decision would need). `:moment-arm-m` keeps its meaning here: the
+   ;; representative NEUTRAL arm the attachment offsets are calibrated to reproduce,
+   ;; documentation of the target rather than a value used in the solve. The
+   ;; sternocleidomastoid's is NEGATIVE because about C7 it is a flexor, and that sign
+   ;; is the whole reason it is refused rather than recruited.
+   "semispinalis_capitis" {:name "semispinalis_capitis" :pcsa-cm2 10.80 :moment-arm-m 0.030}
+   "splenius_capitis"     {:name "splenius_capitis"     :pcsa-cm2 8.52  :moment-arm-m 0.038}
+   "sternocleidomastoid"  {:name "sternocleidomastoid"  :pcsa-cm2 7.44  :moment-arm-m -0.036}
    "upper_trapezius"    {:name "upper_trapezius"    :pcsa-cm2 9.0  :moment-arm-m 0.025}
    "levator_scapulae"   {:name "levator_scapulae"   :pcsa-cm2 5.0  :moment-arm-m 0.020}
    "anterior_deltoid"   {:name "anterior_deltoid"   :pcsa-cm2 10.0 :moment-arm-m 0.030}

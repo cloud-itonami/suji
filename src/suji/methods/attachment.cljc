@@ -70,7 +70,156 @@
     ;; without this the straight-line arm falls under the leverage floor at large
     ;; combined trunk+head flexion and `recruit` declines an ordinary posture.
     :wrap {:radius-m 0.012 :sign 1.0}
-    :source "representative; occipital insertion near C7 height and well posterior, so the line stays behind the joint through flexion — a straight line from a HIGH insertion crosses in front of C7 around 30 deg and would report the extensors as flexors"}
+    ;; ⚠ THIS `:source` SAID `occipital insertion` UNTIL 2026-09-07, AND THAT IS THE
+    ;; SENTENCE THAT HID THE GAP. The insertion is at 0.05 of `head_neck`, which on a
+    ;; 1.70 m body is 15.5 mm above C7 — BELOW C6/C7, which `spine/levels` puts at
+    ;; 18.6 mm. An occipital insertion would have to reach 0.42 (130 mm above C7; see
+    ;; the derivation in the block below). So this group crosses exactly ONE
+    ;; intervertebral level, C7/T1, and nothing it places touches the skull. Its
+    ;; 0.020 m calibration target is not a measured muscle arm either: it is
+    ;; `load/cervical-ext-arm-m`, the effective lever the Hansraj model is fitted
+    ;; with. What this entry actually places is the deep cervical group that spans
+    ;; the cervicothoracic junction — semispinalis cervicis, multifidus, longissimus
+    ;; and spinalis cervicis — and THAT is why the capitis muscles below are added
+    ;; alongside it rather than carved out of it.
+    :source "representative; a deep cervical group spanning the cervicothoracic junction. The insertion is 15.5 mm above C7 at reference stature, i.e. below C6/C7 — it is NOT occipital, and the file said it was until 2026-09-07. Kept low and well posterior so the line stays behind the joint through flexion: a straight line from a HIGH insertion crosses in front of C7 around 30 deg and would report the extensors as flexors. The 0.020 m neutral target is load/cervical-ext-arm-m, the Hansraj effective lever, not a measured muscle moment arm."}
+
+   ;; --- the muscles that hold the head up ---------------------------------------
+   ;; Added 2026-09-07. Until then NOTHING IN THIS MODEL REACHED THE SKULL. The most
+   ;; cranial attachment in the whole set was `levator_scapulae` at `head_neck` 0.22
+   ;; and `spine/levels` puts C3/C4 at 0.24, so the top cervical level was crossed by
+   ;; nothing at all — in the one region a forward-head posture actually loads.
+   ;; Measured at `laptop-on-lap`, 70 kg / 1.70 m, before this block existed:
+   ;;
+   ;;     C7/T1  401.56 N  cervical_extensors, levator_scapulae, upper_trapezius
+   ;;     C6/C7   68.66 N  levator_scapulae, upper_trapezius
+   ;;     C5/C6   34.51 N  levator_scapulae
+   ;;     C4/C5   34.51 N  levator_scapulae
+   ;;     C3/C4    0.00 N  nothing
+   ;;
+   ;; WHERE THE SKULL SITS ON THIS SEGMENT, derived from the model rather than
+   ;; guessed. `head_neck` runs C7 → vertex and is 0.3094 m long at reference
+   ;; stature. `spine/levels` spaces the five cervical levels 0.06 of that apart —
+   ;; 18.6 mm, which is what a cervical vertebra plus its disc measures — so
+   ;; continuing the model's OWN spacing upward past C3/C4 (0.24) gives C2/C3 0.30,
+   ;; C1/C2 0.36, and the occipito-atlantal joint 0.42, i.e. 130 mm above C7. An
+   ;; insertion above 0.24 therefore crosses every cervical level this model has.
+   ;;
+   ;; ⚠ WHAT IS NOT HERE, AND WHY. The suboccipitals — rectus capitis posterior major
+   ;; and minor, obliquus capitis superior and inferior — run from C1 and C2 to the
+   ;; occiput, so BOTH THEIR ENDS WOULD BE ON `head_neck`: this model has one rigid
+   ;; head-and-neck segment and no atlanto-occipital or atlanto-axial joint.
+   ;; `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm` names
+   ;; that shape as the error that produced a constant-looking arm, and it would be
+   ;; that error here rather than the exception `middle_trapezius` earned: that one is
+   ;; defensible because a SUSPENSION coefficient is a cosine against the world
+   ;; vertical, which the segment does not carry, and a suboccipital is solved as a
+   ;; MOMENT, whose axis the segment does carry. Its arm could not vary and its length
+   ;; could not change, so the model would report a muscle that never works. What is
+   ;; missing is a JOINT, not an attachment, and no attachment can supply it. They are
+   ;; excluded rather than faked; `exactly-one-muscle-has-both-ends-on-one-segment-and-it-is-a-suspender`
+   ;; is what keeps them excluded.
+   ;;
+   ;; PCSA HERE IS MEASURED, and it is the second measured column in this file after
+   ;; the lower limb's. Kamibayashi LK, Richmond FJR, "Morphometry of human neck
+   ;; muscles", Spine 23(12):1314–1323, 1998 — 14 neck muscles from 10 human cadavers.
+   ;; The table was read as Table 3–3 ("Morphometric Parameters of Human Neck
+   ;; Muscles", p.65) of Vasavada AN, "Architectural Design and Function of Human Back
+   ;; Muscles", chapter 3 of Rothman-Simeone The Spine, which reproduces it with the
+   ;; attribution printed under the table; full text obtained 2026-09-07 from
+   ;; https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf and read in full,
+   ;; not as an abstract. Per-muscle PCSA means (one side, cm²), with the range:
+   ;;
+   ;;     semispinalis capitis     5.40 (1.30)   3.93–7.32   N=9
+   ;;     splenius (cap + cerv)    4.26 (1.04)   2.57–5.48   N=9
+   ;;     sternocleidomastoideus   3.72 (0.91)   1.81–5.26   N=9
+   ;;
+   ;; A midline group in this model carries the BILATERAL sum (see `muscle`'s note on
+   ;; `cervical_extensors` and `erector_spinae`), so each is doubled below.
+   ;;
+   ;; THE DOUBLE-COUNTING DECISION, since a lumped `cervical_extensors` already exists
+   ;; and `load/cervical-load` is calibrated: these are ADDED as things the lump
+   ;; EXCLUDES, not carved out of it. The evidence is the lump's own geometry, above —
+   ;; it inserts below C6/C7 and crosses one level, so no muscle with a cranial
+   ;; attachment can be inside it. The arithmetic and what it costs are written out in
+   ;; the `:source` of `semispinalis_capitis`, because a decision stated only in a
+   ;; commit message is a decision nobody can check later.
+   ;;
+   ;; THE MOMENT ARMS are representative, calibrated the way the rest of this file's
+   ;; are: the offsets put the neutral arm on a stated target and everything away from
+   ;; neutral is geometry. The targets are 30 mm for semispinalis capitis and 38 mm
+   ;; for splenius capitis, and their ORDER is sourced even though their values are
+   ;; not — Vasavada's chapter states that "the semispinalis capitis has shorter
+   ;; fascicle lengths, but also a smaller moment arm than the splenius capitis"
+   ;; (p.68), and its Figures 3–14/3–15 put neck moment arms on a 0–4 cm scale.
+
+   "semispinalis_capitis"
+   {:name "semispinalis_capitis" :pcsa-cm2 10.80
+    :acts-about :c7 :task :cervical-extension
+    ;; upper thoracic and lower cervical transverse/articular processes → the
+    ;; occipital bone between the superior and inferior nuchal lines. The insertion at
+    ;; 0.48 of `head_neck` is 148 mm above C7, about 19 mm above the occipito-atlantal
+    ;; joint the model's own level spacing puts at 0.42 — the nuchal lines are on the
+    ;; occipital squama, above the foramen magnum.
+    :origin {:segment "thorax_abdomen" :along 0.85 :ant -0.0168 :lat 0.0}
+    :insertion {:segment "head_neck" :along 0.48 :ant -0.0191 :lat 0.0}
+    ;; THE CERVICAL COLUMN — the same surface `cervical_extensors` declares, at the
+    ;; same 0.012 m, because it is the same column and this file's rule is one bone
+    ;; one radius (`the-abduction-floor-is-the-humeral-head-and-it-is-a-floor`).
+    ;; It is needed, and a straight line alone is not enough: measured 2026-09-07, the
+    ;; unwrapped chord from this insertion has a +29.8 mm extension arm at neutral and
+    ;; is −9.0 mm at the `laptop-on-lap` head tilt of 63.5°, i.e. the model's principal
+    ;; head extensor would be reported as a FLEXOR in the posture it exists to
+    ;; describe. That is the same defect the cervical group and the anterior deltoid
+    ;; had, and it is worse here because the insertion is 148 mm out along the lever.
+    ;; A muscle lying further out from the bone has a larger effective radius and this
+    ;; model does not know how much larger, so the column's own radius is used: that
+    ;; makes the floor a LOWER bound on the leverage, and therefore an OVERSTATEMENT
+    ;; of the force and of the compression that follows from it. Stated rather than
+    ;; corrected by a factor nobody measured.
+    :wrap {:radius-m 0.012 :sign 1.0}
+    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 5.40 cm2 per side x 2 sides = 10.80 cm2 bilateral (measured; N=9 cadavers, range 3.93-7.32). ADDED ALONGSIDE the lumped cervical_extensors rather than carved out of it, and the arithmetic is this: the lump is 12.00 cm2 and its insertion sits 15.5 mm above C7, below C6/C7, so it crosses one level and contains nothing cranial; total modelled cervical extensor cross-section therefore goes 12.00 -> 12.00 + 10.80 + 8.52 = 31.32 cm2, a factor of 2.61. WHAT THAT COSTS IF THE LUMP WAS MEANT AS THE WHOLE NECK: this model then overstates neck extensor capacity by 12.00 cm2 and every cervical %MVC it reports is correspondingly low. That reading cannot be settled from inside the model, because the 12.00 has no provenance to check - it is :representative with no citation, and Kamibayashi & Richmond do not measure the deep cervical group it places (semispinalis cervicis, multifidus, longissimus and spinalis cervicis are absent from their table). The one-line change that would settle it the other way is muscle/specs \"cervical_extensors\" :pcsa-cm2 12.0 -> 3.356, which is 12.0 x 7.50/26.82, the suboccipital residual's share of the measured bilateral total 10.80 + 8.52 + 7.50 = 26.82 cm2. It is NOT made here: muscle.cljc is landed, and this is reported instead. Neutral extension arm calibrated to a representative 0.030 m."}
+
+   "splenius_capitis"
+   {:name "splenius_capitis" :pcsa-cm2 8.52
+    :acts-about :c7 :task :cervical-extension
+    ;; ligamentum nuchae and the spinous processes of C7–T3 → the mastoid process and
+    ;; the lateral third of the superior nuchal line. Superficial to semispinalis
+    ;; capitis, so its origin sits further posterior (the spinous process tips rather
+    ;; than the transverse processes) and its extension arm is the larger of the two.
+    :origin {:segment "thorax_abdomen" :along 0.90 :ant -0.0230 :lat 0.0}
+    :insertion {:segment "head_neck" :along 0.45 :ant -0.0206 :lat 0.0}
+    ;; the same cervical column, the same radius — see the note above.
+    :wrap {:radius-m 0.012 :sign 1.0}
+    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, splenius 4.26 cm2 per side x 2 = 8.52 cm2 bilateral (measured; N=9, range 2.57-5.48). ⚠ THAT ENTRY IS THE WHOLE SPLENIUS: the table gives one mass and one PCSA for splenius capitis and splenius cervicis together and separates them only by fascicle length (12.3 cm and 14.7 cm). This entry therefore stands for both, which puts a share of splenius cervicis's cross-section on a cranial insertion it does not have - cervicis runs to the C1-C3 transverse processes. It crosses the same five levels either way, so the error is in WHERE the force is applied on the skull and not in which levels carry it. Neutral extension arm calibrated to a representative 0.038 m, larger than semispinalis capitis's because Vasavada (chapter 3, p.68) states the semispinalis capitis has the smaller of the two."}
+
+   "sternocleidomastoid"
+   {:name "sternocleidomastoid" :pcsa-cm2 7.44
+    :acts-about :c7 :task :cervical-extension
+    ;; manubrium and the medial third of the clavicle → the mastoid process and the
+    ;; lateral superior nuchal line. It passes WELL ANTERIOR to the cervical column in
+    ;; the lower neck, so about C7 it is a FLEXOR and its moment arm is negative.
+    ;;
+    ;; IT WILL BE REFUSED IN ALMOST EVERY POSTURE THIS ACTOR REPORTS, AND THAT IS THE
+    ;; CORRECT ANSWER RATHER THAN A FAILURE. `:cervical-extension` shares an unsigned
+    ;; load through `recruit/share`, so a candidate with a negative coefficient comes
+    ;; back `:refused :acts-the-wrong-way` — the muscle would add to the load rather
+    ;; than resist it, which at a forward-head posture it would. `muscle` then marks it
+    ;; `:antagonist? true` because the load WAS placed, so it is not counted as a gap.
+    ;; The refusal has to be for that reason and not `:no-line-of-action`, which would
+    ;; mean the geometry was degenerate; `the-flexor-is-refused-for-being-a-flexor`
+    ;; pins which.
+    ;;
+    ;; WHAT IT STILL DOES NOT DO. A refused instance carries no `:force-n`, so it
+    ;; contributes nothing to `spine`'s compression even though its line crosses every
+    ;; cervical level — a real sternocleidomastoid holding a head against a headrest
+    ;; compresses the neck, and this model cannot say so. It is also modelled MIDLINE,
+    ;; like the other two, so its lateral flexion and axial rotation are absent: those
+    ;; would need it paired and in `:cervical-lateral-flexion`, and a muscle belongs to
+    ;; one task here.
+    :origin {:segment "thorax_abdomen" :along 0.96 :ant 0.0260 :lat 0.0}
+    :insertion {:segment "head_neck" :along 0.44 :ant -0.0040 :lat 0.0}
+    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 3.72 cm2 per side x 2 = 7.44 cm2 bilateral (measured; N=9, range 1.81-5.26). No double count to decide: the lumped cervical_extensors is an extensor group and this is the antagonist, which was absent from the model entirely. Neutral arm -0.036 m, a FLEXION arm about C7; Vasavada chapter 3 Figure 3-14 puts the sternocleidomastoid's lower-cervical flexion moment arm between about -2 and -4 cm and has it increasing in flexed postures."}
 
    "upper_trapezius"
    {:name "upper_trapezius" :paired? true :pcsa-cm2 9.0
