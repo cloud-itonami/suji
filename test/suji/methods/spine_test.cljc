@@ -616,12 +616,29 @@
     (is (nil? (:ratio x)))
     (is (= 0.83 (:reference-pressure-mpa x))
         "the published pressure is still carried; it is the comparison that is refused"))
-  ;; and standing is refused for a different reason: a seated model with no thigh
-  ;; segment cannot tell standing from sitting, while Wilke measures them apart
+  ;; `standing, bent forward` is refused for the same reason: Table 1 p.757 gives
+  ;; 1.10 MPa and no trunk angle.
+  (let [x (spine/lumbar-cross-check
+           (spine/reference-by-id :wilke-1999-standing-bent-forward))]
+    (is (= :posture-angle-not-stated-in-source (:could-not-obtain x)))
+    (is (nil? (:ratio x))))
+  ;; ⚠ `relaxed standing` USED TO BE HERE and is not any more, and the reason it
+  ;; left matters more than the fact that it did. It was refused twice: first as
+  ;; `this model cannot stand` (no thigh segment), then as `it returns the same
+  ;; 351 N for standing and for sitting` (sitting and standing differed only below
+  ;; L5/S1). The pelvis rotates since 2026-09-08 and the lumbar spine tilts with
+  ;; it, so the model can hold the two postures apart and the entry produces a
+  ;; ratio. What it does NOT have is a lordosis stated by Wilke — that number is
+  ;; imported from Cho et al. 2015 — so the entry carries `:parameter-not-in-source`
+  ;; instead, and so does the sitting entry, whose imported lordosis is zero.
   (let [x (spine/lumbar-cross-check
            (spine/reference-by-id :wilke-1999-relaxed-standing))]
-    (is (= :standing-is-not-representable (:could-not-obtain x)))
-    (is (nil? (:ratio x)))))
+    (is (nil? (:could-not-obtain x)) "standing is comparable now")
+    (is (some? (:ratio x)))
+    (is (= :pelvic-tilt-deg (:parameter (:parameter-not-in-source x)))
+        "and it declares the input its own source does not state")
+    (is (= :cho-2015-standing (:from (:parameter-not-in-source x)))
+        "naming where the input came from instead")))
 
 (deftest the-niosh-scale-is-the-published-kilogram-force-figures-times-g
   ;; NIOSH's 1981 guide states these as kilogram-force — 350 kg and 650 kg — and
@@ -919,3 +936,236 @@
           "and for multifidus, which is the other muscle acting at C2/C3")
       (is (re-find #"UNPROVENANCED" src)
           "and it still declares that its own 12.0 cm2 has no source to carve from"))))
+
+;; --- the pelvis rotates, and what that did to Wilke (2026-09-08) -------------
+
+(def ^:private wilke-body (segment/build-body 70.0 1.68))
+
+(defn- l4l5-at
+  "L4/L5 compression on Wilke's body at the standing reference posture with this
+  pelvic tilt substituted, everything else held."
+  [tilt]
+  (let [pst (assoc (:posture (spine/reference-by-id :wilke-1999-relaxed-standing))
+                   :pelvic-tilt-deg tilt)
+        l (load/solve-posture-loads wilke-body pst)
+        t (muscle/solve-muscle-tensions wilke-body pst l)]
+    (:force-n (first (filter #(= "L4/L5" (:name %))
+                             (spine/profile wilke-body pst t))))))
+
+(deftest zero-pelvic-tilt-is-a-straight-lumbar-spine
+  ;; THE PROPERTY THE WHOLE CHANGE RESTS ON. `pose/lumbar-chord-tilt-deg` is
+  ;; `trunk + pelvic-tilt/2`, so at zero tilt the lumbar segment is collinear with
+  ;; the thorax and every number this actor produced before the pelvis could rotate
+  ;; is unchanged. It is also not merely convenient: Cho et al. measure a stool at
+  ;; 0.6 deg (SD 3.6), and Wilke's one comparable posture is a stool.
+  (doseq [trunk [0.0 20.0 60.0]]
+    (is (math/nearly= trunk (pose/lumbar-chord-tilt-deg trunk 0.0) 1e-12)
+        (str "at zero pelvic tilt the lumbar takes the trunk's own tilt: " trunk)))
+  (let [p (pose/solve-pose body {:head-flexion-deg 0.0 :trunk-flexion-deg 25.0
+                                 :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0})]
+    (is (= (:dir (pose/seg-at p "lumbar")) (:dir (pose/seg-at p "thorax")))
+        "and the two trunk segments point the same way")))
+
+(deftest the-lumbar-chord-bisects-its-two-ends
+  ;; The lumbar spine runs between an endplate the pelvis turns and an endplate the
+  ;; thorax holds. For a circular arc — constant curvature, the simplest curve with
+  ;; those two tangents — the chord bisects them, and that is where `trunk + p/2`
+  ;; comes from. Nothing was chosen; a different curve would give a different chord.
+  (doseq [[trunk tilt] [[0.0 46.5] [20.0 10.0] [0.0 -20.0] [15.0 0.0]]]
+    (let [lower (+ trunk tilt)                 ; the sacral end, turned by the pelvis
+          upper trunk                          ; the T12/L1 end, held by the thorax
+          got (pose/lumbar-chord-tilt-deg trunk tilt)]
+      (is (math/nearly= (* 0.5 (+ lower upper)) got 1e-12)
+          (str "trunk " trunk " tilt " tilt ": chord must bisect " lower " and "
+               upper ", got " got))
+      (is (math/nearly= tilt (pose/lumbar-lordosis-deg {:pelvic-tilt-deg tilt}) 1e-12)
+          "and the lordosis is the angle between the two ends"))))
+
+(deftest the-lower-limb-does-not-reach-l4l5
+  ;; WHAT MAKES THE STANDING COMPARISON A COMPARISON OF LORDOSIS. The two Wilke
+  ;; reference postures differ below L5/S1 as well as above it — one has the hip
+  ;; and knee at 90 deg on a stool, the other stands on a 5 deg lean. If any of
+  ;; that reached L4/L5 the difference this model reports would be a mixture and
+  ;; `sitting-standing-comparison` could not say what it was measuring.
+  ;;
+  ;; It does not reach it, and the reason is the skeleton's shape rather than a
+  ;; judgement: the walk from a thigh goes thigh → pelvis → lumbar at 0.0, and 0.0
+  ;; is not past a cut at 0.2, so every leg segment is proximal to every lumbar
+  ;; level. Asserted by holding the lordosis fixed and swapping the support mode.
+  (let [sit (:posture (spine/reference-by-id :wilke-1999-sitting-relaxed-no-backrest))
+        stand (:posture (spine/reference-by-id :wilke-1999-relaxed-standing))
+        at (fn [pst tilt]
+             (let [p (assoc pst :pelvic-tilt-deg tilt)
+                   l (load/solve-posture-loads wilke-body p)
+                   t (muscle/solve-muscle-tensions wilke-body p l)]
+               (:force-n (first (filter #(= "L4/L5" (:name %))
+                                        (spine/profile wilke-body p t))))))]
+    (is (not= (:support sit) (:support stand)) "the two postures really do differ")
+    (doseq [tilt [0.0 46.5]]
+      (is (math/nearly= (at sit tilt) (at stand tilt) 1e-9)
+          (str "at " tilt " deg of lordosis, sitting and standing must give the same "
+               "L4/L5 force: " (at sit tilt) " vs " (at stand tilt))))))
+
+(deftest standing-and-sitting-now-differ-and-the-difference-is-the-lordosis
+  ;; The gap this change exists to close. Until 2026-09-08 both entries returned
+  ;; 350.887 N because sitting and standing differed only BELOW L5/S1.
+  (let [x (spine/sitting-standing-comparison)]
+    (is (pos? (:model-difference-n x))
+        (str "standing must now load L4/L5 more than sitting: "
+             (:model-difference-n x)))
+    (is (math/nearly= (:model-difference-n x) (- (l4l5-at 46.5) (l4l5-at 0.0)) 1e-9)
+        "and the whole of that difference must come from the lordosis")
+    (is (= 0.0 (:lumbar-lordosis-deg (:sitting x))) "sitting is straight")
+    (is (= 46.5 (:lumbar-lordosis-deg (:standing x))) "standing is lordotic")
+    (is (:parameter-not-in-source (:standing x))
+        "and the entry declares that Wilke did not state that lordosis")
+    (is (:parameter-not-in-source (:sitting x))
+        "as does the sitting entry, whose imported lordosis happens to be zero")
+    (is (false? (:model-validated? x)) "neither side of this is validated")))
+
+(deftest the-direction-agreeing-with-wilke-is-not-evidence
+  ;; THE CONTROL THAT REFUSES THE CREDIT. `sitting-standing-comparison` reports
+  ;; `:same-direction? true` — the model says standing loads L4/L5 more, and so
+  ;; does Wilke. That agreement is worth nothing, and the counterfactual is what
+  ;; shows it: reverse the SIGN of the lordosis and the model still says the
+  ;; tilted posture loads L4/L5 more, so it would have answered `standing loads
+  ;; it more` whichever way Cho's two numbers had come out.
+  ;;
+  ;; ⚠ THE FIRST VERSION OF THIS TEST PASSED FOR THE WRONG REASON AND IT TOOK A
+  ;; BREAK TO FIND OUT. It asserted the same thing and said the cause was that
+  ;; `any lordosis carries the mass above the level off the load line either way`.
+  ;; That is FALSE, measured: with the pelvis frozen so that only the lumbar chord
+  ;; follows it, -46.5 deg gives 320.531 N against 348.862 N flat — the lordosis
+  ;; path is SIGNED, and a posterior lordosis UNLOADS the level, because all it
+  ;; does there is take the cosine of a tilted axis.
+  ;;
+  ;; WHAT MAKES THE MODEL SIGN-BLIND IS A SECOND PATH, and it is not lordosis at
+  ;; all. Eight muscle groups here originate on the PELVIS — erector spinae,
+  ;; quadratus lumborum, latissimus dorsi, obliques, the posterior lumbar
+  ;; ligaments, and three of the lower limb — so rotating the pelvis moves their
+  ;; origins whatever the lumbar spine does. On the posterior side it swings them
+  ;; under L5/S1 and their moment arms collapse: with the lumbar chord held
+  ;; straight and only the pelvis turning, -46.5 deg reports 2121.6 N. So the
+  ;; model's agreement with Wilke's direction is mostly a moment-arm degeneracy.
+  ;;
+  ;; It does not contaminate the number this actor reports for standing: there the
+  ;; tilt is ANTERIOR, which swings the same origins the other way and lengthens
+  ;; the arms rather than collapsing them.
+  (let [flat (l4l5-at 0.0)]
+    (is (> (l4l5-at 46.5) flat)
+        "an anterior tilt raises the compression, which is the reported direction")
+    (is (> (l4l5-at -46.5) flat)
+        (str "and so does a POSTERIOR tilt of the same size, so the model did not "
+             "predict the direction it agrees with: " (l4l5-at -46.5) " vs " flat))))
+
+(deftest pelvic-tilt-reaches-l4l5-by-a-second-path-that-is-not-lordosis
+  ;; The half of the previous test that a docstring cannot assert. Eight of this
+  ;; model's muscle groups hang their ORIGIN on the pelvis, so the new degree of
+  ;; freedom moves them directly — a path from `:pelvic-tilt-deg` to a lumbar
+  ;; compression that does not pass through the lumbar spine's orientation at all.
+  ;; Naming it is the difference between reading `standing loads L4/L5 more` as a
+  ;; statement about lordosis and reading it as what it is.
+  (let [on-pelvis (filterv #(= "pelvis" (:segment (:origin %)))
+                           (vals attachment/muscles))]
+    (is (<= 5 (count on-pelvis))
+        (str "several muscle groups originate on the pelvis: "
+             (mapv :name on-pelvis)))
+    (is (some #(= "erector_spinae" (:name %)) on-pelvis)
+        "including the only trunk extensor this model has"))
+  ;; and the path is live: the extensor's moment arm about L5/S1 moves with the
+  ;; pelvis even at a posture whose lumbar spine is doing the same thing
+  (let [arm (fn [tilt]
+              (let [pst (assoc (:posture (spine/reference-by-id
+                                          :wilke-1999-relaxed-standing))
+                               :pelvic-tilt-deg tilt)
+                    p (pose/solve-pose wilke-body pst)]
+                (attachment/moment-arm p 1.68 (attachment/instance "erector_spinae")
+                                       (get-in p [:joints :l5s1]))))]
+    (is (not (math/nearly= (arm 0.0) (arm 20.0) 1e-6))
+        (str "the extensor's arm about L5/S1 follows the pelvis: "
+             (arm 0.0) " -> " (arm 20.0)))))
+
+(deftest the-lordosis-sensitivity-is-far-too-high
+  ;; THE FINDING, pinned so that it cannot quietly stop being true. The model now
+  ;; separates the two postures, and it separates them by about seven times too
+  ;; much: Wilke's own standing-minus-sitting is 48 N through the same pressure
+  ;; index, and this model returns about 334 N. Equivalently, the lordosis that
+  ;; would reproduce Wilke's difference is about 5.7 deg, against the 46.5 deg Cho
+  ;; measured — a factor of eight the other way.
+  ;;
+  ;; The dominant cause is stated in `pose/lumbar-chord-tilt-deg`: L5/S1 is the
+  ;; root of this chain and does not move, so tilting the lumbar chord translates
+  ;; the whole trunk anteriorly, where a real pelvis rotates about the hips and
+  ;; L5/S1 itself moves back. That translation, not the change in the level's own
+  ;; axis, is most of the 334 N.
+  (let [x (spine/sitting-standing-comparison)
+        need (spine/lordosis-matching-reference-difference-deg)]
+    (is (> (:difference-ratio x) 5.0)
+        (str "the model over-separates the two postures: " (:difference-ratio x)))
+    (is (some? need) "the matching lordosis is bracketed inside the measured one")
+    (is (< need 10.0)
+        (str "and it is far short of the 46.5 deg Cho measured: " need))
+    (is (< need (posture/pelvic-tilt-for :standing))
+        "which is the same statement from the other end")))
+
+(deftest the-model-brackets-wilke-rather-than-matching-either-end
+  ;; AND THE RATIO DID NOT GET BETTER. It was 0.636 at the one comparable posture;
+  ;; it is 0.632 there now (the trunk mass split, not the lordosis) and 1.137 at
+  ;; the posture that became comparable. The model is below the measurement when
+  ;; the spine is straight and above it when the spine is lordotic, and neither is
+  ;; inside the reference's own spread. A single lordosis cannot make both right,
+  ;; which is the same finding as `the-lordosis-sensitivity-is-far-too-high` said
+  ;; in the units the cross-check reports.
+  (let [x (spine/sitting-standing-comparison)]
+    (is (= :model-below-reference (:direction (:sitting x))))
+    (is (= :model-above-reference (:direction (:standing x))))
+    (is (false? (:within-reference-spread? (:sitting x))))
+    (is (false? (:within-reference-spread? (:standing x))))
+    (is (< (:ratio (:sitting x)) 1.0 (:ratio (:standing x)))
+        (str "the model brackets the reference: " (:ratio (:sitting x)) " and "
+             (:ratio (:standing x))))))
+
+(deftest the-pelvis-actually-rotates
+  ;; The kinematic half, checked where it is visible rather than only where it is
+  ;; convenient. An ANTERIOR pelvic tilt tips the top of the sacrum forward and
+  ;; therefore carries the femoral heads BACKWARD, and the legs go with them.
+  (let [pst {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0 :shoulder-flexion-deg 0.0
+             :elbow-flexion-deg 0.0 :support :standing
+             :hip-flexion-deg 0.0 :knee-flexion-deg 0.0 :ankle-dorsiflexion-deg 0.0}
+        flat (pose/solve-pose body pst)
+        tilted (pose/solve-pose body (assoc pst :pelvic-tilt-deg 30.0))
+        hip-x (fn [p] (first (get-in p [:joints :hip/left])))
+        ankle-x (fn [p] (first (get-in p [:joints :ankle/left])))]
+    (is (math/nearly= 0.0 (hip-x flat) 1e-12) "the pelvis hangs straight down at zero")
+    (is (< (hip-x tilted) -0.05)
+        (str "an anterior tilt carries the hip posterior: " (hip-x tilted)))
+    (is (math/nearly= (hip-x tilted) (ankle-x tilted) 1e-9)
+        "and the straight leg goes with it")))
+
+(deftest a-tilted-level-drops-its-shear-and-nothing-carries-it
+  ;; THE COST OF THE NEW DEGREE OF FREEDOM, in newtons. `weight-above-n` takes the
+  ;; component of the weight above a level that acts ALONG the level's axis. While
+  ;; every lumbar level was vertical under a vertical gravity that was the whole
+  ;; weight; a lordosis tilts them, and the transverse component becomes shear that
+  ;; this model does not carry anywhere. The compression it reports is therefore
+  ;; lower than it would be for the same posture with a shear term, and the amount
+  ;; is worth having rather than leaving to be inferred.
+  (let [w (fn [tilt]
+            (let [pst (assoc (:posture (spine/reference-by-id
+                                        :wilke-1999-relaxed-standing))
+                             :pelvic-tilt-deg tilt)
+                  l (load/solve-posture-loads wilke-body pst)
+                  t (muscle/solve-muscle-tensions wilke-body pst l)]
+              (:weight-n (first (filter #(= "L4/L5" (:name %))
+                                        (spine/profile wilke-body pst t))))))
+        flat (w 0.0)
+        tilted (w 46.5)]
+    (is (< tilted flat)
+        (str "a tilted level takes less of the weight axially: " tilted " vs " flat))
+    ;; and the amount is the cosine of HALF the lordosis, because the chord bisects
+    ;; — derived rather than pinned, so a change to the chord rule moves it
+    (is (math/nearly= (* flat (Math/cos (math/radians (* 0.5 46.5)))) tilted 1e-9)
+        (str "and the part it drops is exactly the cosine of the chord's tilt: "
+             tilted " vs " (* flat (Math/cos (math/radians (* 0.5 46.5))))))
+    (is (> (- flat tilted) 25.0)
+        (str "which is " (- flat tilted) " N of real load arriving nowhere"))))

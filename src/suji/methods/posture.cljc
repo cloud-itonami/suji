@@ -12,6 +12,80 @@
 (defn- clamp [x lo hi]
   (max lo (min hi x)))
 
+;; --- lumbar lordosis ---------------------------------------------------------
+
+(def lumbar-lordosis
+  "Measured lumbar lordosis, by posture, in degrees — Cobb between the cranial
+  endplate of L1 and the cranial endplate of S1.
+
+  WHY THIS TABLE IS HERE AT ALL. `pose/lumbar-chord-tilt-deg` gives the lumbar
+  spine an orientation of its own, driven by `:pelvic-tilt-deg`, and the lordosis
+  that results is numerically equal to that input. So a posture that wants to be
+  a SITTING or a STANDING posture rather than an arbitrary one needs a lordosis
+  taken from a measurement, and this is where the measurements are.
+
+  THE SOURCE. Cho IY, Park SY, Park JH, Kim TK, Jung TW, Lee HM. `The Effect of
+  Standing and Different Sitting Positions on Lumbar Lordosis: Radiographic Study
+  of 30 Healthy Volunteers`, Asian Spine Journal 2015;9(5):762-769. Full text read
+  2026-09-08 from
+  https://www.asianspinejournal.org/journal/view.php?doi=10.4184%2Fasj.2015.9.5.762
+  30 healthy male volunteers, mean age 31.1 (SD 1.9), 73.6 kg (SD 9.2), 175 cm
+  (SD 6.1) — a cohort close in build to Wilke's single subject (45 years, 70 kg,
+  168 cm), which is why this table can be put beside that measurement at all.
+
+  THE ONE THAT MATTERS MOST IS `:stool`, AND IT IS ZERO. Cho measures lordosis on
+  a stool at 0.6 deg (SD 3.6) — straight to well inside its own scatter. Wilke's
+  only comparable entry is `relaxed sitting on a stool with a normally straight
+  back`, and this model's neutral is a straight lumbar spine. So the model's
+  neutral IS that posture, MEASURED rather than assumed, and
+  `spine/lumbar-cross-check` at Wilke's own posture does not move because the
+  pelvis learned to rotate.
+
+  ⚠ THE SCATTER IS LARGE AND THE COHORT IS NOT WILKE'S. Standing is 47.1 with an
+  SD of 10.5, so a fifth of Cho's own subjects are more than 10 deg from it, and
+  none of them is the man Wilke implanted a transducer in. Any comparison that
+  uses a number from here against a pressure from Wilke has imported a parameter
+  the pressure's own source does not state — `spine/lumbar-references` marks the
+  entries that do with `:parameter-not-in-source` rather than letting a ratio
+  imply that one paper supplied both halves."
+  {:standing {:deg 47.1 :sd 10.5}
+   :chair-with-lumbar-support {:deg 36.2 :sd 8.4}
+   :chair-90-deg {:deg 17.7 :sd 4.4}
+   :stool {:deg 0.6 :sd 3.6}
+   :chair-with-anterior-support {:deg -4.9 :sd 3.3}
+   :cross-legged {:deg -7.4 :sd 3.5}
+   :citation (str "Cho IY, Park SY, Park JH, Kim TK, Jung TW, Lee HM. "
+                  "The Effect of Standing and Different Sitting Positions on Lumbar "
+                  "Lordosis: Radiographic Study of 30 Healthy Volunteers. "
+                  "Asian Spine J 2015;9(5):762-769.")
+   :url "https://www.asianspinejournal.org/journal/view.php?doi=10.4184%2Fasj.2015.9.5.762"
+   :obtained :full-text
+   :method "Cobb, cranial endplate of L1 to cranial endplate of S1"
+   :cohort {:n 30 :sex :male :age-y 31.1 :mass-kg 73.6 :stature-cm 175.0}})
+
+(defn pelvic-tilt-for
+  "The `:pelvic-tilt-deg` that gives a posture the lordosis Cho measured for it,
+  measured from this model's straight-lumbar neutral.
+
+  IT IS A DIFFERENCE, and it has to be. This model has no pelvic incidence and no
+  sacral endplate, so it cannot state an absolute sacral slope; what it can state
+  is how far a posture's lumbar spine is from straight. The neutral is the stool,
+  which Cho measures at 0.6 deg, so every other posture's tilt is its lordosis
+  minus that — standing comes out at 46.5.
+
+  ⚠ AND THAT NUMBER IS TOO BIG FOR A PELVIS, which is the honest cost of having
+  one input. A real lumbar spine gains lordosis partly by rotating its sacrum and
+  partly by wedging its own discs and vertebrae; this model has no wedging, so the
+  pelvis has to supply all of it. Cho reports a strong correlation between the
+  loss of lordosis and the loss of sacral slope (r = 0.731) and between it and the
+  gain in pelvic tilt (r = -0.842), but does not report the PARTITION, so the
+  share cannot be sourced and is not invented here. The direction of the error is
+  stated instead: in a lordotic posture this model swings the hip joints, and both
+  legs with them, further posterior than a real pelvis would."
+  [posture-key]
+  (- (:deg (get lumbar-lordosis posture-key))
+     (:deg (:stool lumbar-lordosis))))
+
 ;; --- support mode ------------------------------------------------------------
 
 (defn support-mode
@@ -126,12 +200,17 @@
   differs."
   [& {:keys [trunk-flexion-deg head-flexion-deg shoulder-flexion-deg
              elbow-flexion-deg wrist-extension-deg arms-supported
-             hip-flexion-deg knee-flexion-deg ankle-dorsiflexion-deg thigh-supported]
+             hip-flexion-deg knee-flexion-deg ankle-dorsiflexion-deg thigh-supported
+             pelvic-tilt-deg]
       :or {trunk-flexion-deg 0.0 head-flexion-deg 0.0 shoulder-flexion-deg 0.0
            elbow-flexion-deg 0.0 wrist-extension-deg 0.0 arms-supported false
            hip-flexion-deg 90.0 knee-flexion-deg 90.0 ankle-dorsiflexion-deg 0.0
-           thigh-supported true}}]
+           thigh-supported true
+           ;; a straight lumbar spine, which is what Cho measures on a stool
+           ;; (0.6 deg, SD 3.6) — see `lumbar-lordosis`.
+           pelvic-tilt-deg 0.0}}]
   {:support :seated
+   :pelvic-tilt-deg pelvic-tilt-deg
    :trunk-flexion-deg trunk-flexion-deg
    :head-flexion-deg head-flexion-deg
    :shoulder-flexion-deg shoulder-flexion-deg
