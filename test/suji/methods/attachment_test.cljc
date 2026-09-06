@@ -810,3 +810,134 @@
                {:name "level" :screen-below-eye-cm 20.0 :keyboard-above-elbow-cm 0.0
                 :back-supported true :arms-supported true})]
     (is (> (:wrist-extension-deg high) (:wrist-extension-deg level)))))
+
+;; --- the suboccipitals -------------------------------------------------------
+;;
+;; The point of splitting `head_neck` on 2026-09-07. Until then these could not be
+;; written down at all: with one rigid head-and-neck segment both ends of each rode
+;; on the same bone, which is the shape
+;; `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm` names
+;; as the error that produces a constant-looking moment arm. The file said so and
+;; ended `What is missing is a JOINT, not an attachment, and no attachment can
+;; supply it`. These pin that the joint arrived and that the muscles it carries are
+;; not decoration.
+
+(def ^:private suboccipital
+  ["rectus_capitis_posterior_major" "rectus_capitis_posterior_minor"
+   "obliquus_capitis_superior"])
+
+(deftest the-suboccipitals-run-between-the-atlas-axis-block-and-the-skull
+  ;; The claim `the-head-muscles-run-between-two-different-bones` makes for the
+  ;; capitis muscles, made here for the three the split unlocked — and it is the
+  ;; claim that could not be made before, so it is the direct test of what the
+  ;; split bought.
+  (doseq [m suboccipital]
+    (let [spec (att/instance m)]
+      (is (= "upper_cervical" (get-in spec [:origin :segment]))
+          (str m " originates on the atlas-axis block"))
+      (is (= "head" (get-in spec [:insertion :segment]))
+          (str m " inserts on the skull"))
+      (is (= :atlanto-occipital (:acts-about spec))
+          (str m " acts about the joint the split created"))
+      (is (= :atlanto-occipital-extension (:task spec))
+          (str m " belongs to that joint's equilibrium")))))
+
+(deftest the-suboccipital-moment-arms-vary-with-posture
+  ;; THE TEST THE ABSENCE NOTE PREDICTED WOULD FAIL BEFORE THE SPLIT. With both ends
+  ;; on one segment the arm cannot move at any angle; with a joint between them it
+  ;; does. Measured on a 70 kg / 1.70 m body over −15 to 60 deg of head flexion:
+  ;;
+  ;;     rectus capitis posterior major   27.39 → 28.46 mm
+  ;;     rectus capitis posterior minor   22.55 → 23.51 mm
+  ;;     obliquus capitis superior        12.66 → 13.63 mm
+  ;;
+  ;; It is a 4% swing and not more, and the reason is stated rather than hidden: the
+  ;; atlanto-occipital joint takes only about 15% of the head's flexion, so over the
+  ;; model's whole input range it rotates 9 deg. A short rotation moves a moment arm
+  ;; a short way. What matters is that it moves at all, monotonically, and in the
+  ;; direction the geometry requires — the joint EXTENDS as the head flexes on the
+  ;; trunk, which carries the insertion further behind the joint centre.
+  (doseq [m suboccipital]
+    (let [arms (mapv #(arm (at :head-flexion-deg (double %)) m) [-15 0 15 30 45 60])]
+      (is (= 6 (count (distinct arms)))
+          (str m ": every posture must give a different arm, got " arms))
+      (is (every? (fn [[a b]] (< a b)) (partition 2 1 arms))
+          (str m ": and the arm must grow as the head flexes, got " arms))
+      (is (every? pos? arms)
+          (str m ": it is an extensor at every posture, got " arms))))
+  ;; and it is the HEAD's angle that moves them, not the trunk's — the joint is
+  ;; between the skull and the atlas, and `:trunk-flexion-deg` carries the whole
+  ;; chain rigidly. A test that swept trunk flexion would report no variation and
+  ;; look like this defect coming back.
+  ;; (to 1e-12 rather than to the bit: the frame is built by rotating a basis, so
+  ;; a leaned trunk carries the same geometry through different trigonometry and
+  ;; the last bits differ.)
+  (doseq [m suboccipital]
+    (let [xs (mapv #(arm (at :trunk-flexion-deg (double %)) m) [0 20 45])]
+      (is (every? #(math/nearly= (first xs) % 1e-12) xs)
+          (str m ": leaning the trunk must not move an atlanto-occipital arm, got "
+               xs)))))
+
+(deftest the-suboccipital-lengths-are-checked-against-the-measurement
+  ;; CALIBRATED AGAINST A MEASURED LENGTH RATHER THAN AN INVENTED MOMENT ARM, which
+  ;; is a departure from the rest of this file and is stated where the muscles are.
+  ;; Everywhere else the offsets are chosen to reproduce a constant this actor
+  ;; already used; there is no such constant for these three, and inventing a
+  ;; moment-arm target to calibrate to would be a number pretending to be an anchor.
+  ;; Kamibayashi & Richmond publish a length range for each (Table 3-3, `MUSCLE
+  ;; LENGTH (cm)`), so the sites are placed from bony landmarks and the resulting
+  ;; line length is compared against the cadaver measurement.
+  ;;
+  ;; IT REPORTS THE DISAGREEMENT RATHER THAN REMOVING IT. Measured at the neutral
+  ;; posture on a 70 kg / 1.70 m body, against the published range:
+  ;;
+  ;;     rectus capitis posterior major   41.5 mm   vs 30-48 mm   inside
+  ;;     rectus capitis posterior minor   23.0 mm   vs 26-31 mm   3.0 mm SHORT
+  ;;     obliquus capitis superior        39.5 mm   vs 43-57 mm   3.5 mm SHORT
+  ;;
+  ;; Both shortfalls have the same cause and it is not these muscles: this model's
+  ;; `upper_cervical` is 37 mm at reference stature where an atlas plus axis is
+  ;; nearer 50, because `segment` cuts the neck at the model's own uniform 18.6 mm
+  ;; level spacing and C2 with its dens is taller than a typical vertebra. Anything
+  ;; spanning this joint comes out short. It is not corrected by a factor nobody
+  ;; measured; the bound below allows the known 3.5 mm and would fail on more.
+  (let [p (at)
+        len (fn [m] (* 1000.0 (:length-m (att/line-of-action p 1.70 (att/instance m)))))]
+    (doseq [[m lo hi] [["rectus_capitis_posterior_major" 30.0 48.0]
+                       ["rectus_capitis_posterior_minor" 26.0 31.0]
+                       ["obliquus_capitis_superior" 43.0 57.0]]]
+      (let [got (len m)]
+        ;; inside the measured range, or short of it by no more than the 4 mm the
+        ;; segment's own length error accounts for
+        (is (and (> got (- lo 4.0)) (< got (+ hi 4.0)))
+            (str m ": modelled " got " mm against a measured " lo "-" hi " mm"))))
+    ;; and the direction of the error is stated, not just its size: the one whose
+    ;; origin sits low on the axis, and so spans most of the joint's real height, is
+    ;; INSIDE the measured range; the two that hang off the atlas are short
+    (is (and (> (len "rectus_capitis_posterior_major") 30.0)
+             (< (len "rectus_capitis_posterior_major") 48.0))
+        (str "rectus capitis posterior major is inside its range: "
+             (len "rectus_capitis_posterior_major") " mm"))
+    (doseq [[m lo] [["rectus_capitis_posterior_minor" 26.0]
+                    ["obliquus_capitis_superior" 43.0]]]
+      (is (< (len m) lo)
+          (str m " is short of its measured range, and the model says why: "
+               (len m) " mm against " lo " mm")))))
+
+(deftest the-suboccipital-wrap-floor-never-binds
+  ;; Each of these declares the same 0.012 m column wrap the other posterior
+  ;; cervical muscles do — one bone, one radius. A wrapping surface whose radius was
+  ;; taken from a moment-arm target rather than from the bone binds at every posture
+  ;; and quietly restores the constant this whole namespace exists to remove; that
+  ;; is what `middle_deltoid` did, and this file says so. So the floor has to be
+  ;; shown NOT to bind, rather than assumed harmless.
+  (doseq [m suboccipital
+          h [-15.0 0.0 15.0 30.0 45.0 60.0]]
+    (let [p (at :head-flexion-deg h)
+          d (att/moment-arm-detail p 1.70 (att/instance m)
+                                   (get-in p [:joints :atlanto-occipital]))]
+      (is (false? (:wrapped? d))
+          (str m " at head " h " deg wrapped, so its arm is the radius and not the "
+               "geometry: " d))
+      (is (> (Math/abs (:straight d)) (:radius-m d))
+          (str m " at head " h " deg: the chord must beat the floor, " d)))))

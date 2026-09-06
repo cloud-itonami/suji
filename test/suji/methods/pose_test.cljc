@@ -258,3 +258,84 @@
     (is (math/nearly= 0.0 (first xs) 1e-12))
     (is (every? (fn [[a b]] (< a b)) (partition 2 1 xs))
         (str "the frontal moment has to grow with abduction: " xs))))
+
+;; --- the cervical spine has joints now (2026-09-07) --------------------------
+;;
+;; `head_neck` was one rigid segment from C7 to the vertex, so the five cervical
+;; levels `spine` reported all shared one orientation, no suboccipital could be
+;; written down, and a forward-head posture — lower cervical flexion WITH upper
+;; cervical extension — could not be represented at any angle. These pin what the
+;; split did and, more carefully, what it must not have changed.
+
+(deftest the-partition-sums-to-one
+  ;; THE INVARIANT THE POSTURE INPUT RESTS ON. `:head-flexion-deg` has always meant
+  ;; the head's angle relative to the trunk, and three coefficients that summed to
+  ;; anything else would silently redefine it — an existing posture map, an existing
+  ;; browser control and three reference workstations would all keep their numbers
+  ;; and change their meaning.
+  (let [{:keys [lower upper head]} pose/cervical-partition]
+    (is (math/nearly= 1.0 (+ lower upper head) 1e-12)
+        (str "the three shares must be the whole angle: " pose/cervical-partition))
+    (is (> lower 1.0)
+        (str "the lower cervical column flexes MORE than the head does: " lower))
+    (is (pos? upper) (str "C2/C3 flexes with it: " upper))
+    (is (neg? head)
+        (str "and the skull EXTENDS on the atlas, which is the forward-head "
+             "shape and the reason for the split: " head))))
+
+(deftest the-head-still-tilts-by-trunk-plus-head-flexion
+  ;; The same invariant asked of the placed chain rather than of the coefficients,
+  ;; and it has to hold to the BIT rather than to a tolerance: `load/cervical-load`
+  ;; reads this number and it is the one validated quantity in this library. An
+  ;; accumulated sum instead of a set one puts a head asked for 63.5 deg at
+  ;; 63.49999999999999, which is why `cervical-chain` sets it.
+  (doseq [[h t] [[0.0 0.0] [43.5 20.0] [60.0 0.0] [0.0 60.0] [-15.0 25.0] [30.0 30.0]]]
+    (let [p (pose/solve-pose body (neutral :head-flexion-deg h :trunk-flexion-deg t))]
+      (is (= (+ t h) (:tilt-deg (pose/seg-at p "head")))
+          (str "head " h " trunk " t " must place the skull at " (+ t h)))
+      (is (= (+ t h) (load/head-tilt-from-vertical-deg p))
+          "and that is what the cervical load is handed"))))
+
+(deftest a-forward-head-posture-flexes-the-column-and-extends-the-skull-on-it
+  ;; THE SHAPE THE SPLIT EXISTS FOR, and the one a single block could not make.
+  ;; Anatomically a forward head is lower cervical flexion with upper cervical
+  ;; extension — the chin tucks under while the head tips back to keep the eyes
+  ;; level. Measured at the laptop-on-lap head angle of 43.5 deg on a 20 deg trunk:
+  ;; the column reaches 63.95 and 69.97 deg from vertical while the skull sits at
+  ;; 63.50, so the occiput is 6.47 deg extended on the atlas.
+  (let [p (pose/solve-pose body (neutral :head-flexion-deg 43.5 :trunk-flexion-deg 20.0))
+        tilt #(:tilt-deg (pose/seg-at p %))]
+    (is (> (tilt "lower_cervical") (tilt "head"))
+        (str "the lower cervical column is flexed PAST the skull: "
+             (tilt "lower_cervical") " vs " (tilt "head")))
+    (is (> (tilt "upper_cervical") (tilt "lower_cervical"))
+        "and C2/C3 adds to it")
+    (is (> (- (tilt "upper_cervical") (tilt "head")) 5.0)
+        (str "so the skull is extended on the atlas by "
+             (- (tilt "upper_cervical") (tilt "head")) " deg")))
+  ;; and with no head flexion the three are collinear, which is the control: the
+  ;; split changes nothing about a posture that does not flex the neck
+  (let [p (pose/solve-pose body (neutral :trunk-flexion-deg 45.0))]
+    (doseq [b segment/cervical-bases]
+      (is (math/nearly= 45.0 (:tilt-deg (pose/seg-at p b)) 1e-12)
+          (str b " must be collinear with the trunk when the head is not flexed")))))
+
+(deftest the-derived-atlanto-occipital-angle-stays-inside-its-published-range
+  ;; The partition is a fixed proportion, so it can ask a joint for motion the joint
+  ;; does not have. Bogduk & Mercer 2000 put atlanto-occipital flexion-extension at
+  ;; 14-15 deg (`pose/atlanto-occipital-rom-deg`); at the model's largest head-flexion
+  ;; input, 60 deg, the derived extension is 8.9 deg. This is the check that would
+  ;; fail if the reversal share were raised past what the joint can do.
+  (doseq [h [0.0 15.0 30.0 45.0 60.0 -30.0 -60.0]]
+    (let [p (pose/solve-pose body (neutral :head-flexion-deg h :trunk-flexion-deg 20.0))
+          ao (- (:tilt-deg (pose/seg-at p "head"))
+                (:tilt-deg (pose/seg-at p "upper_cervical")))]
+      (is (<= (Math/abs ao) pose/atlanto-occipital-rom-deg)
+          (str "head " h " deg asks the atlanto-occipital joint for " ao
+               " deg, and it has " pose/atlanto-occipital-rom-deg))))
+  ;; the evidence floor: a partition that asked for NOTHING would pass the above
+  (let [p (pose/solve-pose body (neutral :head-flexion-deg 60.0))
+        ao (- (:tilt-deg (pose/seg-at p "head"))
+              (:tilt-deg (pose/seg-at p "upper_cervical")))]
+    (is (> (Math/abs ao) 5.0)
+        (str "and it does ask for something: " ao " deg at 60 deg of head flexion"))))

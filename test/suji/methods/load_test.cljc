@@ -5,6 +5,7 @@
                :cljs [cljs.test :refer [deftest is]])
             [suji.methods.load :as load]
             [suji.methods.math :as math]
+            [suji.methods.muscle :as muscle]
             [suji.methods.pose :as pose]
             [suji.methods.posture :as posture]
             [suji.methods.segment :as segment]))
@@ -222,3 +223,138 @@
       (is (< (Math/abs (double sup)) (Math/abs (double unsup)))
           (str label " must be SMALLER with the forearms rested, got "
                sup " against " unsup)))))
+
+;; --- what the cervical split had to leave alone (2026-09-07) ------------------
+
+(deftest the-split-is-winters-one-row-divided-and-not-changed
+  ;; Winter's Table 4.1 has ONE row above the thorax — `Head and neck`, 0.081 of body
+  ;; mass — and this model now has three segments there. The three have to be that
+  ;; row and nothing else: the whole-body mass table sums to 1.000 only if they do,
+  ;; and `load/cervical-load` is handed their sum as Hansraj's head weight.
+  (let [b (segment/build-body 70.0 1.70)
+        segs (mapv #(segment/seg b %) segment/cervical-bases)]
+    (is (= 3 (count segs)) "three segments, C7 to the vertex")
+    (is (math/nearly= (* 0.081 70.0) (reduce + 0.0 (map :mass-kg segs)) 1e-12)
+        (str "their masses must be Winter's 0.081: " (mapv :mass-kg segs)))
+    (is (math/nearly= (* 0.182 1.70) (reduce + 0.0 (map :length-m segs)) 1e-12)
+        (str "and their lengths Drillis & Contini's 0.182 H: " (mapv :length-m segs)))))
+
+(deftest the-split-keeps-the-complex-centre-of-mass
+  ;; The head's `:com-frac` is DERIVED from this rather than chosen, so this is the
+  ;; equation it was solved from, asserted back. At the neutral posture the three
+  ;; segments are collinear, so their combined centre of mass has to land exactly
+  ;; where the single `head_neck` segment's did — 0.55 of C7→vertex from C7. That is
+  ;; what keeps the gravitational moment about C7 unchanged for an unflexed neck,
+  ;; and it is the reason a change to `segment/head-share-of-complex` needs nothing
+  ;; else edited.
+  (let [b (segment/build-body 70.0 1.70)
+        p (pose/solve-pose b {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0
+                                 :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0})
+        c7 (get-in p [:joints :c7])
+        w (pose/segment-weights b p)
+        segs (pose/segments-on p segment/cervical-bases)
+        total (reduce + 0.0 (map #(get w (:name %)) segs))
+        ;; height of the combined centre of mass above C7
+        com-y (/ (reduce + 0.0 (for [s segs] (* (get w (:name s)) (- (second (:com s))
+                                                                     (second c7)))))
+                 total)]
+    (is (math/nearly= (* 0.55 0.182 1.70) com-y 1e-12)
+        (str "the three together must sit where the one segment did: " com-y
+             " vs " (* 0.55 0.182 1.70)))))
+
+(deftest the-hansraj-cervical-load-is-unchanged-by-the-split
+  ;; THE THING THAT WAS NOT ALLOWED TO MOVE. `load/cervical-load` takes the head's
+  ;; tilt from vertical and the weight above C7; the split preserved both exactly —
+  ;; the partition sums to 1.0 so the skull still lands at trunk + head flexion, and
+  ;; the three masses still sum to Winter's 0.081 — so every value it produces is
+  ;; bit-identical to the values measured on `origin/main` before the neck had any
+  ;; joints in it. Measured there on a 70 kg / 1.70 m body at the three reference
+  ;; workstations by running `origin/main` itself out of `git archive`, and pinned
+  ;; here as full doubles rather than to a tolerance.
+  (let [b (segment/build-body 70.0 1.70)]
+    (doseq [[ws tilt compressive]
+            [[posture/laptop-on-lap 63.5 273.61858521664936]
+             [posture/laptop-on-desk 32.0 194.4819901245166]
+             [posture/external-monitor-eye-level 10.0 103.0363709306259]]]
+      (let [c (:cervical (load/solve-posture-loads
+                          b (posture/posture-from-workstation ws)))]
+        (is (= tilt (:head-tilt-deg c))
+            (str (:name ws) ": the head's tilt from vertical must not have moved"))
+        (is (math/nearly= compressive (:compressive-load-n c) 1e-9)
+            (str (:name ws) ": the Hansraj-calibrated compressive load must not "
+                 "have moved, got " (:compressive-load-n c)))))
+    ;; and the head weight it is handed is still the WHOLE complex above C7, which
+    ;; is what Hansraj's 12-lb head means here. Handing it the skull alone after the
+    ;; split would have cut this by a fifth and looked like nothing.
+    (is (math/nearly= 55.6037055 (:head-weight-n
+                                  (:cervical (load/solve-posture-loads
+                                              b (posture/posture-from-workstation
+                                                 posture/laptop-on-lap))))
+                      1e-9)
+        "the head weight is the three cervical segments, not the skull")))
+
+(deftest the-capitis-muscles-over-supply-the-atlanto-occipital-joint
+  ;; THE RESULT THE SPLIT PRODUCED, and the reason the suboccipitals are given a
+  ;; residual rather than the whole demand. Semispinalis capitis and splenius
+  ;; capitis are sized by the load at C7 and insert on the occiput, so about the
+  ;; joint above them they are already exerting more than the skull's weight asks
+  ;; for. Measured at laptop-on-lap on a 70 kg / 1.70 m body: 2.648 N·m demanded,
+  ;; 6.223 N·m supplied — a factor of 2.35.
+  ;;
+  ;; Charging the suboccipitals the whole 2.648 made rectus capitis posterior major
+  ;; the worst-loaded muscle in the entire report at 51% MVC. That is what this test
+  ;; exists to stop coming back.
+  (let [b (segment/build-body 70.0 1.70)
+        pst (posture/posture-from-workstation posture/laptop-on-lap)
+        loads (load/solve-posture-loads b pst)
+        tens (muscle/solve-muscle-tensions b pst loads)
+        forces (into {} (for [t tens :when (contains? load/capitis-groups (:group t))]
+                          [(:group t) (:force-n t)]))
+        ao (load/atlanto-occipital-moment b pst forces)]
+    (is (= 2 (count forces)) (str "the premise: two capitis muscles solved at C7: " forces))
+    (is (math/nearly= 2.648 (:moment-nm ao) 0.001)
+        (str "the skull about the condyles: " ao))
+    (is (math/nearly= 6.223 (:capitis-nm ao) 0.001)
+        (str "what the C7-solved muscles are already exerting there: " ao))
+    (is (zero? (:residual-nm ao))
+        "so nothing is left for the suboccipitals at a desk posture")
+    (is (> (:over-supplied-nm ao) 3.0)
+        (str "and the surplus is reported rather than dropped: " ao))))
+
+(deftest the-suboccipitals-carry-load-where-the-residual-is-positive
+  ;; THE OTHER DIRECTION, without which the test above only shows a muscle that
+  ;; never works. Head held back on a deeply flexed trunk — looking forward from a
+  ;; bend — is the posture where the C7 demand falls faster than the skull's own
+  ;; moment does, so the capitis muscles stop covering the joint above them and the
+  ;; suboccipitals have something to do. Swept 2026-09-07 over head −60…60 and trunk
+  ;; 0…75 in 5 deg steps: 17 of 400 postures have a positive residual, all of them
+  ;; head −40…−60 on a trunk flexed 60…75.
+  (let [b (segment/build-body 70.0 1.70)
+        pst {:head-flexion-deg -55.0 :trunk-flexion-deg 75.0
+             :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0 :arms-supported false}
+        loads (load/solve-posture-loads b pst)
+        tens (muscle/solve-muscle-tensions b pst loads)
+        by #(first (filter (fn [t] (= % (:group t))) tens))
+        forces (into {} (for [t tens :when (contains? load/capitis-groups (:group t))]
+                          [(:group t) (:force-n t)]))
+        ao (load/atlanto-occipital-moment b pst forces)]
+    (is (pos? (:residual-nm ao)) (str "the premise: a positive residual here: " ao))
+    (doseq [m ["rectus_capitis_posterior_major" "rectus_capitis_posterior_minor"
+               "obliquus_capitis_superior"]]
+      (is (pos? (:force-n (by m)))
+          (str m " must carry force where the residual is positive: " (by m)))
+      (is (pos? (:mvc-pct (by m)))
+          (str m " must report a %MVC rather than a refusal: " (by m))))
+    ;; and the same three carry nothing at a desk, which is the discriminating half
+    (let [desk (posture/posture-from-workstation posture/laptop-on-lap)
+          dl (load/solve-posture-loads b desk)
+          dt (muscle/solve-muscle-tensions b desk dl)
+          dby #(first (filter (fn [t] (= % (:group t))) dt))]
+      (doseq [m ["rectus_capitis_posterior_major" "rectus_capitis_posterior_minor"
+                 "obliquus_capitis_superior"]]
+        (is (zero? (:force-n (dby m)))
+            (str m " carries nothing at a laptop posture: " (dby m)))
+        (is (not (:refused (dby m)))
+            (str m " is not REFUSED there — a zero load is a placed load, and the "
+                 "difference is between `nothing is asked of it here` and `this "
+                 "model could not answer`: " (dby m)))))))
