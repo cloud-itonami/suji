@@ -1227,7 +1227,7 @@ All the change is in the levels above it, which is the point.
 - **The splenius entry is capitis + cervicis.** The source gives one mass and one
   PCSA for both and separates them only by fascicle length, so this entry puts a
   share of splenius cervicis's cross-section on a cranial insertion it does not have
-  (cervicis runs to the C1–C3 transverse processes). It crosses the same five levels
+  (cervicis runs to the C1–C3 transverse processes). It crosses the same six levels
   either way, so the error is in *where on the skull* the force is applied.
 - **The specimens were cadavers.** Kamibayashi & Richmond's own N is 9 or 10 per
   muscle and the ranges are wide — semispinalis capitis spans 3.93 to 7.32 cm²,
