@@ -497,6 +497,17 @@
                         :secondary-arm-m sec-arm
                         :secondary-moment-nm (when (number? (:force-n t))
                                                (* sec-arm (:force-n t)))})
+                     ;; THE SAME CONFESSION, FOR THE OTHER UNCOUPLED JOINT. A
+                     ;; suboccipital gets the residual at the atlanto-occipital
+                     ;; joint, and the residual is usually zero because the two
+                     ;; capitis muscles solved at C7 over-supply that joint. A
+                     ;; muscle reporting 0 N with no reason beside it is
+                     ;; indistinguishable from a muscle nobody thought about, so
+                     ;; the reason travels with it — see
+                     ;; `load/atlanto-occipital-moment`.
+                     (when (= :atlanto-occipital-extension (:task inst))
+                       {:task-load-nm (:residual-nm ao)
+                        :task-over-supplied-nm (:over-supplied-nm ao)})
                      (when (and (:refused t) (contains? carried-names n))
                        {:antagonist? true}))))
           emit-order)))
@@ -546,6 +557,14 @@
               :complete? (not-any? #(and (:refused %) (not (:antagonist? %))) tensions)
               :max-mvc-pct (let [xs (keep :mvc-pct tensions)] (when (seq xs) (apply max xs)))}
        frontal (assoc :frontal frontal)
+       ;; the atlanto-occipital joint's surplus, carried on the suboccipital rows
+       ;; by `solve-muscle-tensions`. It is the same class of statement as
+       ;; `:two-joint-unfed-nm` — a moment one equilibrium is exerting on another
+       ;; that was not told about it — and it is surfaced here so a consumer does
+       ;; not have to know which muscles to look at to find it.
+       (some :task-over-supplied-nm tensions)
+       (assoc :atlanto-occipital-over-supplied-nm
+              (reduce max 0.0 (keep :task-over-supplied-nm tensions)))
        true (assoc :two-joint-unfed-nm
                    (reduce (fn [m t]
                              (if-let [j (:crosses-joint t)]

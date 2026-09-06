@@ -122,7 +122,7 @@
    ;;
    ;; WHERE THE SKULL SITS, derived from the model rather than guessed. This block
    ;; was written on the morning of 2026-09-07, when C7→vertex was ONE segment
-   ;; 0.3094 m long: `spine/levels` spaces the five cervical levels 0.06 of that
+   ;; 0.3094 m long: `spine/levels` then spaced its five cervical levels 0.06 of that
    ;; apart — 18.6 mm, a cervical vertebra plus its disc — so continuing the model's
    ;; own spacing upward past C3/C4 (0.24) gave C2/C3 0.30, C1/C2 0.36, and the
    ;; occipito-atlantal joint 0.42, i.e. 130 mm above C7.

@@ -27,8 +27,25 @@
   not measurements of anybody (G7). Mass above a level is taken as uniform along
   the segment; the segment's own centre of mass is NOT uniform, and this is stated
   rather than hidden — it biases levels near a segment's ends. There is no
-  curvature: the model's spine is two straight segments, so it has no lordosis and
-  no shear component. NON-DIAGNOSTIC (G1): a stress is a stress.
+  curvature: the model's spine is four straight segments and no arc, so it has no
+  lordosis and no shear component. NON-DIAGNOSTIC (G1): a stress is a stress.
+
+  ⚠ TWO THINGS ABOUT THE CERVICAL ROWS, since 2026-09-07 changed one of them and
+  not the other.
+
+  The five lower rows — C7/T1 through C3/C4 — still SHARE ONE ORIENTATION.
+  `lower_cervical` is C3 to C7 and is one rigid body, so those five are five samples
+  of it. What is no longer true, and was until the neck was split, is that the SKULL
+  shares that frame: the head and the atlas-axis block move on their own joints now,
+  so a forward-head posture reaches these levels as a shape rather than as a tilt.
+
+  C2/C3 HAS NO MUSCLE SOLVED AT IT. It is a real disc — the most cranial one there
+  is — and three muscles cross it, but every one of them belongs to another joint's
+  equilibrium. The muscles that act on the upper cervical spine specifically (rectus
+  capitis anterior and lateralis, longus capitis, the cervicis fascicles ending on
+  C2) are not in this model, so C2/C3's compression is a LOWER BOUND. It is the one
+  row where the model is knowingly short of a muscle rather than short of a
+  measurement, and `attachment-test`'s `awaiting-muscles` names it.
 
   VALIDATION STATUS. Two cross-checks live here and they answer different questions.
   `cervical-cross-check` compares this profile against the lumped cervical model
