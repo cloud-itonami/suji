@@ -46,12 +46,75 @@
             (str m " at " d "°: an extensor cannot have a non-positive arm, got " a))))))
 
 (deftest leverage-actually-changes-with-the-joint
-  ;; the whole point of computing arms instead of tabulating them
+  ;; the whole point of computing arms instead of tabulating them. The fall is no
+  ;; longer monotone all the way, because the wrapping surface floors it — that
+  ;; plateau is the correct behaviour and is checked separately below.
   (let [as (mapv #(arm (at :head-flexion-deg (double %)) "cervical_extensors") [0 20 40 60])]
-    (is (every? (fn [[a b]] (> a b)) (partition 2 1 as))
-        (str "the cervical extensor loses leverage as the head flexes: " as))
-    (is (> (/ (first as) (last as)) 2.0)
-        "the change has to be large enough to matter, or a constant would have done")))
+    (is (every? (fn [[a b]] (>= a b)) (partition 2 1 as))
+        (str "the cervical extensor never gains leverage as the head flexes: " as))
+    (is (> (first as) (last as)) "and it does lose some")
+    (is (> (/ (first as) (last as)) 1.5)
+        (str "the change has to be large enough to matter, or a constant would "
+             "have done: " as))))
+
+;; --- wrapping surfaces -------------------------------------------------------
+
+(deftest a-wrapped-arm-floors-at-the-radius-and-never-crosses-zero
+  ;; THE DEFECT THIS REMOVES. A straight chord between two attachment points can
+  ;; pass through the joint it acts about; the arm then goes to zero and the force
+  ;; needed to hold any moment diverges. This model's anterior deltoid did exactly
+  ;; that at 90° of shoulder flexion — an ordinary posture — and `recruit` had to
+  ;; decline it. A muscle lying on bone wraps instead, and every tangent to a
+  ;; circle of radius R is R from its centre, so the arm floors at R.
+  (let [spec (get att/muscles "anterior_deltoid")
+        r (get-in spec [:wrap :radius-m])
+        arms (mapv #(arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid")
+                   (range 0 181 10))]
+    (is (some? r) "the deltoid must declare a wrapping surface")
+    (is (every? #(>= % (- r 1e-12)) arms)
+        (str "no arm may fall below the wrap radius " r ": " arms))
+    (is (every? pos? arms) "and none may cross zero")
+    (is (= r (apply min arms)) "the floor is exactly the declared radius")))
+
+(deftest wrapping-does-not-fight-the-straight-line-where-the-straight-line-is-better
+  ;; the surface must take over only where the chord gives LESS than the radius,
+  ;; or it would flatten the whole curve and hide the variation it exists to keep
+  (doseq [d [0 15 30 45]]
+    (let [det (att/moment-arm-detail (at :shoulder-flexion-deg (double d)) 1.70
+                                     (get att/muscles "anterior_deltoid")
+                                     (get-in (at :shoulder-flexion-deg (double d)) [:joints :shoulder]))]
+      (is (not (:wrapped? det)) (str d "°: the chord still has the better leverage here"))
+      (is (= (:arm det) (:straight det))))))
+
+(deftest the-two-branches-agree-where-they-meet
+  ;; a discontinuity here would be a step change in required force at one angle
+  (let [spec (get att/muscles "anterior_deltoid")
+        step (fn [a b] (Math/abs (- a b)))
+        arms (mapv #(arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid")
+                   (range 40 80 2))]
+    (is (every? #(< % 1e-3) (map (fn [[a b]] (step a b)) (partition 2 1 arms)))
+        (str "crossing into the wrap must not jump: " arms))))
+
+(deftest a-wrapped-flexor-does-not-become-an-extensor-when-the-chord-swings-past
+  ;; THE REGRESSION. Testing `|straight| < R` instead of `sign*straight < R` looks
+  ;; right and is not: once the chord passes far enough to the wrong side its
+  ;; MAGNITUDE exceeds R again, wrapping switches off, and the model hands back a
+  ;; straight-line arm with the sign flipped. Measured 2026-09-06: the anterior
+  ;; deltoid became an extensor at 130° of shoulder flexion.
+  (doseq [d [100 110 120 130 150 180]]
+    (let [a (arm (at :shoulder-flexion-deg (double d)) "anterior_deltoid")]
+      (is (pos? a) (str d "°: a wrapped flexor stays a flexor, got " a)))))
+
+(deftest a-muscle-with-no-wrap-declared-is-left-alone
+  ;; erector spinae has no wrapping surface in this model; its arm must be the
+  ;; straight-line arm, unfloored, so that a future regression there is visible
+  (let [spec (get att/muscles "erector_spinae")]
+    (is (nil? (:wrap spec)))
+    (doseq [d [0 20 40 60]]
+      (let [p (at :trunk-flexion-deg (double d))
+            det (att/moment-arm-detail p 1.70 spec (get-in p [:joints :l5s1]))]
+        (is (not (:wrapped? det)))
+        (is (= (:arm det) (:straight det)))))))
 
 (deftest a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm
   ;; stated as a test because it is the error that produced a constant-looking arm

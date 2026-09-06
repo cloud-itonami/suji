@@ -4,6 +4,7 @@
   than dividing by a coefficient near zero."
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
+            [clojure.string :as str]
             [suji.methods.math :as math]
             [suji.methods.recruit :as recruit]))
 
@@ -76,3 +77,34 @@
   (is (= "0.00" (math/fmt-fixed (math/abs* -0.0) 2)))
   (is (= "0.00" (math/fmt-fixed (math/abs* 0.0) 2)))
   (is (math/nearly= 3.5 (math/abs* -3.5))))
+
+(deftest the-three-refusals-are-told-apart
+  ;; They have three different fixes, so collapsing them into one reason sends the
+  ;; reader to the wrong repair. A non-positive coefficient in particular is NOT a
+  ;; wrapping problem: no surface makes a muscle that is pulling the wrong way pull
+  ;; the right way. Before 2026-09-06 `suspension-effectiveness` clamped its cosine
+  ;; at zero, which turned every wrong-way posture into "below the leverage floor —
+  ;; a straight-line model has no wrapping surface here", which is simply untrue.
+  (let [r (recruit/share [(c "fine" 600.0 0.05)
+                          (c "too-little" 200.0 0.0001)
+                          (c "wrong-way" 200.0 -0.4)
+                          (c "no-line" 200.0 nil)] 30.0)
+        by (into {} (map (juxt :name identity)) r)]
+    (is (some? (:force-n (by "fine"))))
+    (is (= :coefficient-below-floor (:refused (by "too-little"))))
+    (is (= :acts-the-wrong-way (:refused (by "wrong-way"))))
+    (is (= :no-line-of-action (:refused (by "no-line"))))
+    (is (nil? (:force-n (by "wrong-way"))) "a wrong-way muscle carries nothing")
+    ;; and the notes must not tell the reader to look for a wrapping surface when
+    ;; that is not the problem
+    (is (not (str/includes? (:note (by "wrong-way")) "wrapping surface here")))
+    (is (str/includes? (:note (by "too-little")) "wrapping surface"))
+    (is (not (recruit/complete? r)))
+    ;; equilibrium still holds over what was placed
+    (is (math/nearly= 0.0 (recruit/residual r 30.0) 1e-9))))
+
+(deftest a-zero-coefficient-is-wrong-way-not-below-floor
+  ;; exactly zero is the boundary and belongs on the wrong-way side: a muscle with
+  ;; no component along the task does not have "a little" leverage, it has none
+  (let [r (recruit/share [(c "a" 600.0 0.05) (c "zero" 200.0 0.0)] 10.0)]
+    (is (= :acts-the-wrong-way (:refused (second r))))))

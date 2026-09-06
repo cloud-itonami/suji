@@ -32,8 +32,13 @@
   mixing muscles from different tasks in one call would balance a moment against a
   force. `share` therefore takes one task's muscles and one task's load.
 
-  REFUSAL. A muscle whose coefficient is nil, non-positive, or below `min-coeff`
-  is NOT given a force — it is reported as refused, with a reason. Dividing a load
+  REFUSAL, in three kinds, because they have three different fixes. A coefficient
+  that is nil means there is no line of action to speak of. One that is
+  NON-POSITIVE means the muscle acts the wrong way at this posture — it would add
+  to the load — and no amount of wrapping surface changes that; the posture has
+  left the range this line of action represents. One that is merely small means
+  the leverage is real but unresolvable by a straight line, which is what wrapping
+  surfaces are for. A refused muscle is NOT given a force. Dividing a load
   by a coefficient approaching zero produces an arbitrarily large force that looks
   like a finding: at 90° of shoulder flexion this model's straight-line anterior
   deltoid passes through the joint it acts about, and the honest output there is
@@ -77,6 +82,14 @@
               (not (number? coeff))
               {:name name :refused :no-line-of-action
                :note "the muscle's line of action is degenerate at this posture"}
+
+              (<= coeff 0.0)
+              {:name name :refused :acts-the-wrong-way :coeff coeff
+               :note (str "at this posture the line of action gives "
+                          (math/fmt-fixed coeff 5)
+                          " — the muscle would add to the load rather than resist it. "
+                          "No wrapping surface fixes this; it is the posture leaving "
+                          "the range this line of action can represent.")}
 
               (< coeff min-coeff)
               {:name name :refused :coefficient-below-floor :coeff coeff
