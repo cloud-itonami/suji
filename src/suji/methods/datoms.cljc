@@ -29,7 +29,8 @@
   ;; then fail two lines later on the arithmetic. Adding a joint to `load` and
   ;; forgetting it here is the obvious mistake, so the fallback derives the
   ;; keyword instead of returning nothing.
-  {"cervicothoracic" ":cervicothoracic" "shoulder" ":shoulder"
+  {"cervicothoracic" ":cervicothoracic" "atlanto-occipital" ":atlanto-occipital"
+   "shoulder" ":shoulder"
    "elbow" ":elbow" "wrist" ":wrist" "lumbosacral" ":lumbosacral"
    "hip" ":hip" "knee" ":knee" "ankle" ":ankle"})
 

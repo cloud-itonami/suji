@@ -182,3 +182,40 @@
     (is (math/nearly= 24.577900226844537 sup 1e-9)
         (str "bent, forearms rested: " sup " %MVC"))
     (is (< sup unsup) "resting the forearms must lower the lateral-flexion demand")))
+
+(deftest the-atlanto-occipital-surplus-travels-with-the-muscles-it-explains
+  ;; A suboccipital reporting 0 N at a desk posture is indistinguishable, in the
+  ;; output alone, from a muscle nobody thought about. The reason has to be
+  ;; reachable from the same data: `:task-load-nm` says what the equilibrium handed
+  ;; it and `:task-over-supplied-nm` says how much the muscles solved at C7 are
+  ;; already exerting at that joint beyond what it needs.
+  ;;
+  ;; `tension-summary` surfaces the same number once, so a consumer does not have to
+  ;; know which three rows to look at.
+  (let [b (segment/build-body 70.0 1.70)
+        pst (posture/posture-from-workstation posture/laptop-on-lap)
+        loads (load/solve-posture-loads b pst)
+        tens (muscle/solve-muscle-tensions b pst loads)
+        sub (filterv #(= :atlanto-occipital-extension (:task %)) tens)
+        summary (muscle/tension-summary tens loads)]
+    (is (= 3 (count sub)) (str "three suboccipitals: " (mapv :group sub)))
+    (doseq [t sub]
+      (is (zero? (:force-n t)) (str (:group t) " carries nothing here"))
+      (is (zero? (:task-load-nm t))
+          (str (:group t) " was handed a zero load, and says so: " t))
+      (is (> (:task-over-supplied-nm t) 3.0)
+          (str (:group t) " must carry the reason with it: " t)))
+    (is (> (:atlanto-occipital-over-supplied-nm summary) 3.0)
+        (str "and the summary states it once: " (select-keys summary
+                                                              [:atlanto-occipital-over-supplied-nm])))
+    ;; the discriminating half: where the residual IS positive the load is non-zero
+    ;; and the surplus is gone, so these keys are not constants
+    (let [p2 {:head-flexion-deg -55.0 :trunk-flexion-deg 75.0
+              :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0 :arms-supported false}
+          l2 (load/solve-posture-loads b p2)
+          t2 (filterv #(= :atlanto-occipital-extension (:task %))
+                      (muscle/solve-muscle-tensions b p2 l2))]
+      (doseq [t t2]
+        (is (pos? (:task-load-nm t)) (str (:group t) " has a load there: " t))
+        (is (zero? (:task-over-supplied-nm t))
+            (str (:group t) " has no surplus there: " t))))))

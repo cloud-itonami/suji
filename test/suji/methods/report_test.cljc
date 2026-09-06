@@ -228,7 +228,12 @@
     ;; 165.95 and unchanged, is now the sole maximum. The comparison this test
     ;; guards is unaffected: the laptop end is still at the ceiling and the dose
     ;; behind it still separates the two workstations by a factor of 43.
-    (is (str/includes? text "dose 165.95 → 3.87")
+    ;; ⚠ AND AGAIN ON 2026-09-07 WHEN THE NECK WAS SPLIT: 165.95 -> 166.63 and
+    ;; 3.87 -> 3.89. The erector spinae's dose moved because the cervical column now
+    ;; flexes more than the head does, carrying the mass above C7 a little further
+    ;; anterior of L5/S1. The muscle under the maximum did not change and the factor
+    ;; the comparison rests on did not either.
+    (is (str/includes? text "dose 166.63 → 3.89")
         "the comparison does not state the dose beside the indices")
     (is (str/includes? text "≥1.00")
         "the comparison does not mark the saturated end")))

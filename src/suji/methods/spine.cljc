@@ -27,8 +27,25 @@
   not measurements of anybody (G7). Mass above a level is taken as uniform along
   the segment; the segment's own centre of mass is NOT uniform, and this is stated
   rather than hidden — it biases levels near a segment's ends. There is no
-  curvature: the model's spine is two straight segments, so it has no lordosis and
-  no shear component. NON-DIAGNOSTIC (G1): a stress is a stress.
+  curvature: the model's spine is four straight segments and no arc, so it has no
+  lordosis and no shear component. NON-DIAGNOSTIC (G1): a stress is a stress.
+
+  ⚠ TWO THINGS ABOUT THE CERVICAL ROWS, since 2026-09-07 changed one of them and
+  not the other.
+
+  The five lower rows — C7/T1 through C3/C4 — still SHARE ONE ORIENTATION.
+  `lower_cervical` is C3 to C7 and is one rigid body, so those five are five samples
+  of it. What is no longer true, and was until the neck was split, is that the SKULL
+  shares that frame: the head and the atlas-axis block move on their own joints now,
+  so a forward-head posture reaches these levels as a shape rather than as a tilt.
+
+  C2/C3 HAS NO MUSCLE SOLVED AT IT. It is a real disc — the most cranial one there
+  is — and three muscles cross it, but every one of them belongs to another joint's
+  equilibrium. The muscles that act on the upper cervical spine specifically (rectus
+  capitis anterior and lateralis, longus capitis, the cervicis fascicles ending on
+  C2) are not in this model, so C2/C3's compression is a LOWER BOUND. It is the one
+  row where the model is knowingly short of a muscle rather than short of a
+  measurement, and `attachment-test`'s `awaiting-muscles` names it.
 
   VALIDATION STATUS. Two cross-checks live here and they answer different questions.
   `cervical-cross-check` compares this profile against the lumped cervical model
@@ -64,11 +81,38 @@
    {:name "L3/L4" :region :lumbar :segment "thorax_abdomen" :along 0.14 :disc-area-cm2 16.0}
    {:name "L2/L3" :region :lumbar :segment "thorax_abdomen" :along 0.21 :disc-area-cm2 15.0}
    {:name "L1/L2" :region :lumbar :segment "thorax_abdomen" :along 0.28 :disc-area-cm2 14.0}
-   {:name "C7/T1" :region :cervical :segment "head_neck" :along 0.00 :disc-area-cm2 5.0}
-   {:name "C6/C7" :region :cervical :segment "head_neck" :along 0.06 :disc-area-cm2 4.6}
-   {:name "C5/C6" :region :cervical :segment "head_neck" :along 0.12 :disc-area-cm2 4.3}
-   {:name "C4/C5" :region :cervical :segment "head_neck" :along 0.18 :disc-area-cm2 4.0}
-   {:name "C3/C4" :region :cervical :segment "head_neck" :along 0.24 :disc-area-cm2 3.8}])
+   ;; --- the cervical levels, re-based 2026-09-07 --------------------------------
+   ;; These five used to sit on ONE segment, `head_neck`, at 0.00 / 0.06 / 0.12 /
+   ;; 0.18 / 0.24 of it. They now sit on `lower_cervical`, which spans exactly
+   ;; 0.00-0.30 of that old segment, so each `:along` is the old one divided by
+   ;; 0.30 and every level is in the same place on the same body. Their disc areas
+   ;; are unchanged.
+   ;;
+   ;; WHAT MOVED IS THEIR ORIENTATION, and that is the whole reason for the split.
+   ;; All five still share one segment's frame — `lower_cervical` is C3 to C7 and
+   ;; is still rigid — so a reader should not take five distinct cervical rows as
+   ;; five independently oriented joints. What is no longer true is that the SKULL
+   ;; shares that frame: the head and the atlas-axis block above these levels now
+   ;; move separately, so the weight and the muscle lines these levels carry
+   ;; respond to a forward-head posture instead of to a rigid tilt.
+   {:name "C7/T1" :region :cervical :segment "lower_cervical" :along 0.0 :disc-area-cm2 5.0}
+   {:name "C6/C7" :region :cervical :segment "lower_cervical" :along 0.2 :disc-area-cm2 4.6}
+   {:name "C5/C6" :region :cervical :segment "lower_cervical" :along 0.4 :disc-area-cm2 4.3}
+   {:name "C4/C5" :region :cervical :segment "lower_cervical" :along 0.6 :disc-area-cm2 4.0}
+   {:name "C3/C4" :region :cervical :segment "lower_cervical" :along 0.8 :disc-area-cm2 3.8}
+   ;; C2/C3 IS NEW, and it is what the split bought at this end of the model. It is
+   ;; a real intervertebral disc — the most cranial one there is; there is no disc
+   ;; between C1 and C2 or between C1 and the occiput, which is why those two
+   ;; joints appear in `pose` and NOT here. Stated at 0.0 of `upper_cervical` for
+   ;; the same reason C7/T1 is stated at 0.0 of the segment above it and L5/S1 at
+   ;; 0.0 of the trunk: `crosses?` decides a level exactly at a branch joint with a
+   ;; strict `>`, so a level written at 1.0 of the segment BELOW would put
+   ;; everything above it on the wrong side of the cut.
+   ;;
+   ;; Its disc area continues the series above (5.0, 4.6, 4.3, 4.0, 3.8 → 3.6):
+   ;; representative at reference stature, scaled with stature² like the rest, and
+   ;; not a measurement of anybody.
+   {:name "C2/C3" :region :cervical :segment "upper_cervical" :along 0.0 :disc-area-cm2 3.6}])
 
 (defn disc-area-m2
   "Disc area in m², scaled with stature² from the reference."
@@ -132,7 +176,7 @@
   and the root, so the site is on the proximal side.
 
   THE CONSEQUENCE IS THE FIX. A hand and a forearm both reach the root through
-  `upper_arm -> thorax_abdomen (1.0)`, and the walk never enters `head_neck`, so
+  `upper_arm -> thorax_abdomen (1.0)`, and the walk never enters the neck, so
   both are `:proximal` to every cervical level and a wrist extensor crosses none
   of them. It does not matter how high the world puts them."
   [tree level {:keys [segment along]}]
@@ -162,7 +206,7 @@
 
   DERIVED FROM THE SAME CUT AS `crosses?` SINCE 2026-09-07, and that is the point
   of the rewrite rather than a side effect. This used to be a rank table —
-  mapping thorax_abdomen to rank 0 and head_neck to rank 1, with a branch for
+  mapping thorax_abdomen to rank 0 and the neck to rank 1, with a branch for
   segments the table did not know, which meant an unrecognised segment was an ARM
   and had to be told about legs separately through `segment/below-l5s1`. It answered correctly, and it
   answered from a second hand-written copy of the skeleton's shape sitting in the

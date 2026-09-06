@@ -18,26 +18,29 @@
 
 | muscle | tension %MVC | endurance | stiffness (強張り) | dose | band |
 |---|---|---|---|---|---|
-| erector_spinae | 57% | 1 min | ≥1.00 | 165.95 | very-high |
+| erector_spinae | 57% | 1 min | ≥1.00 | 166.63 | very-high |
 | anterior_deltoid/left | 28% | 4 min | 1.00 | 30.86 | very-high |
 | anterior_deltoid/right | 28% | 4 min | 1.00 | 30.86 | very-high |
-| cervical_extensors | 22% | 7 min | 1.00 | 18.41 | very-high |
-| semispinalis_capitis | 20% | 9 min | 1.00 | 13.79 | very-high |
-| splenius_capitis | 18% | 11 min | 1.00 | 11.04 | very-high |
+| cervical_extensors | 22% | 7 min | 1.00 | 18.21 | very-high |
+| semispinalis_capitis | 19% | 9 min | 1.00 | 13.51 | very-high |
+| splenius_capitis | 18% | 11 min | 1.00 | 10.80 | very-high |
 | biceps_brachii/left | 12% | 27 min | 0.99 | 4.54 | very-high |
 | biceps_brachii/right | 12% | 27 min | 0.99 | 4.54 | very-high |
 | wrist_extensors/left | 10% | 38 min | 0.96 | 3.23 | very-high |
 | wrist_extensors/right | 10% | 38 min | 0.96 | 3.23 | very-high |
 | brachialis/left | 10% | 45 min（適合域より下） | 0.94 | 2.76 | very-high |
 | brachialis/right | 10% | 45 min（適合域より下） | 0.94 | 2.76 | very-high |
-| upper_trapezius/left | 9% | 50 min（適合域より下） | 0.92 | 2.48 | very-high |
-| upper_trapezius/right | 9% | 50 min（適合域より下） | 0.92 | 2.48 | very-high |
-| levator_scapulae/left | 8% | 64 min（適合域より下） | 0.85 | 1.93 | very-high |
-| levator_scapulae/right | 8% | 64 min（適合域より下） | 0.85 | 1.93 | very-high |
+| upper_trapezius/left | 9% | 49 min（適合域より下） | 0.92 | 2.49 | very-high |
+| upper_trapezius/right | 9% | 49 min（適合域より下） | 0.92 | 2.49 | very-high |
+| levator_scapulae/left | 8% | 64 min（適合域より下） | 0.86 | 1.93 | very-high |
+| levator_scapulae/right | 8% | 64 min（適合域より下） | 0.86 | 1.93 | very-high |
 | middle_trapezius/left | 6% | ∞（モデルの床未満） | 0.04 | 0.04 | low |
 | middle_trapezius/right | 6% | ∞（モデルの床未満） | 0.04 | 0.04 | low |
 | tibialis_anterior/left | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | tibialis_anterior/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| rectus_capitis_posterior_major | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| rectus_capitis_posterior_minor | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| obliquus_capitis_superior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | middle_deltoid/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | latissimus_dorsi/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | quadratus_lumborum/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
@@ -83,10 +86,10 @@
 
 | muscle | tension %MVC | endurance | stiffness (強張り) | dose | band |
 |---|---|---|---|---|---|
-| erector_spinae | 15% | 17 min | 1.00 | 7.21 | very-high |
-| cervical_extensors | 11% | 32 min | 0.98 | 3.89 | very-high |
-| splenius_capitis | 10% | 39 min | 0.96 | 3.18 | very-high |
-| semispinalis_capitis | 9% | 54 min（適合域より下） | 0.90 | 2.29 | very-high |
+| erector_spinae | 15% | 17 min | 1.00 | 7.33 | very-high |
+| cervical_extensors | 12% | 30 min | 0.98 | 4.10 | very-high |
+| splenius_capitis | 10% | 39 min | 0.96 | 3.19 | very-high |
+| semispinalis_capitis | 9% | 51 min（適合域より下） | 0.91 | 2.43 | very-high |
 | anterior_deltoid/left | 5% | ∞（モデルの床未満） | 0.03 | 0.03 | low |
 | anterior_deltoid/right | 5% | ∞（モデルの床未満） | 0.03 | 0.03 | low |
 | levator_scapulae/left | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
@@ -97,6 +100,9 @@
 | tibialis_anterior/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | middle_trapezius/left | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | middle_trapezius/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| rectus_capitis_posterior_major | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| rectus_capitis_posterior_minor | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| obliquus_capitis_superior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | biceps_brachii/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | brachialis/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | triceps_brachii/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
@@ -148,7 +154,7 @@
 
 | muscle | tension %MVC | endurance | stiffness (強張り) | dose | band |
 |---|---|---|---|---|---|
-| erector_spinae | 11% | 32 min | 0.98 | 3.87 | very-high |
+| erector_spinae | 11% | 32 min | 0.98 | 3.89 | very-high |
 | levator_scapulae/left | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | levator_scapulae/right | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | upper_trapezius/left | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
@@ -162,6 +168,9 @@
 | splenius_capitis | 2% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | cervical_extensors | 2% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | semispinalis_capitis | 2% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| rectus_capitis_posterior_major | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| rectus_capitis_posterior_minor | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| obliquus_capitis_superior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | biceps_brachii/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | brachialis/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | triceps_brachii/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
@@ -210,5 +219,5 @@
 
 - `laptop-on-lap` neck load 27.9 kgf → `external-monitor+keyboard` 10.5 kgf (**−62%** cervical compressive load).
 - worst-muscle stiffness ≥1.00 (erector_spinae) → 0.98 (erector_spinae).
-  dose 165.95 → 3.87 —— 指数は前者で天井に達しているので、指数の差は改善を過小に示す。順序を決めているのはドーズの側である。
+  dose 166.63 → 3.89 —— 指数は前者で天井に達しているので、指数の差は改善を過小に示す。順序を決めているのはドーズの側である。
 - mechanism, not advice: raising the screen toward eye level reduces head flexion (the dominant cervical-load term); supporting the forearms unloads the upper trapezius (the 肩こり muscle). A clinician (mitate/iyashi) owns any health interpretation.

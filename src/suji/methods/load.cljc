@@ -16,7 +16,8 @@
   Numerics: sin/cos resolve on both hosts; degree conversion goes through
   suji.methods.math (Math/toRadians is JVM-only — see that ns).
   Records are kebab-keyword maps; joints kept as an ordered vector (Python list order)."
-  (:require [suji.methods.math :as math]
+  (:require [suji.methods.attachment :as attachment]
+            [suji.methods.math :as math]
             [suji.methods.pose :as pose]
             [suji.methods.posture :as posture]
             [suji.methods.segment :as segment]))
@@ -48,9 +49,19 @@
   model, and the out-of-plane component is reported separately as
   `frontal-moments`' `:cervical-nm` (−4.10 N·m at that posture) and carried by the
   scalenes in `muscle`'s `:cervical-lateral-flexion` equilibrium. Folding the bend
-  into this angle would charge the same load to two equilibria."
+  into this angle would charge the same load to two equilibria.
+
+  IT READS THE SKULL SINCE 2026-09-07, not the head-and-neck block, because there
+  is no head-and-neck block any more — `pose` places three cervical segments. The
+  NUMBER did not move: `pose/cervical-partition`'s coefficients sum to 1.0 and
+  `cervical-chain` sets the skull's tilt to `trunk + head-flexion` outright rather
+  than accumulating it, so this returns exactly what it returned before the neck
+  had joints, and the Hansraj-calibrated load with it. What DID change is that the
+  lower cervical segment is now tilted MORE than this and the skull is extended
+  back on the atlas — which is the forward-head shape, and which this scalar
+  deliberately does not see."
   [pose-data]
-  (:tilt-deg (pose/seg-at pose-data "head_neck")))
+  (:tilt-deg (pose/seg-at pose-data "head")))
 
 (defn cervical-load
   "Forward-head-posture cervical load. Reproduces Hansraj (2014) (G7 anchor).
@@ -66,7 +77,7 @@
 
   THE LEVER IS FITTED, NOT GEOMETRIC. `head-com-lever-m` is 0.10 m — Hansraj's
   effective lever — where the placed head's own CoM sits 0.170 m along the
-  head_neck segment from C7. Measured 2026-09-07 at 60° of tilt, this model
+  cervical chain from C7. Measured 2026-09-07 at 60° of tilt, this model
   returns 4.815 N·m against the pose-derived 8.194 N·m. That gap is the
   calibration, it is not a bug, and closing it would break the one validated
   quantity in this library; `spine/cervical-cross-check` computes the same
@@ -277,8 +288,11 @@
   "Everything above L5/S1 that the lumbar spine has to hold up, before the desk is
   asked what it is taking: the trunk above the level, the head on top of it, and
   both arms — which hang from the shoulder girdle, and the girdle is carried by
-  the thorax, so every gram of arm reaches the ground through the lumbar spine."
-  (into ["thorax_abdomen" "head_neck"] arm-bases))
+  the thorax, so every gram of arm reaches the ground through the lumbar spine.
+
+  `head_neck` became three segments on 2026-09-07 and all three are here: the
+  lumbar spine carries the whole complex above C7 exactly as it carried the block."
+  (into (into ["thorax_abdomen"] segment/cervical-bases) arm-bases))
 
 (defn lumbar-borne-bases
   "What the lumbar spine carries at L5/S1 in this posture.
@@ -383,8 +397,12 @@
                           (for [side [:left :right]]
                             (math/abs* (frontal (get-in p [:joints (keyword "shoulder" (name side))])
                                                 (pose/segments-on p carried-arm-bases side)))))
+     ;; the whole complex above C7, which is three segments since the neck was
+     ;; split; laterally bent they are still collinear, because `pose` gives all
+     ;; three the same lateral-bend angle — the model has no cervical side-bending
+     ;; rhythm and does not pretend to.
      :cervical-nm (frontal (get-in p [:joints :c7])
-                           (pose/segments-on p ["head_neck"]))
+                           (pose/segments-on p segment/cervical-bases))
      ;; the same list `lumbosacral-moment` uses, from the same function: what the
      ;; lumbar spine is holding up does not depend on which plane you ask about it in
      :lumbosacral-nm (frontal (get-in p [:joints :l5s1])
@@ -487,6 +505,86 @@
                (when (and standing base)
                  (<= (:back base) (first com-point) (:front base)))}}))
 
+(def capitis-groups
+  "The muscles solved in the C7 equilibrium that ALSO cross the atlanto-occipital
+  joint, because they insert on the occiput. There are exactly two, and they are
+  the reason `atlanto-occipital-moment` reports a residual rather than a demand."
+  #{"semispinalis_capitis" "splenius_capitis"})
+
+(defn atlanto-occipital-moment
+  "The static moment about the occipital condyles, and what is left of it for the
+  suboccipital muscles once the muscles already solved at C7 are counted.
+
+  IT DID NOT EXIST BEFORE 2026-09-07 AND IT COULD NOT HAVE. The joint did not
+  exist: `head_neck` ran from C7 to the vertex as one body, so there was no free
+  body consisting of the head alone and nothing to take a moment about. That is
+  why this actor had no suboccipital muscle — not because they were judged small
+  (Kamibayashi & Richmond measure them at 3.75 cm² per side) but because there was
+  nowhere to put them.
+
+  WHAT IT IS NOT. It is not the cervical load and it is not a share of it. The
+  cervical load is the whole complex above C7 about C7, calibrated to Hansraj; this
+  is the SKULL about the condyles, computed from the placed chain with no fitted
+  lever anywhere in it. The two answer different questions and this one is much the
+  smaller — the skull is 80% of the complex but its lever about the condyles is a
+  third of the complex's lever about C7.
+
+  THE RESIDUAL, AND WHY IT IS THE HONEST LOAD. Semispinalis capitis and splenius
+  capitis run from the thorax to the OCCIPUT, so they pull on this joint too; they
+  are solved in the C7 equilibrium because that is where they are the principal
+  actors, and `recruit`'s closed form takes one constraint, so a muscle belongs to
+  one task. Handing the suboccipitals the whole gravitational moment would charge
+  them for work those two are already doing. Measured 2026-09-07 at `laptop-on-lap`
+  on a 70 kg / 1.70 m body: the demand is 2.648 N·m and the two capitis muscles are
+  exerting 6.223 N·m here — 2.35 times it. Charging the whole demand made
+  `rectus_capitis_posterior_major` the worst-loaded muscle in the entire report at
+  51% MVC, which would have been a headline manufactured by a decomposition.
+
+  SO THE RESIDUAL IS USUALLY NEGATIVE, AND THAT IS A RESULT RATHER THAN A BUG. The
+  big superficial extensors, sized by the load at C7, over-extend the joint above
+  them; what a real neck balances that with is its upper cervical FLEXORS — longus
+  capitis, rectus capitis anterior and lateralis — and this model has none of them.
+  `:over-supplied-nm` is that surplus, reported at every posture. The suboccipitals
+  are given `:residual-nm`, which is the surplus floored at zero, so in an ordinary
+  desk posture they carry nothing and the model says why.
+
+  ⚠ IT IS AN UNCOUPLED SOLVE AND THE SURPLUS IS PARTLY AN ARTEFACT OF THAT. A
+  simultaneous solve over both constraints would have chosen smaller capitis forces
+  and non-zero suboccipital ones. This model does not have one — the same
+  limitation `attachment/secondary-arm` states for the two-joint muscles of the leg
+  — so the surplus is an upper bound on the real disagreement, not a measurement of
+  it. What can be said without the coupled solve is the direction: the model is
+  short an upper cervical flexor, and until it has one this joint's equilibrium
+  cannot close from both sides.
+
+  `capitis-forces` is `{muscle-name force-n}`; without it only the gravitational
+  terms are computed, because the demand does not depend on who carries it."
+  ([body posture] (atlanto-occipital-moment body posture nil))
+  ([body posture capitis-forces]
+   (let [p (pose/solve-pose body posture)
+         w (pose/segment-weights body p)
+         joint (get-in p [:joints :atlanto-occipital])
+         skull (pose/segments-on p ["head"])
+         m (pose/gravitational-moment joint (for [s skull] [s (get w (:name s))]))
+         capitis (reduce
+                  (fn [acc n]
+                    (let [f (get capitis-forces n)
+                          inst (attachment/instance n)]
+                      (if (and f (pos? f) inst)
+                        (+ acc (* f (or (attachment/moment-arm p (:stature-m body) inst joint)
+                                        0.0)))
+                        acc)))
+                  0.0
+                  capitis-groups)]
+     (cond-> {:joint "atlanto-occipital"
+              :moment-nm m
+              :skull-weight-n (reduce + 0.0 (map #(get w (:name %)) skull))
+              :note "the skull about the occipital condyles; no fitted lever"}
+       capitis-forces
+       (assoc :capitis-nm capitis
+              :residual-nm (max 0.0 (- m capitis))
+              :over-supplied-nm (max 0.0 (- capitis m)))))))
+
 (defn solve-posture-loads
   "Full static inverse-dynamics solve for a posture (the RNEA gravity term).
 
@@ -500,8 +598,11 @@
         ;; 2026-09-07 — told the cervical model that a person bent 60° at the waist
         ;; with the neck in line was holding their head straight up.
         cerv (cervical-load (head-tilt-from-vertical-deg p) head-w)
+        ao (atlanto-occipital-moment body posture)
         joints [(->joint-load "cervicothoracic" (:extensor-moment-nm cerv)
                               "cervical extensor moment")
+                (->joint-load "atlanto-occipital" (:moment-nm ao)
+                              "the skull about the occipital condyles")
                 (shoulder-moment body posture :both)
                 (let [per-side (elbow-moment body posture)]
                   (->joint-load "elbow" (+ (:left per-side) (:right per-side))
@@ -531,6 +632,7 @@
                                  (dissoc :name)))
                            (:joints lower))]
     {:cervical cerv
+     :atlanto-occipital ao
      :joints (into (vec joints) lower-joints)
      :frontal (frontal-moments body posture)
      :support (:support lower)}))

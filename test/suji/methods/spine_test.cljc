@@ -134,9 +134,24 @@
     ;; moved only a little because the new muscles took a share of the SAME cervical
     ;; extensor moment rather than adding a second one. The upper levels are where
     ;; the change is; see `the-top-cervical-level-is-crossed-by-what-reaches-the-skull`.
-    (is (math/nearly= 1.720 (:ratio x) 0.01)
+    ;; ⚠ RE-MEASURED A THIRD TIME ON 2026-09-07, when `head_neck` was split into
+    ;; `lower_cervical` + `upper_cervical` + `head`. The level side moved
+    ;; 470.740 -> 470.299 N against an UNCHANGED 273.619 N lumped, so the ratio
+    ;; went 1.7204 -> 1.7188 — a move of 0.09%, and it is small for a reason worth
+    ;; stating: the split preserved the head's tilt from vertical exactly, so the
+    ;; Hansraj-calibrated moment the cervical extensors are sharing did not move,
+    ;; and the muscle forces at C7 moved only by however much their moment arms
+    ;; did. What DID move is the weight term (24.810 -> 24.420 N), because the neck
+    ;; now bends inside itself and the mass above C7 sits at a slightly different
+    ;; angle to the level's axis.
+    ;;
+    ;; IT MOVED TOWARD 1 BY A HAIR AND THAT IS NOT A VALIDATION. The lumped side is
+    ;; the one Hansraj anchors; a profile that agreed with it exactly would still be
+    ;; unvalidated, and this repo has recorded twice already that agreement bought
+    ;; by changing something else is not evidence.
+    (is (math/nearly= 1.719 (:ratio x) 0.01)
         (str "today's disagreement, measured rather than banded: " x))
-    (is (math/nearly= 470.74 (:level-force-n x) 0.01)
+    (is (math/nearly= 470.299 (:level-force-n x) 0.01)
         (str "the C7/T1 force with only the muscles that reach a neck in it: " x))
     (is (math/nearly= 273.62 (:lumped-force-n x) 0.01)
         "the lumped side did not move; this repair is on the profile side only")))
@@ -201,10 +216,11 @@
 (deftest a-cervical-level-can-only-be-crossed-by-something-attached-to-the-neck
   ;; The general form of the finding, swept over the whole muscle set and every
   ;; reference posture rather than over the four instances the defect happened to
-  ;; produce. A cervical level cuts the head_neck segment, so the only way for a
-  ;; muscle's two ends to fall in different pieces is for one of them to be on
-  ;; head_neck above the cut. Everything else in the body — both arms, both legs,
-  ;; the pelvis, the whole trunk — reaches the root without ever entering the neck.
+  ;; produce. A cervical level cuts one of the three cervical segments, so the only
+  ;; way for a muscle's two ends to fall in different pieces is for one of them to
+  ;; be on the neck or the skull, above the cut. Everything else in the body — both
+  ;; arms, both legs, the pelvis, the whole trunk — reaches the root without ever
+  ;; entering the neck.
   ;;
   ;; This is the claim the old rule violated, and it is derived: nothing here names
   ;; a muscle or a group.
@@ -214,7 +230,8 @@
       (doseq [m attachment/instances
               :let [cervical (filter #(= :cervical (:region %)) (spine/levels-crossed pd m))]
               :when (seq cervical)]
-        (is (some #(= "head_neck" (:segment %)) [(:origin m) (:insertion m)])
+        (is (some #(contains? (set segment/cervical-bases) (:segment %))
+                  [(:origin m) (:insertion m)])
             (str (:name m) " crosses " (mapv :name cervical)
                  " without attaching to the neck: " (select-keys m [:origin :insertion]))))))
   ;; the evidence floor: a sweep that admitted nothing would pass the above by
@@ -264,19 +281,22 @@
   (let [arm {:origin {:segment "forearm" :along 0.10}
              :insertion {:segment "hand" :along 0.25}
              :side :left}
+        ;; 0.20 of the old `head_neck` is 0.667 of `lower_cervical`, which spans
+        ;; 0.00-0.30 of it — the same place on the same body, restated on the
+        ;; segment the split put there
         spinal (assoc arm
                       :origin {:segment "thorax_abdomen" :along 0.97}
-                      :insertion {:segment "head_neck" :along 0.20})]
+                      :insertion {:segment "lower_cervical" :along 0.667})]
     (is (= [] (mapv :name (spine/levels-crossed lap-pose arm))))
     (is (= ["C7/T1" "C6/C7" "C5/C6" "C4/C5"]
            (mapv :name (spine/levels-crossed lap-pose spinal)))
-        "every level below the insertion at 0.20 of the neck, and none above it")
+        "every level below the insertion at 0.667 of the lower cervical column")
     ;; and moving ONE number moves the answer: an insertion one level lower crosses
     ;; one level fewer
     (is (= ["C7/T1" "C6/C7" "C5/C6"]
            (mapv :name (spine/levels-crossed
                         lap-pose
-                        (assoc spinal :insertion {:segment "head_neck" :along 0.15}))))
+                        (assoc spinal :insertion {:segment "lower_cervical" :along 0.5}))))
         "the answer follows the attachment, not the identity of the muscle")))
 
 (deftest a-pose-that-does-not-say-what-it-connects-is-refused
@@ -659,28 +679,38 @@
     (doseq [r rows]
       (is (pos? (:muscle-n r))
           (str (:name r) " carries muscle force: " (:muscle-n r))))
-    ;; and the REASON, read off the attachments rather than asserted about them:
-    ;; the muscle set now attaches ABOVE C3/C4, on the occiput and the mastoid.
-    (let [neck-along (fn [ms] (for [m ms
-                                    site [(:origin m) (:insertion m)]
-                                    :when (= "head_neck" (:segment site))]
-                                (:along site)))
-          c34 (:along (first (filter #(= "C3/C4" (:name %)) spine/levels)))
-          all (neck-along attachment/instances)
+    ;; and the REASON, read off the SKELETON rather than asserted about it. It used
+    ;; to compare two `:along` numbers on the one `head_neck` segment; since
+    ;; 2026-09-07 the neck is three segments and an `:along` on one of them is not
+    ;; comparable with an `:along` on another, so the question is asked of
+    ;; `levels-crossed`, which walks the attachment tree and answers it properly.
+    (let [pd (pose/solve-pose body lap)
+          crosses-c34? (fn [m] (some #(= "C3/C4" (:name %)) (spine/levels-crossed pd m)))
           ;; the gap version (2) of this test pinned, kept as a live measurement
           ;; rather than as prose: WITHOUT the three cranial muscles nothing in the
           ;; set still reaches, so the C3/C4 row would empty again. That is what
           ;; makes this a test of the new anatomy and not of the profile in general.
           cranial #{"semispinalis_capitis" "splenius_capitis" "sternocleidomastoid"}
-          without (neck-along (remove #(cranial (:group %)) attachment/instances))]
-      (is (seq all) "the muscle set does attach to the neck at all")
-      (is (> (apply max all) c34)
-          (str "its most cranial attachment, at " (apply max all)
-               " of the head_neck segment, is above C3/C4 at " c34))
-      (is (< (apply max without) c34)
-          (str "and remove the three muscles that reach the skull and the highest "
-               "attachment left is " (apply max without) ", below C3/C4 at " c34
-               " — which is exactly the gap this test used to assert")))))
+          suboccipital #{"rectus_capitis_posterior_major" "rectus_capitis_posterior_minor"
+                         "obliquus_capitis_superior"}
+          reaching (filter crosses-c34? attachment/instances)
+          without (filter crosses-c34?
+                          (remove #(cranial (:group %)) attachment/instances))]
+      (is (seq reaching) "something in the muscle set does span C3/C4")
+      (is (every? #(cranial (:group %)) reaching)
+          (str "and it is exactly the three that reach the skull: "
+               (mapv :name reaching)))
+      (is (empty? without)
+          (str "remove them and nothing spans C3/C4 at all, which is exactly the "
+               "gap this test used to assert: " (mapv :name without)))
+      ;; THE SUBOCCIPITALS DO NOT APPEAR HERE, AND THAT IS CORRECT. They run from
+      ;; C1/C2 to the occiput, so both their ends are ABOVE every level this model
+      ;; has — there is no disc between C1 and C2 or between C1 and the occiput, so
+      ;; there is nothing for them to cross. Splitting the neck gave them a joint,
+      ;; not a level.
+      (doseq [m attachment/instances :when (suboccipital (:group m))]
+        (is (empty? (spine/levels-crossed pd m))
+            (str (:name m) " sits entirely above every intervertebral level"))))))
 
 (deftest the-profile-steps-and-the-detector-says-where
   ;; THE FINDING. `attachment-steps` required `:muscle-n` to be exactly 0.0, which
@@ -714,9 +744,13 @@
     (is (math/nearly= (:lost-n s) (- (:muscle-n-before s) (:muscle-n-after s)) 1e-9)
         (str "the force lost IS the change, because one muscle left and none "
              "arrived: " s))
-    (is (math/nearly= 1074.734 (:muscle-n-before s) 0.01))
+    ;; re-measured 2026-09-07 when the neck was split: 1074.734 -> 1076.647 and
+    ;; 1070.547 -> 1072.460. The erector spinae works a little harder because the
+    ;; cervical column now flexes MORE than the head does (the forward-head shape),
+    ;; which carries the mass above C7 a little further anterior of L5/S1.
+    (is (math/nearly= 1076.647 (:muscle-n-before s) 0.01))
     (is (math/nearly= 4.187 (:muscle-n-after s) 0.01))
-    (is (math/nearly= 1070.547 (:lost-n s) 0.01)
+    (is (math/nearly= 1072.460 (:lost-n s) 0.01)
         "the newtons that went with it, so the size is reported rather than judged")
     ;; and the old predicate saw none of it, because 4.19 N is not 0.0 N
     (is (pos? (:muscle-n-after s))

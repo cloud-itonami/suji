@@ -24,6 +24,7 @@
   @dataclasses become kebab-keyword maps; links/joints kept as ordered vectors (list order)."
   (:require [suji.methods.segment :as segment]
             [suji.methods.math :as math]
+            [suji.methods.pose :as pose]
             [suji.methods.load :as load]))
 
 ;; KamiLink / KamiJoint / KamiArticulation @dataclasses → kebab-keyword maps.
@@ -45,13 +46,33 @@
                   (:joints art))
    "gravity_mps2" (:gravity-mps2 art)})
 
-;; The sagittal kinematic order: pelvis(base) → lumbar → thorax → cervical → head, plus
+;; The sagittal kinematic order: pelvis(base) → lumbar → thorax → lower cervical →
+;; upper cervical → head, plus
 ;; the upper-limb branch thorax → shoulder → upper_arm → elbow → forearm → wrist → hand.
 (def ^:private chain-joints
-  [["lumbosacral" "pelvis" "thorax_abdomen" :trunk-flexion-deg]
-   ["cervicothoracic" "thorax_abdomen" "head_neck" :head-flexion-deg]
-   ["shoulder" "thorax_abdomen" "upper_arm" :shoulder-flexion-deg]
-   ["elbow" "upper_arm" "forearm" :elbow-flexion-deg]])
+  "Each joint the articulation exports: name, parent link, child link, the posture
+  key its angle comes from, and the SHARE of that angle it takes.
+
+  THE SHARE IS NEW ON 2026-09-07 and it exists because the neck stopped being one
+  link. `head_neck` was split into `lower_cervical` + `upper_cervical` + `head`, so
+  a `chain-joints` row naming `head_neck` as a child would export a joint attached
+  to a link that is not in `links` — a spec an Isaac `Articulation` would refuse to
+  build, and one nothing in this repo would have noticed, because `to-articulation`
+  builds `links` from the body and `joints` from this table and never compared them.
+  `the-articulation-joins-links-that-exist` does compare them now.
+
+  The three cervical shares are `pose/cervical-partition`, so the exported
+  articulation bends the same way the solver's chain does rather than carrying a
+  second copy of the rule."
+  [["lumbosacral" "pelvis" "thorax_abdomen" :trunk-flexion-deg 1.0]
+   ["cervicothoracic" "thorax_abdomen" "lower_cervical" :head-flexion-deg
+    (:lower pose/cervical-partition)]
+   ["c2c3" "lower_cervical" "upper_cervical" :head-flexion-deg
+    (:upper pose/cervical-partition)]
+   ["atlanto-occipital" "upper_cervical" "head" :head-flexion-deg
+    (:head pose/cervical-partition)]
+   ["shoulder" "thorax_abdomen" "upper_arm" :shoulder-flexion-deg 1.0]
+   ["elbow" "upper_arm" "forearm" :elbow-flexion-deg 1.0]])
 
 (defn to-articulation
   "Build the kami-genesis / Isaac articulation spec for a posed body."
@@ -66,8 +87,8 @@
                 :head-flexion-deg (:head-flexion-deg posture)
                 :shoulder-flexion-deg (:shoulder-flexion-deg posture)
                 :elbow-flexion-deg (:elbow-flexion-deg posture)}
-        joints (mapv (fn [[name parent child ang-key]]
-                       (kami-joint name parent child (get angles ang-key)))
+        joints (mapv (fn [[name parent child ang-key share]]
+                       (kami-joint name parent child (* share (get angles ang-key))))
                      chain-joints)]
     {:links links :joints joints :gravity-mps2 segment/gravity}))
 

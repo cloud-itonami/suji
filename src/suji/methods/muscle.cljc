@@ -42,6 +42,7 @@
   NON-DIAGNOSTIC (G1): %MVC is a force ratio, not a diagnosis.
   G10 anti-pseudoscience: Hill-model muscles only; NO 経絡/気/波動."
   (:require [suji.methods.attachment :as attachment]
+            [suji.methods.load :as load]
             [suji.methods.math :as math]
             [suji.methods.pose :as pose]
             [suji.methods.recruit :as recruit]
@@ -204,6 +205,17 @@
    "semispinalis_capitis" {:name "semispinalis_capitis" :pcsa-cm2 10.80 :moment-arm-m 0.030}
    "splenius_capitis"     {:name "splenius_capitis"     :pcsa-cm2 8.52  :moment-arm-m 0.038}
    "sternocleidomastoid"  {:name "sternocleidomastoid"  :pcsa-cm2 7.44  :moment-arm-m -0.036}
+   ;; the suboccipitals, added 2026-09-07 with the atlanto-occipital joint they act
+   ;; about. PCSA measured from the same Kamibayashi & Richmond table; NO
+   ;; `:moment-arm-m`, and its absence is the statement — there is no legacy
+   ;; constant and no published moment arm about this joint to calibrate against,
+   ;; so `attachment` places them from bony landmarks, checks the resulting LENGTHS
+   ;; against the lengths the same table measures, and lets the arms be whatever
+   ;; the geometry gives. Writing a target here would have made an invented number
+   ;; look like an anchor.
+   "rectus_capitis_posterior_major" {:name "rectus_capitis_posterior_major" :pcsa-cm2 1.86}
+   "rectus_capitis_posterior_minor" {:name "rectus_capitis_posterior_minor" :pcsa-cm2 1.00}
+   "obliquus_capitis_superior"      {:name "obliquus_capitis_superior"      :pcsa-cm2 2.06}
    "upper_trapezius"    {:name "upper_trapezius"    :pcsa-cm2 9.0  :moment-arm-m 0.025}
    "levator_scapulae"   {:name "levator_scapulae"   :pcsa-cm2 5.0  :moment-arm-m 0.020}
    "anterior_deltoid"   {:name "anterior_deltoid"   :pcsa-cm2 10.0 :moment-arm-m 0.030}
@@ -380,11 +392,33 @@
         by-joint (into {} (map (juxt :joint identity)) (:joints loads))
         side-load (fn [n side] (get-in by-joint [n :per-side side] 0.0))
         shoulder-per-side (:per-side (joint "shoulder"))
+        ;; THE C7 EQUILIBRIUM IS SOLVED FIRST AND ON PURPOSE. Two of its muscles,
+        ;; semispinalis capitis and splenius capitis, insert on the occiput and
+        ;; therefore also pull on the atlanto-occipital joint; the suboccipital
+        ;; equilibrium below is given what is LEFT of that joint's moment once
+        ;; their contribution is counted, not the whole of it. Every other task in
+        ;; this list is independent of every other, and these two are not, so the
+        ;; order is stated here rather than left to the shape of a `concat`.
+        cervical-shared (recruit/share (candidates :cervical-extension nil coeffs)
+                                       (get-in loads [:cervical :extensor-moment-nm]))
+        ao (load/atlanto-occipital-moment
+            body posture
+            (into {} (for [x cervical-shared
+                           :when (contains? load/capitis-groups (:name x))]
+                       [(:name x) (:force-n x)])))
         task-list
         (concat
-         [[[:cervical-extension :midline]
-           (recruit/share (candidates :cervical-extension nil coeffs)
-                          (get-in loads [:cervical :extensor-moment-nm]))]
+         [[[:cervical-extension :midline] cervical-shared]
+          ;; THE ATLANTO-OCCIPITAL EQUILIBRIUM, new on 2026-09-07 and the one the
+          ;; cervical split exists to make possible. Its load is `:residual-nm` —
+          ;; see `load/atlanto-occipital-moment` for why that is the honest number
+          ;; and for what its usually being zero means. A zero load IS a placed
+          ;; load: the suboccipitals come back at 0 N rather than refused, which is
+          ;; the difference between "nothing is asked of them here" and "this model
+          ;; could not answer".
+          [[:atlanto-occipital-extension :midline]
+           (recruit/share (candidates :atlanto-occipital-extension nil coeffs)
+                          (:residual-nm ao))]
           [[:trunk-extension :midline]
            (recruit/share (candidates :trunk-extension nil coeffs)
                           (:moment-nm (joint "lumbosacral")))]
@@ -463,6 +497,17 @@
                         :secondary-arm-m sec-arm
                         :secondary-moment-nm (when (number? (:force-n t))
                                                (* sec-arm (:force-n t)))})
+                     ;; THE SAME CONFESSION, FOR THE OTHER UNCOUPLED JOINT. A
+                     ;; suboccipital gets the residual at the atlanto-occipital
+                     ;; joint, and the residual is usually zero because the two
+                     ;; capitis muscles solved at C7 over-supply that joint. A
+                     ;; muscle reporting 0 N with no reason beside it is
+                     ;; indistinguishable from a muscle nobody thought about, so
+                     ;; the reason travels with it — see
+                     ;; `load/atlanto-occipital-moment`.
+                     (when (= :atlanto-occipital-extension (:task inst))
+                       {:task-load-nm (:residual-nm ao)
+                        :task-over-supplied-nm (:over-supplied-nm ao)})
                      (when (and (:refused t) (contains? carried-names n))
                        {:antagonist? true}))))
           emit-order)))
@@ -512,6 +557,14 @@
               :complete? (not-any? #(and (:refused %) (not (:antagonist? %))) tensions)
               :max-mvc-pct (let [xs (keep :mvc-pct tensions)] (when (seq xs) (apply max xs)))}
        frontal (assoc :frontal frontal)
+       ;; the atlanto-occipital joint's surplus, carried on the suboccipital rows
+       ;; by `solve-muscle-tensions`. It is the same class of statement as
+       ;; `:two-joint-unfed-nm` — a moment one equilibrium is exerting on another
+       ;; that was not told about it — and it is surfaced here so a consumer does
+       ;; not have to know which muscles to look at to find it.
+       (some :task-over-supplied-nm tensions)
+       (assoc :atlanto-occipital-over-supplied-nm
+              (reduce max 0.0 (keep :task-over-supplied-nm tensions)))
        true (assoc :two-joint-unfed-nm
                    (reduce (fn [m t]
                              (if-let [j (:crosses-joint t)]
