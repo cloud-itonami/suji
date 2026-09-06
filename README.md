@@ -383,6 +383,94 @@ finding, but `:above-maximum-voluntary-contraction` says what it is: an enduranc
 time is how long a *sub-maximal* load is held, and above maximum there is no such
 quantity to extrapolate to.
 
+### The headline band carries one bit, and the discontinuity is why
+
+**`moderate` and `high` are not rare — at this app's session lengths they are
+unreachable.** The band is the column the answer table above and the browser
+comparison view are read through, and it distinguishes two states: *is this
+muscle above 8 %MVC or not*.
+
+The cause is the endurance floor. `endurance-minutes` returns ∞ at or below
+8 %MVC and **70.1 min** immediately above it, so the acute term does not grow
+from zero — it switches on at full size. At a 120 minute session that is 1.71 of
+dose appearing in the width of a rounding error, and the index steps from
+**0.053 to 0.829 across 0.001 %MVC**. That step is wider than `moderate` and
+`high` put together (0.20 → 0.70), so nothing can land in either.
+
+Measured 2026-09-07 on the three reference workstations, 144 muscle entries:
+
+| session | band histogram |
+|---|---|
+| 30 min | `{low 99, moderate 2, high 9, very-high 6, not-computed 28}` |
+| **120 min** (the default) | `{low 99, very-high 17, not-computed 28}` |
+| 480 min (a working day) | `{low 99, very-high 17, not-computed 28}` |
+
+Sweeping %MVC uniformly instead of running the postures gives the same answer:
+at 120 and 480 min only `low` and `very-high` are reachable; at 30 min all four
+are. `strain/band-resolution` computes this by **inverting the model**, and
+`band-resolution-inversion-agrees-with-sampling-the-model` requires the inversion
+and a 0.05 %MVC sweep to agree band by band, so a bug in one cannot make the
+finding look smaller.
+
+**The session lengths at which each band dies are solved, not chosen** — from
+`chronic-weight`, `chronic-threshold-pct`, `endurance-floor-pct` and the
+power-law constants: `moderate` becomes unreachable at **40.6 min** and comes
+back at 495.9 (when the chronic term below the floor finally reaches 0.20);
+`high` dies at **81.8 min** and returns at 1328.5. The app's default is 120 min,
+so both are dead across everything it is used for.
+
+**The top is blind too, by a different mechanism.** The bottom loses resolution
+to a *gap*; the top loses it to a *ceiling*. `strain/band-resolution` reports
+`:saturation-onset-pct` — the %MVC above which the index is exactly 1.0 in double
+precision: **30.2 %MVC at 120 min**, 16.5 at 480. Above it the index is not
+coarse, it is constant: 70 of the 100 points on the axis carry no information at
+all at the default session, and `index-at 50 == index-at 100` is an equality, not
+an approximation. `:saturated?` already marked individual rows; what was missing
+was the size of the region.
+
+**What was NOT done.** No smoothing constant. Fairing the step away needs a blend
+width, and there is nowhere to get one: below 8 %MVC neither the model nor the
+reference has measured anything, so any width would be invented — the exact thing
+this repo has spent days removing. No thresholds were moved and no coefficient
+was touched: re-cutting the bands cannot help, because the defect is in the index
+and no threshold set can put a value inside a gap. And the floor itself was left
+alone, for a reason that cuts **against** it and is now computed rather than
+argued: at the floor the model's 70.1 min and the pooled published fit's 54.3 min
+**agree**, ratio 1.29, inside the reference's own wide (±47%) prediction interval
+and outside the tight (±29%) one. The ∞ is switched on while the power law was
+still inside the literature's spread. That is a reason to *report* the step; it is
+not on its own a reason to delete the floor, because deleting it replaces one
+unmeasured claim (*indefinitely*) with another (*54 minutes*).
+
+**What is reported instead.** `muscle-strain` now emits two things it was
+throwing away or leaving to be reassembled:
+
+| key | what it is |
+|---|---|
+| `:dose` | the sum `acute + chronic` the index is a saturating transform of. It still has range where the index has none: the 17 `very-high` rows at 120 min span 1.93 to 165.95 — a factor of **86** — and at the two decimals the report prints they take only **7** distinct values (1.00, 0.99, 0.98, 0.96, 0.94, 0.92, 0.85) |
+| `:index-resolution` | `:distinguishing` / `:saturated` / `:below-endurance-floor` / `:not-computed` — which regime of the index the row is in, as one keyword instead of three flags |
+
+`:index-resolution` is the **G3** key. This actor exists to compare one member's
+posture against their own other posture. `0.04` against `0.85` reads as a factor
+of twenty and is produced by 0.02 %MVC across the floor; `1.00` against `1.00`
+reads as a tie and can be a factor of two in load. Both are misreadings of a
+correct number, and both are avoidable if the render knows which side of the
+discontinuity each row is on.
+
+**What the consumers should now show** (`analyze/render-report`, the answer table
+above, and the browser comparison view — none of them changed here):
+
+- Do not print `very-high` as though it were the top of a four-rung scale.
+  At 120 min it is one of **two** reachable values. Either print the pair
+  (`above / below the endurance floor`) or print the band together with the dose.
+- Print `:dose` beside the index in the per-muscle table. It is the column that
+  orders the rows the index ties.
+- Render `:index-resolution :saturated` as `≥ 1.00`, and
+  `:index-resolution :below-endurance-floor` with a marker saying the acute term
+  is switched off there — an 0.04 and an 0.85 are not twenty-fold apart in load.
+- Do not compute a ratio of two indices across the floor. It is a ratio of two
+  numbers on either side of a step.
+
 ### What could not be checked at all
 
 **The muscle that produces this app's headline verdict has no published curve
@@ -999,6 +1087,23 @@ There is one entry that is NOT a refusal and belongs in the table anyway:
 reaches exactly 1.0 in double precision once the dose passes ~37 — roughly 50 %MVC
 held for two hours, which is an ordinary posture. Two postures, one twice as bad as
 the other, both read 1.00. `:saturated?` marks them.
+
+**And it is blind at the bottom too, which nothing said (2026-09-07).** The
+saturation above is a ceiling; the fault at the other end is a *gap*, and it does
+more damage because it lands on the band — the column a reader actually reads.
+The index steps from 0.053 to 0.829 across 0.001 %MVC at the 8 %MVC endurance
+floor, which is wider than `moderate` and `high` put together, so **neither band
+can be reached at all** at 120 or 480 minutes. Measured on the three reference
+workstations at 120 min the 144 entries come out `{low 99, very-high 17,
+not-computed 28}`, and the 17 `very-high` rows span 8.3 to 57.4 %MVC — a factor
+of 6.9 in load and 86 in dose — under one word. The band function, its
+thresholds and every coefficient are unchanged; what is new is
+`strain/band-resolution` and `strain/floor-discontinuity`, which compute the
+damage by inverting the model, plus `:dose` and `:index-resolution` on every row.
+`lexicon_conformance_test`'s comment that *"`moderate` and `high` are legitimate
+and no reference posture lands in them"* is now false in its second half and
+should be corrected: nothing can land in them. See **The headline band carries
+one bit** above.
 
 **The dose layer was calling itself Rohmert's, and it is not (2026-09-07).** This
 README said "**強張り** is the Rohmert sustained-isometric dose" and `strain.cljc`'s
