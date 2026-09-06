@@ -15,6 +15,7 @@
                :cljs [cljs.test :refer [deftest is]])
             [clojure.string :as str]
             [suji.methods.analyze :as analyze]
+            [suji.methods.muscle :as muscle]
             [suji.methods.strain :as strain]))
 
 (defn- rows
@@ -84,3 +85,47 @@
     ;; caller rendering any other set of results got nil and a NullPointerException
     (is (str/includes? text "Comparison")
         "the comparison section must render for a result set with no laptop-on-lap")))
+
+(deftest a-dash-is-explained-because-there-are-two-ways-to-have-no-mvc
+  ;; The table renders every row without a %MVC as `—`, which says "no number" and
+  ;; cannot say which kind of no number. This library keeps two apart on purpose —
+  ;; `muscle/numeric-mvc?` exists because the model declining to compute a force
+  ;; and an entry being a LIGAMENT, which cannot contract at all, are different
+  ;; answers. Rendered as the same dash, that distinction does not reach the page.
+  (let [text (analyze/render-report (analyze/analyze-all))
+        strains (:strains (first (analyze/analyze-all)))
+        without (remove muscle/numeric-mvc? strains)]
+    (is (seq without) "the reference scenarios must contain rows without a %MVC")
+    ;; At least two DIFFERENT reasons must occur, or the report has nothing to
+    ;; distinguish and this test would pass on a single hard-coded label. (A
+    ;; ligament carries `:no-mvc` on its strain row rather than a nil, which is
+    ;; why this asks for distinct values and not for the absence of one.)
+    (is (< 1 (count (distinct (map :refused without))))
+        (str "only one reason occurs, so this asserts nothing: "
+             (pr-str (distinct (map :refused without)))))
+    (is (str/includes? text "無い理由")
+        "the report does not explain why any row has no %MVC")
+    (doseq [s without]
+      (is (str/includes? text (:name s))
+          (str (:name s) " has no %MVC and is not named among the reasons")))
+    (is (str/includes? text "`no-mvc`")
+        "a ligament's reason is not distinguished from a refusal's")
+    (is (str/includes? text "`acts-the-wrong-way`")
+        "a refusal's reason is not distinguished from a ligament's")))
+
+(deftest an-unbounded-endurance-says-it-is-the-models-own-floor
+  ;; `∞` alone reads as a measured result. Below the model's 8 %MVC floor it is a
+  ;; modelling choice, and the published fit this layer is checked against returns
+  ;; a finite time there. `strain` computes the position; the report used to drop
+  ;; it, so a reader saw an infinity with nothing saying where it came from.
+  (let [text (analyze/render-report (analyze/analyze-all))
+        parsed (rows text)
+        floored (filter #(= :below-endurance-floor (:endurance-position %))
+                        (:strains (first (analyze/analyze-all))))]
+    (is (seq floored) "no row sits below the floor, so this asserts nothing")
+    (is (seq (filter #(str/includes? (:endurance %) "∞") parsed))
+        "no row shows an unbounded endurance, so this asserts nothing")
+    (doseq [r (filter #(str/includes? (:endurance %) "∞") parsed)]
+      (is (str/includes? (:endurance r) "床未満")
+          (str (:name r) ": an unbounded endurance is shown unqualified: "
+               (:endurance r))))))
