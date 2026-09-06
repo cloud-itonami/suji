@@ -282,22 +282,44 @@
   ;; loaded the quadriceps in every posture.
   (let [squat (:by (tensions-at posture/deep-squat))
         quiet (:by (tensions-at posture/quiet-standing))]
-    ;; In quiet standing the model does not say the vasti are working a little —
-    ;; it says they are the ANTAGONIST. The ground reaction passes IN FRONT of the
-    ;; knee, so the demand there is flexor and the knee rests back on itself, and
-    ;; a static optimum does not co-contract the extensors against that.
-    (is (:antagonist? (quiet "vasti/left"))
-        (str "quiet standing must leave the vasti as the antagonist, got "
+    ;; ⚠ WHAT MOVED ON 2026-09-08. This used to assert that the vasti are the
+    ;; ANTAGONIST in quiet standing — refused, no %MVC at all — because the knee's
+    ;; demand there is flexor and `share-signed` refuses the side that is not
+    ;; resisting. The coupled solve does not decide the knee on its own: the same
+    ;; multipliers price the hip and the ankle, and the cheapest way to close all
+    ;; three is a small vasti force (47.54 N, 1.10% MVC) rather than none.
+    ;;
+    ;; That is a co-contraction the uncoupled model could not express, and it is
+    ;; SMALL — which is the assertion, because a large one would be a finding
+    ;; about the model and not about standing.
+    (is (nil? (:refused (quiet "vasti/left")))
+        (str "the coupled solve computes a force for the vasti in standing: "
              (select-keys (quiet "vasti/left") [:refused :force-n :mvc-pct])))
-    (is (nil? (:mvc-pct (quiet "vasti/left")))
-        "so there is no %MVC for them at all there")
+    (is (< (:mvc-pct (quiet "vasti/left")) 3.0)
+        (str "and it must be a co-contraction and not a load: "
+             (:mvc-pct (quiet "vasti/left")) " %MVC"))
+    (is (> (:mvc-pct (squat "vasti/left")) (* 10.0 (:mvc-pct (quiet "vasti/left"))))
+        (str "a squat must ask them for more than an order of magnitude more: "
+             (:mvc-pct (squat "vasti/left")) " vs " (:mvc-pct (quiet "vasti/left"))))
     (is (> (:force-n (squat "vasti/left")) 500.0)
         (str "a deep squat is what a quadriceps is for: " (:force-n (squat "vasti/left")) " N"))
     (is (> (:mvc-pct (squat "vasti/left")) 15.0)
         (str "and it is a large fraction of what they can produce: "
              (:mvc-pct (squat "vasti/left")) " %"))
-    ;; both heads of the extensor mechanism, and the hip extensor with them
-    (is (pos? (:force-n (squat "rectus_femoris/left"))))
+    ;; ⚠ AND SO DID RECTUS FEMORIS, in the other direction. Solved at the knee
+    ;; alone it took 86.54 N in a deep squat; solved with the hip in the problem
+    ;; the optimum switches it OFF, because every newton it puts into extending
+    ;; the knee also flexes a hip that gravity is already flexing. That is the
+    ;; trade the closed form could not see, and it is why the assertion is now
+    ;; that it is inactive rather than that it is pulling.
+    (is (:inactive? (squat "rectus_femoris/left"))
+        (str "the coupled optimum switches rectus femoris off in a deep squat: "
+             (select-keys (squat "rectus_femoris/left") [:active-n :price :inactive?])))
+    (is (neg? (:price (squat "rectus_femoris/left")))
+        (str "and the reason is its price, not a refusal: "
+             (:price (squat "rectus_femoris/left"))))
+    ;; the hip extensor is still doing the hip extension, which is the half that
+    ;; must NOT have moved
     (is (> (:force-n (squat "gluteus_maximus/left")) 500.0)
         "and a squat is a hip extension as much as a knee extension")
     ;; the mechanism, stated as the sign of the joint moment rather than inferred
@@ -420,17 +442,24 @@
         (str "the unpinned chord would give half again as much: "
              (:straight (nth dets 2)) " against " r))))
 
-(deftest the-two-joint-muscles-are-solved-at-one-joint-and-reported-at-both
-  ;; THE HONEST SCOPE OF THE LOWER LIMB, asserted rather than described. A muscle
-  ;; spanning two joints appears in two equilibria at once and the two are
-  ;; coupled; `recruit`'s Crowninshield–Brand closed form solves ONE equality
-  ;; constraint, and there is no closed form of that shape for two. So each
-  ;; two-joint muscle is solved where it is the primary actor, and the moment it
-  ;; is simultaneously exerting at its other joint is COMPUTED and reported.
+(deftest the-two-joint-muscles-are-solved-at-both-joints-at-once
+  ;; WHAT THIS TEST USED TO ASSERT. A muscle spanning two joints appears in two
+  ;; equilibria at once and the two are coupled; `recruit/share`'s
+  ;; Crowninshield–Brand closed form solves ONE equality constraint, so each
+  ;; two-joint muscle was solved where it was the primary actor and the moment it
+  ;; was simultaneously exerting at its other joint was COMPUTED and reported as
+  ;; unfed. The assertion was that the unfed moment is non-zero somewhere — `or the
+  ;; model is claiming an approximation it never makes and a coupled solve would
+  ;; give identical output`. Measured at `deep-squat`: 3.6348762211480548 N·m at
+  ;; each hip.
   ;;
-  ;; The test that matters is the last one: the reported quantity must be
-  ;; non-zero somewhere, or the model is claiming an approximation it never makes
-  ;; and a coupled solve would give identical output.
+  ;; `recruit/solve` is that coupled solve, so the assertion inverts. The hip, the
+  ;; knee and the ankle of one leg are ONE equilibrium: the same force appears in
+  ;; all three constraints and satisfies all three. What is asserted here now is
+  ;; that (1) the second joint is still reported, because the number is worth
+  ;; seeing, (2) the row says it was FED, and (3) the equilibrium at that joint
+  ;; actually holds — which is a stronger statement than the old one and is the
+  ;; whole content of the change.
   (let [{:keys [by summary]} (tensions-at posture/deep-squat)
         two-joint ["rectus_femoris/left" "hamstrings/left" "gastrocnemius/left"]]
     (doseq [n two-joint]
@@ -440,27 +469,53 @@
         (is (= (:crosses-joint t) (get-in inst [:crosses :joint]))
             (str n " must report which joint it also crosses"))
         (is (number? (:secondary-arm-m t)) (str n " must report its arm there"))
-        ;; solved at ONE joint: the task it belongs to is its primary joint's
-        (is (not= (:acts-about inst) (get-in inst [:crosses :joint]))
-            (str n " cannot be solved at the joint it is only reported at"))
+        (is (:secondary-fed? t)
+            (str n ": its second joint must be one of the constraints its own solve "
+                 "satisfied, got " (pr-str (select-keys t [:crosses-joint
+                                                           :coupled-joints
+                                                           :secondary-fed?]))))
         (when (number? (:force-n t))
           (is (math/nearly= (* (:secondary-arm-m t) (:force-n t))
                             (:secondary-moment-nm t) 1e-9)
               (str n ": the reported secondary moment must be arm × force")))))
-    ;; the hip's equilibrium is solved WITHOUT the two muscles that cross it
-    (let [hip-task (set (map :name (filter #(= :hip-extension (:task %)) att/instances)))]
-      (is (= #{"gluteus_maximus/left" "gluteus_maximus/right"
-               "iliopsoas/left" "iliopsoas/right"} hip-task)
-          (str "the hip is solved by its one-joint muscles only: " hip-task))
-      (is (not (contains? hip-task "rectus_femoris/left"))
-          "rectus femoris crosses the hip and is not in its equilibrium — that is the approximation")
-      (is (not (contains? hip-task "hamstrings/left"))))
-    ;; and the size of the approximation is reported, per joint, and is not zero
+    ;; the hip's equilibrium is solved WITH the two muscles that cross it — the
+    ;; exact opposite of what this block asserted before
+    (let [t (by "rectus_femoris/left")]
+      (is (= [:hip/left :knee/left :ankle/left] (vec (:coupled-joints t)))
+          (str "rectus femoris is solved over all three joints of its leg: "
+               (:coupled-joints t)))
+      (is (contains? (:coeffs t) :hip/left)
+          (str "and its hip arm is in the constraint matrix: " (:coeffs t))))
+    ;; the three equilibria hold simultaneously, which is what `:two-joint-unfed-nm`
+    ;; used to measure the failure of
+    (doseq [j [:hip/left :knee/left :ankle/left :hip/right :knee/right :ankle/right]]
+      (is (math/nearly= 0.0 (get-in summary [:coupled-residual-nm j]) 1e-9)
+          (str j " must be balanced: " (:coupled-residual-nm summary))))
+    ;; and the unfed total no longer contains a lower-limb joint at all. What is
+    ;; left in it is `:c2c3`, which no equilibrium in this model covers.
     (is (map? (:two-joint-unfed-nm summary)))
-    (is (contains? (:two-joint-unfed-nm summary) :hip/left))
-    (is (> (math/abs* (get-in summary [:two-joint-unfed-nm :hip/left])) 1.0)
-        (str "in a squat the unfed hip moment is a real quantity, not a formality: "
-             (:two-joint-unfed-nm summary)))))
+    (is (not (contains? (:two-joint-unfed-nm summary) :hip/left))
+        (str "the hip is fed now, so it must not be counted as unfed: "
+             (:two-joint-unfed-nm summary)))
+    (is (= #{:c2c3 :c7} (set (keys (:two-joint-unfed-nm summary))))
+        (str "the joints still unfed are the two the coupled groups do not reach: "
+             "`:c2c3`, which has no equilibrium at all, and `:c7`, which has one "
+             "the girdle suspension muscles cannot join because their own balance "
+             "is a force and not a moment — see "
+             "`muscle-test/the-girdle-suspension-muscles-load-c7-and-are-not-in-its-group`. "
+             "Got " (:two-joint-unfed-nm summary)))
+    ;; THE DISCRIMINATING HALF. A coupled solve that had simply switched the
+    ;; two-joint muscles off would satisfy every residual above. The hamstrings
+    ;; must actually be recruited in a squat — they extend the hip and flex the
+    ;; knee at the same time, which is exactly the trade the uncoupled solve could
+    ;; not represent: it refused them as acting the wrong way at the knee.
+    (is (pos? (:active-n (by "hamstrings/left")))
+        (str "the hamstrings must be recruited in a deep squat: "
+             (by "hamstrings/left")))
+    (is (< (:force-n (by "gluteus_maximus/left")) 1072.0)
+        (str "and the gluteus maximus must be doing LESS than the uncoupled solve "
+             "gave it (1072.30 N), because the hamstrings are helping at the hip: "
+             (:force-n (by "gluteus_maximus/left"))))))
 
 (deftest every-lower-limb-load-in-range-is-carried
   ;; The coverage sweep, which is what the upper limb's frontal-plane work also

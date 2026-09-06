@@ -183,7 +183,17 @@
                                                      (if (:refused t)
                                                        (kw-str (name (:refused t)))
                                                        ":none"))]
-                              [":muscle/antagonist" (if has-mvc? omit (boolean (:antagonist? t)))]])))
+                              [":muscle/antagonist" (if has-mvc? omit (boolean (:antagonist? t)))]
+                              ;; A MUSCLE AT 0 N THAT WAS NOT REFUSED. Since
+                              ;; 2026-09-08 a coupled group answers for every
+                              ;; muscle it prices, so `the optimum switched this
+                              ;; one off` arrives as a force of zero rather than as
+                              ;; a refusal — and a zero with no reason beside it is
+                              ;; indistinguishable from a muscle nobody thought
+                              ;; about, which is the same trap `:muscle/refused`
+                              ;; was written for. Emitted only when true, so a row
+                              ;; that is simply lightly loaded does not carry it.
+                              [":muscle/inactive" (if (:inactive? t) true omit)]])))
                         (:tensions result))
         strain-ds (mapv (fn [st]
                           ;; THE SENTINEL IS GONE (2026-09-07). Until today both of
@@ -295,7 +305,8 @@
     :attrs {":muscle/id" :muscleId ":muscle/posture" :postureId
             ":muscle/group" :group ":muscle/side" :side
             ":muscle/force-n" :forceN ":muscle/mvc-pct" :mvcPct
-            ":muscle/refused" :refused ":muscle/antagonist" :antagonist}}
+            ":muscle/refused" :refused ":muscle/antagonist" :antagonist
+            ":muscle/inactive" :inactive}}
    "strain"
    {:lexicon "strainReport"
     :attrs {":strain/id" :strainId ":strain/posture" :postureId

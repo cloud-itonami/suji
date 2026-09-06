@@ -149,35 +149,55 @@
         (str "splenius " (arm p "splenius_capitis")
              " must exceed semispinalis " (arm p "semispinalis_capitis")))))
 
-(deftest the-flexor-is-refused-for-being-a-flexor
-  ;; The sternocleidomastoid is an antagonist in every posture this actor reports,
-  ;; and that is the correct answer rather than a failure — but WHICH refusal it is
-  ;; matters, because the three kinds have three different fixes.
-  ;; `:acts-the-wrong-way` says the posture has left the range this line of action
-  ;; represents and no wrapping surface changes it. `:no-line-of-action` would say
-  ;; the geometry is degenerate, and `:coefficient-below-floor` would say a
-  ;; wrapping surface is missing. Asserting only "refused" cannot tell them apart,
-  ;; which is the shape `recruit`'s own docstring warns about.
+(deftest the-flexor-is-switched-off-for-being-a-flexor
+  ;; WHAT THIS TEST USED TO SAY, AND WHY THE CHANGE IS NOT A WEAKENING. The
+  ;; sternocleidomastoid is an antagonist in every posture this actor reports, and
+  ;; while the cervical extension load was shared by `recruit/share` that came back
+  ;; as `:refused :acts-the-wrong-way` — a judgement readable off ONE coefficient,
+  ;; because there was one constraint.
+  ;;
+  ;; The neck is now a coupled group over two constraints (`muscle/coupled-groups`),
+  ;; and there the direction a muscle helps in is not readable off one coefficient:
+  ;; a muscle can have good leverage the right way at one joint and still be off,
+  ;; because helping there costs more at the other. So the judgement belongs to the
+  ;; solve, which makes it through the KKT price — s_i = Σ_k λ_k C_ki, non-positive
+  ;; exactly when activating the muscle would raise the cost without helping any
+  ;; constraint — and the row says `:inactive?` rather than `:refused`.
+  ;;
+  ;; THAT IS A DIFFERENT CLAIM AND A STRONGER ONE. `:refused` meant `the model
+  ;; declined to compute a force`; `:inactive?` means `the model computed the
+  ;; force and it is zero`, which is what the optimum actually says. The three
+  ;; GEOMETRIC refusals are untouched and still pinned by their reason, in
+  ;; `the-sternocleidomastoid-is-an-upper-cervical-extensor-not-a-flexor` below.
   (let [posture (posture/posture-from-workstation posture/laptop-on-lap)
         l (suji.methods.load/solve-posture-loads body posture)
         ts (muscle/solve-muscle-tensions body posture l)
         by (into {} (map (juxt :name identity)) ts)
         scm (by "sternocleidomastoid")]
-    (is (= :acts-the-wrong-way (:refused scm))
-        (str "the sternocleidomastoid must be refused for pulling the wrong way, "
-             "not for having no line of action: " (pr-str scm)))
+    (is (:inactive? scm)
+        (str "the coupled optimum must switch the sternocleidomastoid off: "
+             (pr-str scm)))
+    (is (nil? (:refused scm))
+        (str "and NOT refuse it — the force was computed, and it is zero: "
+             (pr-str scm)))
+    ;; the reason literal, pinned: the price and not the outcome. A muscle that
+    ;; came out at zero because its `:f-max-n` had gone to zero, or because the
+    ;; whole group was unloaded, would satisfy `zero? :active-n` and would be a
+    ;; different fact.
+    (is (neg? (:price scm))
+        (str "its price at the solved multipliers must be negative: " (:price scm)))
     (is (neg? (:coeff scm))
-        (str "and the reason must be visible in the coefficient: " (:coeff scm)))
-    (is (:antagonist? scm)
-        "the cervical extension load WAS placed, so this is an antagonist and not a gap")
-    (is (nil? (:mvc-pct scm)) "a refused muscle gets no %MVC")
-    ;; the discriminating half: the extensors in the SAME task are not refused, so
-    ;; this is a statement about one muscle's direction and not about the task
+        (str "and the geometry behind that is visible in the coefficient: "
+             (:coeff scm)))
+    (is (math/nearly= 0.0 (:active-n scm) 1e-12) "so it produces no active force")
+    ;; the discriminating half: the extensors in the SAME solve are not off, so
+    ;; this is a statement about one muscle's direction and not about the group
     ;; having failed
-    (doseq [m ["cervical_extensors" "semispinalis_capitis" "splenius_capitis"]]
-      (is (pos? (:mvc-pct (by m))) (str m " carries load in the same equilibrium")))
+    (doseq [m ["cervical_extensors" "semispinalis_capitis"]]
+      (is (pos? (:active-n (by m)))
+          (str m " carries load in the same coupled solve: " (by m))))
     (is (:complete? (muscle/tension-summary ts l))
-        "and an antagonist must not make the solve incomplete")))
+        "and an inactive muscle must not make the solve incomplete")))
 
 (deftest the-head-muscles-cross-every-cervical-level
   ;; The point of the whole exercise, asked of `spine`'s rule rather than of a
@@ -1135,122 +1155,97 @@
       (is (nil? (:refused (by m))) (str m " is not refused here: " (by m)))
       (is (math/nearly= 0.0 (or (:active-n (by m)) 0.0) 1e-12)
           (str m " is asked for nothing here: " (by m))))
-    ;; the whole demand is gravity, with no decomposition surplus in it at all,
-    ;; which is what makes this posture the control for the desk ones below
-    (is (math/nearly= 0.0 (:task-decomposition-surplus-nm (by "longus_capitis")) 1e-12)
-        (str "no capitis surplus at a tipped-back head: " (by "longus_capitis")))
-    (is (math/nearly= (- (:moment-nm ao))
-                      (:task-load-nm (by "longus_capitis")) 1e-12)
-        "the flexion task's load is exactly the gravitational moment")))
+    ;; the load the row states is the joint's own gravitational moment, signed —
+    ;; there is no second task and no decomposition to add to it any more
+    (is (math/nearly= (:moment-nm ao) (:task-load-nm (by "longus_capitis")) 1e-12)
+        (str "the row states the joint's gravitational moment as its load, got "
+             (:task-load-nm (by "longus_capitis"))))
+    ;; and the equilibrium it belongs to is SATISFIED, which is the assertion the
+    ;; uncoupled model could not make about this joint at all
+    (is (math/nearly= 0.0 (get-in (by "longus_capitis")
+                                  [:coupled-residual-nm :atlanto-occipital])
+                      1e-9)
+        (str "the atlanto-occipital equilibrium holds: "
+             (:coupled-residual-nm (by "longus_capitis"))))))
 
-(deftest the-atlanto-occipital-flexion-load-is-gravity-and-not-the-surplus
-  ;; THE DECISION THIS BLOCK TURNS ON. `:over-supplied-nm` is two different things
-  ;; added together: the moment gravity applies when the head is tipped back, and
-  ;; the surplus the two capitis muscles leave because they were sized at C7 and
-  ;; solved without this joint's constraint. Only the first is a load on a person,
-  ;; and the flexion task is given only the first.
+(deftest the-coupled-solve-removes-the-manufactured-flexor-headline
+  ;; WHAT THESE TWO TESTS REPLACE. `the-atlanto-occipital-flexion-load-is-gravity-and-not-the-surplus`
+  ;; and `the-surplus-is-larger-than-the-flexors-that-would-carry-it` both existed
+  ;; to keep ONE number out of the report. `:over-supplied-nm` was two things added
+  ;; together — the moment gravity applies when the head is tipped back, and the
+  ;; surplus the two capitis muscles left because they were sized at C7 and solved
+  ;; without this joint's constraint — and charging the flexors the second put
+  ;; `longus_capitis` at 185% MVC at `laptop-on-lap` and made it the worst-loaded
+  ;; muscle in the whole report at all three reference workstations. A headline
+  ;; manufactured by a decomposition.
+  ;;
+  ;; The decomposition is gone: `recruit/solve` chooses the capitis forces with
+  ;; this joint's constraint in the problem, so there is no surplus to charge or
+  ;; withhold. What has to be checked is that the headline did not come back by
+  ;; another route — the flexors now DO carry, at every posture rather than only at
+  ;; a tipped-back head, and the question is how much.
   (doseq [w posture/reference-workstations]
     (let [p (posture/posture-from-workstation w)
-          ao (load/atlanto-occipital-moment
-              body p
-              (into {} (for [t (muscle/solve-muscle-tensions
-                                body p (suji.methods.load/solve-posture-loads body p))
-                             :when (load/capitis-groups (:group t))]
-                         [(:group t) (:force-n t)])))]
-      ;; the split is exact, by construction, and that is asserted rather than assumed
-      (is (math/nearly= (:over-supplied-nm ao)
-                        (+ (:gravitational-flexion-nm ao) (:decomposition-surplus-nm ao))
-                        1e-12)
-          (str (:name w) ": the two halves must sum to the whole: " ao))
-      (is (>= (:decomposition-surplus-nm ao) 0.0)
-          (str (:name w) ": a surplus is not negative: " ao))
-      ;; at every reference workstation the head is tipped FORWARD, so gravity asks
-      ;; the flexors for nothing and the whole of `:over-supplied-nm` is the model's
-      ;; own inconsistency
-      (is (math/nearly= 0.0 (:gravitational-flexion-nm ao) 1e-12)
-          (str (:name w) ": the head is tipped forward, so gravity asks the flexors "
-               "for nothing: " ao))
-      (is (pos? (:decomposition-surplus-nm ao))
-          (str (:name w) ": and the surplus is all of it: " ao))
-      ;; AND THE SOLVE IS WIRED TO THE GRAVITATIONAL HALF, which is the half of this
-      ;; claim the arithmetic above does not reach. Splitting the number and then
-      ;; handing the task the whole of `:over-supplied-nm` would satisfy every
-      ;; assertion so far and would put the flexors at 185% MVC — that was the first
-      ;; draft, and this is what catches it.
-      (let [tens (muscle/solve-muscle-tensions
-                  body p (suji.methods.load/solve-posture-loads body p))
-            by (into {} (map (juxt :name identity)) tens)
-            ;; the moment the flexors' ACTIVE forces actually produce. Passive
-            ;; tension is excluded because `recruit` subtracts it from the load
-            ;; before sharing, so it is not part of what the criterion placed.
-            placed (reduce + 0.0
-                           (for [m upper-cervical-flexors
-                                 :let [t (by m)]
-                                 :when (number? (:active-n t))]
-                             (* (:coeff t) (:active-n t))))]
-        (doseq [m upper-cervical-flexors]
-          (is (math/nearly= (:gravitational-flexion-nm ao) (:task-load-nm (by m)) 1e-12)
-              (str (:name w) " " m ": the row states the gravitational half as its "
-                   "load, got " (:task-load-nm (by m)))))
-        ;; and the SOLVE agrees with the row, which is the half the arithmetic
-        ;; above cannot reach: `:task-load-nm` is written by one expression and the
-        ;; share is done by another, so handing the share `:over-supplied-nm` while
-        ;; the row went on reporting the gravitational half would satisfy every
-        ;; assertion so far. That was the first draft and it put the flexors at
-        ;; 185% MVC. Verified 2026-09-08 by making exactly that change: this
-        ;; assertion reported `placed 3.5707, stated 0.0, surplus 3.5746`.
-        (is (math/nearly= (:gravitational-flexion-nm ao) placed 1e-9)
-            (str (:name w) ": the moment the flexors actually place must be the "
-                 "load the row states — placed " placed ", stated "
-                 (:gravitational-flexion-nm ao) ", surplus "
-                 (:decomposition-surplus-nm ao)))))))
+          loads (suji.methods.load/solve-posture-loads body p)
+          tens (muscle/solve-muscle-tensions body p loads)
+          by (into {} (map (juxt :name identity)) tens)
+          s (muscle/tension-summary tens loads)]
+      ;; the equilibrium the surplus used to measure the violation of
+      (is (math/nearly= 0.0 (get-in s [:coupled-residual-nm :atlanto-occipital]) 1e-9)
+          (str (:name w) ": the atlanto-occipital equilibrium is satisfied: "
+               (:coupled-residual-nm s)))
+      (is (math/nearly= 0.0 (get-in s [:coupled-residual-nm :c7]) 1e-9)
+          (str (:name w) ": and the cervicothoracic one at the same time: "
+               (:coupled-residual-nm s)))
+      ;; and the flexors are nowhere near the 185% assigning the surplus produced.
+      ;; Measured 2026-09-08 on a 70 kg / 1.70 m body: 9.94% for longus capitis at
+      ;; `laptop-on-lap`, and 11.23% is the worst anywhere in the sweep below.
+      (doseq [m upper-cervical-flexors]
+        (is (< (:mvc-pct (by m)) 20.0)
+            (str (:name w) " " m ": a coupled flexor force, not a decomposition "
+                 "error charged to a muscle — got " (:mvc-pct (by m)) " %MVC")))
+      (is (zero? (:over-mvc s)) (str (:name w) ": nothing is over MVC: " s))
+      ;; the worst muscle in the report is not one of them, which is the specific
+      ;; thing the old headline got wrong
+      (let [worst (apply max-key :mvc-pct (filter :mvc-pct tens))]
+        (is (not (contains? (set upper-cervical-flexors) (:name worst)))
+            (str (:name w) ": the worst-loaded muscle must not be an upper "
+                 "cervical flexor, got " (:name worst) " at " (:mvc-pct worst))))
+      ;; and the keys the manufactured headline was quoted in are gone rather than
+      ;; left behind holding a number that now means something else
+      (is (nil? (:atlanto-occipital-surplus-mvc-pct s))
+          "the surplus %MVC key is removed with the decomposition")
+      (is (not-any? :surplus-force-n tens)
+          "and so is the per-muscle surplus force"))))
 
-(deftest the-surplus-is-larger-than-the-flexors-that-would-carry-it
-  ;; WHY THE SURPLUS IS REPORTED AND NOT ASSIGNED, as a computation rather than as a
-  ;; sentence somebody has to remember to keep true.
+(deftest the-flexors-co-contract-and-the-size-of-it-is-the-finding
+  ;; THE BEHAVIOUR THAT CHANGED, stated as a sweep so one posture cannot stand for
+  ;; the model.
   ;;
-  ;; Assigning it was tried first. `longus_capitis` came out at 185% MVC at
-  ;; `laptop-on-lap`, 97% at `laptop-on-desk`, and the worst-loaded muscle in the
-  ;; whole report at all three reference workstations — a headline manufactured by a
-  ;; decomposition, which is the same thing `atlanto-occipital-moment` refused when
-  ;; it declined to charge the suboccipitals this joint's whole demand.
+  ;; WHAT THIS TEST USED TO ASSERT was an equivalence: the upper cervical flexors
+  ;; take active force in exactly the postures where the skull's centre of mass is
+  ;; behind the occipital condyles, and NOWHERE ELSE. That was true of the
+  ;; uncoupled model by construction — their task's load was the gravitational
+  ;; flexion moment, which is zero unless the head is tipped back — so the test was
+  ;; checking the wiring rather than the mechanics.
   ;;
-  ;; So the surplus is quoted in the units that make its size legible — %MVC of the
-  ;; muscles that would have to absorb it, through the same criterion — and over 100
-  ;; is the finding: the model's inconsistency at this joint is bigger than the
-  ;; anatomy that would have to carry it, so it is evidence about the decomposition
-  ;; and not about a neck.
-  (let [p (posture/posture-from-workstation posture/laptop-on-lap)
-        loads (suji.methods.load/solve-posture-loads body p)
-        tens (muscle/solve-muscle-tensions body p loads)
-        by (into {} (map (juxt :name identity)) tens)
-        s (muscle/tension-summary tens loads)]
-    (is (> (:atlanto-occipital-surplus-mvc-pct s) 100.0)
-        (str "the surplus exceeds what the flexors could produce: "
-             (:atlanto-occipital-surplus-mvc-pct s) " %MVC"))
-    ;; and it is NOT charged to anybody: no muscle is over MVC, and the worst
-    ;; muscle in the report is not one of the flexors
-    (is (zero? (:over-mvc s)) (str "nothing is over MVC at this posture: " s))
-    (doseq [m upper-cervical-flexors]
-      (is (< (or (:mvc-pct (by m)) 0.0) 1.0)
-          (str m " is not charged the surplus, got " (:mvc-pct (by m)) " %MVC")))
-    (is (> (:atlanto-occipital-surplus-mvc-pct s) (:max-mvc-pct s))
-        (str "the surplus would dominate every real load in this posture, which is "
-             "why it is reported rather than assigned: surplus "
-             (:atlanto-occipital-surplus-mvc-pct s) " vs worst muscle "
-             (:max-mvc-pct s)))))
-
-(deftest the-flexors-carry-only-where-gravity-flexes-the-head
-  ;; THE SWEEP, so the previous test's single posture cannot stand for the model.
-  ;; The claim is an equivalence and not a count: the upper cervical flexors take
-  ;; active force in exactly the postures where the skull's centre of mass is behind
-  ;; the occipital condyles, and nowhere else. A flexor that carried in a posture
-  ;; where gravity flexes the head the other way would be co-contraction the static
-  ;; optimum does not predict; one that carried in none would be decoration.
+  ;; It is FALSE of the coupled model, and the reason is worth stating rather than
+  ;; tuning away. Semispinalis and splenius capitis have a LARGER moment arm about
+  ;; the atlanto-occipital joint than about C7 (measured at `laptop-on-lap`: 26.8
+  ;; and 32.9 mm against 12.0 mm at C7, where the chord is on the cervical column's
+  ;; 12 mm wrapping radius). So any force they produce to hold C7 over-extends the
+  ;; joint above, and the cheapest way to close BOTH equilibria is a little
+  ;; flexor co-contraction. That is what a coupled Crowninshield–Brand optimum says
+  ;; given these arms; it is also a real phenomenon, and it is sensitive to the C7
+  ;; wrap radius, which is `:representative` — see the `:wrap` note on
+  ;; semispinalis_capitis in `attachment/muscles`.
   ;;
-  ;; Measured 2026-09-08 over a 365-posture sweep on a 70 kg / 1.70 m body: active
-  ;; in 40 of them, all of them head-tilt-negative, peaking at 37.59% MVC for
-  ;; longus capitis at head -15 deg with the trunk upright.
+  ;; SO THE CLAIM IS NOW ABOUT SIZE. Where gravity extends the head the flexors do
+  ;; real work; everywhere else they co-contract, and the co-contraction must stay
+  ;; small enough that it is not mistaken for a load on a person. Measured
+  ;; 2026-09-08 on a 70 kg / 1.70 m body over these 36 postures: 38.06% MVC at the
+  ;; most tipped-back head, 11.23% at the worst forward-head posture, and the
+  ;; 185% the assigned surplus produced is not reachable anywhere.
   (let [rows (for [hf [-15.0 -10.0 -5.0 0.0 5.0 15.0 30.0 45.0 60.0]
                    tf [0.0 5.0 20.0 45.0]]
                (let [p (posture/seated-posture :head-flexion-deg hf :trunk-flexion-deg tf)
@@ -1259,19 +1254,42 @@
                      by (into {} (map (juxt :name identity)) tens)]
                  {:hf hf :tf tf
                   :tilt (+ hf tf)
+                  :ao (get-in loads [:atlanto-occipital :moment-nm])
                   :active (reduce + 0.0 (map #(or (:active-n (by %)) 0.0)
                                              upper-cervical-flexors))
+                  :mvc (reduce max 0.0 (map #(or (:mvc-pct (by %)) 0.0)
+                                            upper-cervical-flexors))
+                  :resid (get-in (by "longus_capitis")
+                                 [:coupled-residual-nm :atlanto-occipital])
                   :refused (keep #(:refused (by %)) upper-cervical-flexors)}))
-        carrying (filter #(pos? (:active %)) rows)]
-    (is (seq carrying) "the flexors must carry somewhere")
-    (is (every? #(neg? (:tilt %)) carrying)
-        (str "they carry only where the head is tipped BACK: "
-             (mapv (juxt :hf :tf :tilt) carrying)))
-    (is (every? #(pos? (:active %)) (filter #(neg? (:tilt %)) rows))
-        (str "and they carry everywhere it is: "
-             (mapv (juxt :hf :tf :active) (filter #(neg? (:tilt %)) rows))))
+        tipped-back (filter #(neg? (:ao %)) rows)
+        forward (filter #(pos? (:ao %)) rows)]
+    ;; where gravity extends the head, they do real work — this half is unchanged
+    (is (seq tipped-back) "the sweep must contain postures with the head tipped back")
+    (is (every? #(pos? (:active %)) tipped-back)
+        (str "every tipped-back posture must load the flexors: "
+             (mapv (juxt :hf :tf :ao :active) (remove #(pos? (:active %)) tipped-back))))
+    ;; and where it flexes the head they co-contract — the half that changed
+    (is (every? #(pos? (:active %)) forward)
+        (str "a forward head co-contracts them, because the capitis muscles are "
+             "better levered at the joint above than at the one they are sized by: "
+             (mapv (juxt :hf :tf :ao :active) (remove #(pos? (:active %)) forward))))
+    ;; THE SIZE IS THE FINDING. A co-contraction of a few percent is a mechanical
+    ;; statement; one of 185% is a decomposition error wearing a muscle's name.
+    (is (< (reduce max 0.0 (map :mvc forward)) 15.0)
+        (str "forward-head co-contraction must stay small: worst "
+             (reduce max 0.0 (map :mvc forward)) " %MVC at "
+             (pr-str (apply max-key :mvc forward))))
+    (is (< (reduce max 0.0 (map :mvc rows)) 50.0)
+        (str "and the flexors are never near their limit anywhere in the sweep: "
+             (reduce max 0.0 (map :mvc rows)) " %MVC"))
+    ;; every one of those answers is an answer: the joint's equilibrium holds at
+    ;; all 36 postures, which the uncoupled model could not say at any of them
+    (is (every? #(< (math/abs* (or (:resid %) 1.0)) 1e-9) rows)
+        (str "the atlanto-occipital equilibrium must hold everywhere: "
+             (remove #(< (math/abs* (or (:resid %) 1.0)) 1e-9) rows)))
     ;; they are never REFUSED — a refusal would mean the model could not answer,
-    ;; and a placed load of zero is a different statement from that
+    ;; and a computed zero is a different statement from that
     (is (every? #(empty? (:refused %)) rows)
-        (str "an upper cervical flexor is never refused, only unasked: "
+        (str "an upper cervical flexor is never refused: "
              (remove #(empty? (:refused %)) rows)))))

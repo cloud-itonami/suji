@@ -16,8 +16,7 @@
   Numerics: sin/cos resolve on both hosts; degree conversion goes through
   suji.methods.math (Math/toRadians is JVM-only — see that ns).
   Records are kebab-keyword maps; joints kept as an ordered vector (Python list order)."
-  (:require [suji.methods.attachment :as attachment]
-            [suji.methods.math :as math]
+  (:require [suji.methods.math :as math]
             [suji.methods.pose :as pose]
             [suji.methods.posture :as posture]
             [suji.methods.segment :as segment]))
@@ -505,15 +504,8 @@
                (when (and standing base)
                  (<= (:back base) (first com-point) (:front base)))}}))
 
-(def capitis-groups
-  "The muscles solved in the C7 equilibrium that ALSO cross the atlanto-occipital
-  joint, because they insert on the occiput. There are exactly two, and they are
-  the reason `atlanto-occipital-moment` reports a residual rather than a demand."
-  #{"semispinalis_capitis" "splenius_capitis"})
-
 (defn atlanto-occipital-moment
-  "The static moment about the occipital condyles, and what is left of it for the
-  suboccipital muscles once the muscles already solved at C7 are counted.
+  "The static moment about the occipital condyles: the skull, about its own joint.
 
   IT DID NOT EXIST BEFORE 2026-09-07 AND IT COULD NOT HAVE. The joint did not
   exist: `head_neck` ran from C7 to the vertex as one body, so there was no free
@@ -529,99 +521,45 @@
   smaller — the skull is 80% of the complex but its lever about the condyles is a
   third of the complex's lever about C7.
 
-  THE RESIDUAL, AND WHY IT IS THE HONEST LOAD. Semispinalis capitis and splenius
-  capitis run from the thorax to the OCCIPUT, so they pull on this joint too; they
-  are solved in the C7 equilibrium because that is where they are the principal
-  actors, and `recruit`'s closed form takes one constraint, so a muscle belongs to
-  one task. Handing the suboccipitals the whole gravitational moment would charge
-  them for work those two are already doing. Measured 2026-09-07 at `laptop-on-lap`
-  on a 70 kg / 1.70 m body: the demand is 2.648 N·m and the two capitis muscles are
-  exerting 6.223 N·m here — 2.35 times it. Charging the whole demand made
-  `rectus_capitis_posterior_major` the worst-loaded muscle in the entire report at
-  51% MVC, which would have been a headline manufactured by a decomposition.
+  WHAT IT USED TO CARRY, AND WHY IT DOES NOT ANY MORE. Until 2026-09-08 this
+  function took a third argument, the forces of the two capitis muscles, and
+  returned a DECOMPOSITION: `:capitis-nm`, `:residual-nm`, `:over-supplied-nm`,
+  and a split of the last into a gravitational half and a decomposition half.
+  All of that existed for one reason — semispinalis capitis and splenius capitis
+  run from the thorax to the occiput, so they pull on this joint as well as on the
+  cervicothoracic junction where they were solved, and `recruit`'s closed form
+  takes ONE constraint, so a muscle had to belong to one task. Handing the
+  suboccipitals the whole gravitational moment would have charged them for work
+  those two were already doing; handing them the leftover charged them for
+  nothing, because the leftover was usually negative. At `laptop-on-lap` on a
+  70 kg / 1.70 m body the demand was 2.648 N·m and the two capitis muscles were
+  exerting 6.223 — 2.35 times it — and absorbing the 3.575 N·m surplus would have
+  cost 1.85 times every newton the modelled upper cervical flexors can produce.
 
-  SO THE RESIDUAL IS USUALLY NEGATIVE, AND THAT IS A RESULT RATHER THAN A BUG. The
-  big superficial extensors, sized by the load at C7, over-extend the joint above
-  them. `:over-supplied-nm` is that surplus, reported at every posture. The
-  suboccipitals are given `:residual-nm`, which is the surplus floored at zero, so
-  in an ordinary desk posture they carry nothing and the model says why.
+  `recruit/solve` satisfies this joint and the cervicothoracic junction at the
+  same time (see `muscle/coupled-groups`), so there is no leftover to hand
+  anybody: the forces that balance one balance the other, by construction. What
+  this function returns is the gravitational moment, which was always the honest
+  quantity — it is computed from the placed chain with no muscle force in it, so
+  it is free of every decomposition this model makes — and the muscle side of the
+  equilibrium is the solve's business. `muscle/tension-summary` reports the
+  residual as `:coupled-residual-nm`, which is zero to floating point.
 
-  ⚠ IT IS AN UNCOUPLED SOLVE AND THE SURPLUS IS AN ARTEFACT OF THAT, AND SINCE
-  2026-09-08 THAT IS MEASURED RATHER THAN SUSPECTED. A simultaneous solve over both
-  constraints would have chosen smaller capitis forces and non-zero suboccipital
-  ones. This model does not have one — the same limitation
-  `attachment/secondary-arm` states for the two-joint muscles of the leg.
-
-  THIS PARAGRAPH USED TO END: the model is short an upper cervical flexor, and
-  until it has one this joint's equilibrium cannot close from both sides. It has
-  two now — `longus_capitis` and `rectus_capitis_anterior`, in
-  `:atlanto-occipital-flexion` — and the equilibrium STILL does not close from both
-  sides, for a reason the flexors made visible rather than removed: carrying the
-  surplus would take 185% and 116% of what those two muscles can produce at
-  `laptop-on-lap`, 1.85 times the anatomy that would have to absorb it. So the
-  surplus is not a small residual that a missing muscle was hiding. It is a
-  decomposition error bigger than the muscles it is charged against, and what it
-  needs is a coupled solve and not another muscle.
-
-  That is why `:over-supplied-nm` is split below rather than handed to the flexors.
-
-  `capitis-forces` is `{muscle-name force-n}`; without it only the gravitational
-  terms are computed, because the demand does not depend on who carries it."
-  ([body posture] (atlanto-occipital-moment body posture nil))
-  ([body posture capitis-forces]
-   (let [p (pose/solve-pose body posture)
-         w (pose/segment-weights body p)
-         joint (get-in p [:joints :atlanto-occipital])
-         skull (pose/segments-on p ["head"])
-         m (pose/gravitational-moment joint (for [s skull] [s (get w (:name s))]))
-         capitis (reduce
-                  (fn [acc n]
-                    (let [f (get capitis-forces n)
-                          inst (attachment/instance n)]
-                      (if (and f (pos? f) inst)
-                        (+ acc (* f (or (attachment/moment-arm p (:stature-m body) inst joint)
-                                        0.0)))
-                        acc)))
-                  0.0
-                  capitis-groups)]
-     (cond-> {:joint "atlanto-occipital"
-              :moment-nm m
-              :skull-weight-n (reduce + 0.0 (map #(get w (:name %)) skull))
-              :note "the skull about the occipital condyles; no fitted lever"}
-       capitis-forces
-       (assoc :capitis-nm capitis
-              :residual-nm (max 0.0 (- m capitis))
-              :over-supplied-nm (max 0.0 (- capitis m))
-              ;; --- THE TWO HALVES OF THE FLEXION SIDE, SPLIT 2026-09-08 ---------
-              ;; `:over-supplied-nm` is one number made of two things that must not
-              ;; be spent alike, and until the joint had flexors nothing had to tell
-              ;; them apart because nothing could carry either.
-              ;;
-              ;; `:gravitational-flexion-nm` is what GRAVITY asks the flexors for:
-              ;; it is non-zero exactly when the skull's centre of mass sits BEHIND
-              ;; the occipital condyles, which is a head tipped back — looking up, or
-              ;; held against a headrest. It is computed from the placed chain with
-              ;; no muscle force in it, so it is free of every decomposition this
-              ;; model makes. At `head-flexion -15 deg` on a 70 kg / 1.70 m body it
-              ;; is 0.766 N·m and the capitis term is exactly zero.
-              ;;
-              ;; `:decomposition-surplus-nm` is the rest: the moment the two capitis
-              ;; muscles exert here IN EXCESS of what this joint's own gravity
-              ;; demands, which exists because they were sized by the equilibrium at
-              ;; C7 and `recruit`'s closed form takes one constraint. It is not a
-              ;; load on anybody. It is the size of this model's own inconsistency,
-              ;; and `muscle/solve-muscle-tensions` reports what carrying it WOULD
-              ;; cost the flexors rather than charging them for it — because the
-              ;; answer, measured 2026-09-08, is that carrying it takes 1.85x every
-              ;; newton the modelled flexors can produce. A surplus larger than the
-              ;; anatomy that would have to absorb it is evidence about the
-              ;; decomposition, not about a neck.
-              ;;
-              ;; The two sum to `:over-supplied-nm` by construction, which
-              ;; `the-atlanto-occipital-flexion-load-is-gravity-and-not-the-surplus`
-              ;; asserts rather than assumes.
-              :gravitational-flexion-nm (max 0.0 (- m))
-              :decomposition-surplus-nm (- (max 0.0 (- capitis m)) (max 0.0 (- m))))))))
+  A NEGATIVE MOMENT IS A FLEXION DEMAND and not an error: it means the skull's
+  centre of mass sits BEHIND the occipital condyles, which is a head tipped back —
+  looking up, or held against a headrest — and there the joint's flexors are the
+  ones with work to do. The coupled solve reads that off the sign; nothing has to
+  split it into two tasks any more."
+  [body posture]
+  (let [p (pose/solve-pose body posture)
+        w (pose/segment-weights body p)
+        joint (get-in p [:joints :atlanto-occipital])
+        skull (pose/segments-on p ["head"])
+        m (pose/gravitational-moment joint (for [s skull] [s (get w (:name s))]))]
+    {:joint "atlanto-occipital"
+     :moment-nm m
+     :skull-weight-n (reduce + 0.0 (map #(get w (:name %)) skull))
+     :note "the skull about the occipital condyles; no fitted lever"}))
 
 (defn solve-posture-loads
   "Full static inverse-dynamics solve for a posture (the RNEA gravity term).

@@ -361,6 +361,75 @@
       (recruit/share (map #(update % :coeff (fn [c] (when c (* flip c)))) cands)
                      (math/abs* load)))))
 
+(def coupled-groups
+  "The sets of equilibria this model solves SIMULTANEOUSLY, because a muscle in
+  one of them is also in another.
+
+  WHY THERE IS A TABLE HERE AT ALL. `recruit/share` distributes one load across
+  the muscles that can carry it, which is the right answer whenever a task's
+  muscles belong to that task and to nothing else. Most of them do. The ones that
+  do not are the two-joint muscles — rectus femoris and the hamstrings across hip
+  and knee, gastrocnemius across knee and ankle, semispinalis and splenius capitis
+  from the thorax to the occiput — and for those a per-task solve produces a force
+  that satisfies one equilibrium while silently violating another. This actor
+  measured the violation rather than hiding it (`:two-joint-unfed-nm`,
+  `:task-over-supplied-nm`) and the measurements were large: 3.63 N·m at the hip
+  in a deep squat, and at the head an over-supply of 3.57 N·m whose absorption
+  would have cost 1.85 times every newton the modelled upper cervical flexors can
+  produce. `recruit/solve` satisfies the whole group at once instead.
+
+  A GROUP IS A SET OF JOINTS AND THE TASKS THAT ACT ON THEM, and both halves are
+  needed: the joints are the constraints, and the tasks say which muscle instances
+  are candidates. `:paired?` means the joints are per-side, so the group is solved
+  twice — the two legs do not share a constraint, and solving them together would
+  let one leg's load be carried by the other's muscles.
+
+  WHAT IS NOT IN A GROUP IS NOT A GAP. A task whose muscles cross exactly one
+  joint has no coupling to represent, and `share`'s closed form is the exact
+  optimum for it — the same optimum `solve` would find, which
+  `recruit-test/the-coupled-solver-reproduces-the-closed-form` checks numerically.
+  The shoulder, the girdle, the elbow, the wrist, the trunk and the two
+  lateral-flexion tasks stay on `share` for that reason and their numbers do not
+  move."
+  [{:id :neck
+    :joints [:c7 :atlanto-occipital]
+    :tasks #{:cervical-extension :atlanto-occipital-extension :atlanto-occipital-flexion}
+    :paired? false
+    :why (str "semispinalis capitis and splenius capitis run from the thorax to "
+              "the occiput, so the force that balances the cervicothoracic "
+              "junction is the same force that acts on the atlanto-occipital "
+              "joint above it")}
+   {:id :lower-limb
+    :joints [:hip :knee :ankle]
+    :tasks #{:hip-extension :knee-extension :ankle-plantarflexion}
+    :paired? true
+    :why (str "rectus femoris and the hamstrings span hip and knee and "
+              "gastrocnemius spans knee and ankle, so the three joints of one leg "
+              "are one equilibrium and not three")}])
+
+(defn- resolve-joint
+  "A group's joint key at this side: `:hip` → `:hip/left` for a paired group."
+  [group side joint]
+  (if (:paired? group) (keyword (name joint) (name side)) joint))
+
+(defn- group-candidates
+  "The muscle instances a coupled group distributes over, with their SIGNED moment
+  arm at each of the group's joints they span.
+
+  `attachment/coupled-arms` and not `attachment/arms`: a coupled group is one
+  solve over several equilibria, so there is one sign convention across the whole
+  constraint matrix — see that function for why `task-sense` cannot survive into
+  it."
+  [p stature-m lens opts group joints side]
+  (vec (for [m attachment/instances
+             :when (and (contains? (:tasks group) (:task m))
+                        (or (nil? side) (= side (:side m))))]
+         {:name (:name m)
+          :primary (:acts-about m)
+          :f-max-n (f-max-of m lens opts)
+          :passive-n (passive-of m lens opts)
+          :coeffs (attachment/coupled-arms p stature-m m joints)})))
+
 (defn- ->tension
   "Attach %MVC to one shared result. A refusal stays a refusal — there is no
   %MVC for a force this model declined to compute.
@@ -406,77 +475,49 @@
         by-joint (into {} (map (juxt :joint identity)) (:joints loads))
         side-load (fn [n side] (get-in by-joint [n :per-side side] 0.0))
         shoulder-per-side (:per-side (joint "shoulder"))
-        ;; THE C7 EQUILIBRIUM IS SOLVED FIRST AND ON PURPOSE. Two of its muscles,
-        ;; semispinalis capitis and splenius capitis, insert on the occiput and
-        ;; therefore also pull on the atlanto-occipital joint; the suboccipital
-        ;; equilibrium below is given what is LEFT of that joint's moment once
-        ;; their contribution is counted, not the whole of it. Every other task in
-        ;; this list is independent of every other, and these two are not, so the
-        ;; order is stated here rather than left to the shape of a `concat`.
-        cervical-shared (recruit/share (candidates :cervical-extension nil coeffs)
-                                       (get-in loads [:cervical :extensor-moment-nm]))
-        ao (load/atlanto-occipital-moment
-            body posture
-            (into {} (for [x cervical-shared
-                           :when (contains? load/capitis-groups (:name x))]
-                       [(:name x) (:force-n x)])))
-        ;; the flexors, solved twice against two different loads. The first is the
-        ;; answer; the second is never emitted as a force and exists only so the
-        ;; surplus can be quoted in %MVC on the rows below. Sharing the SAME
-        ;; candidates through the SAME criterion is what makes the comparison mean
-        ;; anything — a surplus divided by a hand-picked moment arm would not.
-        ao-flexors (candidates :atlanto-occipital-flexion nil coeffs)
-        ao-flexion (recruit/share ao-flexors (:gravitational-flexion-nm ao))
-        ao-surplus-share
-        (into {} (for [x (recruit/share ao-flexors (:decomposition-surplus-nm ao))
-                       :when (number? (:force-n x))]
-                   [(:name x) (:force-n x)]))
+        ;; THE NECK IS ONE EQUILIBRIUM AND NOT THREE, since 2026-09-08. Two of the
+        ;; C7 muscles — semispinalis capitis and splenius capitis — insert on the
+        ;; occiput and therefore pull on the atlanto-occipital joint as well, so
+        ;; the force that balances one of those joints is the same force that
+        ;; appears at the other. That used to be handled by ORDER: C7 was solved
+        ;; first and the atlanto-occipital joint was handed what was left of its
+        ;; moment once the capitis contribution was subtracted. The leftover was
+        ;; usually NEGATIVE — the big superficial extensors, sized by the load at
+        ;; C7, over-extended the joint above them by 3.57 N·m at `laptop-on-lap` —
+        ;; and no ordering can fix that, because it is not an ordering problem: the
+        ;; two constraints have to be satisfied at the same time by one choice of
+        ;; forces. `recruit/solve` does that. There is no first equilibrium here
+        ;; any more.
+        ao (load/atlanto-occipital-moment body posture)
+        neck-group (first (filter #(= :neck (:id %)) coupled-groups))
+        neck (recruit/solve
+              (group-candidates p (:stature-m body) lens opts neck-group
+                                (:joints neck-group) nil)
+              [[:c7 (get-in loads [:cervical :extensor-moment-nm])]
+               [:atlanto-occipital (:moment-nm ao)]])
+        ;; AND SO IS ONE LEG. rectus femoris and the hamstrings span hip and knee,
+        ;; gastrocnemius spans knee and ankle; the three joints of one leg are one
+        ;; equilibrium. The two legs are NOT — they share no muscle — so the group
+        ;; is solved once per side, and solving them together would let one leg's
+        ;; load be carried by the other leg's muscles.
+        limb-group (first (filter #(= :lower-limb (:id %)) coupled-groups))
+        limb (into {}
+                   (for [side [:left :right]
+                         :let [js (mapv #(resolve-joint limb-group side %)
+                                        (:joints limb-group))]]
+                     [side (recruit/solve
+                            (group-candidates p (:stature-m body) lens opts
+                                              limb-group js side)
+                            (mapv vector js [(side-load "hip" side)
+                                             (side-load "knee" side)
+                                             (side-load "ankle" side)]))]))
         task-list
         (concat
-         [[[:cervical-extension :midline] cervical-shared]
-          ;; THE ATLANTO-OCCIPITAL EQUILIBRIUM, new on 2026-09-07 and the one the
-          ;; cervical split exists to make possible. Its load is `:residual-nm` —
-          ;; see `load/atlanto-occipital-moment` for why that is the honest number
-          ;; and for what its usually being zero means. A zero load IS a placed
-          ;; load: the suboccipitals come back at 0 N rather than refused, which is
-          ;; the difference between "nothing is asked of them here" and "this model
-          ;; could not answer".
-          [[:atlanto-occipital-extension :midline]
-           (recruit/share (candidates :atlanto-occipital-extension nil coeffs)
-                          (:residual-nm ao))]
-          ;; THE OTHER SIDE OF THAT JOINT, new on 2026-09-08 — the flexors the
-          ;; suboccipital extensors above had none of.
-          ;;
-          ;; ITS LOAD IS GRAVITY AND NOT `:over-supplied-nm`, and that is the whole
-          ;; decision. The flexion side of this joint is two different things added
-          ;; together (see `load/atlanto-occipital-moment`): the moment gravity
-          ;; applies when the skull's centre of mass sits behind the condyles — a head
-          ;; tipped back, or held against a headrest — and the surplus the two capitis
-          ;; muscles leave because they were sized at C7 and solved without this
-          ;; joint's constraint. Only the first is a load on a person.
-          ;;
-          ;; Assigning the second was tried first and rejected on the measurement.
-          ;; With it, `longus_capitis` came out at 185% MVC at `laptop-on-lap`, 97% at
-          ;; `laptop-on-desk` and the WORST-LOADED MUSCLE IN THE WHOLE REPORT at all
-          ;; three reference workstations — a headline manufactured by a
-          ;; decomposition, which is the same thing `atlanto-occipital-moment` refused
-          ;; when it declined to charge the suboccipitals the joint's whole demand.
-          ;; A muscle cannot be shown carrying 1.85 times what it can produce as
-          ;; though that were a finding about a posture.
-          ;;
-          ;; The surplus is not hidden by that. It is REPORTED, and for the first
-          ;; time in muscle terms: every flexor row carries `:surplus-force-n` and
-          ;; `:surplus-mvc-pct`, which is what THIS muscle would have to produce if
-          ;; the surplus were assigned, by the same criterion. That converts a moment
-          ;; nobody could size into the statement that the model's own inconsistency
-          ;; is larger than the anatomy that would have to absorb it.
-          ;;
-          ;; IT IS TWO TASKS RATHER THAN ONE SIGNED ONE ON PURPOSE. `share-signed`
-          ;; refuses the idle side as an antagonist; two complementary loads leave
-          ;; the idle side with a PLACED load of zero, which is the distinction
-          ;; `load/atlanto-occipital-moment` exists to keep — 0 N because nothing is
-          ;; asked here, not 0 N because the model could not answer.
-          [[:atlanto-occipital-flexion :midline] ao-flexion]
+         ;; THE NECK, as one entry: three tasks and two constraints solved
+         ;; together. Keeping them as three separate rows here would put three
+         ;; keys on one solve and let a consumer ask `was the atlanto-occipital
+         ;; task carried` about something that is not a task any more.
+         [[[:coupled :neck] (:entries neck)]
           [[:trunk-extension :midline]
            (recruit/share (candidates :trunk-extension nil coeffs)
                           (:moment-nm (joint "lumbosacral")))]
@@ -499,21 +540,19 @@
                       [[:wrist-flexion side]
                        (share-signed (candidates :wrist-flexion side coeffs)
                                      (side-load "wrist" side))]
-                      ;; the lower limb. All three are mirror-paired antagonist
-                      ;; tasks like the elbow and the wrist — one side of the joint
-                      ;; resists and the other is its antagonist — so they share
-                      ;; through `share-signed` and the SIGN of the load decides
-                      ;; which. That sign is the whole difference between standing
-                      ;; and squatting at the knee.
-                      [[:hip-extension side]
-                       (share-signed (candidates :hip-extension side coeffs)
-                                     (side-load "hip" side))]
-                      [[:knee-extension side]
-                       (share-signed (candidates :knee-extension side coeffs)
-                                     (side-load "knee" side))]
-                      [[:ankle-plantarflexion side]
-                       (share-signed (candidates :ankle-plantarflexion side coeffs)
-                                     (side-load "ankle" side))]
+                      ;; THE LOWER LIMB, as ONE entry per side. Until 2026-09-08
+                      ;; these were three `share-signed` calls, one per joint,
+                      ;; and the sign of each joint's load picked which side of
+                      ;; that joint resisted. That is exact for a one-joint
+                      ;; muscle and wrong for the three that are not: rectus
+                      ;; femoris solved at the knee was simultaneously flexing a
+                      ;; hip whose equilibrium had not been told, by 3.63 N·m in
+                      ;; a deep squat. `recruit/solve` decides all three joints
+                      ;; and both sides of each of them at once, so there is no
+                      ;; per-joint sign to read — the sign lives in the loads and
+                      ;; in the moment arms, and the solve's own active set says
+                      ;; which muscles are on.
+                      [[:coupled :lower-limb side] (:entries (get limb side))]
                       [[:shoulder-abduction side]
                        (share-signed (candidates :shoulder-abduction side coeffs)
                                      (get-in loads [:frontal :shoulder-per-side side] 0.0))]]]
@@ -534,16 +573,29 @@
                             (for [[_ shared] task-results
                                   :when (recruit/carried? shared)
                                   x shared]
-                              (:name x)))]
+                              (:name x)))
+        ;; WHICH COUPLED GROUP EACH INSTANCE WAS SOLVED IN, so a row can say what
+        ;; its answer was answered WITH. A muscle solved inside a group carries the
+        ;; group's residual and its convergence, because those are properties of
+        ;; the solve and not of the muscle, and a consumer that cannot see them
+        ;; cannot tell a satisfied equilibrium from an unsatisfied one.
+        group-of (into {}
+                       (concat
+                        (for [e (:entries neck)] [(:name e) [:neck neck]])
+                        (for [side [:left :right], e (:entries (get limb side))]
+                          [(:name e) [:lower-limb (get limb side)]])))]
     (mapv (fn [n]
             (let [inst (instance-by n)
                   t (->tension (get results n))
-                  ;; A TWO-JOINT MUSCLE'S OTHER JOINT. It was solved in one
-                  ;; equilibrium and is simultaneously pulling on a second one that
-                  ;; was not told about it — see `attachment/secondary-arm`.
-                  ;; Reporting the moment makes the size of that approximation
-                  ;; visible at every posture; leaving it out would make a coupled
-                  ;; model and an uncoupled one produce identical output.
+                  [gid gres] (get group-of n)
+                  gjoints (:joints gres)
+                  ;; A TWO-JOINT MUSCLE'S OTHER JOINT. Inside a coupled group it
+                  ;; is one of the constraints that were solved, and the row says
+                  ;; so with `:secondary-fed?`; outside one it is a moment the
+                  ;; model computed and no equilibrium was told about, which is
+                  ;; what `:two-joint-unfed-nm` totals. Reporting the moment either
+                  ;; way is what makes the difference between the two visible
+                  ;; rather than a claim.
                   sec-arm (attachment/secondary-arm p (:stature-m body) inst)]
               (merge (select-keys inst [:group :side :task :ligament?])
                      (when (:ligament? inst)
@@ -551,44 +603,29 @@
                                     inst (get lens (:name inst)) (get opts (:name inst)))})
                      t
                      (when (and sec-arm (:crosses inst))
-                       {:crosses-joint (get-in inst [:crosses :joint])
-                        :secondary-arm-m sec-arm
-                        :secondary-moment-nm (when (number? (:force-n t))
-                                               (* sec-arm (:force-n t)))})
-                     ;; THE SAME CONFESSION, FOR THE OTHER UNCOUPLED JOINT. A
-                     ;; suboccipital gets the residual at the atlanto-occipital
-                     ;; joint, and the residual is usually zero because the two
-                     ;; capitis muscles solved at C7 over-supply that joint. A
-                     ;; muscle reporting 0 N with no reason beside it is
-                     ;; indistinguishable from a muscle nobody thought about, so
-                     ;; the reason travels with it — see
-                     ;; `load/atlanto-occipital-moment`.
-                     (when (#{:atlanto-occipital-extension :atlanto-occipital-flexion}
-                            (:task inst))
-                       (let [flexor? (= :atlanto-occipital-flexion (:task inst))]
-                         (cond->
-                          {:task-load-nm (if flexor?
-                                           (:gravitational-flexion-nm ao)
-                                           (:residual-nm ao))
-                           :task-over-supplied-nm (:over-supplied-nm ao)
-                           ;; the two halves of `:over-supplied-nm`, so a consumer
-                           ;; cannot read a decomposition error as a load
-                           :task-gravitational-flexion-nm (:gravitational-flexion-nm ao)
-                           :task-decomposition-surplus-nm (:decomposition-surplus-nm ao)}
-                           ;; WHAT THE SURPLUS WOULD COST THIS MUSCLE, on the rows of
-                           ;; the muscles it would fall on. Not a force it is
-                           ;; producing — `:force-n` is the answer — and deliberately
-                           ;; not folded into `:mvc-pct`, so nothing downstream ranks,
-                           ;; bands or doses a body by a number this model does not
-                           ;; claim.
-                           flexor?
-                           (merge
-                            (let [f (get ao-surplus-share n)
-                                  fmax (f-max-of inst lens opts)]
-                              (when (number? f)
-                                {:surplus-force-n f
-                                 :surplus-mvc-pct (when (and fmax (pos? fmax))
-                                                    (/ (* 100.0 f) fmax))}))))))
+                       (let [j (get-in inst [:crosses :joint])]
+                         {:crosses-joint j
+                          :secondary-arm-m sec-arm
+                          :secondary-moment-nm (when (number? (:force-n t))
+                                                 (* sec-arm (:force-n t)))
+                          ;; TRUE when that second joint was one of the constraints
+                          ;; this muscle's own solve satisfied. It is the whole
+                          ;; difference between a coupled answer and an uncoupled
+                          ;; one, and it is a lookup rather than a claim.
+                          :secondary-fed? (boolean (some #{j} gjoints))}))
+                     ;; WHAT THIS ROW'S ANSWER WAS ANSWERED WITH. Present only on
+                     ;; the rows a coupled group solved.
+                     (when gid
+                       {:coupled-group gid
+                        :coupled-joints gjoints
+                        :coupled-converged? (boolean (:converged? gres))
+                        ;; the equilibrium error at every joint of the group,
+                        ;; against the ORIGINAL loads and counting passive tension.
+                        ;; Zero to floating point when it converged — and the point
+                        ;; of carrying it is that a consumer can check rather than
+                        ;; believe.
+                        :coupled-residual-nm (recruit/coupled-residual gres)
+                        :task-load-nm (get (:raw-loads gres) (:acts-about inst))})
                      (when (and (:refused t) (contains? carried-names n))
                        {:antagonist? true}))))
           emit-order)))
@@ -609,19 +646,36 @@
                      straight-line model with no wrapping surface. Fixed by
                      wrapping surfaces, not by more muscles.
     :antagonists     a mirror-paired task's other side, refused because a static
-                     optimum does not co-contract. NOT a gap.
+                     optimum does not co-contract. NOT a gap. Only the tasks still
+                     on `share` produce these; a coupled group answers for every
+                     muscle it can price — see `:inactive`.
+    :inactive        a muscle a COUPLED group switched off: force 0 N, %MVC 0, and
+                     the reason is its KKT price. Neither a gap nor a refusal — the
+                     model computed the force and it is zero, which is a different
+                     statement from declining to compute it.
     :over-mvc        the load was placed, and placing it needs more force than the
                      muscle can produce. Also not a gap — a finding.
     :two-joint-unfed-nm
                      per joint, the total moment two-joint muscles are exerting
-                     there which that joint's equilibrium was NOT given. This is
-                     the one approximation the lower limb makes and cannot remove:
-                     a muscle spanning two joints appears in two equilibria at
-                     once, and `recruit`'s closed form solves ONE constraint. See
-                     `attachment/secondary-arm`. It is not a refusal and not a gap
-                     in coverage — the load WAS placed — it is a statement of how
-                     far the uncoupled answer could be from a coupled one, at this
-                     posture, in newton-metres.
+                     there which NO equilibrium in this model was given. Until
+                     2026-09-08 that was every second joint — `recruit`'s closed
+                     form solves one constraint, so a muscle spanning two appeared
+                     in two equilibria and was told about one — and it reached
+                     3.63 N·m at the hip in a deep squat. `recruit/solve` now
+                     satisfies the hip, the knee and the ankle of one leg together
+                     and the two neck joints together, so those are fed and are
+                     NOT counted here. What is left is the joints this model has no
+                     equilibrium for at all: today that is `:c2c3`, which
+                     `longus_capitis` crosses and where nothing is solved because
+                     nothing can be — see
+                     `spine-test/nothing-is-solved-at-c2c3-and-the-reason-is-provenance`.
+    :coupled-residual-nm
+                     per joint, Σ c_i F_i − T after the coupled solve, against the
+                     original loads and counting passive tension. Zero to floating
+                     point when every group converged. It is the check that the
+                     coupled answer is an answer: an unconverged group refuses (see
+                     `:refused`), and a converged one has to be able to show that
+                     the equilibria it claims to have satisfied are satisfied.
 
   Frontal-plane loads used to appear here as `:unassigned-frontal-nm`, because
   this actor had no frontal-plane musculature at all. It has since 2026-09-06."
@@ -634,35 +688,46 @@
               ;; optimum rather than an unanswered load
               :refused (count (remove :antagonist? (filter :refused tensions)))
               :antagonists (count (filter :antagonist? tensions))
+              ;; NOT A GAP AND NOT AN ANTAGONIST, and it needs its own count
+              ;; because it is neither. A muscle in a coupled group that the
+              ;; optimum switched off is ANSWERED — force 0, %MVC 0 — so it does
+              ;; not appear in `:refused`, and `:antagonist?` is kept for the
+              ;; refusals it has always meant. Without this line the number of
+              ;; muscles doing nothing would simply have fallen out of the summary
+              ;; when the lower limb and the neck stopped refusing their idle
+              ;; sides: 11 antagonists at `laptop-on-lap` became 4, and the other
+              ;; seven went nowhere visible.
+              :inactive (count (filter :inactive? tensions))
               :over-mvc (count (over-mvc tensions))
               :complete? (not-any? #(and (:refused %) (not (:antagonist? %))) tensions)
               :max-mvc-pct (let [xs (keep :mvc-pct tensions)] (when (seq xs) (apply max xs)))}
        frontal (assoc :frontal frontal)
-       ;; the atlanto-occipital joint's surplus, carried on the suboccipital rows
-       ;; by `solve-muscle-tensions`. It is the same class of statement as
-       ;; `:two-joint-unfed-nm` — a moment one equilibrium is exerting on another
-       ;; that was not told about it — and it is surfaced here so a consumer does
-       ;; not have to know which muscles to look at to find it.
-       (some :task-over-supplied-nm tensions)
-       (assoc :atlanto-occipital-over-supplied-nm
-              (reduce max 0.0 (keep :task-over-supplied-nm tensions))
-              ;; THE SURPLUS, SIZED AGAINST THE ANATOMY THAT WOULD HAVE TO ABSORB IT.
-              ;; The moment above says how big this model's inconsistency at the
-              ;; atlanto-occipital joint is; this says what it would cost to make it
-              ;; go away. Over 100 means the decomposition error exceeds every newton
-              ;; the modelled upper cervical flexors can produce, which is why the
-              ;; surplus is reported here rather than assigned to them — see
-              ;; `solve-muscle-tensions`. It is NOT counted in `:max-mvc-pct` and NOT
-              ;; counted in `:over-mvc`: no muscle is producing it.
-              :atlanto-occipital-surplus-mvc-pct
-              (let [xs (keep :surplus-mvc-pct tensions)] (when (seq xs) (apply max xs))))
        true (assoc :two-joint-unfed-nm
                    (reduce (fn [m t]
-                             (if-let [j (:crosses-joint t)]
-                               (update m j (fnil + 0.0) (or (:secondary-moment-nm t) 0.0))
+                             ;; `:secondary-fed?` and not `:crosses-joint`: a
+                             ;; two-joint muscle inside a coupled group HAS its
+                             ;; second joint in the equilibrium that was solved, so
+                             ;; counting it here would report a satisfied
+                             ;; constraint as an unfed one. Measured 2026-09-08:
+                             ;; counting by `:crosses-joint` alone reported the
+                             ;; deep squat's hip as 3.63 N·m unfed while
+                             ;; `:coupled-residual-nm` said the same joint was
+                             ;; balanced to 6e-14.
+                             (if (and (:crosses-joint t) (not (:secondary-fed? t)))
+                               (update m (:crosses-joint t) (fnil + 0.0)
+                                       (or (:secondary-moment-nm t) 0.0))
                                m))
                            {}
-                           tensions))))))
+                           tensions)
+                   :coupled-residual-nm
+                   (reduce (fn [m t] (merge m (:coupled-residual-nm t))) {} tensions)
+                   ;; a group that did not converge does not report forces at all —
+                   ;; every one of its members is refused — so this is the count of
+                   ;; the ROWS that landed in one, not a second refusal channel
+                   :coupled-not-converged
+                   (count (filter #(and (contains? % :coupled-converged?)
+                                        (not (:coupled-converged? %)))
+                                  tensions)))))))
 
 (defn numeric-mvc?
   "Does this entry have a %MVC at all?
