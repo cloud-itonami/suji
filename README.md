@@ -60,6 +60,132 @@ Technology International* 25 (the "60-lb tech-neck" study): neutral ≈ head wei
 60° flexion. `src/suji/methods/test_load.cljc::test_reproduces_hansraj_table` asserts the multipliers track the
 published table (0°→1× … 60°→5×) within 10%.
 
+## The lumbar spine against the literature — and it disagrees
+
+The lumbar spine is the most-measured structure in this field, so unlike almost
+everything else this actor computes, the per-level profile can be made to answer
+to a number somebody actually recorded. `spine/lumbar-cross-check` does that.
+**The answer is that the model disagrees with the measurement, and this section
+exists to say so rather than to announce a validation.**
+
+### What the measurement is
+
+Wilke, Neef, Caimi, Hoogland & Claes, "New in vivo measurements of pressures in
+the intervertebral disc in daily life", *Spine* 1999;24(8):755–762 — a pressure
+transducer implanted in the **L4/L5 nucleus of one living volunteer**, 45 years
+old, **70 kg, 1.68 m**, disc cross-sectional area **1800 mm²**, telemetered across
+a day of ordinary postures. Full text read at
+<https://www.fonar.com/pdf/spine_vol_24.No.8.pdf>.
+
+Four of its Table 1 entries are carried in `spine/lumbar-references`. **Only one of
+them is comparable**, and the other three say why not:
+
+| Wilke Table 1 (p.757) | pressure | comparable? |
+|---|---|---|
+| sitting relaxed, without backrest | **0.46 MPa** (0.45–0.50, p.758) | **yes** — p.758 also states the posture: "Relaxed sitting on a stool with a **normally straight back**" |
+| sitting with maximum flexion | 0.83 MPa | no — the paper gives the pressure but **not the trunk angle** |
+| standing, bent forward | 1.10 MPa | no — same, no angle |
+| relaxed standing | 0.50 MPa (0.48–0.50) | no — **this model cannot stand.** Its base is the pelvis and it has no thigh segment, so it returns the same force for standing and sitting; Wilke measures them apart (0.50 vs 0.46) |
+
+Refusing the last three is the point. To compare against "maximum flexion" the
+model would have to **choose** a trunk angle, and choosing it is exactly the move
+that turns a validation into a fit. Those entries keep the published pressure —
+a real number, worth having — and return `:could-not-obtain` with the reason.
+
+### A pressure is not a force
+
+Wilke measured **megapascals in a nucleus**. This model computes **newtons through
+a joint**. Getting from one to the other requires a conversion, and the conversion
+is a modelling assumption, not a measurement:
+
+> **Nachemson's pressure index.** Nachemson, "Measurement of Intradiscal Pressure",
+> *Acta Orthopaedica Scandinavica* XXVIII:269–289 (full text read at
+> <https://actaorthop.org/actao/article/download/30762/35650/84307>) measured, in
+> vitro, the quotient between the pressure recorded in the nucleus and the pressure
+> applied to the whole disc, and named it the pressure index: `I = Pn / (P / Ad)`,
+> hence **`force = pressure × disc area ÷ I`** (definition p.282, formula p.285).
+> For **normal** lumbar discs Table 5 (p.281) gives **L1 1.6, L2 1.7, L3 1.5,
+> L4 1.7** — so **1.5 to 1.7**, and the prose at p.285 uses 1.5.
+
+**It is an assumption.** The index was measured on cadaver discs under pure axial
+load; using it on an in-vivo pressure assumes the same proportionality holds in a
+living spine that is also being squeezed by its own muscles. Wilke's paper performs
+no such conversion and does not endorse one. So the 1.5–1.7 spread is propagated
+into the reference's own spread rather than hidden behind the single number, and
+`nachemson-pressure-index` is a separate, documented value that a caller can
+disagree with by passing a different one.
+
+### The disagreement
+
+Reference, from the two published sources above and nothing else:
+
+```
+0.46 MPa × 1800 mm² ÷ 1.5  =  552 N        (the point value)
+0.45 MPa × 1800 mm² ÷ 1.7  =  476 N        (low: Wilke's low pressure, Nachemson's high index)
+0.50 MPa × 1800 mm² ÷ 1.5  =  600 N        (high: the other way round)
+```
+
+**The model reads about 351 N** at that posture on Wilke's own body — **below the
+reference's own spread, at roughly two thirds of the measured value** (measured
+2026-09-07; the model side moves whenever the muscle set moves, which is why
+`spine-test` pins the ratio into 0.5–0.8 rather than to a number, and why you
+should ask rather than quote):
+
+```clojure
+(spine/lumbar-cross-check)
+;; => {:model-force-n … :reference-force-n … :reference-force-range-n […]
+;;     :ratio … :within-reference-spread? false :direction :model-below-reference
+;;     :validated :reference :model-validated? false}
+```
+
+`:validated :reference` is the counterpart of `cervical-cross-check`'s
+`:validated :lumped`, and it points the other way: **there the validated side was
+this actor's own model; here it is the literature.** The profile is the unvalidated
+side in both.
+
+### Why it is short, named rather than fixed
+
+At zero trunk flexion this model's extensor moment is zero, so its tissue term is
+**exactly zero** and the whole 351 N is the weight stacked above L4/L5 — nothing
+else. A real spine at rest is not unloaded: it has lordosis, resting muscle tone
+and intra-abdominal pressure, and `spine.cljc`'s own docstring already says it has
+none of the three ("There is no curvature: the model's spine is two straight
+segments"). `the-disagreement-is-the-absent-tissue-term-not-the-weight` asserts
+that decomposition, so the explanation is a computation rather than a story.
+
+**The model was not tuned to close the gap.** A fudge factor of 1.57 would make
+this section read like a validation and would be worth nothing.
+
+### The NIOSH scale
+
+`spine/niosh-compression-comparison` places an L5/S1 force on the published
+occupational **design** scale. Not a validation, and not about anybody — it is one
+newton compared to another (G1).
+
+NIOSH states these in **kilogram-force**, not newtons. *Work Practices Guide for
+Manual Lifting*, DHHS (NIOSH) 81-122, 1981, p.36 (full text read at
+<https://stacks.cdc.gov/view/cdc/209417/cdc_209417_DS1.pdf>; scanned, no text
+layer): "jobs which place more than **650 kg** compressive force on the low-back
+are hazardous to all but the healthiest of workers. In terms of a specification
+for design a much lower level of **350 kg** or lower should be viewed as an upper
+limit." The familiar **3400 N and 6400 N are those two figures times g**
+(3432 N and 6374 N), and the 1993 revision quotes the lower one directly as
+"3·4 kN (770 lbs)" and keeps it (Waters, Putz-Anderson, Garg & Fine, *Ergonomics*
+1993;36(7):749–776, Table 1 p.751 and §3.4 p.755; full text read at
+<https://stacks.cdc.gov/view/cdc/205542/cdc_205542_DS1.pdf>). The labels "action
+limit" and "maximum permissible limit" are commonly attached to these two numbers;
+the pages read here do not use those words for them, so this repo does not either.
+
+### What could not be obtained
+
+**Schultz, Andersson, Örtengren, Haderspeck & Nachemson (1982), "Loads on the
+lumbar spine", *J Bone Joint Surg Am* 64(5):713–720** — the EMG-and-model lumbar
+compression estimates. PubMed, Europe PMC, Semantic Scholar and the publisher all
+returned a consent page, a navigation shell or a paywall rather than the abstract.
+A search engine returned a *paraphrase* of the abstract; **that is not a source
+that was read, so none of its numbers appear anywhere in this repo.** The entry is
+missing, not filled in.
+
 ## Isaac Sim / kami-genesis
 
 `wire/wit/kami-biomech.wit` is the articulation contract a kami-genesis `PlanarChain` / nv-compat
@@ -99,9 +225,9 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 150 tests / 4218 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 134 tests /  749 assertions
-clojure -M:lint                                   # 0 errors
+clojure -M:test                                   # JVM   — 159 tests / 4276 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 143 tests /  807 assertions
+clojure -M:lint                                   # 0 errors (14 pre-existing warnings)
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
 
@@ -276,14 +402,19 @@ every muscle force crossing it, and divides by that level's disc area — becaus
 disc's tolerance is a stress, and 500 N through a cervical disc and 500 N through
 a lumbar one are not the same event.
 
-The muscle term dominates: at L5/S1 in the laptop-on-lap posture it is 612 N
-against 346 N of weight, because an extensor works at a short moment arm and all
-of the force it needs presses the joint together.
+The tissue term dominates: at L5/S1 in the laptop-on-lap posture it is 605 N —
+483 N of muscle and 122 N of ligament — against 346 N of weight, because an
+extensor works at a short moment arm and all of the force it needs presses the
+joint together. (Measured 2026-09-07. This paragraph said "the muscle term … is
+612 N", which was the figure from before the tissue term was split; the split
+made the sentence name the wrong structure as well as the wrong number.)
 
 ⚠ **The level profile is NOT validated and disagrees with the leg that is.** At the
 cervical spine it disagrees with the Hansraj-calibrated lumped model by roughly a
 factor of two, because it uses the muscle's geometric moment arm rather than an
-effective lever fitted to the published table.
+effective lever fitted to the published table. At the lumbar spine it now has a
+published measurement to answer to, and it disagrees with that too — in the other
+direction. See **The lumbar spine against the literature** below.
 
 **The ratio is not written here on purpose.** It moves whenever the muscle set
 moves — it was 2.24 when the level profile landed and 2.44 after the ligaments —
@@ -357,5 +488,10 @@ the other, both read 1.00. `:saturated?` marks them.
 
 **Honest R0**: design + runnable physics + a validated cervical model. Anthropometry / muscle /
 endurance parameters are `:representative` (G7); the cervical leg is validated, the muscle %MVC and
-Rohmert strain legs are mechanistically grounded but illustrative. No hardware, no live member scan,
-no live kami-genesis backend. Cells `.solve()` raise at R0; `load_solve` transitions are unit-tested.
+Rohmert strain legs are mechanistically grounded but illustrative. The per-level spinal profile is
+**not** validated, and since 2026-09-07 that is a measurement rather than a disclaimer: it disagrees
+with the Hansraj-calibrated cervical model by about a factor of two, and with Wilke's in-vivo lumbar
+pressure by about a factor of two thirds in the other direction. Both disagreements are computed by
+`cervical-cross-check` / `lumbar-cross-check` and asserted by tests, so neither can quietly stop
+being true. No hardware, no live member scan, no live kami-genesis backend. Cells `.solve()` raise
+at R0; `load_solve` transitions are unit-tested.
