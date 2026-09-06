@@ -12,7 +12,8 @@
   House style: SPECS is an array-map (insertion order = Python dict order) of kebab-keyword
   maps keyed on the underscore muscle names (matching the Python str keys); tensions are a
   vector emitted in the Python append order."
-  (:require [suji.methods.segment :as segment]
+  (:require [suji.methods.math :as math]
+            [suji.methods.segment :as segment]
             [suji.methods.load :as load]))
 
 (def specific-tension-n-cm2 60.0)
@@ -37,8 +38,6 @@
         fmax (f-max-n spec)]
     {:name name :force-n force-n :f-max-n fmax :mvc-pct (/ (* 100.0 force-n) fmax)}))
 
-(defn- radians [deg] (Math/toRadians deg))
-
 (defn solve-muscle-tensions
   "Map the posture's joint loads to per-muscle force and %MVC."
   [body posture loads]
@@ -56,10 +55,10 @@
                     (:mass-kg (segment/seg body "forearm"))
                     (:mass-kg (segment/seg body "hand")))
         arm-w-pair (* arm-each segment/gravity 2.0)
-        elev (Math/sin (radians (:shoulder-elevation-deg posture)))
+        elev (Math/sin (math/radians (:shoulder-elevation-deg posture)))
         support-factor (if-not (:arms-supported posture) 1.0 0.4)
         head-co (* 0.15 (get-in loads [:cervical :head-weight-n])
-                   (Math/sin (radians (:head-flexion-deg posture))))
+                   (Math/sin (math/radians (:head-flexion-deg posture))))
         trap-force (+ (* arm-w-pair (+ 0.3 (* 0.7 elev)) support-factor) head-co)
         trap (tension "upper_trapezius" trap-force)
         lev-force (+ (* 0.5 (* arm-w-pair (+ 0.2 (* 0.6 elev)) support-factor))

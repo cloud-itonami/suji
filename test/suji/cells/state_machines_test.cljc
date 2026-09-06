@@ -6,7 +6,8 @@
   The cell.cljc R0-gating tests are folded onto each state machine's `solve` (the sanae pattern;
   cell.cljc is deleted in this port)."
   (:require [clojure.set :as set]
-            [clojure.test :refer [deftest is]]
+            #?(:clj  [clojure.test :refer [deftest is]]
+               :cljs [cljs.test :refer [deftest is]])
             [suji.cells.load-solve.state-machine :as load-sm]
             [suji.cells.strain-accumulate.state-machine :as strain-sm]))
 
@@ -40,14 +41,14 @@
     (doseq [bad [load-sm/transition-muscle-distribute
                  load-sm/transition-assert-nondiagnostic
                  load-sm/transition-emit]]
-      (is (thrown? clojure.lang.ExceptionInfo (bad s))))))
+      (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) (bad s))))))
 
 (deftest test-nondiagnostic-gate-refuses-clinical-key
   (let [s (-> (run-to-emit)
               (assoc "phase" load-sm/phase-distributed)
               (update "muscle_tensions" conj
                       {"group" "x" "mvcPct" 1.0 "diagnosis" "cervicalgia"}))]
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"non-diagnostic"
+    (is (thrown-with-msg? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) #"non-diagnostic"
                           (load-sm/transition-assert-nondiagnostic s)))))
 
 (deftest test-forbidden-set-covers-core-clinical-terms
@@ -55,7 +56,7 @@
                            load-sm/forbidden-clinical-keys)))
 
 (deftest test-solve-is-r0-gated
-  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"R0 scaffold"
+  (is (thrown-with-msg? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) #"R0 scaffold"
                         (load-sm/solve {"posture" lap-posture}))))
 
 ;; --- strain_accumulate cell (second coded cell) ---------------------------------
@@ -93,24 +94,24 @@
     (doseq [bad [strain-sm/transition-band
                  strain-sm/transition-assert-self-referenced
                  strain-sm/transition-emit]]
-      (is (thrown? clojure.lang.ExceptionInfo (bad s))))))
+      (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) (bad s))))))
 
 (deftest test-strain-refuses-ranking-key-g3
   (let [s (-> (run-strain)
               (assoc "phase" strain-sm/phase-banded)
               (update "strains" (fn [v] (update v 0 assoc "percentile" 88))))]
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"self-referenced"
+    (is (thrown-with-msg? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) #"self-referenced"
                           (strain-sm/transition-assert-self-referenced s)))))
 
 (deftest test-strain-refuses-clinical-key-g1
   (let [s (-> (run-strain)
               (assoc "phase" strain-sm/phase-banded)
               (update "strains" (fn [v] (update v 0 assoc "diagnosis" "myalgia"))))]
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"non-diagnostic"
+    (is (thrown-with-msg? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) #"non-diagnostic"
                           (strain-sm/transition-assert-self-referenced s)))))
 
 (deftest test-strain-rohmert-requires-tensions
-  (is (thrown? clojure.lang.ExceptionInfo
+  (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo)
                (strain-sm/transition-rohmert-dose (strain-sm/strain-state {"tensions" []})))))
 
 (deftest test-ranking-denylist-covers-core-terms
@@ -118,5 +119,5 @@
                            strain-sm/forbidden-ranking-keys)))
 
 (deftest test-strain-solve-is-r0-gated
-  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"R0 scaffold"
+  (is (thrown-with-msg? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) #"R0 scaffold"
                         (strain-sm/solve {"tensions" tensions}))))

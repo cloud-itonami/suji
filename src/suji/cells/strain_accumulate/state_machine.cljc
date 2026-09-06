@@ -16,13 +16,8 @@
   keys; phase enum values stay strings; ValueError → ex-info; round-half-EVEN via py-round."
   (:require [clojure.string :as str]
             [suji.cells.load-solve.state-machine :as load-sm]
+            [suji.methods.math :as math]
             [suji.methods.strain :as strain]))
-
-(defn- py-round [v n]
-  #?(:clj (-> (java.math.BigDecimal. (double v))
-              (.setScale (int n) java.math.RoundingMode/HALF_EVEN)
-              .doubleValue)
-     :cljs (let [f (Math/pow 10 n)] (/ (Math/round (* (double v) f)) f))))
 
 ;; G1 — reuse the load_solve clinical-key denylist (single source of the rule).
 (def forbidden-clinical-keys load-sm/forbidden-clinical-keys)
@@ -73,14 +68,14 @@
                      mt {:name (get t "group") :force-n 0.0 :f-max-n 1.0 :mvc-pct mvc}
                      st (strain/muscle-strain mt session)
                      em (:endurance-minutes st)
-                     end (if #?(:clj (Double/isInfinite em) :cljs (not (js/isFinite em)))
+                     end (if (math/infinite? em)
                            -1.0
-                           (py-round em 2))]
+                           (math/round-to em 2))]
                  {"group" (get t "group")
-                  "mvcPct" (py-round mvc 2)
+                  "mvcPct" (math/round-to mvc 2)
                   "sessionMinutes" session
                   "enduranceMinutes" end
-                  "stiffnessIndex" (py-round (:stiffness-index st) 4)}))
+                  "stiffnessIndex" (math/round-to (:stiffness-index st) 4)}))
              (get s "tensions"))]
     (assoc s "strains" out "phase" phase-dosed)))
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env bb
 ;; suji 筋 — validation of the KamiArticulation → WIT/Isaac dict serializer.
 ;; Run:  bb test
 (ns suji.methods.articulation-dict-test
@@ -7,7 +6,8 @@
   kebab→snake key rename and the per-link / per-joint field mapping, so a regression that dropped or
   mis-keyed a field — which would silently feed the physics solver the wrong geometry — is caught."
   (:require [suji.methods.kami-biomech-bridge :as b]
-            [clojure.test :refer [deftest is run-tests]]))
+            #?(:clj  [clojure.test :refer [deftest is]]
+               :cljs [cljs.test :refer [deftest is]])))
 
 (def ^:private art
   {:links [{:name "thorax" :mass-kg 25.0 :length-m 0.3 :com-frac 0.5}
@@ -40,7 +40,3 @@
     (is (every? string? (mapcat keys (get d "links"))))
     (is (every? string? (mapcat keys (get d "joints"))))))
 
-#?(:clj
-   (when (= *file* (System/getProperty "babashka.file"))
-     (let [{:keys [fail error]} (run-tests 'suji.methods.articulation-dict-test)]
-       (System/exit (if (zero? (+ fail error)) 0 1)))))

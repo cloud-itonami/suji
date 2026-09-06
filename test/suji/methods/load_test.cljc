@@ -1,7 +1,8 @@
 (ns suji.methods.load-test
   "suji (筋) — load/segment physics tests, incl. the Hansraj 2014 validation anchor.
   1:1 Clojure port of src/suji/methods/test_load.cljc."
-  (:require [clojure.test :refer [deftest is]]
+  (:require #?(:clj  [clojure.test :refer [deftest is]]
+               :cljs [cljs.test :refer [deftest is]])
             [suji.methods.load :as load]
             [suji.methods.posture :as posture]
             [suji.methods.segment :as segment]))
@@ -32,7 +33,7 @@
 
 (deftest test-cervical-load-rejects-bad-input
   (doseq [[bad-w bad-arm] [[-1.0 0.02] [50.0 0.0]]]
-    (is (thrown? clojure.lang.ExceptionInfo
+    (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo)
                  (load/cervical-load 30.0 bad-w 0.10 bad-arm)))))
 
 (deftest test-laptop-lap-loads-more-than-eye-level-monitor

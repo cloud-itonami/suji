@@ -20,6 +20,8 @@ kizashi senses  →  suji simulates the loads  →  mitate diagnoses  →  iyash
 
 ```
 laptop workstation ──▶ posture (joint angles)        posture.cljc
+                   ──▶ forward kinematics (3-D)       pose.cljc     ← world-space chain,
+                                                                      shared by physics + renderer
                    ──▶ static inverse dynamics        load.cljc     ← kami-genesis PlanarChain
                        (RNEA gravity term)                          Featherstone statics
                    ──▶ cervical compressive load      load.cljc     ← VALIDATED vs Hansraj 2014
@@ -82,7 +84,7 @@ body model is passive.
 ## Layout
 
 ```
-src/suji/methods/   segment · posture · load · muscle · strain · analyze · datoms · kami_biomech_bridge  (+ tests)
+src/suji/methods/   math · segment · posture · pose · load · muscle · strain · analyze · datoms · kami_biomech_bridge  (+ tests)
 data/cells/     segment_build · posture_resolve · load_solve(coded) · strain_accumulate(coded) · ergonomic_compare
 data/lex/       bodyModel · postureScenario · jointLoad · muscleTension · strainReport · ergonomicComparison
 kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture-report.md · posture-datoms.edn
@@ -90,10 +92,37 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 
 ## Run
 
+`bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
+
 ```bash
-bb test                 # 45 tests (31 methods + 14 cells) + analyze smoke
-bb -m suji.methods.analyze     # the laptop-posture report (writes generated posture report)
+clojure -M:test                                   # JVM   — 79 tests / 1177 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 63 tests / 225 assertions
+clojure -M:lint                                   # 0 errors
+clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
+
+**Why two hosts.** Until 2026-09-06 every namespace here was named `.cljc` and four
+of them called JVM-only interop (`Math/toRadians`, `Double/POSITIVE_INFINITY`,
+`Double/isInfinite`), while the tests referred `clojure.test` directly. The suite was
+green and the library did not load in a browser at all — a JVM-only suite returns the
+same green for portable `.cljc` and for `.cljc` that only claims to be. The numeric
+floor is now `suji.methods.math` and the cljs runner exists to fail. Three test
+namespaces read repo files off disk and stay `.clj`, named for what they are.
+
+## Corrections
+
+**Shoulder geometry (2026-09-06).** `shoulder-moment` placed the forearm and hand at
+`(90° − elbow-flexion)` from vertical. That is inverted at both ends of the range: a
+straight hanging arm came out horizontal, and the 90° elbow of a typing posture came
+out vertical. Measured consequence — a straight arm hanging at the side, whose mass is
+directly beneath the joint and can therefore exert **exactly zero** moment, reported
+**5.15 N·m**; the unsupported laptop-on-lap shoulder moment was understated by 130%
+(3.84 → 8.82 N·m). The two supported reference postures are unchanged, because only
+the upper arm loads the girdle there. The chain is now placed once by `pose/solve-pose`
+and the moment read off it as Σ weight × anterior lever. `pose-test` states the control
+that names its own reason: a mass under its joint has no lever.
+
+**The cervical leg is untouched** and still reproduces the Hansraj (2014) table.
 
 **Honest R0**: design + runnable physics + a validated cervical model. Anthropometry / muscle /
 endurance parameters are `:representative` (G7); the cervical leg is validated, the muscle %MVC and
