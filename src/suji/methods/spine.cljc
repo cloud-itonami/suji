@@ -14,8 +14,10 @@
       Σ (weight of everything above it, projected on the spine's local axis)
     + Σ (force of every muscle whose line crosses it, projected on the same axis)
 
-  and the stress is that force divided by the level's disc area. The muscle term
-  usually dominates — an extensor works at a short moment arm, so holding a small
+  and the stress is that force divided by the level's disc area. The tissue term is
+  reported split into `:muscle-n` and `:ligament-n`, because past flexion-relaxation
+  the second one IS the answer and calling it muscle would be a different claim.
+  The muscle term usually dominates — an extensor works at a short moment arm, so holding a small
   external moment costs a large force, and all of that force presses the joint
   together. That is why a flexed posture loads a spine so much more than the
   weight it carries would suggest, and a model that omitted the muscle term would
@@ -115,34 +117,48 @@
         h (fn [p] (math/vdot (math/v- p point) axis))]
     (and origin insertion (neg? (* (h origin) (h insertion))))))
 
-(defn- muscle-compression-n
-  "Axial component of every muscle force crossing the level."
+(defn- tissue-compression-n
+  "Axial component of the forces crossing the level, split by what produced them.
+
+  `{:muscle-n … :ligament-n …}`. It used to be one number called `:muscle-n`, and
+  once the posterior ligamentous system landed that name stopped being true:
+  measured 2026-09-06 at 60 degrees of trunk flexion, the term was 3,904 N of
+  which 3,989 N came from the ligament — the muscles were contributing a NEGATIVE
+  net component and the ligament was pressing the joint together on its own. A
+  reader taking `:muscle-n` literally would have read a spine compressed by muscle
+  where it is compressed by tissue, which is a different statement about the
+  posture and about what would change it."
   [pose-data stature-m level tensions]
   (let [{:keys [axis]} (level-point pose-data level)
-        by-name (into {} (map (juxt :name identity)) tensions)]
-    (reduce + 0.0
-            (for [m attachment/instances
-                  :let [t (by-name (:name m))
-                        f (:force-n t)]
-                  :when (and f (pos? f) (crosses? pose-data stature-m level m))
-                  :let [{:keys [dir]} (attachment/line-of-action pose-data stature-m m)]
-                  :when dir]
-              ;; only the component ALONG the spine compresses it; the transverse
-              ;; component is shear, which this model does not carry
-              (* f (math/abs* (math/vdot dir axis)))))))
+        by-name (into {} (map (juxt :name identity)) tensions)
+        contribution
+        (fn [m]
+          (let [t (by-name (:name m))
+                f (:force-n t)]
+            (when (and f (pos? f) (crosses? pose-data stature-m level m))
+              (let [{:keys [dir]} (attachment/line-of-action pose-data stature-m m)]
+                (when dir
+                  ;; only the component ALONG the spine compresses it; the
+                  ;; transverse component is shear, which this model does not carry
+                  (* f (math/abs* (math/vdot dir axis))))))))]
+    {:muscle-n (reduce + 0.0 (keep #(when-not (:ligament? %) (contribution %))
+                                   attachment/instances))
+     :ligament-n (reduce + 0.0 (keep #(when (:ligament? %) (contribution %))
+                                     attachment/instances))}))
 
 (defn level-compression
   "Compression at one level: {:name :region :force-n :stress-mpa :weight-n :muscle-n}."
   [body pose-data tensions level]
   (let [stature-m (:stature-m body)
         weight (weight-above-n body pose-data level)
-        muscle (muscle-compression-n pose-data stature-m level tensions)
-        force (+ weight muscle)
+        {:keys [muscle-n ligament-n]} (tissue-compression-n pose-data stature-m level tensions)
+        force (+ weight muscle-n ligament-n)
         area (disc-area-m2 level stature-m)]
     {:name (:name level)
      :region (:region level)
      :weight-n weight
-     :muscle-n muscle
+     :muscle-n muscle-n
+     :ligament-n ligament-n
      :force-n force
      :disc-area-cm2 (* 1e4 area)
      ;; N / m² = Pa; ÷1e6 = MPa, which is the unit disc tolerances are quoted in
