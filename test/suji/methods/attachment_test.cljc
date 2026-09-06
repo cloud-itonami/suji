@@ -1179,14 +1179,31 @@
       ;; draft, and this is what catches it.
       (let [tens (muscle/solve-muscle-tensions
                   body p (suji.methods.load/solve-posture-loads body p))
-            by (into {} (map (juxt :name identity)) tens)]
+            by (into {} (map (juxt :name identity)) tens)
+            ;; the moment the flexors' ACTIVE forces actually produce. Passive
+            ;; tension is excluded because `recruit` subtracts it from the load
+            ;; before sharing, so it is not part of what the criterion placed.
+            placed (reduce + 0.0
+                           (for [m upper-cervical-flexors
+                                 :let [t (by m)]
+                                 :when (number? (:active-n t))]
+                             (* (:coeff t) (:active-n t))))]
         (doseq [m upper-cervical-flexors]
           (is (math/nearly= (:gravitational-flexion-nm ao) (:task-load-nm (by m)) 1e-12)
-              (str (:name w) " " m
-                   ": the flexion task is given the gravitational half, not the "
-                   "surplus — load " (:task-load-nm (by m)) " vs gravity "
-                   (:gravitational-flexion-nm ao) " and surplus "
-                   (:decomposition-surplus-nm ao))))))))
+              (str (:name w) " " m ": the row states the gravitational half as its "
+                   "load, got " (:task-load-nm (by m)))))
+        ;; and the SOLVE agrees with the row, which is the half the arithmetic
+        ;; above cannot reach: `:task-load-nm` is written by one expression and the
+        ;; share is done by another, so handing the share `:over-supplied-nm` while
+        ;; the row went on reporting the gravitational half would satisfy every
+        ;; assertion so far. That was the first draft and it put the flexors at
+        ;; 185% MVC. Verified 2026-09-08 by making exactly that change: this
+        ;; assertion reported `placed 3.5707, stated 0.0, surplus 3.5746`.
+        (is (math/nearly= (:gravitational-flexion-nm ao) placed 1e-9)
+            (str (:name w) ": the moment the flexors actually place must be the "
+                 "load the row states — placed " placed ", stated "
+                 (:gravitational-flexion-nm ao) ", surplus "
+                 (:decomposition-surplus-nm ao)))))))
 
 (deftest the-surplus-is-larger-than-the-flexors-that-would-carry-it
   ;; WHY THE SURPLUS IS REPORTED AND NOT ASSIGNED, as a computation rather than as a
