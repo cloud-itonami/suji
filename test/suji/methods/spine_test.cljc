@@ -836,10 +836,21 @@
       (let [arms (mapv #(attachment/moment-arm (flex %) 1.70 m
                                                (get-in (flex %) [:joints :c2c3]))
                        [-15 0 15 30 45 60])]
-        (is (= 6 (count (distinct arms)))
-            (str (:name m) ": its arm about :c2c3 must move with the joint, got " arms))
-        (is (every? (fn [[a b]] (not= a b)) (partition 2 1 arms))
-            (str (:name m) ": monotone in the joint angle, got " arms)))))
+        ;; A SPREAD AND NOT A `distinct` COUNT, and the difference is the whole
+        ;; point of the test. A muscle with both ends on one bone gives an arm that
+        ;; is constant in exact arithmetic and differs in the last bits in a double,
+        ;; so `(count (distinct arms))` returns 6 for exactly the shape this is
+        ;; supposed to reject — verified 2026-09-08 by moving this candidate's origin
+        ;; onto `upper_cervical`, where the distinct count still passed. 1% of the
+        ;; mean arm is far above float noise and far below what any of these three
+        ;; actually moves (12% for the multifidus, 45% and 60% for the other two).
+        (let [lo (apply min arms) hi (apply max arms)
+              scale (/ (+ (math/abs* lo) (math/abs* hi)) 2.0)]
+          (is (> (- hi lo) (* 0.01 scale))
+              (str (:name m) ": its arm about :c2c3 must MOVE with the joint, and "
+                   "not merely differ in the last bits, got " arms))
+          (is (every? (fn [[a b]] (not= a b)) (partition 2 1 arms))
+              (str (:name m) ": monotone in the joint angle, got " arms))))))
   ;; and the one-level multifidus crosses C2/C3 and NOTHING ELSE, which is the
   ;; sharpest form of the claim: a muscle can be placed that acts at this joint and
   ;; at no other level in the model
