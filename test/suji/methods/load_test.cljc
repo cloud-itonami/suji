@@ -293,33 +293,50 @@
                       1e-9)
         "the head weight is the three cervical segments, not the skull")))
 
-(deftest the-capitis-muscles-over-supply-the-atlanto-occipital-joint
-  ;; THE RESULT THE SPLIT PRODUCED, and the reason the suboccipitals are given a
-  ;; residual rather than the whole demand. Semispinalis capitis and splenius
-  ;; capitis are sized by the load at C7 and insert on the occiput, so about the
-  ;; joint above them they are already exerting more than the skull's weight asks
-  ;; for. Measured at laptop-on-lap on a 70 kg / 1.70 m body: 2.648 N·m demanded,
-  ;; 6.223 N·m supplied — a factor of 2.35.
+(deftest the-coupled-solve-balances-the-atlanto-occipital-joint
+  ;; WHAT THIS REPLACES, and why the replacement is the opposite assertion.
+  ;; `the-capitis-muscles-over-supply-the-atlanto-occipital-joint` measured a real
+  ;; defect: semispinalis capitis and splenius capitis are sized by the load at C7
+  ;; and insert on the occiput, so about the joint above them they were exerting
+  ;; 6.223 N·m where the skull's weight asks for 2.648 — a factor of 2.35, and a
+  ;; 3.575 N·m surplus riding on muscles that could not have produced it. That was
+  ;; the correct thing to report while `recruit` solved one constraint at a time.
   ;;
-  ;; Charging the suboccipitals the whole 2.648 made rectus capitis posterior major
-  ;; the worst-loaded muscle in the entire report at 51% MVC. That is what this test
-  ;; exists to stop coming back.
+  ;; `recruit/solve` solves the two constraints together, so the surplus is not
+  ;; reported smaller — it is not there. The muscles that balance C7 are the same
+  ;; muscles that balance this joint, chosen once. What has to be checked is that
+  ;; BOTH equilibria hold, which is a stronger statement than either of the old
+  ;; ones and is the whole content of the change.
   (let [b (segment/build-body 70.0 1.70)
         pst (posture/posture-from-workstation posture/laptop-on-lap)
         loads (load/solve-posture-loads b pst)
         tens (muscle/solve-muscle-tensions b pst loads)
-        forces (into {} (for [t tens :when (contains? load/capitis-groups (:group t))]
-                          [(:group t) (:force-n t)]))
-        ao (load/atlanto-occipital-moment b pst forces)]
-    (is (= 2 (count forces)) (str "the premise: two capitis muscles solved at C7: " forces))
+        summary (muscle/tension-summary tens loads)
+        resid (:coupled-residual-nm summary)
+        ao (load/atlanto-occipital-moment b pst)]
+    ;; the demand is unchanged — it is gravity on the skull and no muscle force
+    ;; enters it, which is what made it the honest number before and now
     (is (math/nearly= 2.648 (:moment-nm ao) 0.001)
         (str "the skull about the condyles: " ao))
-    (is (math/nearly= 6.223 (:capitis-nm ao) 0.001)
-        (str "what the C7-solved muscles are already exerting there: " ao))
-    (is (zero? (:residual-nm ao))
-        "so nothing is left for the suboccipitals at a desk posture")
-    (is (> (:over-supplied-nm ao) 3.0)
-        (str "and the surplus is reported rather than dropped: " ao))))
+    ;; and it is now MET, not over-met
+    (is (math/nearly= 0.0 (get resid :atlanto-occipital) 1e-9)
+        (str "the atlanto-occipital equilibrium must be satisfied, got " resid))
+    (is (math/nearly= 0.0 (get resid :c7) 1e-9)
+        (str "and so must the cervicothoracic one, at the same time: " resid))
+    ;; the discriminating half: the capitis muscles are still the ones doing it —
+    ;; a solve that had simply switched them off would satisfy both residuals too
+    (let [by (into {} (map (juxt :name identity)) tens)
+          semi (by "semispinalis_capitis")]
+      (is (pos? (:active-n semi))
+          (str "semispinalis capitis is still recruited: " semi))
+      (is (< (:force-n semi) 125.0)
+          (str "and by LESS than the uncoupled solve gave it (125.249 N), because "
+               "it is now paying for what it does at the joint above: " semi)))
+    ;; and the keys the decomposition used are gone rather than reinterpreted
+    (is (nil? (:atlanto-occipital-over-supplied-nm summary))
+        "the over-supply key is removed with the decomposition that produced it")
+    (is (not-any? :surplus-mvc-pct tens)
+        "and so is the per-muscle surplus it was quoted in")))
 
 (deftest the-suboccipitals-carry-load-where-the-residual-is-positive
   ;; THE OTHER DIRECTION, without which the test above only shows a muscle that
@@ -335,10 +352,12 @@
         loads (load/solve-posture-loads b pst)
         tens (muscle/solve-muscle-tensions b pst loads)
         by #(first (filter (fn [t] (= % (:group t))) tens))
-        forces (into {} (for [t tens :when (contains? load/capitis-groups (:group t))]
-                          [(:group t) (:force-n t)]))
-        ao (load/atlanto-occipital-moment b pst forces)]
-    (is (pos? (:residual-nm ao)) (str "the premise: a positive residual here: " ao))
+        ao (load/atlanto-occipital-moment b pst)]
+    ;; THE PREMISE, restated for the coupled solve. It used to be `the residual
+    ;; left after the capitis muscles is positive`; there is no residual any more,
+    ;; so what has to be true is that the extensors of THIS joint are the cheapest
+    ;; way to satisfy it here. The demand is still gravity on the skull.
+    (is (pos? (:moment-nm ao)) (str "the premise: an extension demand here: " ao))
     (doseq [m ["rectus_capitis_posterior_major" "rectus_capitis_posterior_minor"
                "obliquus_capitis_superior"]]
       (is (pos? (:force-n (by m)))
