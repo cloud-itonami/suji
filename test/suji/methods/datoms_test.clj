@@ -120,14 +120,28 @@
     (doseq [k [":posture/hip-flex-deg" ":posture/knee-flex-deg" ":posture/ankle-dorsiflex-deg"]]
       (is (number? (get (posture-of stand) k)) (str k " must be emitted")))))
 
-(deftest test-the-lower-limb-joints-are-emitted-with-declared-keywords
-  ;; `joint-kw` maps a joint name to the keyword the schema declares, and falls back
-  ;; to deriving one. The fallback exists because forgetting a new joint is the
-  ;; obvious mistake — this asserts the three new ones were not forgotten, so the
-  ;; fallback stays a safety net rather than the mechanism.
+(deftest test-every-lower-limb-load-reaches-the-log
+  ;; ⚠ THIS TEST USED TO BE CALLED `…-emitted-with-declared-keywords`, and it could
+  ;; not fail for that reason. `joint-kw` maps a joint name to the keyword the
+  ;; schema declares AND falls back to deriving one from the name, and for "hip"
+  ;; both paths produce exactly ":hip" — so removing the three explicit entries
+  ;; changed no output and the test stayed green. Measured 2026-09-07 by removing
+  ;; them: 8 tests, 0 failures. A test that cannot fail for the reason it names is
+  ;; a defect whatever it asserts, so it now names the claim it CAN discriminate.
+  ;;
+  ;; (The explicit entries are still there and still worth having — an explicit
+  ;; table is easier to read than a fallback — but nothing here guards them, and
+  ;; saying so is the difference between a safety net and a belief.)
+  ;;
+  ;; What IS checkable is that the lower limb's loads reach the log at all: a
+  ;; solver that computes a hip moment and an emitter that drops it is the same
+  ;; kind of silence this actor keeps finding.
   (let [ds (datoms/scenario-datoms
             (scenario-for "x" posture/quiet-standing) "b" 0)
         joints (into #{} (keep #(get % ":load/joint")) ds)]
     (doseq [j [":hip" ":knee" ":ankle"]]
       (is (contains? joints j) (str j " must appear in the emitted load datoms")))
-    (is (contains? joints ":cervicothoracic") "and the old ones are still there")))
+    (is (contains? joints ":cervicothoracic") "and the old ones are still there")
+    (is (= 8 (count (filter #(contains? % ":load/joint") ds)))
+        (str "every joint the solver reports must be emitted exactly once, got "
+             (mapv #(get % ":load/joint") (filter #(contains? % ":load/joint") ds))))))

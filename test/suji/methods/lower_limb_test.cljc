@@ -495,3 +495,36 @@
                           [:support :hip-flexion-deg :knee-flexion-deg :ankle-dorsiflexion-deg])))
     (is (pos? (count (filterv #(false? (:balanced? %)) results)))
         "and some of them are postures a body could not hold, which the model says")))
+
+;; --- the posture the workstation model could not say -------------------------
+
+(deftest an-upright-unsupported-seated-posture-is-expressible
+  ;; `posture-from-workstation` derives the trunk angle from ONE bit — whether the
+  ;; back is supported — so the only trunk angles it can produce are 5° and 20°.
+  ;; There was no way through it to say `sitting upright with no backrest`, which
+  ;; is an ordinary posture and the one an in-vivo lumbar pressure is usually
+  ;; measured in; a caller who wanted it wrote the whole map out by hand and
+  ;; re-stated the seated lower limb from memory.
+  ;;
+  ;; The premise is asserted, not assumed: if the workstation model ever gains a
+  ;; third trunk angle this test should be revisited rather than silently kept.
+  (let [ws-trunks (into #{} (map #(:trunk-flexion-deg (posture/posture-from-workstation %)))
+                        posture/reference-workstations)]
+    (is (= #{5.0 20.0} ws-trunks)
+        (str "the workstation model offers exactly two trunk angles: " ws-trunks))
+    (is (not (contains? ws-trunks 0.0))
+        "and upright is not one of them, which is why the constructor exists"))
+  (let [p (posture/seated-posture)]
+    (is (= 0.0 (:trunk-flexion-deg p)) "upright")
+    (is (false? (:arms-supported p)) "unsupported")
+    (is (= :seated (posture/support-mode p)))
+    ;; and it is a whole posture, not a fragment: it solves without a merge
+    (let [l (at p)]
+      (is (number? (:moment-nm (joint l "lumbosacral"))))
+      (is (math/nearly= 0.0 (:moment-nm (joint l "lumbosacral")) 1e-9)
+          "an upright trunk carries no gravitational L5/S1 moment")
+      (is (< (:left (:supported-weight-n (joint l "knee"))) (* 0.10 body-weight-n))
+          "and it is seated, so the knee carries a limb rather than a body")))
+  ;; the overrides do what they say
+  (is (= 45.0 (:trunk-flexion-deg (posture/seated-posture :trunk-flexion-deg 45.0))))
+  (is (true? (:arms-supported (posture/seated-posture :arms-supported true)))))
