@@ -125,17 +125,73 @@
 
 ;; --- the pose and the moment solver are the same geometry --------------------
 
-(deftest test-lumbosacral-lever-matches-the-pose
-  ;; `lumbosacral-moment` predates the pose layer and computes its own thorax lever.
-  ;; They must agree, or the picture and the physics have drifted apart.
-  (doseq [deg [0.0 10.0 25.0 45.0]]
-    (let [p (pose/solve-pose body (neutral :trunk-flexion-deg deg))
-          thorax (pose/seg-at p "thorax_abdomen")
-          from-pose (* (segment/weight-n (segment/seg body "thorax_abdomen"))
-                       (pose/anterior-lever (get-in p [:joints :l5s1]) thorax))
-          legacy (:moment-nm (load/lumbosacral-moment body deg {:head-weight-n 0.0}))]
-      (is (math/nearly= from-pose legacy 1e-9)
-          (str deg "°: pose-derived " from-pose " vs lumbosacral-moment " legacy)))))
+(defn- lumbar-moment-from-pose
+  "Everything above L5/S1, summed here from a list written out IN THIS TEST rather
+  than read from the implementation. That is the whole point of the rewrite: the
+  version of this test that shipped until 2026-09-07 asked `lumbosacral-moment`
+  for a moment with a synthetic `{:head-weight-n 0.0}` and compared it against a
+  THORAX-ONLY pose lever — so it checked the one term that was already right, and
+  a model that dropped the head's own lever and both arms passed it every time.
+
+  A test that computes its reference from the same set the implementation uses
+  cannot see a missing segment. This one names the five segments out loud."
+  [pose-data supported?]
+  (let [w (pose/segment-weights body pose-data)
+        bases (if supported?
+                ["thorax_abdomen" "head_neck" "upper_arm"]
+                ["thorax_abdomen" "head_neck" "upper_arm" "forearm" "hand"])]
+    (pose/gravitational-moment
+     (get-in pose-data [:joints :l5s1])
+     (for [s (pose/segments-on pose-data bases)] [s (get w (:name s))]))))
+
+(deftest test-lumbosacral-moment-is-the-full-pose-derived-moment
+  ;; `lumbosacral-moment` used to compute its own lever algebra. It reads the
+  ;; placed chain now, and this pins that it reads ALL of it — the trunk, the head
+  ;; with its own lever, and both arms.
+  (doseq [pst [(neutral)
+               (neutral :head-flexion-deg 45.0)
+               (neutral :trunk-flexion-deg 60.0)
+               (neutral :trunk-flexion-deg 25.0 :head-flexion-deg 30.0
+                        :shoulder-flexion-deg 45.0 :elbow-flexion-deg 90.0)
+               (posture/posture-from-workstation posture/laptop-on-lap)
+               (posture/posture-from-workstation posture/laptop-on-desk)
+               (posture/posture-from-workstation posture/external-monitor-eye-level)]]
+    (let [p (pose/solve-pose body pst)
+          from-pose (lumbar-moment-from-pose p (boolean (:arms-supported pst)))
+          got (:moment-nm (load/lumbosacral-moment body pst))]
+      (is (math/nearly= from-pose got 1e-9)
+          (str pst ": pose-derived " from-pose " vs lumbosacral-moment " got)))))
+
+(deftest test-a-flexed-head-loads-the-lumbar-spine-from-an-upright-trunk
+  ;; THE CONTROL THAT NAMES THE DEFECT. Trunk upright, head flexed 45°: the head's
+  ;; centre of mass is 12 cm anterior of L5/S1, so the lumbar extensors have a real
+  ;; moment to hold. The hand algebra placed the head's weight AT C7 — which is on
+  ;; the line of gravity when the trunk is upright — and returned exactly 0.
+  (let [pst (neutral :head-flexion-deg 45.0)
+        p (pose/solve-pose body pst)
+        head (pose/seg-at p "head_neck")
+        lever (pose/anterior-lever (get-in p [:joints :l5s1]) head)
+        got (:moment-nm (load/lumbosacral-moment body pst))]
+    (is (> lever 0.10) (str "the premise: the head's CoM is anterior of L5/S1, got " lever))
+    (is (math/nearly= (* (segment/weight-n (segment/seg body "head_neck")) lever) got 1e-9)
+        (str "and the whole moment is that lever, got " got))
+    (is (> got 6.0) (str "which is not zero, and was: " got))))
+
+(deftest test-the-arms-load-the-lumbar-spine-and-resting-them-unloads-it
+  ;; The arms hang from the girdle and the girdle is carried by the thorax, so the
+  ;; lumbar spine holds up every gram of them. `lumbosacral-moment` had no arm term
+  ;; at all and never read `:arms-supported`, while `spine/above-fraction` — the
+  ;; same model, one file over — counted the arms at every trunk level.
+  (let [at (fn [& {:as over}] (:moment-nm (load/lumbosacral-moment body (merge (neutral) over))))
+        hanging (at :trunk-flexion-deg 20.0)
+        reaching (at :trunk-flexion-deg 20.0 :shoulder-flexion-deg 60.0 :elbow-flexion-deg 0.0)
+        rested (at :trunk-flexion-deg 20.0 :shoulder-flexion-deg 60.0 :elbow-flexion-deg 0.0
+                   :arms-supported true)]
+    (is (> reaching hanging)
+        (str "reaching forward must load the lumbar spine more than hanging: "
+             reaching " vs " hanging))
+    (is (< rested reaching)
+        (str "and resting the forearms must take some of it off: " rested " vs " reaching))))
 
 (deftest test-bone-lines-cover-every-segment
   (let [p (pose/solve-pose body (posture/posture-from-workstation posture/laptop-on-lap))
