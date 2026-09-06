@@ -82,6 +82,29 @@
     ;; the cervicothoracic junction — semispinalis cervicis, multifidus, longissimus
     ;; and spinalis cervicis — and THAT is why the capitis muscles below are added
     ;; alongside it rather than carved out of it.
+    ;;
+    ;; ⚠ THE 12.0 IS STILL UNPROVENANCED, AND I LOOKED. Kamibayashi & Richmond
+    ;; 1998 is the source the capitis muscles below are measured from, and I read
+    ;; its Table 3–3 directly (`pdftotext -layout` of
+    ;; https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf, which reprints
+    ;; it with attribution). Its fourteen rows are: sternocleidomastoideus,
+    ;; clavotrapezius, acromiotrapezius, rhomboideus, rectus capitis posterior
+    ;; major and minor, obliquus capitis superior and inferior, longus capitis,
+    ;; splenius (capitis + cervicis as one), semispinalis capitis, scalenus
+    ;; anterior / medius / posterior, and levator scapulae.
+    ;;
+    ;; Semispinalis CERVICIS, multifidus, longissimus and spinalis cervicis — the
+    ;; four this entry places — are NOT in it. So the obvious source cannot
+    ;; provenance this number, and that is recorded here as a measured negative
+    ;; rather than left for the next reader to rediscover.
+    ;;
+    ;; What follows from it: the sum 12.00 + 10.80 + 8.52 = 31.32 cm² of posterior
+    ;; neck extensor is only defensible while the 12.0 means the deep group alone.
+    ;; If it was ever meant as the whole posterior neck, this model overstates
+    ;; cervical extensor capacity by 12.0 cm² and every cervical %MVC here is
+    ;; correspondingly low. That question needs a source covering the deep
+    ;; cervical extensors; it cannot be settled from inside this model, and
+    ;; nothing here should be tuned until it is.
     :source "representative; a deep cervical group spanning the cervicothoracic junction. The insertion is 15.5 mm above C7 at reference stature, i.e. below C6/C7 — it is NOT occipital, and the file said it was until 2026-09-07. Kept low and well posterior so the line stays behind the joint through flexion: a straight line from a HIGH insertion crosses in front of C7 around 30 deg and would report the extensors as flexors. The 0.020 m neutral target is load/cervical-ext-arm-m, the Hansraj effective lever, not a measured muscle moment arm."}
 
    ;; --- the muscles that hold the head up ---------------------------------------
