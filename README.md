@@ -99,8 +99,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 119 tests / 2720 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 103 tests /  508 assertions
+clojure -M:test                                   # JVM   — 125 tests / 3446 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 109 tests /  544 assertions
 clojure -M:lint                                   # 0 errors
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -165,6 +165,14 @@ hand-written expressions. `recruit` shares them by minimum cubed stress
 (Crowninshield & Brand 1981) in closed form — exact, and it moves when the anatomy
 moves. The old trapezius expression also charged the head's extension load a second
 time, on top of the cervical group; that term is gone.
+
+**The elbow has an equilibrium (2026-09-06).** `pose` has placed an elbow since
+the pose layer existed and no muscle acted about it — the forearm and hand hung
+off a joint whose equilibrium nobody solved, as though it were welded, while a
+typing posture holds them out at 90° all day. Biceps brachii, brachialis and
+triceps brachii now share it. Every joint the kinematics places except the wrist
+now has kinetics, and `the-elbow-has-an-equilibrium-at-all` asserts it by looking
+at what the muscle set actually acts about rather than at a comment.
 
 **The spine is resolved level by level (2026-09-06).** This actor used to report
 ONE spinal number, the lumped cervical compressive load. `spine.cljc` computes, at

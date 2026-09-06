@@ -119,6 +119,28 @@
                    (if sup "forearms supported" "arms unsupported (hanging)")
                    per-side))))
 
+(defn elbow-moment
+  "Gravitational moment about each elbow from the forearm and hand hanging off it.
+
+  The chain has placed an elbow since `pose` existed and nothing took a moment
+  about it: the forearm and hand were carried by the shoulder's equilibrium and by
+  nothing else, as though the elbow were welded. A typing posture holds them out
+  at 90° all day, so this is not a small term — it is the one a desk worker is
+  actually asking about.
+
+  Resting the forearms transfers them to the desk, and then the elbow carries
+  nothing, which is the whole of the `arms-supported` effect here."
+  [body posture]
+  (let [p (pose/solve-pose body posture)
+        w (pose/segment-weights body p)
+        carried (if (:arms-supported posture) [] ["forearm" "hand"])]
+    (into {}
+          (for [side [:left :right]]
+            [side (pose/gravitational-moment
+                   (get-in p [:joints (keyword "elbow" (name side))])
+                   (for [seg (pose/segments-on p carried side)]
+                     [seg (get w (:name seg))]))]))))
+
 (defn lumbosacral-moment
   "Gravitational moment about L5/S1 from the leaned trunk + head-arm load above it."
   [body trunk-flexion-deg head]
@@ -179,5 +201,11 @@
         joints [(->joint-load "cervicothoracic" (:extensor-moment-nm cerv)
                               "cervical extensor moment")
                 (shoulder-moment body posture :both)
+                (let [per-side (elbow-moment body posture)]
+                  (->joint-load "elbow" (+ (:left per-side) (:right per-side))
+                                (if (:arms-supported posture)
+                                  "forearms rest on the desk"
+                                  "forearm + hand held out")
+                                per-side))
                 (lumbosacral-moment body (:trunk-flexion-deg posture) cerv)]]
     {:cervical cerv :joints joints :frontal (frontal-moments body posture)}))

@@ -109,6 +109,43 @@
     :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0090 :lat 0.1225}
     :source "representative; thoracic-spine origin, acromial insertion"}
 
+   ;; --- the elbow --------------------------------------------------------------
+   ;; The chain has placed an elbow since the pose layer existed, and until
+   ;; 2026-09-06 no muscle acted about it: the forearm and hand hung off a joint
+   ;; whose equilibrium nobody solved. A typing posture holds them out at 90° all
+   ;; day, which is exactly the load a desk worker asks about.
+
+   "biceps_brachii"
+   {:name "biceps_brachii" :paired? true :pcsa-cm2 9.0
+    :acts-about :elbow :task :elbow-flexion
+    ;; scapula (supraglenoid / coracoid) → radial tuberosity
+    :origin {:segment "thorax_abdomen" :along 0.97 :ant 0.0080 :lat 0.1150}
+    :insertion {:segment "forearm" :along 0.11 :ant 0.0135 :lat 0.0}
+    ;; the trochlea. Without it the chord crosses the joint near full extension
+    ;; and the flexor is reported as an extensor.
+    :wrap {:radius-m 0.018 :sign 1.0}
+    :source "representative; elbow flexion moment arm ~35-45 mm through mid-range"}
+
+   "brachialis"
+   {:name "brachialis" :paired? true :pcsa-cm2 12.0
+    :acts-about :elbow :task :elbow-flexion
+    ;; distal humerus → ulnar tuberosity: shorter, closer to the joint, and the
+    ;; larger cross-section — which is why the criterion gives it the bigger share
+    :origin {:segment "upper_arm" :along 0.55 :ant 0.0090 :lat 0.0}
+    :insertion {:segment "forearm" :along 0.06 :ant 0.0090 :lat 0.0}
+    :wrap {:radius-m 0.013 :sign 1.0}
+    :source "representative; the workhorse elbow flexor, arm ~20-25 mm"}
+
+   "triceps_brachii"
+   {:name "triceps_brachii" :paired? true :pcsa-cm2 20.0
+    :acts-about :elbow :task :elbow-flexion
+    ;; humerus + scapula → olecranon, POSTERIOR to the joint, so its moment
+    ;; opposes the flexors' by construction — it belongs in the same equilibrium
+    :origin {:segment "upper_arm" :along 0.35 :ant -0.0090 :lat 0.0}
+    :insertion {:segment "forearm" :along 0.03 :ant -0.0135 :lat 0.0}
+    :wrap {:radius-m 0.016 :sign -1.0}
+    :source "representative; the elbow extensor, arm ~20-25 mm"}
+
    ;; --- the frontal plane ------------------------------------------------------
    ;; None of these existed before 2026-09-06, which is why every frontal-plane
    ;; moment this actor computed was reported as carried by nobody.
@@ -312,8 +349,12 @@
         ;; them was pulling the way gravity already was. Measured 2026-09-06.
         (cond-> (and (:wrap muscle) (= :frontal (:axis muscle)) (= :right side))
           (update-in [:wrap :sign] -))
-        (cond-> (= :shoulder (:acts-about muscle))
-          (assoc :acts-about (keyword "shoulder" (name side)))))))
+        ;; every paired joint, not only the shoulder: the elbow and the wrist are
+        ;; placed per side too, and a muscle acting about `:elbow` on the right has
+        ;; to be told about `:elbow/right` or it takes its moment about the left
+        ;; one — which is a wrong answer, not an error.
+        (cond-> (#{:shoulder :elbow :wrist} (:acts-about muscle))
+          (assoc :acts-about (keyword (name (:acts-about muscle)) (name side)))))))
 
 (def instances
   "Every muscle the solver works with: midline groups once, paired groups twice.
