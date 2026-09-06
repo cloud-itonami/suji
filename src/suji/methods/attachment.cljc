@@ -460,6 +460,34 @@
                 (get-in pose-data [:joints (:acts-about muscle)])
                 (axis-of muscle))))
 
+(def reference-posture
+  "Anatomical neutral: every joint at zero. Each muscle's OPTIMAL length is its
+  line length here — derived from the same geometry as everything else rather than
+  tabulated, so moving an attachment moves the optimal length with it instead of
+  leaving a stale constant behind."
+  {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0
+   :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0
+   :wrist-extension-deg 0.0 :shoulder-abduction-deg 0.0
+   :trunk-lateral-bend-deg 0.0 :head-rotation-deg 0.0})
+
+(defn optimal-lengths
+  "Every muscle instance's length at the reference posture, keyed by name.
+
+  Pure and body-dependent, so a caller computes it once per body rather than per
+  frame. It is not a constant table: a body of a different stature has different
+  optimal lengths, and an edited attachment moves them."
+  [reference-pose stature-m]
+  (into (array-map)
+        (for [m instances]
+          [(:name m) (:length-m (line-of-action reference-pose stature-m m))])))
+
+(defn lengths
+  "Every muscle instance's current length, keyed by name."
+  [pose-data stature-m]
+  (into (array-map)
+        (for [m instances]
+          [(:name m) (:length-m (line-of-action pose-data stature-m m))])))
+
 (defn arms
   "Every muscle INSTANCE's task coefficient at this pose, keyed by its unique name
   (a moment arm in metres, or a dimensionless cosine for a suspension muscle — see

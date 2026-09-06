@@ -49,7 +49,43 @@
 
 (def specific-tension-n-cm2 60.0)
 
-(defn f-max-n [spec] (* (:pcsa-cm2 spec) specific-tension-n-cm2))
+(defn peak-force-n
+  "The most this muscle could ever produce: PCSA × specific tension. It is the
+  force available only AT the optimal length — see `available-force-n`."
+  [spec]
+  (* (:pcsa-cm2 spec) specific-tension-n-cm2))
+
+;; kept as the old name, because it is what `specs` documents
+(def f-max-n peak-force-n)
+
+(defn force-length-factor
+  "Hill-type active force–length scaling: a multiplier in [0,1], 1.0 at the optimal
+  length and reaching 0 outside [0.5, 1.5] × optimal.
+
+  DELIBERATE DUPLICATION, stated so it is not mistaken for a failure to look.
+  `kotoba.biomech.muscle/force-length-factor` in kotoba-lang/biomech is this same
+  closed form. suji does not depend on it: biomech's deps.edn pulls kotoba-lang/fea,
+  kotoba-lang/kami-vehicle and kotoba-lang/kami-engine-cfd — three solver repos —
+  and this actor is compiled into a browser bundle. Three heavy git dependencies
+  for one three-line function is a cost the consumer pays and the function does not
+  justify. `muscle-test` pins the values, so the two can be compared by hand; it
+  cannot notice biomech changing, and that is the price of the duplication."
+  [length optimal-length]
+  (if (or (nil? length) (nil? optimal-length) (<= optimal-length 0.0))
+    1.0
+    (let [ratio (/ (double length) (double optimal-length))]
+      (max 0.0 (- 1.0 (* 4.0 (- ratio 1.0) (- ratio 1.0)))))))
+
+(defn available-force-n
+  "What this muscle can actually produce AT THIS POSTURE.
+
+  %MVC used to divide by the peak force, which assumes a muscle can produce its
+  maximum at every length. It cannot: at half or one and a half times its optimal
+  length it produces nothing at all, and the posture decides its length. Dividing
+  by a constant therefore UNDERSTATES the effort of any posture that stretches or
+  shortens a muscle away from its optimum — which is most of the interesting ones."
+  [spec length optimal-length]
+  (* (peak-force-n spec) (force-length-factor length optimal-length)))
 
 (def specs
   "Kept as the public description of each group. `:moment-arm-m` is the NEUTRAL
@@ -84,9 +120,15 @@
 (def emit-order (mapv :name attachment/instances))
 
 (defn f-max-of
-  "F_max for one muscle instance, from its group's PCSA."
-  [inst]
-  (f-max-n (get specs (:group inst))))
+  "Force available to one instance at this posture. `lengths` and `optimals` are
+  `attachment/lengths` / `attachment/optimal-lengths`; passing neither falls back
+  to the peak force, which is what this returned before the force–length relation
+  existed."
+  ([inst] (peak-force-n (get specs (:group inst))))
+  ([inst lengths optimals]
+   (available-force-n (get specs (:group inst))
+                      (get lengths (:name inst))
+                      (get optimals (:name inst)))))
 
 (defn suspended-weight-n
   "Weight ONE shoulder girdle has to suspend: the arm segments hanging from it.
@@ -107,12 +149,16 @@
     (reduce + 0.0 (map #(get w (:name %)) (pose/segments-on p hanging side)))))
 
 (defn- candidates
-  "Muscle instances for one task, optionally restricted to one side."
-  [task side coeffs]
+  "Muscle instances for one task, optionally restricted to one side.
+
+  `:f-max-n` is the force AVAILABLE at this posture, not the peak — so the
+  criterion weighs what each muscle can actually contribute here. Weighing the
+  peak would hand load to a muscle that is too short or too stretched to take it."
+  [task side coeffs lengths optimals]
   (for [m attachment/instances
         :when (and (= task (:task m))
                    (or (nil? side) (= side (:side m))))]
-    {:name (:name m) :f-max-n (f-max-of m) :coeff (get coeffs (:name m))}))
+    {:name (:name m) :f-max-n (f-max-of m lengths optimals) :coeff (get coeffs (:name m))}))
 
 (defn- share-signed
   "Share a load whose SIGN says which side has to resist it.
@@ -169,6 +215,10 @@
   [body posture loads]
   (let [p (pose/solve-pose body posture)
         coeffs (attachment/arms p (:stature-m body))
+        lens (attachment/lengths p (:stature-m body))
+        opts (attachment/optimal-lengths
+              (pose/solve-pose body attachment/reference-posture) (:stature-m body))
+        candidates (fn [task side coeffs] (candidates task side coeffs lens opts))
         sup (:arms-supported posture)
         joint (fn [n] (first (filter #(= n (:joint %)) (:joints loads))))
         by-name (fn [xs] (into {} (map (juxt :name identity)) xs))

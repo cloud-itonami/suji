@@ -99,8 +99,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 132 tests / 3874 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 116 tests /  585 assertions
+clojure -M:test                                   # JVM   — 138 tests / 3980 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 122 tests /  691 assertions
 clojure -M:lint                                   # 0 errors
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -165,6 +165,29 @@ hand-written expressions. `recruit` shares them by minimum cubed stress
 (Crowninshield & Brand 1981) in closed form — exact, and it moves when the anatomy
 moves. The old trapezius expression also charged the head's extension load a second
 time, on top of the cervical group; that term is gone.
+
+**%MVC's denominator is no longer a constant (2026-09-06).** It divided by
+PCSA × specific tension, which assumes a muscle can produce its maximum at every
+length. It cannot — at half or one and a half times its optimal length it produces
+nothing — and the posture decides its length. The optimal length is now DERIVED,
+as each muscle's line length at anatomical neutral, from the same geometry as the
+moment arms; the available force is that peak scaled by the Hill force–length
+parabola; and `recruit` weighs available force, so load is not handed to a muscle
+too short to use its cross-section.
+
+Measured where it is worst: at 90° of shoulder flexion with a straight elbow the
+anterior deltoid sits at 0.75 of its optimal length. The constant denominator
+reported **83.4 %MVC**; the length-aware one reports **111.6 %MVC** — above maximum
+voluntary contraction, which is a different statement about that posture and the
+true one. The old number understated the effort by 28 points at exactly the
+posture where the muscle is most compromised.
+
+`force-length-factor` deliberately duplicates
+`kotoba.biomech.muscle/force-length-factor`, and says so: biomech's deps.edn pulls
+kotoba-lang/fea, kotoba-lang/kami-vehicle and kotoba-lang/kami-engine-cfd — three
+solver repos — and this actor compiles into a browser bundle. `force-length-test`
+pins the values so the two can be compared by hand; it cannot notice biomech
+changing, and that is the price.
 
 **Every placed joint is solved, except the hip on purpose (2026-09-06).** The
 wrist was the last one the kinematics placed and the kinetics did not, and it had
