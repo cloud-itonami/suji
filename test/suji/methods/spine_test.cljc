@@ -4,9 +4,11 @@
   where it disagrees with the leg this actor actually validated."
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
+            [suji.methods.attachment :as attachment]
             [suji.methods.load :as load]
             [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]
+            [suji.methods.pose :as pose]
             [suji.methods.posture :as posture]
             [suji.methods.segment :as segment]
             [suji.methods.spine :as spine]))
@@ -91,17 +93,206 @@
 
 (deftest the-model-reports-where-it-disagrees-with-the-validated-leg
   ;; The lumped cervical model is the one validated against Hansraj (2014); this
-  ;; profile is not, and it disagrees with it by about a factor of two because it
-  ;; uses the muscle's geometric moment arm rather than a fitted effective lever.
-  ;; A consumer must not be able to read the profile as if it inherited the
-  ;; validation, so the disagreement is computed rather than remembered.
+  ;; profile is not, and it disagrees with it. A consumer must not be able to read
+  ;; the profile as if it inherited the validation, so the disagreement is computed
+  ;; rather than remembered.
+  ;;
+  ;; ⚠ THE REASON WAS REWRITTEN ON 2026-09-07 AND THE BOUND WAS TIGHTENED, because
+  ;; the old ones were not measuring this. The comment said the two disagree `by
+  ;; about a factor of two ... because it uses the muscle's geometric moment arm
+  ;; rather than a fitted effective lever`, and the assertion was `1.5 < ratio <
+  ;; 4.0`. But C7/T1 was being computed by a half-space test on HEIGHT, so its
+  ;; muscle term included 62.4 N per side of anterior deltoid and 30.7 N per side
+  ;; of wrist extensor — 186 N of the 588 N — none of which is transmitted through
+  ;; a neck. The moment arm was not the whole of the difference and the ratio was
+  ;; not measuring the quantity the sentence named.
+  ;;
+  ;; Measured at laptop-on-lap, 70 kg / 1.70 m: 651.12 N by level before the
+  ;; repair, 464.92 N after, against an unchanged 273.62 N lumped — the ratio fell
+  ;; 2.380 -> 1.699. The old 1.5-4.0 band admitted BOTH, which is why it never
+  ;; reported the defect. The bound is now tight enough to have to be re-measured
+  ;; if the muscle set moves again, and that is the point of it.
+  ;;
+  ;; The model moving CLOSER to the validated leg is not evidence that it got
+  ;; better at what the validated leg measures. It is the arithmetic consequence of
+  ;; removing forces that were never in the neck; agreement bought by deleting a
+  ;; defect elsewhere is not a validation, and `:validated :lumped` still says
+  ;; which side carries one.
   (let [{:keys [loads tensions]} (run lap)
         x (spine/cervical-cross-check body lap tensions (:cervical loads))]
     (is (= :lumped (:validated x)))
     (is (pos? (:ratio x)))
-    (is (> (:ratio x) 1.5)
-        (str "the two paths really do disagree, and by how much is the point: " x))
-    (is (< (:ratio x) 4.0) "but not by an order of magnitude")))
+    (is (> (:ratio x) 1.0)
+        (str "the two paths really do still disagree, and by how much is the point: " x))
+    (is (math/nearly= 1.699 (:ratio x) 0.01)
+        (str "today's disagreement, measured rather than banded: " x))
+    (is (math/nearly= 464.92 (:level-force-n x) 0.01)
+        (str "the C7/T1 force with only the muscles that reach a neck in it: " x))
+    (is (math/nearly= 273.62 (:lumped-force-n x) 0.01)
+        "the lumped side did not move; this repair is on the profile side only")))
+
+;; --- which muscles load a level ----------------------------------------------
+
+(def ^:private lap-pose (pose/solve-pose body lap))
+
+(defn- level-named [n] (first (filter #(= n (:name %)) spine/levels)))
+
+(defn- height-either-side?
+  "The OLD predicate, kept as a control: are this muscle's two attachment points on
+  opposite sides of the level's height, measured along the spine's local axis
+  there? That is exactly what `crosses?` used to ask, so a muscle for which this is
+  TRUE and `levels-crossed` is empty is a muscle the repair actually changed."
+  [pose-data level muscle]
+  (let [{:keys [point axis]} (spine/level-point pose-data level)
+        {:keys [origin insertion]} (attachment/line-of-action pose-data 1.70 muscle)
+        h #(math/vdot (math/v- % point) axis)]
+    (neg? (* (h origin) (h insertion)))))
+
+(deftest a-muscle-loads-a-level-by-its-path-not-by-its-height
+  ;; THE FINDING. `crosses?` projected both attachment points onto the spine's
+  ;; axis at the level and asked whether they straddled it, so anything whose two
+  ;; ends sat at different heights counted — whether or not its line of force went
+  ;; anywhere near a spine.
+  ;;
+  ;; Measured 2026-09-07 at laptop-on-lap, 70 kg / 1.70 m, before the repair: the
+  ;; C3/C4 muscle term was 61.44 N and ALL of it was `wrist_extensors/left` and
+  ;; `wrist_extensors/right` at 30.72 N each; C5/C6 and C4/C5 were 64% wrist
+  ;; extensor. At 60 degrees of trunk flexion `vasti` and `tibialis_anterior`
+  ;; appeared at L1/L2, and `vasti` carried 117.7 N of the 186.0 N at C3/C4.
+  ;;
+  ;; The control is the point: the wrist extensor's two ends really ARE on opposite
+  ;; sides of C3/C4's height (−0.110 m and +0.152 m along the local axis), so the
+  ;; old test's condition still holds and the new answer is nonetheless empty. A
+  ;; test that only asserted `crosses nothing` could be passed by a rule that had
+  ;; simply stopped answering.
+  (let [c34 (level-named "C3/C4")
+        we (attachment/instance "wrist_extensors/left")]
+    (is (some? we))
+    (is (height-either-side? lap-pose c34 we)
+        "the wrist extensor's ends do straddle C3/C4's height, which is what the old rule asked")
+    (is (= [] (spine/levels-crossed lap-pose we))
+        "and it crosses no level at all: its force goes to the forearm")
+    ;; the same muscle, asked about every level, so this is not one lucky level
+    (doseq [m [(attachment/instance "wrist_extensors/left")
+               (attachment/instance "wrist_extensors/right")
+               (attachment/instance "vasti/left")
+               (attachment/instance "tibialis_anterior/left")]]
+      (is (= [] (spine/levels-crossed lap-pose m))
+          (str (:name m) " loads no intervertebral level"))))
+  ;; and at 60 degrees, where the leg muscles were reaching the lumbar spine
+  (let [deep (pose/solve-pose body (merge lap {:trunk-flexion-deg 60.0 :arms-supported false}))
+        l12 (level-named "L1/L2")
+        vasti (attachment/instance "vasti/left")]
+    (is (height-either-side? deep l12 vasti)
+        "at 60 degrees the vastus's ends straddle L1/L2's height too")
+    (is (= [] (spine/levels-crossed deep vasti))
+        "a vastus transmits its force to the tibia, not through a lumbar disc")))
+
+(deftest a-cervical-level-can-only-be-crossed-by-something-attached-to-the-neck
+  ;; The general form of the finding, swept over the whole muscle set and every
+  ;; reference posture rather than over the four instances the defect happened to
+  ;; produce. A cervical level cuts the head_neck segment, so the only way for a
+  ;; muscle's two ends to fall in different pieces is for one of them to be on
+  ;; head_neck above the cut. Everything else in the body — both arms, both legs,
+  ;; the pelvis, the whole trunk — reaches the root without ever entering the neck.
+  ;;
+  ;; This is the claim the old rule violated, and it is derived: nothing here names
+  ;; a muscle or a group.
+  (doseq [p [lap monitor (merge lap {:trunk-flexion-deg 60.0 :arms-supported false})
+             (assoc lap :shoulder-abduction-deg 45.0 :wrist-extension-deg 25.0)]]
+    (let [pd (pose/solve-pose body p)]
+      (doseq [m attachment/instances
+              :let [cervical (filter #(= :cervical (:region %)) (spine/levels-crossed pd m))]
+              :when (seq cervical)]
+        (is (some #(= "head_neck" (:segment %)) [(:origin m) (:insertion m)])
+            (str (:name m) " crosses " (mapv :name cervical)
+                 " without attaching to the neck: " (select-keys m [:origin :insertion]))))))
+  ;; the evidence floor: a sweep that admitted nothing would pass the above by
+  ;; having nothing to check
+  (is (<= 4 (count (filter #(seq (filter (fn [l] (= :cervical (:region l)))
+                                         (spine/levels-crossed lap-pose %)))
+                           attachment/instances)))
+      "and some muscles do cross cervical levels, so the sweep is not empty"))
+
+(deftest the-erector-spinae-still-crosses-the-lumbosacral-junction
+  ;; THE CONTROL FOR THE OTHER DIRECTION. It is easy to write a crossing rule that
+  ;; deletes everything, and L5/S1 is where such a rule shows: the erector spinae
+  ;; originates on the PELVIS, at 0.15 of it, and inserts on the trunk at 0.25, and
+  ;; L5/S1 is the joint between the two. The disc is between the muscle's ends and
+  ;; the force presses it together.
+  ;;
+  ;; The model puts L5/S1 at exactly 0.0 of the trunk and hangs the pelvis at
+  ;; exactly 0.0 of the trunk, so this is decided by a strict comparison rather than
+  ;; by anatomy: a rule that placed the pelvis on the trunk's own side of that point
+  ;; would lose the single largest muscle contribution in the whole profile —
+  ;; 1,070.5 N of the 1,074.7 N at L5/S1, measured at laptop-on-lap — and would
+  ;; still look like a working crossing rule everywhere else.
+  (let [es (attachment/instance "erector_spinae")
+        crossed (mapv :name (spine/levels-crossed lap-pose es))]
+    (is (= "pelvis" (:segment (:origin es))) "it originates below the junction")
+    (is (= "thorax_abdomen" (:segment (:insertion es))) "and inserts above it")
+    (is (= ["L5/S1" "L4/L5" "L3/L4" "L2/L3"] crossed)
+        (str "so it crosses every lumbar level below its insertion at 0.25: " crossed))
+    (let [l5s1 (first (filter #(= "L5/S1" (:name %)) (:rows (run lap))))]
+      (is (some #(= "erector_spinae" (first %)) (:muscle-crossing l5s1))
+          (str "and it is in the row: " (:muscle-crossing l5s1)))))
+  ;; the same shape for the arm chain, which hangs at the OTHER end of the trunk:
+  ;; latissimus dorsi runs pelvis -> humerus and so crosses every lumbar level and
+  ;; no cervical one, because the arm reaches the spine at the top of the thorax
+  (let [ld (attachment/instance "latissimus_dorsi/left")]
+    (is (= ["L5/S1" "L4/L5" "L3/L4" "L2/L3" "L1/L2"]
+           (mapv :name (spine/levels-crossed lap-pose ld)))
+        "the whole lumbar spine, and nothing cervical")))
+
+(deftest the-crossing-rule-reads-the-attachments-and-not-the-name
+  ;; DERIVED RATHER THAN TABULATED, demonstrated by giving the rule a muscle it has
+  ;; never heard of. The same anonymous map crosses nothing when its two sites are
+  ;; on the forearm and the hand, and four cervical levels when the same map's
+  ;; sites are moved onto the trunk and the neck. No name is consulted, so there is
+  ;; no list of spinal muscles to fall out of date, and adding a muscle or moving an
+  ;; attachment changes the answer without this rule being edited.
+  (let [arm {:origin {:segment "forearm" :along 0.10}
+             :insertion {:segment "hand" :along 0.25}
+             :side :left}
+        spinal (assoc arm
+                      :origin {:segment "thorax_abdomen" :along 0.97}
+                      :insertion {:segment "head_neck" :along 0.20})]
+    (is (= [] (mapv :name (spine/levels-crossed lap-pose arm))))
+    (is (= ["C7/T1" "C6/C7" "C5/C6" "C4/C5"]
+           (mapv :name (spine/levels-crossed lap-pose spinal)))
+        "every level below the insertion at 0.20 of the neck, and none above it")
+    ;; and moving ONE number moves the answer: an insertion one level lower crosses
+    ;; one level fewer
+    (is (= ["C7/T1" "C6/C7" "C5/C6"]
+           (mapv :name (spine/levels-crossed
+                        lap-pose
+                        (assoc spinal :insertion {:segment "head_neck" :along 0.15}))))
+        "the answer follows the attachment, not the identity of the muscle")))
+
+(deftest a-pose-that-does-not-say-what-it-connects-is-refused
+  ;; The failure mode this whole repair is about, one layer down. The crossing rule
+  ;; reads the skeleton's shape from `pose`'s `:attaches-to`. A pose that does not
+  ;; carry it — an older `place`, a hand-built fixture — would make every walk reach
+  ;; the root immediately, every site land on the proximal side, and every muscle
+  ;; cross nothing. That is the same value a correct profile of a muscle-free body
+  ;; would produce, so it has to be refused instead, and the refusal has to name the
+  ;; reason rather than merely throw.
+  (let [stripped (update lap-pose :segments #(mapv (fn [seg] (dissoc seg :attaches-to)) %))
+        d (refusal-data #(spine/levels-crossed
+                          stripped (attachment/instance "erector_spinae")))]
+    (is (= :value-error (:type d))
+        (str "a pose with no :attaches-to is refused as a value error: " (pr-str d)))
+    (is (string? (:segment d)) "and the refusal names a segment it could not read")
+    ;; the control: the SAME call on the same pose with the key present answers
+    (is (seq (spine/levels-crossed lap-pose (attachment/instance "erector_spinae")))
+        "while the unstripped pose answers normally"))
+  ;; and a site on a bone this pose does not have is refused too, rather than being
+  ;; quietly treated as a root
+  (let [d (refusal-data #(spine/levels-crossed
+                          lap-pose {:origin {:segment "tail" :along 0.5}
+                                    :insertion {:segment "thorax_abdomen" :along 0.5}}))]
+    (is (= :value-error (:type d)) (str "an unknown bone is refused: " (pr-str d)))
+    (is (= "tail" (:segment d)) "and the refusal names it")))
 
 (defn- row
   "A profile row as `attachment-steps` needs it: named, in a region, and carrying
@@ -365,20 +556,49 @@
     (is (false? (:above-hazardous? b))
         "but not the higher one, which this model reaches only past 650 kgf")))
 
-(deftest no-level-is-left-with-exactly-no-muscle-force
-  ;; THE LABEL IS THE FIX. This was called `passive-tension-smoothed-the-profile`
-  ;; and asserted `(empty? (attachment-steps rows))` under the sentence `no level
-  ;; loses its whole muscle term any more`. What it actually checked was that
-  ;; nothing was EXACTLY zero, because that is all the old detector could see —
-  ;; and passive tension had made exact zeros unreachable, so the assertion could
-  ;; not fail. The profile went on stepping the whole time.
+(deftest the-top-cervical-level-has-no-muscle-crossing-it-at-all
+  ;; ⚠ THIS TEST WAS CALLED `no-level-is-left-with-exactly-no-muscle-force` AND
+  ;; ITS CLAIM WAS FALSE. It asserted `(every? #(pos? (:muscle-n %)) rows)` under
+  ;; the sentence `passive tension keeps every level carrying SOME muscle force`.
+  ;; It passed, and what was holding C3/C4 above zero was `wrist_extensors/left`
+  ;; and `wrist_extensors/right` — 61.4 N of a 61.4 N muscle term, i.e. all of it —
+  ;; admitted by a `crosses?` that compared HEIGHTS. Passive tension was not the
+  ;; reason; a defect was.
   ;;
-  ;; What is true, and is what this now says: passive tension keeps every level
-  ;; carrying SOME muscle force. That is worth pinning on its own.
-  (let [rows (:rows (run lap))]
-    (is (every? #(pos? (:muscle-n %)) rows)
-        (str "every level carries some muscle force: "
-             (mapv (juxt :name :muscle-n) rows)))))
+  ;; What is true, measured 2026-09-07 at laptop-on-lap after the repair: this
+  ;; model has NOTHING that spans C3/C4. Its most cranial muscle attachment is
+  ;; `levator_scapulae` at 0.22 of the head_neck segment and C3/C4 sits at 0.24, so
+  ;; every muscle in the set attaches below it and the cut separates none of them.
+  ;;
+  ;; THAT IS A GAP IN THIS MODEL'S ANATOMY, NOT A STATEMENT ABOUT A NECK. A real
+  ;; upper cervical spine is spanned by muscles that reach the skull — this set has
+  ;; none of them, so C3/C4 reports the weight above it and nothing else. Saying so
+  ;; is the whole difference between a model that admits what it does not have and
+  ;; one that fills the hole with a wrist extensor.
+  (let [rows (:rows (run lap))
+        by-name #(first (filter (fn [r] (= % (:name r))) rows))
+        top (by-name "C3/C4")]
+    (is (= [] (:muscle-crossing top))
+        (str "no muscle in this set spans C3/C4: " top))
+    (is (zero? (:muscle-n top)) "so its muscle term is exactly zero, not nearly zero")
+    (is (math/nearly= (:force-n top) (:weight-n top) 1e-9)
+        "and the whole force at that level is the weight above it")
+    ;; the discriminating half: every OTHER level does carry muscle force, so this
+    ;; is a statement about one level and not about the profile having gone quiet
+    (doseq [r rows :when (not= "C3/C4" (:name r))]
+      (is (pos? (:muscle-n r))
+          (str (:name r) " still carries muscle force: " (:muscle-n r))))
+    ;; and the highest attachment in the whole muscle set really is below it, which
+    ;; is the REASON — read off the attachments rather than asserted about them
+    (let [neck-alongs (for [m attachment/instances
+                            site [(:origin m) (:insertion m)]
+                            :when (= "head_neck" (:segment site))]
+                        (:along site))
+          c34 (first (filter #(= "C3/C4" (:name %)) spine/levels))]
+      (is (seq neck-alongs) "the muscle set does attach to the neck at all")
+      (is (< (apply max neck-alongs) (:along c34))
+          (str "and its most cranial attachment, at " (apply max neck-alongs)
+               " of the head_neck segment, is below C3/C4 at " (:along c34))))))
 
 (deftest the-profile-steps-and-the-detector-says-where
   ;; THE FINDING. `attachment-steps` required `:muscle-n` to be exactly 0.0, which

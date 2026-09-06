@@ -231,6 +231,22 @@
     (not= (side-of-level tree level (seg-of (:origin muscle)))
           (side-of-level tree level (seg-of (:insertion muscle))))))
 
+(defn levels-crossed
+  "Which levels a muscle's line of force passes through, in `levels` order.
+
+  Public because the rule is the interesting part and it should be possible to ask
+  it about a muscle WITHOUT running a whole profile — including about a muscle that
+  is not in `attachment/instances`. That is what makes the rule checkable as a
+  rule: hand it two attachment sites and it answers from the sites, so a test can
+  move an attachment and watch the answer follow, rather than confirming that a
+  name this file already knows still gets the treatment this file already gives it.
+
+  `muscle` needs only `:origin` and `:insertion` — each `{:segment … :along …}` —
+  and `:side` if it rides on a paired segment."
+  [pose-data muscle]
+  (let [tree (attachment-tree pose-data)]
+    (filterv #(crosses? tree % muscle) levels)))
+
 (defn- tissue-compression-n
   "Axial component of the forces crossing the level, split by what produced them.
 
