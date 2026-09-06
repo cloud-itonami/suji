@@ -29,6 +29,7 @@
             [suji.methods.muscle-strain-test]
             [suji.methods.pose-test]
             [suji.methods.recruit-test]
+            [suji.methods.spine-test]
             [suji.murakumo-test]))
 
 (def namespaces
@@ -42,6 +43,7 @@
     suji.methods.muscle-strain-test
     suji.methods.pose-test
     suji.methods.recruit-test
+    suji.methods.spine-test
     suji.murakumo-test])
 
 ;; An evidence floor: a runner that loads no namespace, or that silently stops

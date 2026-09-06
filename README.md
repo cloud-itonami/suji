@@ -99,8 +99,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 112 tests / 2674 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  —  96 tests /  462 assertions
+clojure -M:test                                   # JVM   — 119 tests / 2720 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 103 tests /  508 assertions
 clojure -M:lint                                   # 0 errors
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -165,6 +165,29 @@ hand-written expressions. `recruit` shares them by minimum cubed stress
 (Crowninshield & Brand 1981) in closed form — exact, and it moves when the anatomy
 moves. The old trapezius expression also charged the head's extension load a second
 time, on top of the cervical group; that term is gone.
+
+**The spine is resolved level by level (2026-09-06).** This actor used to report
+ONE spinal number, the lumped cervical compressive load. `spine.cljc` computes, at
+each of ten intervertebral levels, the weight above it plus the axial component of
+every muscle force crossing it, and divides by that level's disc area — because a
+disc's tolerance is a stress, and 500 N through a cervical disc and 500 N through
+a lumbar one are not the same event.
+
+The muscle term dominates: at L5/S1 in the laptop-on-lap posture it is 612 N
+against 346 N of weight, because an extensor works at a short moment arm and all
+of the force it needs presses the joint together.
+
+⚠ **The level profile is NOT validated and disagrees with the leg that is.** At the
+cervical spine it gives 519 N where the Hansraj-calibrated lumped model gives 232 N
+— a ratio of 2.2, because it uses the muscle's geometric moment arm rather than an
+effective lever fitted to the published table. `cervical-cross-check` computes that
+ratio and names which of the two is validated, so the profile cannot be read as
+though it inherited the validation. It did not.
+
+`attachment-steps` reports the levels where the muscle term drops to zero between
+neighbours. A real muscle attaches over a range of vertebrae; this one attaches at
+a point, so the force steps rather than tapering. Naming the steps is the
+difference between a reader seeing an artefact and a reader believing a spine.
 
 **The frontal plane is CARRIED (2026-09-06).** Six muscle groups were added for
 it — middle deltoid and latissimus dorsi at each shoulder, quadratus lumborum and
