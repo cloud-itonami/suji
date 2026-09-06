@@ -472,6 +472,23 @@
         "lumbar-neutral quiet standing: 3.70 cm, inside the measured 2-6 cm")
     (is (math/nearly= 0.13970138699304943 (:ahead-of-ankle-m cho) 1e-9)
         "Cho's standing lordosis: 13.97 cm, far outside it")
+    ;; EACH TERM PINNED ABSOLUTELY, IN BOTH POSTURES, AND NOT ONLY AS A DIFFERENCE.
+    ;; Measured while writing this: moving a constant 1 cm from the trunk term into
+    ;; the sacrum term produced NO FAILURE at all. The residual could not see it —
+    ;; the sum is unchanged by construction — and the difference pins below could
+    ;; not either, because a constant offset appears in both postures and cancels
+    ;; when they are subtracted. Two checks that both look like per-term checks and
+    ;; are both blind to the same defect. These are the ones that see it.
+    (doseq [[nm g expected]
+            [["lumbar-neutral" neutral {:sacrum-over-the-feet-m 0.019536412946749866
+                                        :trunk-over-the-sacrum-m 0.0012397936122427468
+                                        :everything-below-l5s1-m 0.016260765333737916}]
+             ["Cho's lordosis" cho {:sacrum-over-the-feet-m 0.08232771999905754
+                                    :trunk-over-the-sacrum-m 0.0327953964350415
+                                    :everything-below-l5s1-m 0.024578270558950316}]]]
+      (doseq [[k v] expected]
+        (is (math/nearly= v (k g) 1e-9)
+            (str nm ": " k " is " (k g) " m, pinned at " v))))
     ;; the 10.27 cm, split three ways and each one pinned
     (is (math/nearly= 0.1026644151003189 (d :ahead-of-ankle-m) 1e-9))
     (is (math/nearly= 0.06279130705230768 (d :sacrum-over-the-feet-m) 1e-9)
