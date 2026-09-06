@@ -295,11 +295,20 @@
             ":strain/saturated" :saturated ":strain/as-of" :asOf}}})
 
 (defn datom-kind
-  "The kind of a datom, from its `…/id` attribute. `nil` if it has none — a datom
+  "The kind of a datom, from its `:…/id` attribute. `nil` if it has none — a datom
   with no identity cannot be checked against a record contract, and saying so is
-  better than skipping it silently."
+  better than skipping it silently.
+
+  The leading colon is required, not stripped optimistically: `suji.cells.
+  strain-accumulate.state-machine` emits a SECOND projection of the same
+  `strainReport` record with bare keys (`\"strain/id\"`), and stripping the first
+  character regardless turned that into the kind `\"train\"` — a wrong answer in
+  the violation report rather than an honest `nil`."
   [d]
-  (some (fn [k] (when (str/ends-with? k "/id") (subs k 1 (- (count k) 3)))) (keys d)))
+  (some (fn [k]
+          (when (and (str/starts-with? k ":") (str/ends-with? k "/id"))
+            (subs k 1 (- (count k) 3))))
+        (keys d)))
 
 (defn- type-ok? [declared v]
   (case declared
