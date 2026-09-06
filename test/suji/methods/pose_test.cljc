@@ -27,14 +27,17 @@
   ;; every joint is shared by the segments that meet there — a chain, not a pile
   (let [p (pose/solve-pose body (neutral :trunk-flexion-deg 20.0 :head-flexion-deg 30.0
                                          :shoulder-flexion-deg 40.0 :elbow-flexion-deg 90.0))
-        {:keys [c7 elbow wrist]} (:joints p)]
+        {:keys [c7] :as joints} (:joints p)
+        elbow (:elbow/left joints)
+        wrist (:wrist/left joints)
+        shoulder (:shoulder/left joints)]
     (is (= c7 (:distal (pose/seg-at p "thorax_abdomen"))))
     (is (= c7 (:proximal (pose/seg-at p "head_neck"))))
-    (is (= c7 (:proximal (pose/seg-at p "upper_arm"))))
-    (is (= elbow (:distal (pose/seg-at p "upper_arm"))))
-    (is (= elbow (:proximal (pose/seg-at p "forearm"))))
-    (is (= wrist (:distal (pose/seg-at p "forearm"))))
-    (is (= wrist (:proximal (pose/seg-at p "hand"))))))
+    (is (= shoulder (:proximal (pose/seg-at p "upper_arm/left"))))
+    (is (= elbow (:distal (pose/seg-at p "upper_arm/left"))))
+    (is (= elbow (:proximal (pose/seg-at p "forearm/left"))))
+    (is (= wrist (:distal (pose/seg-at p "forearm/left"))))
+    (is (= wrist (:proximal (pose/seg-at p "hand/left"))))))
 
 (deftest test-endpoints-agree-with-stated-length-and-direction
   (let [p (pose/solve-pose body (neutral :trunk-flexion-deg 25.0 :shoulder-flexion-deg 35.0
@@ -44,14 +47,37 @@
           (str name ": |distal - proximal| must equal the segment length"))
       (is (math/nearly= 1.0 (math/vlen dir) 1e-9) (str name ": direction must be a unit vector")))))
 
-(deftest test-chain-stays-in-the-sagittal-plane
-  ;; this is a 2-D model living in a 3-D frame; z must be identically zero, or a
-  ;; renderer will show a body twisted out of the plane the physics assumes
+(deftest midline-stays-in-the-plane-and-the-arms-mirror-each-other
+  ;; This used to assert that EVERY segment sits at z = 0, which was true of a
+  ;; one-armed model and is exactly what made it unable to represent an asymmetric
+  ;; posture. The invariant that survives is: the midline is midline, and the two
+  ;; arms are mirror images while the posture is symmetric.
   (let [p (pose/solve-pose body (neutral :trunk-flexion-deg 30.0 :head-flexion-deg 45.0
                                          :shoulder-flexion-deg 60.0 :elbow-flexion-deg 90.0))]
-    (doseq [{:keys [name proximal distal com]} (:segments p)]
+    (doseq [{:keys [name side proximal distal com]} (:segments p)
+            :when (= :midline side)]
       (doseq [pt [proximal distal com]]
-        (is (math/nearly= 0.0 (nth pt 2) 1e-12) (str name ": z must be 0"))))))
+        (is (math/nearly= 0.0 (nth pt 2) 1e-12) (str name ": a midline segment has z = 0"))))
+    (doseq [base ["upper_arm" "forearm" "hand"]]
+      (let [l (pose/seg-at p (str base "/left"))
+            r (pose/seg-at p (str base "/right"))]
+        (is (some? l)) (is (some? r))
+        (doseq [k [:proximal :distal :com]]
+          (is (math/nearly= (nth (k l) 0) (nth (k r) 0) 1e-12) (str base " " k ": same x"))
+          (is (math/nearly= (nth (k l) 1) (nth (k r) 1) 1e-12) (str base " " k ": same y"))
+          (is (math/nearly= (nth (k l) 2) (- (nth (k r) 2)) 1e-12)
+              (str base " " k ": mirrored z")))
+        (is (> (nth (:com l) 2) 0.05) "the left arm is on the +Z side, off the midline")))))
+
+(deftest an-asymmetric-posture-stops-the-arms-mirroring
+  ;; the point of the bilateral model: lateral bend must make the two sides differ
+  (let [p (pose/solve-pose body (neutral :trunk-lateral-bend-deg 30.0))
+        l (pose/seg-at p "upper_arm/left")
+        r (pose/seg-at p "upper_arm/right")]
+    (is (not (math/nearly= (nth (:com l) 1) (nth (:com r) 1) 1e-6))
+        "leaning sideways puts one shoulder lower than the other")
+    (is (< (nth (:com l) 1) (nth (:com r) 1))
+        "leaning toward +Z (the person's left) drops the LEFT shoulder")))
 
 (deftest test-folding-forward-shortens-the-chain
   (let [hs (mapv #(pose/total-height-m (pose/solve-pose body (neutral :trunk-flexion-deg %)))
@@ -67,8 +93,8 @@
   ;; algebra this replaced returned 5.15 N·m here, because it placed a 0° elbow's
   ;; forearm horizontally. This is the control that names its own reason.
   (let [p (pose/solve-pose body (neutral))]
-    (doseq [n ["upper_arm" "forearm" "hand"]]
-      (is (math/nearly= 0.0 (pose/anterior-lever (get-in p [:joints :shoulder])
+    (doseq [n ["upper_arm/left" "forearm/left" "hand/left"]]
+      (is (math/nearly= 0.0 (pose/anterior-lever (get-in p [:joints :shoulder/left])
                                                  (pose/seg-at p n))
                         1e-12)
           (str n " hangs under the shoulder and can have no anterior lever")))
@@ -80,8 +106,8 @@
   ;; forearm's mass ANTERIOR, never posterior, and must raise the shoulder moment
   (let [levers (mapv (fn [e]
                        (let [p (pose/solve-pose body (neutral :elbow-flexion-deg e))]
-                         (pose/anterior-lever (get-in p [:joints :shoulder])
-                                              (pose/seg-at p "forearm"))))
+                         (pose/anterior-lever (get-in p [:joints :shoulder/left])
+                                              (pose/seg-at p "forearm/left"))))
                      [0.0 30.0 60.0 90.0])
         moments (mapv #(:moment-nm (load/shoulder-moment body 0.0 % false)) [0.0 30.0 60.0 90.0])]
     (is (every? (fn [[a b]] (< a b)) (partition 2 1 levers))
@@ -132,8 +158,8 @@
                    (neutral :head-flexion-deg 45.0 :trunk-flexion-deg 15.0)]]
     (let [p (pose/solve-pose body posture)
           w (pose/segment-weights body p)
-          arm (for [n ["upper_arm" "forearm" "hand"]] [(pose/seg-at p n) (get w n)])
-          shoulder (get-in p [:joints :shoulder])]
+          arm (for [n ["upper_arm/left" "forearm/left" "hand/left"]] [(pose/seg-at p n) (get w n)])
+          shoulder (get-in p [:joints :shoulder/left])]
       (is (math/nearly= (pose/gravitational-moment shoulder arm)
                         (nth (pose/gravitational-moment-vec shoulder arm) 2)
                         1e-9)
@@ -143,8 +169,8 @@
   (let [p (pose/solve-pose body (neutral :trunk-flexion-deg 30.0 :shoulder-flexion-deg 45.0
                                          :elbow-flexion-deg 90.0))
         w (pose/segment-weights body p)
-        arm (for [n ["upper_arm" "forearm" "hand"]] [(pose/seg-at p n) (get w n)])
-        v (pose/gravitational-moment-vec (get-in p [:joints :shoulder]) arm)]
+        arm (for [n ["upper_arm/left" "forearm/left" "hand/left"]] [(pose/seg-at p n) (get w n)])
+        v (pose/gravitational-moment-vec (get-in p [:joints :shoulder/left]) arm)]
     (is (math/nearly= 0.0 (nth v 0) 1e-12) "no frontal moment in the sagittal plane")))
 
 (deftest abduction-produces-a-frontal-moment-that-grows
@@ -153,8 +179,8 @@
                                                     :elbow-flexion-deg 90.0
                                                     :shoulder-abduction-deg ab))
                    w (pose/segment-weights body p)
-                   arm (for [n ["upper_arm" "forearm" "hand"]] [(pose/seg-at p n) (get w n)])]
-               (Math/abs (nth (pose/gravitational-moment-vec (get-in p [:joints :shoulder]) arm) 0))))
+                   arm (for [n ["upper_arm/left" "forearm/left" "hand/left"]] [(pose/seg-at p n) (get w n)])]
+               (Math/abs (nth (pose/gravitational-moment-vec (get-in p [:joints :shoulder/left]) arm) 0))))
         xs (mapv fr [0.0 20.0 40.0 60.0])]
     (is (math/nearly= 0.0 (first xs) 1e-12))
     (is (every? (fn [[a b]] (< a b)) (partition 2 1 xs))

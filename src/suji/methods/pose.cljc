@@ -91,15 +91,29 @@
               :lat [0.0 0.0 1.0]}]
     (rotate-frame base flex-deg abduct-deg axial-deg (if up? -1.0 1.0))))
 
+(defn placed-name
+  "The unique name of a placed segment. A midline segment keeps its anthropometric
+  name; a paired one is suffixed with its side, because a bilateral model has two
+  of them and `seg-at` has to be able to say which."
+  [base side]
+  (if (= :midline side) base (str base "/" (name side))))
+
 (defn- place
   "One placed segment: proximal point, frame, length → the record every consumer
   reads. `tilt-deg` is kept so a renderer can build a sagittal transform without
-  inverting the direction, and so a test can state the intent it is checking."
-  [name proximal frame length-m com-frac tilt-deg up?]
-  (let [dir (:long frame)
+  inverting the direction, and so a test can state the intent it is checking.
+
+  `:base` is the anthropometric segment this was built from and `:name` is unique
+  within the pose; `segment-weights` reads `:base`, everything that has to talk
+  about one particular arm reads `:name`."
+  [base side proximal frame length-m com-frac tilt-deg up?]
+  (let [name (placed-name base side)
+        dir (:long frame)
         distal (math/v+ proximal (math/v* dir length-m))
         com (math/v+ proximal (math/v* dir (* com-frac length-m)))]
     {:name name
+     :base base
+     :side side
      :proximal proximal
      :distal distal
      :com com
@@ -113,78 +127,104 @@
      ;; needs the out-of-plane placement reads `:frame` or the endpoints.
      :euler-z (math/radians (if up? (- tilt-deg) (- 180.0 tilt-deg)))}))
 
-(defn solve-pose
-  "Place the whole sagittal chain in world space for a body + posture.
+(def biacromial-frac
+  "Shoulder (biacromial) breadth as a fraction of stature — Winter/Drillis. Half of
+  it is how far each glenohumeral joint sits from the midline.
 
-  Returns {:joints {…point} :segments [placed…] :frame {…}}. Joint keys are the
-  anatomical landmarks the moment solver takes moments about; segments are in
-  proximal-to-distal order. The arm chain is placed ONCE — in a purely sagittal
-  posture both arms are mirror images across the plane and carry the same lever,
-  so the loads multiply by two rather than the geometry. The placed arm is the
-  person's LEFT (the +Z side); with a non-zero abduction the two arms are no
-  longer interchangeable, and `:arm-side` says which one this is so a consumer
-  cannot silently read it as both.
+  A one-sided model could ignore this, because a lever measured about the shoulder
+  itself does not care where the shoulder is. A BILATERAL model cannot: the two
+  arms hang at ±this from the midline, and that is exactly what makes their
+  frontal-plane moments about L5/S1 cancel when the posture is symmetric and stop
+  cancelling when it is not. Without it, lateral bend would move the picture and
+  change nothing in the frontal plane."
+  0.245)
 
-  Out-of-plane angles are optional and default to zero:
-    :trunk-lateral-bend-deg   trunk away from the midline (about X)
-    :shoulder-abduction-deg   arm away from the midline
-    :head-rotation-deg        axial rotation of the head on the neck"
-  [body posture]
-  (let [{:keys [head-flexion-deg trunk-flexion-deg
-                shoulder-flexion-deg elbow-flexion-deg]} posture
-        lateral (or (:trunk-lateral-bend-deg posture) 0.0)
-        abduct (or (:shoulder-abduction-deg posture) 0.0)
-        head-rot (or (:head-rotation-deg posture) 0.0)
-        pelvis (segment/seg body "pelvis")
-        thorax (segment/seg body "thorax_abdomen")
-        head (segment/seg body "head_neck")
-        ua (segment/seg body "upper_arm")
+(defn- arm-chain
+  "Place one arm, from the girdle outward. `side-sign` is +1 for the person's left
+  (+Z) and −1 for the right; it mirrors both the lateral offset of the shoulder and
+  the sense of abduction, so that abduction always carries each arm AWAY from the
+  midline rather than both of them the same way."
+  [body {:keys [shoulder-flexion-deg elbow-flexion-deg]} c7 lat-axis abduct side side-sign stature-m]
+  (let [ua (segment/seg body "upper_arm")
         fa (segment/seg body "forearm")
         hand (segment/seg body "hand")
-        l5s1 [0.0 0.0 0.0]
-        ;; pelvis descends from L5/S1; seated, it is the base the chain stands on.
-        p-seg (place "pelvis" l5s1 (segment-frame 0.0 0.0 0.0 false)
-                     (:length-m pelvis) (:com-frac pelvis) 0.0 false)
-        ;; trunk rises from L5/S1, tilted forward by the trunk flexion
-        t-seg (place "thorax_abdomen" l5s1
-                     (segment-frame trunk-flexion-deg lateral 0.0 true)
-                     (:length-m thorax) (:com-frac thorax) trunk-flexion-deg true)
-        c7 (:distal t-seg)
-        ;; the head's tilt is measured from the trunk it sits on, so world tilt adds
-        head-tilt (+ trunk-flexion-deg head-flexion-deg)
-        h-seg (place "head_neck" c7 (segment-frame head-tilt lateral head-rot true)
-                     (:length-m head) (:com-frac head) head-tilt true)
-        ;; glenohumeral ≈ C7 in this chain: there is no scapula segment, and the
-        ;; shoulder moment is taken about the joint, so a shared origin with C7 is
-        ;; the honest simplification rather than an invented offset.
-        shoulder c7
-        ua-seg (place "upper_arm" shoulder
-                      (segment-frame shoulder-flexion-deg (- abduct) 0.0 false)
-                      (:length-m ua) (:com-frac ua) shoulder-flexion-deg false)
+        shoulder (math/v+ c7 (math/v* lat-axis (* side-sign 0.5 biacromial-frac stature-m)))
+        ;; abduction lifts the arm away from the midline on this side
+        ua-frame (segment-frame shoulder-flexion-deg (* (- side-sign) abduct) 0.0 false)
+        ua-seg (place "upper_arm" side shoulder ua-frame (:length-m ua) (:com-frac ua)
+                      shoulder-flexion-deg false)
         elbow (:distal ua-seg)
         ;; Elbow flexion is the angle BETWEEN the forearm and the upper arm (0° =
         ;; straight arm hanging, 90° = right angle), so the forearm's tilt from
-        ;; vertical is the upper arm's tilt PLUS the elbow angle. With a 15°
-        ;; shoulder and a 90° elbow that reaches forward and slightly up — a
-        ;; keyboard posture. The pre-2026-09-06 `(- 90.0 elbow)` gave 0°, i.e.
-        ;; straight down, for the same posture.
+        ;; vertical is the upper arm's tilt PLUS the elbow angle.
         fa-tilt (+ shoulder-flexion-deg elbow-flexion-deg)
-        fa-frame (segment-frame fa-tilt (- abduct) 0.0 false)
-        fa-seg (place "forearm" elbow fa-frame (:length-m fa) (:com-frac fa) fa-tilt false)
+        fa-frame (segment-frame fa-tilt (* (- side-sign) abduct) 0.0 false)
+        fa-seg (place "forearm" side elbow fa-frame (:length-m fa) (:com-frac fa) fa-tilt false)
         wrist (:distal fa-seg)
         ;; no wrist flexion in this model: the hand continues the forearm
-        hand-seg (place "hand" wrist fa-frame (:length-m hand) (:com-frac hand)
+        hand-seg (place "hand" side wrist fa-frame (:length-m hand) (:com-frac hand)
                         fa-tilt false)]
+    {:shoulder shoulder :elbow elbow :wrist wrist
+     :segments [ua-seg fa-seg hand-seg]}))
+
+(defn solve-pose
+  "Place the whole chain in world space for a body + posture.
+
+  Returns {:joints {…point} :segments [placed…] :sides #{…} :frame {…}}. Joint keys
+  are the anatomical landmarks the moment solver takes moments about; segments are
+  in proximal-to-distal order, midline first and then each arm.
+
+  BILATERAL since 2026-09-06. The model used to place ONE arm and multiply its
+  load by two, which is exact for a symmetric posture and silently wrong for every
+  other one: lateral bend is asymmetric by definition, and a single side could
+  neither represent it nor say that it could not. It also meant the two arms'
+  frontal-plane moments about the spine had nothing to cancel against. Both arms
+  are placed now, each at half the biacromial breadth from the midline, and the
+  loads are summed rather than doubled — which gives the same answer as before
+  wherever the posture is symmetric, and a different and correct one where it is
+  not.
+
+  Out-of-plane angles are optional and default to zero:
+    :trunk-lateral-bend-deg   trunk away from the midline (about X)
+    :shoulder-abduction-deg   arms away from the midline, each on its own side
+    :head-rotation-deg        axial rotation of the head on the neck"
+  [body posture]
+  (let [{:keys [head-flexion-deg trunk-flexion-deg]} posture
+        lateral (or (:trunk-lateral-bend-deg posture) 0.0)
+        abduct (or (:shoulder-abduction-deg posture) 0.0)
+        head-rot (or (:head-rotation-deg posture) 0.0)
+        stature-m (:stature-m body)
+        pelvis (segment/seg body "pelvis")
+        thorax (segment/seg body "thorax_abdomen")
+        head (segment/seg body "head_neck")
+        l5s1 [0.0 0.0 0.0]
+        p-seg (place "pelvis" :midline l5s1 (segment-frame 0.0 0.0 0.0 false)
+                     (:length-m pelvis) (:com-frac pelvis) 0.0 false)
+        t-frame (segment-frame trunk-flexion-deg lateral 0.0 true)
+        t-seg (place "thorax_abdomen" :midline l5s1 t-frame
+                     (:length-m thorax) (:com-frac thorax) trunk-flexion-deg true)
+        c7 (:distal t-seg)
+        head-tilt (+ trunk-flexion-deg head-flexion-deg)
+        h-seg (place "head_neck" :midline c7 (segment-frame head-tilt lateral head-rot true)
+                     (:length-m head) (:com-frac head) head-tilt true)
+        ;; the girdle is carried by the trunk, so its lateral axis is the trunk's —
+        ;; leaning sideways carries both shoulders with it
+        lat-axis (:lat t-frame)
+        left (arm-chain body posture c7 lat-axis abduct :left 1.0 stature-m)
+        right (arm-chain body posture c7 lat-axis abduct :right -1.0 stature-m)]
     {:frame {:units :metres :origin "L5/S1" :axes {:x :anterior :y :superior :z :left}}
-     :arm-side :left
+     :sides #{:left :right}
      :joints {:l5s1 l5s1
               :hip (:distal p-seg)
               :c7 c7
-              :shoulder shoulder
-              :elbow elbow
-              :wrist wrist
+              :shoulder/left (:shoulder left)
+              :shoulder/right (:shoulder right)
+              :elbow/left (:elbow left)
+              :elbow/right (:elbow right)
+              :wrist/left (:wrist left)
+              :wrist/right (:wrist right)
               :vertex (:distal h-seg)}
-     :segments [p-seg t-seg h-seg ua-seg fa-seg hand-seg]}))
+     :segments (vec (concat [p-seg t-seg h-seg] (:segments left) (:segments right)))}))
 
 (defn seg-at
   "The placed segment with this name, or nil."
@@ -237,10 +277,22 @@
           placed-with-weights))
 
 (defn segment-weights
-  "Pair each placed segment with its weight in newtons, from the body it came from."
+  "Pair each PLACED segment with its weight in newtons. Keyed by `:name` (unique
+  within the pose) and looked up by `:base` (the anthropometric segment), because
+  a bilateral model has two `upper_arm`s and each carries the mass of one limb —
+  `segment/build-body` already stores paired segments as one side's mass."
   [body pose]
-  (into {} (for [{:keys [name]} (:segments pose)]
-             [name (segment/weight-n (segment/seg body name))])))
+  (into {} (for [{:keys [name base]} (:segments pose)]
+             [name (segment/weight-n (segment/seg body base))])))
+
+(defn segments-on
+  "Placed segments whose base is one of `bases`, on `side` (or on any side when
+  `side` is nil)."
+  ([pose bases] (segments-on pose bases nil))
+  ([pose bases side]
+   (let [bases (set bases)]
+     (filter #(and (bases (:base %)) (or (nil? side) (= side (:side %))))
+             (:segments pose)))))
 
 (defn bone-lines
   "The chain as drawable line segments [from to] — the minimum a renderer needs to

@@ -39,6 +39,11 @@
 ;;               Anthropometric offsets scale with stature, so a fraction of
 ;;               stature is what stays true across bodies; a fraction of the
 ;;               segment would make a long-necked model's muscles wander.
+;;
+;; :lat is stated for the LEFT side. `mirror` negates it for the right, so the
+;; anatomy is described once and the asymmetry comes from the posture. Values near
+;; half the biacromial breadth (see `pose/biacromial-frac`) put a site on the
+;; acromion; smaller ones sit between there and the midline.
 
 (def muscles
   "Line-of-action model for the muscle groups this actor already solved. PCSA
@@ -63,27 +68,27 @@
     :source "representative; occipital insertion near C7 height and well posterior, so the line stays behind the joint through flexion — a straight line from a HIGH insertion crosses in front of C7 around 30 deg and would report the extensors as flexors"}
 
    "upper_trapezius"
-   {:name "upper_trapezius" :pcsa-cm2 9.0
+   {:name "upper_trapezius" :paired? true :pcsa-cm2 9.0
     :acts-about :shoulder :task :scapular-suspension
     ;; occiput/nuchal line → lateral clavicle-acromion; suspends the girdle
-    :origin {:segment "head_neck" :along 0.10 :ant -0.0170 :lat 0.0}
-    :insertion {:segment "thorax_abdomen" :along 0.985 :ant -0.0090 :lat 0.0480}
+    :origin {:segment "head_neck" :along 0.10 :ant -0.0170 :lat 0.0180}
+    :insertion {:segment "thorax_abdomen" :along 0.985 :ant -0.0090 :lat 0.1225}
     :source "representative; suspension line. The insertion rides on the THORAX, not on the humerus: the acromion belongs to the shoulder girdle, and a girdle that rotated with the arm would swing its own suspension line horizontal under abduction and report that the trapezius cannot lift"}
 
    "levator_scapulae"
-   {:name "levator_scapulae" :pcsa-cm2 5.0
+   {:name "levator_scapulae" :paired? true :pcsa-cm2 5.0
     :acts-about :shoulder :task :scapular-suspension
     ;; upper cervical transverse processes → superior medial scapula: shorter,
     ;; more vertical, and closer to the midline than the trapezius
     :origin {:segment "head_neck" :along 0.22 :ant -0.0120 :lat 0.0125}
-    :insertion {:segment "thorax_abdomen" :along 0.985 :ant -0.0120 :lat 0.0270}
+    :insertion {:segment "thorax_abdomen" :along 0.985 :ant -0.0120 :lat 0.0750}
     :source "representative; suspension line, on the thorax for the same reason as upper_trapezius — the scapula is not the humerus"}
 
    "anterior_deltoid"
-   {:name "anterior_deltoid" :pcsa-cm2 10.0
+   {:name "anterior_deltoid" :paired? true :pcsa-cm2 10.0
     :acts-about :shoulder :task :shoulder-flexion
     ;; clavicle → deltoid tuberosity, anterior to the humeral axis
-    :origin {:segment "thorax_abdomen" :along 1.0 :ant 0.01811 :lat 0.0}
+    :origin {:segment "thorax_abdomen" :along 1.0 :ant 0.01811 :lat 0.1225}
     :insertion {:segment "upper_arm" :along 0.42 :ant 0.0 :lat 0.0}
     ;; the humeral head. Without it the straight chord crosses the joint centre at
     ;; 90° of shoulder flexion and the arm goes to zero; with it the arm plateaus
@@ -103,20 +108,25 @@
 
 (defn site-point
   "World position of one attachment site, given a solved pose and the stature the
-  offsets scale with."
-  [pose-data stature-m {:keys [segment along ant lat]}]
-  (let [{:keys [proximal frame length-m]} (pose/seg-at pose-data segment)]
+  offsets scale with. `side` selects which of a paired segment the site rides on;
+  a midline segment ignores it."
+  ([pose-data stature-m site] (site-point pose-data stature-m site nil))
+  ([pose-data stature-m {:keys [segment along ant lat]} side]
+  (let [{:keys [proximal frame length-m]}
+        (or (when side (pose/seg-at pose-data (pose/placed-name segment side)))
+            (pose/seg-at pose-data segment))]
     (-> proximal
         (math/v+ (math/v* (:long frame) (* along length-m)))
         (math/v+ (math/v* (:ant frame) (* (or ant 0.0) stature-m)))
-        (math/v+ (math/v* (:lat frame) (* (or lat 0.0) stature-m))))))
+        (math/v+ (math/v* (:lat frame) (* (or lat 0.0) stature-m)))))))
 
 (defn line-of-action
   "{:origin p :insertion p :dir unit :length-m}. `:dir` points from the insertion
   toward the origin — the direction the muscle pulls the bone it inserts on."
   [pose-data stature-m muscle]
-  (let [o (site-point pose-data stature-m (:origin muscle))
-        i (site-point pose-data stature-m (:insertion muscle))
+  (let [side (:side muscle)
+        o (site-point pose-data stature-m (:origin muscle) side)
+        i (site-point pose-data stature-m (:insertion muscle) side)
         d (math/v- o i)]
     {:origin o :insertion i :dir (math/vnorm d) :length-m (math/vlen d)}))
 
@@ -192,6 +202,41 @@
   ([pose-data stature-m muscle joint-point axis]
    (:arm (moment-arm-detail pose-data stature-m muscle joint-point axis))))
 
+(defn mirror
+  "The right-side twin of a paired muscle: every lateral offset negated, the joint
+  it acts about resolved to that side, and a unique name.
+
+  Mirroring the DATA rather than writing a second table is the point. Two tables
+  is two places for an attachment to be edited and one place for it to be
+  forgotten, and the asymmetry this model exists to represent has to come from the
+  POSTURE, not from the muscles being described differently on the two sides."
+  [muscle side]
+  (let [sign (if (= :left side) 1.0 -1.0)
+        flip (fn [site] (update site :lat #(* sign (or % 0.0))))]
+    (-> muscle
+        (assoc :side side
+               :name (str (:name muscle) "/" (name side))
+               :group (:name muscle))
+        (update :origin flip)
+        (update :insertion flip)
+        (cond-> (= :shoulder (:acts-about muscle))
+          (assoc :acts-about (keyword "shoulder" (name side)))))))
+
+(def instances
+  "Every muscle the solver works with: midline groups once, paired groups twice.
+  Ordered midline-first then left then right, so a consumer's column order is
+  stable."
+  (vec (concat
+        (for [[_ m] muscles :when (not (:paired? m))]
+          (assoc m :group (:name m) :side :midline))
+        (for [side [:left :right], [_ m] muscles :when (:paired? m)]
+          (mirror m side)))))
+
+(defn instance
+  "One muscle instance by its unique name."
+  [name]
+  (first (filter #(= name (:name %)) instances)))
+
 (def vertical
   "The direction a suspension muscle has to pull to hold a hanging girdle up."
   [0.0 1.0 0.0])
@@ -233,11 +278,12 @@
                 (get-in pose-data [:joints (:acts-about muscle)]))))
 
 (defn arms
-  "Every muscle's task coefficient at this pose, keyed by name (a moment arm in
-  metres, or a dimensionless cosine for a suspension muscle — see `effectiveness`).
-  A nil is kept as nil rather than coerced to zero: `recruit` refuses to distribute
-  a load it cannot place, and 0 would silently mean 'infinitely strong'."
+  "Every muscle INSTANCE's task coefficient at this pose, keyed by its unique name
+  (a moment arm in metres, or a dimensionless cosine for a suspension muscle — see
+  `effectiveness`). A nil is kept as nil rather than coerced to zero: `recruit`
+  refuses to distribute a load it cannot place, and 0 would silently mean
+  'infinitely strong'."
   [pose-data stature-m]
   (into (array-map)
-        (for [[k m] muscles]
-          [k (effectiveness pose-data stature-m m)])))
+        (for [m instances]
+          [(:name m) (effectiveness pose-data stature-m m)])))

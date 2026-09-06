@@ -65,8 +65,11 @@
 
 ;; --- Generic static joint moment (RNEA gravity term) -------------------------
 (defn- ->joint-load
-  ([joint moment-nm] (->joint-load joint moment-nm ""))
-  ([joint moment-nm note] {:joint joint :moment-nm moment-nm :note note}))
+  ([joint moment-nm] (->joint-load joint moment-nm "" nil))
+  ([joint moment-nm note] (->joint-load joint moment-nm note nil))
+  ([joint moment-nm note per-side]
+   (cond-> {:joint joint :moment-nm moment-nm :note note}
+     per-side (assoc :per-side per-side))))
 
 (defn- horizontal-lever
   "Horizontal moment arm of a flexed segment's CoM about its proximal joint:
@@ -74,39 +77,47 @@
   [length-m com-frac flexion-deg]
   (* length-m com-frac (Math/sin (math/radians flexion-deg))))
 
-(defn shoulder-moment
-  "Gravitational moment about the glenohumeral joint from the held-out arm(s). Both arms
-  load the shoulder girdle → ×2.
-
-  GEOMETRY CORRECTION (2026-09-06). This used to place the forearm and hand with
-  `(- 90.0 elbow-flexion-deg)` degrees of tilt from vertical. That is backwards at
-  both ends of the range: a straight arm (0°) came out HORIZONTAL, and the 90° elbow
-  of a typing posture came out VERTICAL — hanging straight down from the elbow, with
-  no lever of its own, so the forearm and hand contributed only the elbow's own
-  offset and the shoulder moment of every keyboard posture was under-stated. Elbow
-  flexion is the angle between forearm and upper arm, so the forearm's tilt from
-  vertical is the upper arm's tilt PLUS the elbow angle. The chain is now placed once
-  by `pose/solve-pose` and the moment read off it as Σ weight × anterior lever, which
-  is the definition of the RNEA gravity term rather than a re-derivation of it."
-  [body shoulder-flexion-deg elbow-flexion-deg arms-supported]
-  (let [;; only the arm chain matters about the shoulder, and in this model the arm's
-        ;; tilt is measured from vertical (gravity's frame), not from the thorax — so
-        ;; the trunk and head angles cannot change this moment and are left at zero.
-        p (pose/solve-pose body {:head-flexion-deg 0.0
-                                 :trunk-flexion-deg 0.0
-                                 :shoulder-flexion-deg shoulder-flexion-deg
-                                 :elbow-flexion-deg elbow-flexion-deg})
-        shoulder (get-in p [:joints :shoulder])
-        w (pose/segment-weights body p)
+(defn- arm-moment-about
+  "Sagittal moment about one shoulder from the arm segments hanging off it."
+  [body p side arms-supported]
+  (let [w (pose/segment-weights body p)
         carried (if arms-supported
                   ;; forearm + hand rest on the desk; the girdle carries the upper arm only
                   ["upper_arm"]
                   ["upper_arm" "forearm" "hand"])
-        m (pose/gravitational-moment
-           shoulder
-           (for [n carried] [(pose/seg-at p n) (get w n)]))]
-    (->joint-load "shoulder" (* m 2.0)
-                  (if arms-supported "forearms supported" "arms unsupported (hanging)"))))
+        joint (get-in p [:joints (keyword "shoulder" (name side))])]
+    (pose/gravitational-moment
+     joint
+     (for [seg (pose/segments-on p carried side)] [seg (get w (:name seg))]))))
+
+(defn shoulder-moment
+  "Gravitational moment about the glenohumeral joints from the held-out arm(s).
+
+  BILATERAL since 2026-09-06: the two sides are computed and SUMMED, where this
+  used to compute one and multiply by two. Those agree exactly for a symmetric
+  posture and disagree for every asymmetric one — and lateral bend is asymmetric
+  by definition, so doubling one side could not represent it.
+
+  GEOMETRY CORRECTION (2026-09-06, earlier the same day). This used to place the
+  forearm and hand at `(90° − elbow-flexion)` from vertical, which is inverted at
+  both ends of the range: a straight arm came out HORIZONTAL and the 90° elbow of
+  a typing posture came out VERTICAL. The chain is placed by `pose/solve-pose` and
+  the moment read off it as Σ weight × anterior lever, which is the definition of
+  the RNEA gravity term rather than a re-derivation of it."
+  ([body shoulder-flexion-deg elbow-flexion-deg arms-supported]
+   (shoulder-moment body {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0
+                          :shoulder-flexion-deg shoulder-flexion-deg
+                          :elbow-flexion-deg elbow-flexion-deg
+                          :arms-supported arms-supported}
+                    :both))
+  ([body posture _mode]
+   (let [p (pose/solve-pose body posture)
+         sup (:arms-supported posture)
+         per-side (into {} (for [side [:left :right]]
+                             [side (arm-moment-about body p side sup)]))]
+     (->joint-load "shoulder" (+ (:left per-side) (:right per-side))
+                   (if sup "forearms supported" "arms unsupported (hanging)")
+                   per-side))))
 
 (defn lumbosacral-moment
   "Gravitational moment about L5/S1 from the leaned trunk + head-arm load above it."
@@ -119,27 +130,41 @@
     (->joint-load "lumbosacral" m "trunk lean + carried head")))
 
 (defn frontal-moments
-  "The FRONTAL-plane (about X) gravitational moments this posture creates, which
-  are identically zero for a sagittal posture and are not zero as soon as the
-  chain is abducted or laterally bent.
+  "The FRONTAL-plane (about X) gravitational moments this posture creates.
 
-  These are reported, not solved. This actor has no frontal-plane musculature —
-  no scalenes, no latissimus, no gluteus medius — so there is nobody to assign
-  them to, and `muscle/tension-summary` says so. Reporting a load the model cannot
-  carry is the difference between an incomplete answer and a wrong one; the
-  alternative, which this actor did until 2026-09-06, is to accept a frontal-plane
-  input, move the picture with it, and quietly leave the load out of every number
-  on the page."
+  Zero for a symmetric posture — the two arms hang at ±half the biacromial breadth
+  from the midline and their moments about the spine cancel exactly — and non-zero
+  as soon as the trunk bends laterally or the arms abduct unequally. Before the
+  model was bilateral it placed ONE arm and doubled it, so there was nothing for
+  that arm's frontal moment to cancel against and this number was an artefact of
+  the modelling rather than of the posture.
+
+  These are reported, not solved, until a muscle exists that can carry them: see
+  `muscle/tension-summary`, which refuses to call an answer complete while any of
+  this is unassigned."
   [body posture]
   (let [p (pose/solve-pose body posture)
         w (pose/segment-weights body p)
-        m-about (fn [joint-key names]
+        frontal (fn [joint-point segs]
                   (nth (pose/gravitational-moment-vec
-                        (get-in p [:joints joint-key])
-                        (for [n names] [(pose/seg-at p n) (get w n)]))
-                       0))]
-    {:shoulder-nm (* 2.0 (m-about :shoulder ["upper_arm" "forearm" "hand"]))
-     :lumbosacral-nm (m-about :l5s1 ["thorax_abdomen" "head_neck"])}))
+                        joint-point (for [seg segs] [seg (get w (:name seg))]))
+                       0))
+        arm-bases ["upper_arm" "forearm" "hand"]]
+    {;; PER SIDE, not summed. The two shoulders are different joints with
+     ;; different muscles; a symmetric abduction gives each of them a real frontal
+     ;; moment, and adding them cancels to zero and reports that abducting both
+     ;; arms asks nothing of either shoulder. The lumbosacral term IS a sum,
+     ;; because there is one spine and the two arms load it about the same axis.
+     :shoulder-per-side (into {} (for [side [:left :right]]
+                                   [side (frontal (get-in p [:joints (keyword "shoulder" (name side))])
+                                                  (pose/segments-on p arm-bases side))]))
+     :shoulder-nm (reduce max 0.0
+                          (for [side [:left :right]]
+                            (math/abs* (frontal (get-in p [:joints (keyword "shoulder" (name side))])
+                                                (pose/segments-on p arm-bases side)))))
+     :lumbosacral-nm (frontal (get-in p [:joints :l5s1])
+                              (concat (pose/segments-on p ["thorax_abdomen" "head_neck"])
+                                      (pose/segments-on p arm-bases)))}))
 
 (defn solve-posture-loads
   "Full static inverse-dynamics solve for a posture (the RNEA gravity term).
@@ -151,7 +176,6 @@
         cerv (cervical-load (:head-flexion-deg posture) head-w)
         joints [(->joint-load "cervicothoracic" (:extensor-moment-nm cerv)
                               "cervical extensor moment")
-                (shoulder-moment body (:shoulder-flexion-deg posture)
-                                 (:elbow-flexion-deg posture) (:arms-supported posture))
+                (shoulder-moment body posture :both)
                 (lumbosacral-moment body (:trunk-flexion-deg posture) cerv)]]
     {:cervical cerv :joints joints :frontal (frontal-moments body posture)}))

@@ -3,6 +3,7 @@
   src/suji/methods/test_muscle_strain.cljc."
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
+            [suji.methods.attachment :as attachment]
             [suji.methods.math :as math]
             [suji.methods.analyze :as analyze]
             [suji.methods.load :as load]
@@ -16,10 +17,16 @@
         p (posture/posture-from-workstation posture/laptop-on-lap)
         loads (load/solve-posture-loads body p)
         tensions (muscle/solve-muscle-tensions body p loads)]
-    (is (= (set (map :name tensions)) (set (keys muscle/specs))))
-    (doseq [t tensions]
+    ;; every instance appears, and every instance belongs to a declared group
+    (is (= (set (map :name tensions)) (set (map :name attachment/instances))))
+    (is (every? #(contains? muscle/specs (:group %)) tensions))
+    (doseq [t (remove :refused tensions)]
       (is (>= (:force-n t) 0))
-      (is (and (<= 0 (:mvc-pct t)) (< (:mvc-pct t) 100))))))
+      (is (and (<= 0 (:mvc-pct t)) (< (:mvc-pct t) 100))))
+    ;; and a refused entry carries no numbers to mistake for small ones
+    (doseq [t (filter :refused tensions)]
+      (is (nil? (:force-n t)))
+      (is (nil? (:mvc-pct t))))))
 
 (deftest test-endurance-falls-with-load
   (is (< (strain/endurance-minutes 50.0)

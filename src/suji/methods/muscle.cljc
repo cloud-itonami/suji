@@ -63,25 +63,39 @@
    "anterior_deltoid"   {:name "anterior_deltoid"   :pcsa-cm2 10.0 :moment-arm-m 0.030}
    "erector_spinae"     {:name "erector_spinae"     :pcsa-cm2 34.0 :moment-arm-m 0.055}))
 
-;; emission order — unchanged, so every downstream consumer keeps its column order
-(def ^:private emit-order
-  ["cervical_extensors" "anterior_deltoid" "erector_spinae"
-   "upper_trapezius" "levator_scapulae"])
+;; emission order — midline groups, then each side, matching `attachment/instances`
+(def emit-order (mapv :name attachment/instances))
+
+(defn f-max-of
+  "F_max for one muscle instance, from its group's PCSA."
+  [inst]
+  (f-max-n (get specs (:group inst))))
 
 (defn suspended-weight-n
-  "Weight the shoulder girdle has to suspend: the arm segments hanging from it,
-  both sides. Resting the forearms on a desk transfers those two segments to the
-  desk, so the girdle carries the upper arms only — that is the whole of the
-  `arms-supported` effect, stated as which segments are hanging rather than as a
-  multiplier."
-  [body arms-supported]
-  (let [hanging (if arms-supported ["upper_arm"] ["upper_arm" "forearm" "hand"])]
-    (* 2.0 (reduce + 0.0 (map #(segment/weight-n (segment/seg body %)) hanging)))))
+  "Weight ONE shoulder girdle has to suspend: the arm segments hanging from it.
+  Resting the forearms on a desk transfers those two segments to the desk, so the
+  girdle carries the upper arm only — that is the whole of the `arms-supported`
+  effect, stated as which segments are hanging rather than as a multiplier.
 
-(defn- candidates-for [task coeffs]
-  (for [[k m] attachment/muscles
-        :when (= task (:task m))]
-    {:name k :f-max-n (f-max-n (get specs k)) :coeff (get coeffs k)}))
+  Per side since the model became bilateral: this used to be `2 ×` one arm, which
+  is the same number for a symmetric posture and cannot represent any other."
+  [body p side]
+  (let [w (pose/segment-weights body p)
+        hanging (if (:arms-supported (meta p)) ["upper_arm"] ["upper_arm" "forearm" "hand"])]
+    (reduce + 0.0 (map #(get w (:name %)) (pose/segments-on p hanging side)))))
+
+(defn- girdle-load-n [body p side arms-supported]
+  (let [w (pose/segment-weights body p)
+        hanging (if arms-supported ["upper_arm"] ["upper_arm" "forearm" "hand"])]
+    (reduce + 0.0 (map #(get w (:name %)) (pose/segments-on p hanging side)))))
+
+(defn- candidates
+  "Muscle instances for one task, optionally restricted to one side."
+  [task side coeffs]
+  (for [m attachment/instances
+        :when (and (= task (:task m))
+                   (or (nil? side) (= side (:side m))))]
+    {:name (:name m) :f-max-n (f-max-of m) :coeff (get coeffs (:name m))}))
 
 (defn- ->tension
   "Attach %MVC to one shared result. A refusal stays a refusal — there is no
@@ -94,24 +108,40 @@
 (defn solve-muscle-tensions
   "Map a posture's joint loads onto per-muscle force and %MVC.
 
-  Returns a vector in the historical order. An entry is either
-  {:name :force-n :f-max-n :mvc-pct :coeff} or {:name :refused :note :mvc-pct nil}."
+  BILATERAL. Each side's shoulder and girdle equilibrium is solved on its own, so
+  an asymmetric posture — which is any posture with lateral bend, and any posture
+  where the two arms differ — loads the two sides differently. The midline groups
+  (cervical extensors, erector spinae) are solved once; their PCSA is already the
+  bilateral sum.
+
+  Returns a vector in `emit-order`. An entry is either
+  {:name :group :side :force-n :f-max-n :mvc-pct :coeff} or
+  {:name :refused :note :mvc-pct nil}."
   [body posture loads]
   (let [p (pose/solve-pose body posture)
         coeffs (attachment/arms p (:stature-m body))
+        sup (:arms-supported posture)
         joint (fn [n] (first (filter #(= n (:joint %)) (:joints loads))))
         by-name (fn [xs] (into {} (map (juxt :name identity)) xs))
+        shoulder-per-side (:per-side (joint "shoulder"))
         results
-        (merge
-         (by-name (recruit/share (candidates-for :cervical-extension coeffs)
-                                 (get-in loads [:cervical :extensor-moment-nm])))
-         (by-name (recruit/share (candidates-for :shoulder-flexion coeffs)
-                                 (:moment-nm (joint "shoulder"))))
-         (by-name (recruit/share (candidates-for :trunk-extension coeffs)
-                                 (:moment-nm (joint "lumbosacral"))))
-         (by-name (recruit/share (candidates-for :scapular-suspension coeffs)
-                                 (suspended-weight-n body (:arms-supported posture)))))]
-    (mapv (comp ->tension results) emit-order)))
+        (apply merge
+               (by-name (recruit/share (candidates :cervical-extension nil coeffs)
+                                       (get-in loads [:cervical :extensor-moment-nm])))
+               (by-name (recruit/share (candidates :trunk-extension nil coeffs)
+                                       (:moment-nm (joint "lumbosacral"))))
+               (for [side [:left :right]]
+                 (merge
+                  (by-name (recruit/share (candidates :shoulder-flexion side coeffs)
+                                          (get shoulder-per-side side 0.0)))
+                  (by-name (recruit/share (candidates :scapular-suspension side coeffs)
+                                          (girdle-load-n body p side sup))))))
+        instance-by (into {} (map (juxt :name identity)) attachment/instances)]
+    (mapv (fn [n]
+            (let [inst (instance-by n)]
+              (merge (select-keys inst [:group :side])
+                     (->tension (get results n)))))
+          emit-order)))
 
 (defn tension-summary
   "Which parts of the load this solve could place, for a consumer that must not
