@@ -195,6 +195,16 @@ none of the three ("There is no curvature: the model's spine is two straight
 segments"). `the-disagreement-is-the-absent-tissue-term-not-the-weight` asserts
 that decomposition, so the explanation is a computation rather than a story.
 
+**The crossing repair of 2026-09-07 did not move this number, and it could not.**
+When `crosses?` stopped being a half-space test on height, every cervical row fell
+and the lumbar rows at laptop-on-lap did not. At Wilke's posture the model force is
+**350.887 N before and 350.887 N after, to every digit** — and the reason is
+stronger than the arithmetic: at zero trunk flexion the crossing SET at L4/L5 was
+already empty under both rules. The twelve muscles carrying force at that posture
+are the girdle trio and three leg muscles per side, and none of the six ever passed
+either test. So this cross-check is untouched by the repair, and reporting it as
+unchanged is the honest answer rather than a lucky one.
+
 **The model was not tuned to close the gap.** A fudge factor of 1.57 would make
 this section read like a validation and would be worth nothing.
 
@@ -567,7 +577,7 @@ after:
 | shoulder moment, sagittal | 9.922588 N·m | 1.812620 | 1.812620 |
 | shoulder moment, **frontal** (left) | −3.9184149037422804 N·m | **−3.9184149037422804** | **−1.600583792781923** |
 | `middle_deltoid/left` | 21.56177777831644 %MVC | **21.56177777831644** | **8.843874638150753** |
-| L5/S1 weight-above (`spine`) | 367.945508 N | **367.945508** | **367.945508** — see below |
+| L5/S1 weight-above (`spine`) | 367.945508 N | **367.945508** | **337.741026** — see below |
 
 The supported column was **byte-identical** to the unsupported one in the frontal plane. In the
 sagittal plane a forearm rested on a desk; in the frontal plane the same forearm, of the same arm,
@@ -581,7 +591,9 @@ supported, and `quadratus_lumborum/right` goes 27.882735608784447 → 24.5779002
 **One place decides now.** `load/body-carries?` answers "does the body still carry this segment,
 or has the desk taken it", `load/desk-borne-bases` is `#{"forearm" "hand"}`, and
 `arm-moment-about`, `elbow-moment`, `wrist-moment`, `lumbar-borne-bases` and `frontal-moments` all
-route through it. `lumbar-borne-bases` **was a map keyed by support state** — a second
+route through it — and since later the same day so does `spine/above-fraction`, which was the
+last holdout (see **The spine has paid the desk** below; that is what moved the fourth row of the
+table from byte-identical to 337.741026 N). `lumbar-borne-bases` **was a map keyed by support state** — a second
 hand-written copy of the same two-element answer — and is derived now; the frontal L5/S1 term
 asks it for its segment list rather than concatenating its own. The idealisation is stated once,
 in `body-carries?`, and therefore holds identically everywhere: *the desk's upward reaction is
@@ -604,39 +616,33 @@ posture chosen so that all six are non-zero. Three of the six did not move by a 
 workstations is unchanged too (ratios 2.379664 / 1.666824 / 1.766411), because the arms load
 trunk levels only and never reached a cervical one.
 
-### What the spine still owes the desk, and the function it can call
+### The spine has paid the desk (2026-09-07)
 
-`spine/above-fraction` decides how much of each segment sits above a level, and its "a segment the
-rank table does not know is an ARM, which hangs from the girdle and therefore loads every trunk
-level" branch is **right and incomplete**: an arm hangs from the girdle *unless it is lying on a
-desk*. `weight-above-n` is therefore identical in both support states — 367.945508 N at the
-posture above — and `spine.cljc` is the last place in this model where the desk does not exist.
+`spine/above-fraction` decides how much of each segment sits above a level, and its "an
+unrecognised segment is an ARM, which hangs from the girdle and therefore loads every trunk level"
+branch was **right and incomplete**: an arm hangs from the girdle *unless it is lying on a desk*.
+`weight-above-n` was byte-identical in both support states, so `spine.cljc` was the last place in
+this model where the desk did not exist. It exists now: `above-fraction` asks
+`load/body-carries?`, the same function every other equilibrium asks, and the posture is threaded
+`profile` → `level-compression` → `weight-above-n` → `above-fraction`. `level-compression` gained
+a parameter; `profile` is its only caller in this tree.
 
-`spine.cljc` already `:require`s `load`, so the call is available with no new dependency:
-
-```clojure
-(load/body-carries? posture (:base seg))   ;; false for "forearm"/"hand" when :arms-supported
-```
-
-It needs the POSTURE, which `above-fraction` and `weight-above-n` do not currently take.
-`profile` has it, and threading it through `level-compression` → `weight-above-n` →
-`above-fraction` is the whole change. Measured with that thread in place and then reverted
-byte-identical, on the same 70 kg / 1.70 m body:
-
-| posture | level | weight-above now | with the flag honoured | force-n now | with the flag |
+| posture | level | weight-above before | after | force-n before | after |
 |---|---|---|---|---|---|
-| audit, supported | L5/S1 | 367.9455 N | **337.7410** | 400.1093 N | **369.9048** |
-| audit, supported | L4/L5 | 350.8868 | **320.6824** | 383.0506 | **352.8461** |
-| `laptop-on-desk` | L5/S1 | 366.5454 | **336.4558** | 660.4416 | **630.3521** |
-| `laptop-on-desk` | L4/L5 | 349.5516 | **319.4621** | 643.4479 | **613.3583** |
+| `laptop-on-desk` | L5/S1 | 366.545364 N | **336.455819** | 660.441627 N | **630.352082** |
+| `laptop-on-desk` | L4/L5 | 349.551610 | **319.462065** | 643.447872 | **613.358328** |
+| `external-monitor+keyboard` | L5/S1 | 366.545364 | **336.455819** | 590.956342 | **560.866797** |
+| `external-monitor+keyboard` | L4/L5 | 349.551610 | **319.462065** | 573.962588 | **543.873043** |
 
-The drop is the same at every lumbar level, because `above-fraction` gives an arm 1.0 at all of
-them: **30.2045 N** at the audit posture and **30.0896 N** at `laptop-on-desk`. Both are the
-weight of two forearms and two hands — 30.204482 N — times the level axis's vertical component,
-which is 1.0 for an upright trunk and cos 5° for that workstation's. Both cross-checks are unmoved by
-it: `lumbar-cross-check` because Wilke's posture is unsupported, `cervical-cross-check` because no
-cervical level ever counted an arm. That is measured, not predicted: 350.8868 N / 0.6357 and
-2.3797 / 1.6668 / 1.7664 with the thread in and with it out.
+The drop is **30.089545 N** and it is the same at every lumbar level, because the cut gives an arm
+1.0 at all of them. `the-desk-takes-the-forearms-off-the-lumbar-spine` derives that number rather
+than typing it — two forearms and two hands, projected on the level axis — and asserts that **no
+cervical level moves at all**, because an arm hangs below every one of them. `laptop-on-lap` is
+untouched: it is `:arms-supported false`.
+
+Neither published cross-check moved: `lumbar-cross-check` because Wilke's posture is unsupported
+(350.886840 N, ratio 0.635665, unchanged to the bit), `cervical-cross-check` because no cervical
+level ever counted an arm.
 
 **An audit finding that did not reproduce.** The same audit reported that
 `muscle/suspended-weight-n` read the flag from `(meta p)` and that `pose` never calls `with-meta`,
@@ -971,16 +977,23 @@ arms — the weight term is untouched, because `above-fraction` was already coun
 what the moment was not.)
 
 ⚠ **The level profile is NOT validated and disagrees with the leg that is.** At the
-cervical spine it disagrees with the Hansraj-calibrated lumped model by roughly a
-factor of two, because it uses the muscle's geometric moment arm rather than an
-effective lever fitted to the published table. At the lumbar spine it now has a
-published measurement to answer to, and it disagrees with that too — in the other
-direction. See **The lumbar spine against the literature** below.
+cervical spine it disagrees with the Hansraj-calibrated lumped model, because it
+uses the muscle's geometric moment arm rather than an effective lever fitted to the
+published table. Until 2026-09-07 that sentence was the whole explanation and it
+was not the whole cause: the C7/T1 row also contained 186 N of anterior deltoid and
+wrist extensor, admitted by a crossing rule that compared heights. Removing them
+took the ratio from 2.38 to 1.70 — **closer to the validated leg, and that is not
+evidence of anything.** Agreement bought by deleting a defect somewhere else is not
+a validation; what the profile inherited from the repair is a smaller number, not a
+measurement. At the lumbar spine it has a published measurement to answer to, and
+it disagrees with that too — in the other direction. See **The lumbar spine against
+the literature** below.
 
 **The ratio is not written here on purpose.** It moves whenever the muscle set
-moves — it was 2.24 when the level profile landed, 2.44 after the ligaments, and
-2.38 after the cervical load stopped ignoring trunk flexion —
-and a number in a standing document gets quoted with its date dropped. Ask for it:
+moves — it was 2.24 when the level profile landed, 2.44 after the ligaments, 2.38
+after the cervical load stopped ignoring trunk flexion, and 1.70 once the crossing
+rule stopped admitting arms — and a number in a standing document gets quoted with
+its date dropped. Ask for it:
 
 ```clojure
 (spine/cervical-cross-check body posture tensions (:cervical loads))
@@ -1017,14 +1030,69 @@ them would report the missing region as an attachment artefact. And rows with no
 that cannot see its input must not return the value of one that looked and found
 nothing.
 
-⚠ **`:muscle-crossing` also makes a second defect visible, which is named and not
-fixed.** `crosses?` is a half-space test on HEIGHT along the spine, so a muscle
-nowhere near the spine counts whenever its two ends straddle a level's height:
-at laptop-on-lap the whole C3/C4 row is carried by the two wrist extensors, and at
-60° of trunk flexion `vasti` and `tibialis_anterior` appear at L1/L2. A wrist
-extensor transmits its force to the forearm, not through somebody's neck. Fixing it
-moves every number in this namespace and both published cross-checks, so it is
-written down in `crosses?` as a known gap rather than silently changed.
+**Which muscles load a level is now a path through the skeleton, not a height
+(2026-09-07).** `:muscle-crossing` made a second defect visible and this is the
+commit that removed it. `crosses?` used to project both attachment points onto the
+spine's local axis at the level and ask whether they straddled it, so anything
+whose two ends sat at different heights counted — whether or not its line of force
+went near a spine. Measured at laptop-on-lap, 70 kg / 1.70 m, before the repair:
+
+| level | muscle term | who was carrying it |
+|---|---|---|
+| C3/C4 | 61.4 N | `wrist_extensors/left` + `/right`, **100% of it** |
+| C4/C5 | 96.0 N | 64% wrist extensor, 36% levator scapulae |
+| C5/C6 | 96.0 N | same |
+| C6/C7 | 254.9 N | 49% anterior deltoid, 24% wrist extensor |
+| C7/T1 | 587.8 N | 57% cervical extensors, 21% anterior deltoid, 10% wrist extensor |
+
+and at 60° of trunk flexion `vasti` and `tibialis_anterior` appeared at L1/L2 while
+`vasti` carried 117.7 N of the 186.0 N at C3/C4. A wrist extensor transmits its
+force to the forearm and a vastus transmits it to the tibia; neither passes through
+anybody's neck.
+
+A level is now a **cut of the skeleton**: take the point out and the body falls
+into two pieces, and a muscle crosses the level when its two attachments land in
+different pieces. Walk from each attachment toward L5/S1, carrying the fraction at
+which each segment hangs on the next; if the walk reaches the level's own segment,
+the answer is whether it arrived past the level, and if it reaches the root without
+ever entering that segment, the level was never between the site and the root. A
+hand and a forearm both reach the root through `upper_arm → thorax_abdomen (1.0)`
+and never enter `head_neck`, so no muscle of the arm chain can load a cervical
+level at any height in any posture.
+
+**It is derived, not listed.** There is no set of spinal muscles anywhere in
+`spine.cljc` and no name is tested. The answer comes from two things the model
+already states: which bone each attachment rides on and how far along it
+(`attachment/muscles`), and which bone hangs from which and where — `pose`'s
+`:attaches-to`, **a pure addition made in the same wave**, because `solve-pose` had
+always known the skeleton's shape and then discarded it. Ask the rule about a
+muscle it has never heard of:
+
+```clojure
+(spine/levels-crossed pose-data {:origin    {:segment "forearm" :along 0.10}
+                                 :insertion {:segment "hand"    :along 0.25}
+                                 :side :left})
+;; => []                                   ; the same map, sites moved:
+(spine/levels-crossed pose-data {:origin    {:segment "thorax_abdomen" :along 0.97}
+                                 :insertion {:segment "head_neck"      :along 0.20}})
+;; => C7/T1 C6/C7 C5/C6 C4/C5
+```
+
+**What moved, and what did not.** At laptop-on-lap the lumbar rows are unchanged —
+the muscles that were crossing them already belonged there. The cervical rows fell:
+C7/T1 from 651.1 N to 464.9 N, C3/C4 from 80.3 N to 18.9 N. The **peak stress moved
+from C7/T1 (1.302 MPa) to L2/L3 (0.996 MPa)**, which is the more consequential
+change: the level this actor named as the most stressed one was being named by
+wrist extensors and deltoids.
+
+⚠ **C3/C4 now carries no muscle at all**, and that is reported rather than filled.
+This model's most cranial muscle attachment is `levator_scapulae` at 0.22 of the
+head_neck segment; C3/C4 sits at 0.24, so nothing in the set spans it and the level
+reports the weight above it and nothing else. A real upper cervical spine is
+spanned by muscles that reach the skull and this set has none of them. That is a
+gap in the model's anatomy, not a statement about a neck — and it is exactly what
+the old rule was hiding, because a wrist extensor was standing in for the muscles
+that are missing.
 
 **The frontal plane is CARRIED (2026-09-06).** Six muscle groups were added for
 it — middle deltoid and latissimus dorsi at each shoulder, quadratus lumborum and
@@ -1332,8 +1400,9 @@ since 2026-09-07 it answers to Frey Law & Avin's meta-analysis of measured endur
 answer is that it agrees with the pooled curve and disagrees with the joint-specific ones — see
 "The dose layer against the endurance literature" above.** The per-level spinal profile is
 **not** validated, and since 2026-09-07 that is a measurement rather than a disclaimer: it disagrees
-with the Hansraj-calibrated cervical model by about a factor of two, and with Wilke's in-vivo lumbar
+with the Hansraj-calibrated cervical model by about 70%, and with Wilke's in-vivo lumbar
 pressure by about a factor of two thirds in the other direction. Both disagreements are computed by
 `cervical-cross-check` / `lumbar-cross-check` and asserted by tests, so neither can quietly stop
-being true. No hardware, no live member scan, no live kami-genesis backend. Cells `.solve()` raise
+being true. The cervical figure was `about a factor of two` until the crossing rule was repaired
+later the same day; the lumbar one did not move at all, and why it could not is stated below. No hardware, no live member scan, no live kami-genesis backend. Cells `.solve()` raise
 at R0; `load_solve` transitions are unit-tested.

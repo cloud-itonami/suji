@@ -127,6 +127,29 @@
      ;; needs the out-of-plane placement reads `:frame` or the endpoints.
      :euler-z (math/radians (if up? (- tilt-deg) (- 180.0 tilt-deg)))}))
 
+(defn- hangs-from
+  "Say which placed segment this one hangs from, and WHERE along that segment it
+  hangs — `{:segment name :along fraction}`, or nil for the one segment that is
+  the root of the chain.
+
+  ADDED 2026-09-07, and it is a pure addition: nothing that read a placed segment
+  before reads `:attaches-to`, and no value that was already there changed. It
+  exists because `solve-pose` has always KNOWN this — it threads `c7` into
+  `head_neck` and into each `arm-chain`, and `pelvis-seg`'s distal into each
+  `leg-chain` — and then threw the fact away, leaving every consumer to guess the
+  skeleton's shape from world coordinates. `spine/crosses?` guessed it from
+  HEIGHT, and so counted a wrist extensor as loading somebody's neck.
+
+  `:along` is a fraction of the PARENT's length from the parent's proximal joint,
+  the same convention `attachment` states its sites in, so the two compose without
+  a conversion. The lateral offsets that put a glenohumeral joint half a
+  biacromial breadth from the midline, or a femoral head half an interhip breadth
+  from it, are deliberately NOT represented here: this says which bone carries
+  which, not where the joint centre sits, and `:proximal` already says the latter
+  exactly."
+  [seg parent-name along]
+  (assoc seg :attaches-to (when parent-name {:segment parent-name :along along})))
+
 (def biacromial-frac
   "Shoulder (biacromial) breadth as a fraction of stature — Winter/Drillis. Half of
   it is how far each glenohumeral joint sits from the midline.
@@ -152,15 +175,21 @@
         shoulder (math/v+ c7 (math/v* lat-axis (* side-sign 0.5 biacromial-frac stature-m)))
         ;; abduction lifts the arm away from the midline on this side
         ua-frame (segment-frame shoulder-flexion-deg (* (- side-sign) abduct) 0.0 false)
-        ua-seg (place "upper_arm" side shoulder ua-frame (:length-m ua) (:com-frac ua)
-                      shoulder-flexion-deg false)
+        ;; the arm hangs from the GIRDLE, which this model rides on the top of the
+        ;; trunk: the shoulder is c7 offset laterally, so the upper arm attaches to
+        ;; `thorax_abdomen` at 1.0 of its length and to nothing cervical at all.
+        ua-seg (hangs-from (place "upper_arm" side shoulder ua-frame (:length-m ua)
+                                  (:com-frac ua) shoulder-flexion-deg false)
+                           "thorax_abdomen" 1.0)
         elbow (:distal ua-seg)
         ;; Elbow flexion is the angle BETWEEN the forearm and the upper arm (0° =
         ;; straight arm hanging, 90° = right angle), so the forearm's tilt from
         ;; vertical is the upper arm's tilt PLUS the elbow angle.
         fa-tilt (+ shoulder-flexion-deg elbow-flexion-deg)
         fa-frame (segment-frame fa-tilt (* (- side-sign) abduct) 0.0 false)
-        fa-seg (place "forearm" side elbow fa-frame (:length-m fa) (:com-frac fa) fa-tilt false)
+        fa-seg (hangs-from (place "forearm" side elbow fa-frame (:length-m fa)
+                                  (:com-frac fa) fa-tilt false)
+                           (placed-name "upper_arm" side) 1.0)
         wrist (:distal fa-seg)
         ;; WRIST EXTENSION, added 2026-09-06. The hand used to continue the forearm
         ;; rigidly, which gave the wrist muscles a moment arm that could not change
@@ -171,8 +200,9 @@
         wrist-ext (or wrist-extension-deg 0.0)
         hand-tilt (+ fa-tilt wrist-ext)
         hand-frame (segment-frame hand-tilt (* (- side-sign) abduct) 0.0 false)
-        hand-seg (place "hand" side wrist hand-frame (:length-m hand) (:com-frac hand)
-                        hand-tilt false)]
+        hand-seg (hangs-from (place "hand" side wrist hand-frame (:length-m hand)
+                                    (:com-frac hand) hand-tilt false)
+                             (placed-name "forearm" side) 1.0)]
     {:shoulder shoulder :elbow elbow :wrist wrist
      :segments [ua-seg fa-seg hand-seg]}))
 
@@ -244,11 +274,15 @@
                      (math/v* lat-axis (* side-sign 0.5 interhip-frac stature-m)))
         th-tilt hip-flex
         th-frame (segment-frame th-tilt 0.0 0.0 false)
-        th-seg (place "thigh" side hip th-frame (:length-m th) (:com-frac th) th-tilt false)
+        th-seg (hangs-from (place "thigh" side hip th-frame (:length-m th)
+                                  (:com-frac th) th-tilt false)
+                           "pelvis" 1.0)
         knee (:distal th-seg)
         sh-tilt (- th-tilt knee-flex)
         sh-frame (segment-frame sh-tilt 0.0 0.0 false)
-        sh-seg (place "shank" side knee sh-frame (:length-m sh) (:com-frac sh) sh-tilt false)
+        sh-seg (hangs-from (place "shank" side knee sh-frame (:length-m sh)
+                                  (:com-frac sh) sh-tilt false)
+                           (placed-name "thigh" side) 1.0)
         ankle (:distal sh-seg)
         ft-tilt (+ sh-tilt 90.0 dorsi)
         ft-frame (segment-frame ft-tilt 0.0 0.0 false)
@@ -257,7 +291,12 @@
         ;; its own joint; this one does not, and a consumer that assumes otherwise
         ;; puts the base of support in the wrong place.
         heel (math/v- ankle (math/v* (:long ft-frame) (* heel-frac (:length-m ft))))
-        ft-seg (place "foot" side heel ft-frame (:length-m ft) (:com-frac ft) ft-tilt false)]
+        ;; the foot hangs from the shank at the ANKLE, which is the shank's distal
+        ;; end — 1.0 of the shank — even though it is `heel-frac` along the foot
+        ;; rather than at the foot's own proximal point.
+        ft-seg (hangs-from (place "foot" side heel ft-frame (:length-m ft)
+                                  (:com-frac ft) ft-tilt false)
+                           (placed-name "shank" side) 1.0)]
     {:hip hip :knee knee :ankle ankle :heel heel :toe (:distal ft-seg)
      :segments [th-seg sh-seg ft-seg]}))
 
@@ -305,15 +344,26 @@
         thorax (segment/seg body "thorax_abdomen")
         head (segment/seg body "head_neck")
         l5s1 [0.0 0.0 0.0]
-        p-seg (place "pelvis" :midline l5s1 (segment-frame 0.0 0.0 0.0 false)
-                     (:length-m pelvis) (:com-frac pelvis) 0.0 false)
+        ;; The trunk is the ROOT of this chain and the pelvis hangs off its
+        ;; proximal end. Both start at L5/S1, so either could have been called the
+        ;; root; the trunk is, because `spine/levels` states every level as a
+        ;; fraction of a segment measured from L5/S1 upward, and rooting the chain
+        ;; anywhere else would make that reading depend on a convention stated
+        ;; somewhere the levels cannot see.
+        p-seg (hangs-from (place "pelvis" :midline l5s1 (segment-frame 0.0 0.0 0.0 false)
+                                 (:length-m pelvis) (:com-frac pelvis) 0.0 false)
+                          "thorax_abdomen" 0.0)
         t-frame (segment-frame trunk-flexion-deg lateral 0.0 true)
-        t-seg (place "thorax_abdomen" :midline l5s1 t-frame
-                     (:length-m thorax) (:com-frac thorax) trunk-flexion-deg true)
+        t-seg (hangs-from (place "thorax_abdomen" :midline l5s1 t-frame
+                                 (:length-m thorax) (:com-frac thorax)
+                                 trunk-flexion-deg true)
+                          nil nil)
         c7 (:distal t-seg)
         head-tilt (+ trunk-flexion-deg head-flexion-deg)
-        h-seg (place "head_neck" :midline c7 (segment-frame head-tilt lateral head-rot true)
-                     (:length-m head) (:com-frac head) head-tilt true)
+        h-seg (hangs-from (place "head_neck" :midline c7
+                                 (segment-frame head-tilt lateral head-rot true)
+                                 (:length-m head) (:com-frac head) head-tilt true)
+                          "thorax_abdomen" 1.0)
         ;; the girdle is carried by the trunk, so its lateral axis is the trunk's —
         ;; leaning sideways carries both shoulders with it
         lat-axis (:lat t-frame)

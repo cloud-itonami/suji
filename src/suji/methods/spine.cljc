@@ -35,7 +35,14 @@
   that IS validated (Hansraj 2014) and reports which of the two carries that
   validation. `lumbar-cross-check` compares the lumbar profile against a published
   in-vivo measurement (Wilke 1999). Neither makes this profile validated; the
-  second one measures, in newtons, how far from a measurement it is."
+  second one measures, in newtons, how far from a measurement it is.
+
+  BOTH WERE RE-MEASURED ON 2026-09-07, when `crosses?` stopped deciding by height.
+  The cervical ratio fell from 2.38 to 1.70 because the C7/T1 row lost muscles that
+  do not reach a neck. The lumbar figure did not move at all — 350.887 N before and
+  after — because at Wilke's zero-flexion posture the crossing set at L4/L5 was
+  already empty under both rules: the muscles carrying force there are the girdle
+  trio and three leg muscles per side, and none of them ever passed either test."
   (:require [suji.methods.attachment :as attachment]
             [suji.methods.load :as load]
             [suji.methods.math :as math]
@@ -77,75 +84,207 @@
     {:point (math/v+ proximal (math/v* (:long frame) (* (:along level) length-m)))
      :axis (:long frame)}))
 
+;; --- the shape of the skeleton, which two questions below both need ---------
+;;
+;; Where a level sits and what a muscle spans are the same question asked from
+;; two ends, so they read the same structure. Before 2026-09-07 they read two
+;; different ones: `above-fraction` had a rank table and `crosses?` had world
+;; heights, and only one of them was right.
+
+(defn- placed-segment-name
+  "The name of the placed segment an attachment site rides on, for this muscle's
+  side. Resolved exactly the way `attachment/site-point` resolves it — a paired
+  segment gets the side suffix, a midline one does not — because a rule about
+  where a site SITS and a rule about which bone it is ON must not be able to
+  disagree about which bone that is."
+  [tree site side]
+  (let [base (:segment site)
+        placed (when side (pose/placed-name base side))]
+    (if (and placed (contains? tree placed)) placed base)))
+
+(defn- attachment-tree
+  "`placed segment name -> {:segment parent :along fraction}`, read off the pose.
+
+  REFUSES a pose whose segments do not carry `:attaches-to` rather than reading
+  the missing key as `this segment hangs from nothing`. A root and an unanswered
+  question look identical once `nil` has been returned, and the whole point of
+  this namespace's 2026-09-07 repair is that a test which cannot see its input
+  must not return what a test that looked and found nothing returns."
+  [pose-data]
+  (doseq [seg (:segments pose-data)]
+    (when-not (contains? seg :attaches-to)
+      (throw (ex-info (str "this pose does not say what its segments hang from; "
+                           "spine crossing cannot be decided from world height alone")
+                      {:type :value-error :segment (:name seg)}))))
+  (into {} (map (juxt :name :attaches-to)) (:segments pose-data)))
+
+(defn- side-of-level
+  "Which side of a level a point on the skeleton lies on: `:proximal` (toward
+  L5/S1 and everything hanging below it) or `:distal` (further up the spine than
+  the level, or out along a limb that branches above it).
+
+  A level is a CUT of the skeleton. Take the point out and the body falls into two
+  pieces; this says which piece a site is in. Walk from the site toward the root,
+  and at each step carry the fraction at which the segment you are leaving hangs
+  on the next one. If the walk reaches the level's own segment, the answer is
+  whether the fraction you arrived with is past the level. If it reaches the root
+  without ever touching the level's segment, the level was never between this site
+  and the root, so the site is on the proximal side.
+
+  THE CONSEQUENCE IS THE FIX. A hand and a forearm both reach the root through
+  `upper_arm -> thorax_abdomen (1.0)`, and the walk never enters `head_neck`, so
+  both are `:proximal` to every cervical level and a wrist extensor crosses none
+  of them. It does not matter how high the world puts them."
+  [tree level {:keys [segment along]}]
+  (let [target (:segment level)
+        cut (:along level)]
+    (loop [seg segment, at along, seen #{}]
+      (cond
+        (= seg target) (if (> at cut) :distal :proximal)
+        (contains? seen seg)
+        (throw (ex-info "the skeleton's attachment chain contains a cycle"
+                        {:type :value-error :segment seg}))
+        (not (contains? tree seg))
+        (throw (ex-info (str "no placed segment named " (pr-str seg)
+                             "; a muscle cannot be placed on a bone the pose does "
+                             "not have")
+                        {:type :value-error :segment seg}))
+        :else (if-let [{p :segment a :along} (get tree seg)]
+                (recur p a (conj seen seg))
+                :proximal)))))
+
 ;; --- what sits above a level -------------------------------------------------
 
-(def ^:private chain-order
-  "Segments in ascending order along the spine. A level on the trunk has the whole
-  neck above it; a level on the neck has only the neck above it. The arms hang
-  from the girdle, which is on the trunk, so they load every trunk level and no
-  cervical one."
-  {"thorax_abdomen" 0 "head_neck" 1})
-
 (defn- above-fraction
-  "How much of `seg` sits above `level` — 1.0 for a segment higher up the chain,
-  0.0 for one lower, and the remaining fraction for the segment the level is on.
+  "How much of `seg` sits above `level` — 1.0 for a segment the level's cut leaves
+  entirely up the chain, 0.0 for one it leaves entirely below, and the remaining
+  fraction for the segment the level is on.
+
+  DERIVED FROM THE SAME CUT AS `crosses?` SINCE 2026-09-07, and that is the point
+  of the rewrite rather than a side effect. This used to be a rank table —
+  mapping thorax_abdomen to rank 0 and head_neck to rank 1, with a branch for
+  segments the table did not know, which meant an unrecognised segment was an ARM
+  and had to be told about legs separately through `segment/below-l5s1`. It answered correctly, and it
+  answered from a second hand-written copy of the skeleton's shape sitting in the
+  same file as the first. Two copies of a topology is one place for it to be
+  corrected and one place for it to be forgotten; there is now one, and it is the
+  one `pose` states.
+
+  Take the segment's two ends and ask which side of the cut each is on. Both above
+  the cut is 1.0, both below is 0.0, and a segment the cut passes through
+  contributes the part of it that is above — which for the level's own segment is
+  `1 − :along`.
 
   UNIFORM along the segment, which is not how mass is actually distributed (see
   `segment`'s `:com-frac`). Stated here because it biases levels near a segment's
   ends, and a reader comparing two adjacent levels should know the bias is in the
-  model rather than in the body."
-  [level seg]
-  (let [lvl-rank (chain-order (:segment level))
-        seg-rank (chain-order (:base seg))]
-    (cond
-      ;; A segment the spine's rank table does not know is either an ARM, which
-      ;; hangs from the girdle and therefore loads every trunk level, or a LEG,
-      ;; which hangs below the pelvis and loads none of them. Before the lower limb
-      ;; existed the first case was the only case and this branch could simply say
-      ;; 1.0; `segment/below-l5s1` is what makes it stay right — without it a third
-      ;; of body mass was added to the lumbar spine, in every posture, and the only
-      ;; symptom was a number that was 300 N too large.
-      (segment/below-l5s1 (:base seg)) 0.0
-      (nil? seg-rank) (if (= 0 lvl-rank) 1.0 0.0)  ;; arms: above trunk levels only
-      (> seg-rank lvl-rank) 1.0
-      (< seg-rank lvl-rank) 0.0
-      :else (max 0.0 (- 1.0 (:along level))))))
+  model rather than in the body.
+
+  Measured 2026-09-07: this returns the same value as the rank table for every
+  segment at every level across the eight reference postures — the weight term did
+  not move by one bit.
+
+  AND THE DESK EXISTS HERE NOW, which it did not until 2026-09-07. The cut says an
+  arm hangs from the girdle and therefore sits above every trunk level, and that is
+  right *unless the forearm is lying on a desk*, in which case the desk holds it up
+  and the lumbar spine does not. `load/body-carries?` is the one place that
+  question is answered — `arm-moment-about`, `elbow-moment`, `wrist-moment`,
+  `lumbar-borne-bases` and `frontal-moments` all route through it — and this was
+  the last equilibrium in the model that did not ask it. Measured: L5/S1 drops
+  366.5454 N -> 336.4558 N at `laptop-on-desk`, the weight of two forearms and two
+  hands times the level axis's vertical component, and the same drop appears at
+  every lumbar level because the cut gives an arm 1.0 at all of them.
+
+  It is asked of `:base`, the anthropometric name, because the desk does not
+  distinguish a left forearm from a right one."
+  [posture tree level seg]
+  (if-not (load/body-carries? posture (:base seg))
+    0.0
+    (let [name (:name seg)
+          end (fn [along] (side-of-level tree level {:segment name :along along}))]
+      (case [(end 0.0) (end 1.0)]
+        [:distal :distal] 1.0
+        [:proximal :proximal] 0.0
+        (max 0.0 (- 1.0 (:along level)))))))
 
 (defn- weight-above-n
-  "Axial component of the weight sitting above a level."
-  [body pose-data level]
+  "Axial component of the weight sitting above a level.
+
+  TAKES THE POSTURE as well as the pose, because `:arms-supported` is a fact about
+  the posture that the placed geometry does not carry — a forearm resting on a desk
+  is in the same place as one held there."
+  [body posture pose-data level]
   (let [w (pose/segment-weights body pose-data)
+        tree (attachment-tree pose-data)
         {:keys [axis]} (level-point pose-data level)]
     (reduce + 0.0
             (for [seg (:segments pose-data)
-                  :let [f (above-fraction level seg)]
+                  :let [f (above-fraction posture tree level seg)]
                   :when (pos? f)]
               ;; gravity is [0,-w,0]; its compressive component along the spine
               ;; axis is w × (axis · up)
               (* f (get w (:name seg)) (nth axis 1))))))
 
 (defn- crosses?
-  "Does this muscle's line cross the level? True when its two attachment points
-  sit on opposite sides of the level along the spine axis.
+  "Does this muscle's line of force pass THROUGH the level?
 
-  ⚠ A HALF-SPACE TEST, NOT A PATH TEST, and `:muscle-crossing` now makes that
-  visible instead of leaving it inside a sum. It asks only about HEIGHT along the
-  spine, so a muscle nowhere near the spine counts whenever its two ends happen to
-  straddle a level's height. Measured 2026-09-07 at `laptop-on-lap`, the C3/C4 row
-  is carried entirely by `wrist_extensors/left` and `wrist_extensors/right`; at 60°
-  of trunk flexion `vasti` and `tibialis_anterior` appear at L1/L2. A wrist
-  extensor transmits its force to the forearm, not through somebody's neck.
+  It does when its two attachments end up on opposite sides of the cut the level
+  makes in the skeleton — one piece of the body on each side, so the force has to
+  be transmitted across the joint to get from one attachment to the other.
 
-  NOT FIXED HERE, deliberately. It is a different defect from the one this wave is
-  removing, it moves every number in this namespace, and both cross-checks
-  (`cervical-cross-check` against Hansraj, `lumbar-cross-check` against Wilke) pin
-  today's disagreement — changing the muscle set would move those without anybody
-  having decided to. Named here so it is a known gap rather than a discovery."
-  [pose-data stature-m level muscle]
-  (let [{:keys [point axis]} (level-point pose-data level)
-        {:keys [origin insertion]} (attachment/line-of-action pose-data stature-m muscle)
-        h (fn [p] (math/vdot (math/v- p point) axis))]
-    (and origin insertion (neg? (* (h origin) (h insertion))))))
+  IT USED TO BE A HALF-SPACE TEST ON HEIGHT, which is a different question and
+  answered it wrongly. It projected both attachment points onto the spine's local
+  axis at the level and asked whether they straddled it, so anything whose ends
+  happened to sit at different heights counted, whether or not its line went
+  anywhere near a spine. Measured 2026-09-07 at `laptop-on-lap` before the repair:
+  the C3/C4 row was carried ENTIRELY by `wrist_extensors/left` and
+  `wrist_extensors/right` (61.4 N of 61.4 N), C5/C6 and C4/C5 were 64% wrist
+  extensor, and at 60 degrees of trunk flexion `vasti` and `tibialis_anterior`
+  appeared at L1/L2 while `vasti` carried 117.7 N of the 186.0 N at C3/C4. A wrist
+  extensor transmits its force to the forearm; a vastus transmits it to the tibia.
+  Neither one passes through anybody's neck, and neither should ever have been
+  able to, at any height, in any posture.
+
+  DERIVED, NOT LISTED. There is no set of spinal muscles here and no name is
+  tested. The answer comes from two things the model already states: which bone
+  each attachment rides on and how far along it (`attachment/muscles`), and which
+  bone hangs from which and where (`pose`'s `:attaches-to`). A muscle whose whole
+  path lives on the arm chain cannot reach a cervical level because the arm chain
+  reaches the spine at the top of the THORAX, and that is a fact about the
+  skeleton rather than a judgement about the muscle. Adding a muscle, moving an
+  attachment or re-hanging a limb changes the answer without anything here being
+  edited.
+
+  WHAT IT STILL CANNOT SEE. An attachment is a point, so crossing is
+  all-or-nothing where a real muscle tapers over several vertebrae —
+  `attachment-steps` reports where that shows. And a level that sits exactly at a
+  branch joint is decided by `>` rather than by anatomy: the pelvis hangs at
+  `thorax_abdomen` 0.0 and L5/S1 IS `thorax_abdomen` 0.0, so the pelvis is placed
+  below L5/S1, which is right — the sacrum is below that disc. Nothing here knows
+  that; it follows from the strict comparison, and a level added at exactly 1.0 of
+  the trunk would need the question asked again."
+  [tree level muscle]
+  (let [side (:side muscle)
+        seg-of (fn [site] {:segment (placed-segment-name tree site side)
+                           :along (:along site)})]
+    (not= (side-of-level tree level (seg-of (:origin muscle)))
+          (side-of-level tree level (seg-of (:insertion muscle))))))
+
+(defn levels-crossed
+  "Which levels a muscle's line of force passes through, in `levels` order.
+
+  Public because the rule is the interesting part and it should be possible to ask
+  it about a muscle WITHOUT running a whole profile — including about a muscle that
+  is not in `attachment/instances`. That is what makes the rule checkable as a
+  rule: hand it two attachment sites and it answers from the sites, so a test can
+  move an attachment and watch the answer follow, rather than confirming that a
+  name this file already knows still gets the treatment this file already gives it.
+
+  `muscle` needs only `:origin` and `:insertion` — each `{:segment … :along …}` —
+  and `:side` if it rides on a paired segment."
+  [pose-data muscle]
+  (let [tree (attachment-tree pose-data)]
+    (filterv #(crosses? tree % muscle) levels)))
 
 (defn- tissue-compression-n
   "Axial component of the forces crossing the level, split by what produced them.
@@ -160,12 +299,17 @@
   posture and about what would change it."
   [pose-data stature-m level tensions]
   (let [{:keys [axis]} (level-point pose-data level)
+        ;; ONE tree for the whole level, not one per muscle: it is a property of
+        ;; the pose, and rebuilding it inside the predicate would also rebuild its
+        ;; refusal, so a pose that could not be read would be re-refused forty
+        ;; times over.
+        tree (attachment-tree pose-data)
         by-name (into {} (map (juxt :name identity)) tensions)
         contribution
         (fn [m]
           (let [t (by-name (:name m))
                 f (:force-n t)]
-            (when (and f (pos? f) (crosses? pose-data stature-m level m))
+            (when (and f (pos? f) (crosses? tree level m))
               (let [{:keys [dir]} (attachment/line-of-action pose-data stature-m m)]
                 (when dir
                   ;; only the component ALONG the spine compresses it; the
@@ -189,10 +333,15 @@
                                      attachment/instances))}))
 
 (defn level-compression
-  "Compression at one level: {:name :region :force-n :stress-mpa :weight-n :muscle-n}."
-  [body pose-data tensions level]
+  "Compression at one level: {:name :region :force-n :stress-mpa :weight-n :muscle-n}.
+
+  TAKES THE POSTURE since 2026-09-07 — an arity change, and the only caller in this
+  tree is `profile`, which already had it. `:arms-supported` is not recoverable
+  from a solved pose, and without it this level counted a forearm lying on a desk
+  as hanging from the shoulder girdle."
+  [body posture pose-data tensions level]
   (let [stature-m (:stature-m body)
-        weight (weight-above-n body pose-data level)
+        weight (weight-above-n body posture pose-data level)
         {:keys [muscle-n ligament-n muscle-crossing]}
         (tissue-compression-n pose-data stature-m level tensions)
         force (+ weight muscle-n ligament-n)
@@ -212,7 +361,7 @@
   "Compression at every level, in the order `levels` declares."
   [body posture tensions]
   (let [p (pose/solve-pose body posture)]
-    (mapv #(level-compression body p tensions %) levels)))
+    (mapv #(level-compression body posture p tensions %) levels)))
 
 (defn cervical-cross-check
   "Compare this namespace's C7/T1 force against `load/cervical-load`'s lumped,
@@ -223,9 +372,20 @@
   to within 10% — and it gets there with an effective lever fitted to that table.
   This namespace instead adds the muscle force computed from the muscle's actual
   geometric moment arm, which at large flexion is much shorter and therefore
-  demands much more force, all of which presses the joint together. Measured
-  2026-09-06 at the laptop-on-lap posture: 232 N lumped, 519 N by level, a ratio
-  of 2.2.
+  demands much more force, all of which presses the joint together.
+
+  UNTIL 2026-09-07 THAT WAS NOT THE WHOLE CAUSE. `crosses?` was a half-space test
+  on height, so the C7/T1 muscle term also contained 62.4 N per side of anterior
+  deltoid and 30.7 N per side of wrist extensor — 186 N of 588 N that is not
+  transmitted through a neck. The ratio was therefore not measuring the quantity
+  this docstring named. Measured at laptop-on-lap, 70 kg / 1.70 m: 273.6 N lumped
+  and 651.1 N by level before the repair (ratio 2.38), 273.6 N lumped and 464.9 N
+  by level after it (ratio 1.70).
+
+  THE PROFILE MOVING CLOSER TO THE VALIDATED LEG IS NOT EVIDENCE THAT IT GOT
+  BETTER. It is the arithmetic consequence of removing forces that were never in
+  the neck. Agreement obtained by fixing an unrelated defect is not a validation,
+  and `:validated :lumped` still says which of the two carries one.
 
   Neither number is offered as the right one here. What is offered is the ratio,
   so a consumer cannot read the level profile as though it inherited the lumped
