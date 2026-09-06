@@ -497,9 +497,13 @@
     (is (not (contains? (:two-joint-unfed-nm summary) :hip/left))
         (str "the hip is fed now, so it must not be counted as unfed: "
              (:two-joint-unfed-nm summary)))
-    (is (= #{:c2c3} (set (keys (:two-joint-unfed-nm summary))))
-        (str "the only joint still unfed is the one with no equilibrium: "
-             (:two-joint-unfed-nm summary)))
+    (is (= #{:c2c3 :c7} (set (keys (:two-joint-unfed-nm summary))))
+        (str "the joints still unfed are the two the coupled groups do not reach: "
+             "`:c2c3`, which has no equilibrium at all, and `:c7`, which has one "
+             "the girdle suspension muscles cannot join because their own balance "
+             "is a force and not a moment — see "
+             "`muscle-test/the-girdle-suspension-muscles-load-c7-and-are-not-in-its-group`. "
+             "Got " (:two-joint-unfed-nm summary)))
     ;; THE DISCRIMINATING HALF. A coupled solve that had simply switched the
     ;; two-joint muscles off would satisfy every residual above. The hamstrings
     ;; must actually be recruited in a squat — they extend the hip and flex the

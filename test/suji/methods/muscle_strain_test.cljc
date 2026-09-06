@@ -9,6 +9,7 @@
             [suji.methods.load :as load]
             [suji.methods.muscle :as muscle]
             [suji.methods.posture :as posture]
+            [suji.methods.recruit :as recruit]
             [suji.methods.segment :as segment]
             [suji.methods.strain :as strain]))
 
@@ -244,3 +245,82 @@
         (is (pos? (:active-n t))
             (str (:group t) " must take active force where the optimum wants it: " t))))))
 
+
+(deftest the-girdle-suspension-muscles-load-c7-and-are-not-in-its-group
+  ;; THE GAP THE COUPLED SOLVE DID NOT CLOSE, as a number rather than a sentence.
+  ;;
+  ;; Upper trapezius runs from the occiput and the nuchal line to the lateral
+  ;; clavicle and levator scapulae from the upper cervical transverse processes to
+  ;; the scapula, so both pass the cervicothoracic junction. `spine/levels-crossed`
+  ;; has always put them across C7/T1 and their force has always been in that
+  ;; level's compression; what was never reported is the MOMENT they exert there,
+  ;; which the cervical equilibrium is not told about.
+  ;;
+  ;; They are not in the `:neck` coupled group and the reason is the shape of the
+  ;; solver's inputs, not the solver: their own equilibrium is a SUSPENSION balance
+  ;; — a force, with a dimensionless direction cosine for a coefficient — and the
+  ;; neck group's rows are moments. `recruit/solve` can take rows in different
+  ;; units, because each multiplier carries the reciprocal of its own row's;
+  ;; `attachment/coupled-arms` cannot supply a suspension coefficient.
+  ;;
+  ;; And even if it could, this model would decline: both arms about C7 are BELOW
+  ;; `recruit/min-coeff`, which is the floor that says a straight line has no
+  ;; business claiming leverage this close to the joint.
+  ;;
+  ;; ⚠ HOW THIS TEST FAILS, MEASURED, because two different breaks give two
+  ;; different kinds of red. Deleting `:crosses {:joint :c7}` from either entry
+  ;; fails it HERE, by its own label — `must declare that it crosses C7`, `must
+  ;; report the moment`, and the summary total off by that muscle's share
+  ;; (−0.3786 → −0.3228 N·m with levator scapulae removed). Restoring the `mirror`
+  ;; bug instead — side-qualifying every crossed joint, so these two get
+  ;; `:c7/left` — does NOT fail here: it throws a NullPointerException out of
+  ;; `attachment/straight-moment-arm`, because `(get-in pose-data [:joints
+  ;; :c7/left])` is nil and the vector subtraction destructures it. That is a loud
+  ;; failure and not a silent one, and it is deliberately left loud: a joint key
+  ;; that does not exist is a wiring mistake, and returning nil for it would make
+  ;; it indistinguishable from a degenerate line of action.
+  (let [b (segment/build-body 70.0 1.70)
+        pst (posture/posture-from-workstation posture/laptop-on-lap)
+        loads (load/solve-posture-loads b pst)
+        tens (muscle/solve-muscle-tensions b pst loads)
+        by (into {} (map (juxt :name identity)) tens)
+        summary (muscle/tension-summary tens loads)]
+    (doseq [n ["upper_trapezius/left" "upper_trapezius/right"
+               "levator_scapulae/left" "levator_scapulae/right"]]
+      (let [t (by n)]
+        ;; the crossing is DECLARED, so the moment is reported at every posture
+        (is (= :c7 (:crosses-joint t))
+            (str n " must declare that it crosses C7 — and NOT `:c7/left`, which "
+                 "`pose` has no joint for: " (pr-str (select-keys t [:crosses-joint
+                                                                     :secondary-arm-m]))))
+        (is (number? (:secondary-moment-nm t))
+            (str n " must report the moment it exerts there: " t))
+        (is (false? (boolean (:secondary-fed? t)))
+            (str n " is NOT in a coupled group, and must say so rather than look "
+                 "solved: " t))
+        ;; below the leverage floor, which is why coupling them would refuse them.
+        ;; Guarded on the arm being a NUMBER rather than letting `abs*` throw: a
+        ;; nil arm here is the failure the assertion above names, and an uncaught
+        ;; NPE would report it as `Uncaught exception, not in assertion` instead of
+        ;; as the thing that is wrong. Verified 2026-09-08 by restoring the mirror
+        ;; bug this test was written against.
+        (is (and (number? (:secondary-arm-m t))
+                 (< (math/abs* (:secondary-arm-m t)) recruit/min-coeff))
+            (str n "'s arm about C7 must be a number below the floor "
+                 recruit/min-coeff ", got " (pr-str (:secondary-arm-m t))))))
+    ;; and the total is in the summary, where a consumer will find it without
+    ;; knowing which four rows to look at
+    (is (contains? (:two-joint-unfed-nm summary) :c7)
+        (str "the summary must total it: " (:two-joint-unfed-nm summary)))
+    (is (math/nearly= -0.3786202544993853 (get-in summary [:two-joint-unfed-nm :c7]) 1e-12)
+        (str "measured 2026-09-08 at laptop-on-lap, 70 kg / 1.70 m: "
+             (get-in summary [:two-joint-unfed-nm :c7]) " N·m against a C7 demand of "
+             (get-in loads [:cervical :extensor-moment-nm])))
+    ;; THE SIZE IS THE POINT: 7.6% of the demand at this posture. Small, real, and
+    ;; not zero — a reported approximation that is always zero would mean nothing.
+    (is (< 0.05 (/ (math/abs* (get-in summary [:two-joint-unfed-nm :c7]))
+                   (get-in loads [:cervical :extensor-moment-nm]))
+           0.15)
+        (str "it is a few percent of the C7 demand, not a rounding artefact and "
+             "not a headline: " (get-in summary [:two-joint-unfed-nm :c7]) " of "
+             (get-in loads [:cervical :extensor-moment-nm])))))

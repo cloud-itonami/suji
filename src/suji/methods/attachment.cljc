@@ -470,6 +470,23 @@
    "upper_trapezius"
    {:name "upper_trapezius" :paired? true :pcsa-cm2 9.0
     :acts-about :shoulder :task :scapular-suspension
+    ;; TWO-JOINT, and nothing said so until 2026-09-08. It runs from the occiput
+    ;; and the nuchal line to the lateral clavicle, so it passes the
+    ;; cervicothoracic junction and exerts a moment there — `spine/levels-crossed`
+    ;; has always put it across C7/T1, and its force has always been in that
+    ;; level's compression. What was missing is the MOMENT: measured at
+    ;; `laptop-on-lap`, −3.22 mm of arm about C7 carrying 50.13 N, i.e. −0.161 N·m
+    ;; per side that the cervical equilibrium was not told about.
+    ;;
+    ;; IT IS NOT IN THE `:neck` COUPLED GROUP, and the reason is a limit of the
+    ;; solver's inputs rather than of the solver. Its own task is a SUSPENSION
+    ;; balance — a force, with a dimensionless direction cosine for a coefficient —
+    ;; and the neck group's rows are moments. `recruit/solve` can take rows in
+    ;; different units (each multiplier carries the reciprocal of its own row's),
+    ;; but `coupled-arms` supplies moment arms and has nothing to say about a
+    ;; suspension coefficient. Declaring the crossing makes the size of the gap a
+    ;; number at every posture instead of a sentence here.
+    :crosses {:joint :c7}
     ;; occiput/nuchal line → lateral clavicle-acromion; suspends the girdle
     :origin {:segment "lower_cervical" :along 0.33333333333333337 :ant -0.0170 :lat 0.0180}
     :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0090 :lat 0.1225}
@@ -478,6 +495,10 @@
    "levator_scapulae"
    {:name "levator_scapulae" :paired? true :pcsa-cm2 5.0
     :acts-about :shoulder :task :scapular-suspension
+    ;; the same crossing, for the same reason — C1–C4 transverse processes to the
+    ;; superior angle of the scapula, past C7. −1.13 mm of arm carrying 24.81 N at
+    ;; `laptop-on-lap`: −0.028 N·m per side. See the note on upper_trapezius.
+    :crosses {:joint :c7}
     ;; upper cervical transverse processes → superior medial scapula: shorter,
     ;; more vertical, and closer to the midline than the trapezius
     :origin {:segment "lower_cervical" :along 0.7333333333333334 :ant -0.0120 :lat 0.0125}
@@ -1030,8 +1051,15 @@
         ;; a two-joint muscle's OTHER joint is paired too, and forgetting it here
         ;; would report the right-side rectus femoris's hip moment about the left
         ;; hip — a wrong answer rather than an error, which is the same trap the
-        ;; line above exists for
-        (cond-> (:crosses muscle)
+        ;; line above exists for.
+        ;;
+        ;; ONLY IF THAT JOINT IS PAIRED, and the same set decides it as decides
+        ;; `:acts-about` above. A paired muscle can cross a MIDLINE joint — upper
+        ;; trapezius and levator scapulae both run past C7 — and side-qualifying
+        ;; that gives `:c7/left`, a key `pose` has no joint for, so the arm comes
+        ;; back nil and the moment is silently not reported. Measured 2026-09-08.
+        (cond-> (#{:shoulder :elbow :wrist :hip :knee :ankle}
+                 (get-in muscle [:crosses :joint]))
           (assoc-in [:crosses :joint]
                     (keyword (name (get-in muscle [:crosses :joint])) (name side)))))))
 

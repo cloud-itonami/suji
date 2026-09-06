@@ -2297,7 +2297,7 @@ back down.
 
 | | before | after |
 |---|---|---|
-| `:two-joint-unfed-nm`, deep squat | `{:hip/left 3.6348762211480548, :knee/left -0.9496, :hip/right …, :c2c3 0.0}` | **`{:c2c3 -0.0585}`** — the only joint left with no equilibrium at all |
+| `:two-joint-unfed-nm`, deep squat | `{:hip/left 3.6348762211480548, :knee/left -0.9496, :hip/right …, :c2c3 0.0}` | **`{:c2c3 -0.0585, :c7 -1.8428}`** — see the two survivors below; every lower-limb joint is gone from it |
 | `:coupled-residual-nm`, every joint of every group | — (did not exist) | **0 to floating point** |
 | `:task-over-supplied-nm` at the atlanto-occipital joint | 3.5746 N·m | **key removed with the decomposition that produced it** |
 | `:atlanto-occipital-surplus-mvc-pct` | 184.82 | **key removed** |
@@ -2343,7 +2343,29 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
 - **`:c2c3`.** `longus_capitis` crosses it and **no equilibrium in this model covers it**, so
   its moment there is still reported as `:two-joint-unfed-nm` and still fed to nobody. The
   blocker is unchanged and is **provenance, not the solver**: see *C2/C3: expressible, and
-  blocked by provenance*. This is the one honest survivor of the original finding.
+  blocked by provenance*. This is the one survivor of the original finding.
+- **`:c7`, and this one is new — found by asking what else the closed solve was hiding.**
+  Upper trapezius and levator scapulae run past the cervicothoracic junction (occiput and
+  nuchal line → lateral clavicle; upper cervical transverse processes → scapula), so both
+  exert a moment about C7. `spine/levels-crossed` has always put them across C7/T1 and their
+  FORCE has always been in that level's compression; the MOMENT was reported by nobody.
+  Measured at `laptop-on-lap`: **−0.3786 N·m against a C7 demand of 4.9762, i.e. 7.6%**;
+  −1.8428 N·m in a deep squat, where the arms are held out. They now declare
+  `:crosses {:joint :c7}`, so it is a number at every posture rather than this paragraph.
+  **They are not in the `:neck` group and the obstacle is the solver's INPUTS, not the
+  solver:** their own equilibrium is a suspension balance — a force, with a dimensionless
+  direction cosine for a coefficient — and the neck group's rows are moments.
+  `recruit/solve` can take rows in different units, because each multiplier carries the
+  reciprocal of its own row's; `attachment/coupled-arms` supplies moment arms and has
+  nothing to say about a suspension coefficient. And even with the plumbing, this model
+  would decline: **both arms are below `recruit/min-coeff`** (−3.22 mm and −1.13 mm against
+  a 5 mm floor), which is the floor that says a straight line has no business claiming
+  leverage that close to a joint. See
+  `muscle-test/the-girdle-suspension-muscles-load-c7-and-are-not-in-its-group`.
+  ⚠ Declaring that crossing also turned up a latent bug in `attachment/mirror`: it
+  side-qualified **every** crossed joint, so a paired muscle crossing a MIDLINE joint got
+  `:c7/left`, which `pose` has no joint for — the arm came back nil and the moment was
+  silently not reported. It now uses the same paired-joint set `:acts-about` does.
 - **Co-contraction at the atlanto-occipital joint is now predicted, and its size depends on a
   `:representative` number.** Semispinalis and splenius capitis have a *larger* arm about the
   atlanto-occipital joint than about C7 — 26.8 and 32.9 mm against 12.0 mm, where the C7
