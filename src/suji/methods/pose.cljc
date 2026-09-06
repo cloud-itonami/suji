@@ -176,12 +176,97 @@
     {:shoulder shoulder :elbow elbow :wrist wrist
      :segments [ua-seg fa-seg hand-seg]}))
 
+(def interhip-frac
+  "Distance between the two hip joint centres as a fraction of stature. Half of it
+  is how far each femoral head sits from the midline — the lower limb's answer to
+  `biacromial-frac`, and stated separately rather than reused because a pelvis is
+  not a shoulder girdle.
+
+  Representative (0.10 H, so 0.17 m apart at 1.70 m stature), not measured. It has
+  no effect on any sagittal moment — the two legs are symmetric about the midline
+  and a sagittal lever is a difference in x — and it is here because the frontal
+  component of the ground reaction about the hip is not zero once it exists."
+  0.10)
+
+(def heel-frac
+  "Where along the foot the ankle joint sits, as a fraction of foot length from
+  the heel. Representative ~0.25.
+
+  THIS IS THE MECHANISM OF QUIET STANDING, so it is not an ornament. The foot is
+  the only segment in this model whose proximal point is NOT its joint: it runs
+  heel-to-toe and the ankle sits a quarter of the way along it. Behind the ankle
+  there is heel, in front of it there is forefoot, and the base of support a
+  standing body balances over is that whole span. Start the foot at the ankle
+  instead and the base of support begins at the joint, so the ground reaction can
+  never pass behind it, and the model can only ever say that the plantarflexors
+  are working — including in the postures where they are not."
+  0.25)
+
+(defn- leg-chain
+  "Place one leg, from the pelvis outward. `side-sign` is +1 for the person's left
+  (+Z) and −1 for the right, exactly as `arm-chain` uses it.
+
+  THE THREE ANGLES, and what each is measured against:
+
+    :hip-flexion-deg          the thigh's tilt anterior from straight down. This
+                              model's pelvis never rotates — `solve-pose` places
+                              it vertically below L5/S1 at every posture — so the
+                              tilt from vertical and the anatomical hip angle are
+                              the same number here, which they would not be in a
+                              model with a mobile pelvis.
+    :knee-flexion-deg         the shank swung POSTERIOR relative to the thigh, so
+                              the shank's tilt is the thigh's MINUS this. The knee
+                              bends one way; a negative value is hyperextension
+                              and the model will place it rather than refuse.
+    :ankle-dorsiflexion-deg   the foot rotated toes-up relative to the shank. The
+                              foot's tilt is the shank's plus 90° (a foot at right
+                              angles to the shank lies flat when the shank is
+                              vertical) plus this.
+
+  A flat foot in standing is therefore `dorsiflexion = knee-flexion −
+  hip-flexion`, which is why `posture/quiet-standing` carries a few degrees of
+  each rather than zeros: a person standing still leans the shank forward over the
+  foot, and that lean is where their weight goes in front of the ankle.
+
+  NO ABDUCTION. The lower limb is placed in the sagittal plane only; there is no
+  `:hip-abduction-deg`. `arm-chain` has one, and the difference is real rather
+  than an oversight — the frontal-plane loads this actor solves are the ones a
+  desk posture creates, and no muscle here abducts a hip."
+  [body {:keys [hip-flexion-deg knee-flexion-deg ankle-dorsiflexion-deg]}
+   pelvis-seg lat-axis side side-sign stature-m]
+  (let [th (segment/seg body "thigh")
+        sh (segment/seg body "shank")
+        ft (segment/seg body "foot")
+        hip-flex (or hip-flexion-deg 0.0)
+        knee-flex (or knee-flexion-deg 0.0)
+        dorsi (or ankle-dorsiflexion-deg 0.0)
+        hip (math/v+ (:distal pelvis-seg)
+                     (math/v* lat-axis (* side-sign 0.5 interhip-frac stature-m)))
+        th-tilt hip-flex
+        th-frame (segment-frame th-tilt 0.0 0.0 false)
+        th-seg (place "thigh" side hip th-frame (:length-m th) (:com-frac th) th-tilt false)
+        knee (:distal th-seg)
+        sh-tilt (- th-tilt knee-flex)
+        sh-frame (segment-frame sh-tilt 0.0 0.0 false)
+        sh-seg (place "shank" side knee sh-frame (:length-m sh) (:com-frac sh) sh-tilt false)
+        ankle (:distal sh-seg)
+        ft-tilt (+ sh-tilt 90.0 dorsi)
+        ft-frame (segment-frame ft-tilt 0.0 0.0 false)
+        ;; the foot's proximal point is the HEEL, and the ankle sits `heel-frac`
+        ;; along it — see `heel-frac`. Every other segment in this model starts at
+        ;; its own joint; this one does not, and a consumer that assumes otherwise
+        ;; puts the base of support in the wrong place.
+        heel (math/v- ankle (math/v* (:long ft-frame) (* heel-frac (:length-m ft))))
+        ft-seg (place "foot" side heel ft-frame (:length-m ft) (:com-frac ft) ft-tilt false)]
+    {:hip hip :knee knee :ankle ankle :heel heel :toe (:distal ft-seg)
+     :segments [th-seg sh-seg ft-seg]}))
+
 (defn solve-pose
   "Place the whole chain in world space for a body + posture.
 
   Returns {:joints {…point} :segments [placed…] :sides #{…} :frame {…}}. Joint keys
   are the anatomical landmarks the moment solver takes moments about; segments are
-  in proximal-to-distal order, midline first and then each arm.
+  in proximal-to-distal order, midline first, then each arm, then each leg.
 
   BILATERAL since 2026-09-06. The model used to place ONE arm and multiply its
   load by two, which is exact for a symmetric posture and silently wrong for every
@@ -198,7 +283,18 @@
     :shoulder-abduction-deg   arms away from the midline, each on its own side
     :head-rotation-deg        axial rotation of the head on the neck
     :wrist-extension-deg      hand lifted relative to the forearm (a keyboard's
-                              usual 15-25 deg)"
+                              usual 15-25 deg)
+
+  THE LOWER LIMB, added 2026-09-07, is likewise optional and defaults to zero, so
+  a posture that names none of it places both legs straight down and every number
+  this actor produced before it existed is unchanged:
+
+    :hip-flexion-deg          thigh anterior from straight down
+    :knee-flexion-deg         shank posterior relative to the thigh
+    :ankle-dorsiflexion-deg   foot toes-up relative to the shank
+
+  See `leg-chain` for what each is measured against, and `posture/support-mode`
+  for the thing that actually decides what those angles cost."
   [body posture]
   (let [{:keys [head-flexion-deg trunk-flexion-deg]} posture
         lateral (or (:trunk-lateral-bend-deg posture) 0.0)
@@ -222,11 +318,19 @@
         ;; leaning sideways carries both shoulders with it
         lat-axis (:lat t-frame)
         left (arm-chain body posture c7 lat-axis abduct :left 1.0 stature-m)
-        right (arm-chain body posture c7 lat-axis abduct :right -1.0 stature-m)]
+        right (arm-chain body posture c7 lat-axis abduct :right -1.0 stature-m)
+        ;; the legs hang from the PELVIS, whose frame this model never rotates, so
+        ;; their lateral axis is the world's rather than the trunk's — leaning the
+        ;; trunk sideways carries the shoulders with it and does not carry the hips
+        leg-left (leg-chain body posture p-seg (:lat (:frame p-seg)) :left 1.0 stature-m)
+        leg-right (leg-chain body posture p-seg (:lat (:frame p-seg)) :right -1.0 stature-m)]
     {:frame {:units :metres :origin "L5/S1" :axes {:x :anterior :y :superior :z :left}}
      :sides #{:left :right}
      :joints {:l5s1 l5s1
-              :hip (:distal p-seg)
+              ;; the midline landmark at the base of the pelvis segment. It is NOT
+              ;; a hip joint and never was: the femoral heads are `:hip/left` and
+              ;; `:hip/right`, half of `interhip-frac` to either side of it.
+              :pelvis-base (:distal p-seg)
               :c7 c7
               :shoulder/left (:shoulder left)
               :shoulder/right (:shoulder right)
@@ -234,8 +338,23 @@
               :elbow/right (:elbow right)
               :wrist/left (:wrist left)
               :wrist/right (:wrist right)
+              :hip/left (:hip leg-left)
+              :hip/right (:hip leg-right)
+              :knee/left (:knee leg-left)
+              :knee/right (:knee leg-right)
+              :ankle/left (:ankle leg-left)
+              :ankle/right (:ankle leg-right)
+              ;; the ends of the feet. Not joints — they are the two edges of the
+              ;; base of support, and `base-of-support` is the only reason a
+              ;; standing posture can be said to be one a body could hold.
+              :heel/left (:heel leg-left)
+              :heel/right (:heel leg-right)
+              :toe/left (:toe leg-left)
+              :toe/right (:toe leg-right)
               :vertex (:distal h-seg)}
-     :segments (vec (concat [p-seg t-seg h-seg] (:segments left) (:segments right)))}))
+     :segments (vec (concat [p-seg t-seg h-seg]
+                            (:segments left) (:segments right)
+                            (:segments leg-left) (:segments leg-right)))}))
 
 (defn seg-at
   "The placed segment with this name, or nil."
@@ -247,6 +366,29 @@
   arm gravity acts through. Positive means the mass is in front of the joint."
   [joint-point placed]
   (- (first (:com placed)) (first joint-point)))
+
+(defn external-moment-vec
+  "The static moment the musculature must GENERATE about `joint-point`, given every
+  external force acting on the free body DISTAL to it: −Σ (rᵢ − j) × Fᵢ.
+
+  `forces` is a seq of `[point force-vector]` in newtons. Gravity is the case
+  where every force is `[0, −w, 0]`, and `gravitational-moment-vec` is exactly
+  this function with that substitution — written that way rather than duplicated,
+  because the sign convention here is the one thing in this namespace that cannot
+  be got slightly wrong and still look right.
+
+  THE GROUND REACTION IS WHY THIS IS GENERAL. Until the lower limb existed, every
+  external force on every free body in this model pointed down, so a function that
+  could only take weights was a function that could take everything. A standing
+  body has one force that points UP, it is the largest force in the problem, and
+  it is the ONLY difference between the statics of standing and the statics of
+  sitting — see `load/lower-limb-loads`."
+  [joint-point forces]
+  (math/v* (reduce (fn [m [point f]]
+                     (math/v+ m (math/vcross (math/v- point joint-point) f)))
+                   [0.0 0.0 0.0]
+                   forces)
+           -1.0))
 
 (defn gravitational-moment-vec
   "The static moment the musculature must GENERATE about `joint-point`, as a
@@ -269,13 +411,9 @@
   reports the frontal component so that a consumer can see there is a load nobody
   in this model is carrying."
   [joint-point placed-with-weights]
-  (math/v* (reduce (fn [m [placed weight-n]]
-                     (let [r (math/v- (:com placed) joint-point)
-                           w [0.0 (- weight-n) 0.0]]
-                       (math/v+ m (math/vcross r w))))
-                   [0.0 0.0 0.0]
-                   placed-with-weights)
-           -1.0))
+  (external-moment-vec joint-point
+                       (for [[placed weight-n] placed-with-weights]
+                         [(:com placed) [0.0 (- weight-n) 0.0]])))
 
 (defn gravitational-moment
   "Static gravitational moment (N·m) about `joint-point` in the SAGITTAL plane —
@@ -313,9 +451,85 @@
         (:segments pose)))
 
 (defn total-height-m
-  "Vertical extent of the placed chain (hip to vertex) — a cheap invariant: a chain
-  that folds forward must get SHORTER, never taller."
+  "Vertical extent of the placed chain — a cheap invariant: a chain that folds
+  forward must get SHORTER, never taller.
+
+  It used to read pelvis-to-vertex because that was the whole chain. With a lower
+  limb it reads floor-to-vertex, which is the same invariant over a longer body
+  and is closer to a stature than it was."
   [pose]
   (let [ys (mapcat (fn [{:keys [proximal distal]}] [(second proximal) (second distal)])
                    (:segments pose))]
     (- (apply max ys) (apply min ys))))
+
+;; --- standing on something ---------------------------------------------------
+
+(defn whole-body-com
+  "`{:point [x y z] :weight-n W}` — the centre of mass of the placed chain and the
+  total weight hanging on it.
+
+  W is the whole body's weight and not an approximation of it: the mass fractions
+  in `segment` sum to exactly 1.0 across the nine segments once each paired one is
+  counted twice, which `the-whole-body-is-accounted-for` asserts. That matters
+  here because W is the magnitude of the ground reaction, and a table that summed
+  to 1.08 would inflate every standing moment in this model by 8%."
+  [body pose-data]
+  (let [w (segment-weights body pose-data)
+        total (reduce + 0.0 (map #(get w (:name %)) (:segments pose-data)))
+        weighted (reduce (fn [acc placed]
+                           (math/v+ acc (math/v* (:com placed) (get w (:name placed)))))
+                         [0.0 0.0 0.0]
+                         (:segments pose-data))]
+    {:point (if (pos? total) (math/v* weighted (/ 1.0 total)) [0.0 0.0 0.0])
+     :weight-n total}))
+
+(defn ground-y
+  "The height of the ground: the lowest point of either foot. nil when the pose has
+  no feet, which is how a body model without a lower limb says so rather than
+  putting the floor at an arbitrary height."
+  [pose-data]
+  (let [ys (for [{:keys [base proximal distal]} (:segments pose-data)
+                 :when (= "foot" base)
+                 pt [proximal distal]]
+             (second pt))]
+    (when (seq ys) (apply min ys))))
+
+(defn base-of-support
+  "`{:back x :front x}` — the anterior extent of the feet on the ground, from the
+  most posterior heel to the most anterior toe.
+
+  A standing body is only in static equilibrium while its line of gravity falls
+  inside this span. The model does NOT refuse a posture that fails it, because
+  such a posture is a real thing a body does — it is the first instant of a step,
+  or of a fall — but `load/lower-limb-loads` reports `:cop-inside-base?` so that a
+  consumer is never handed the statics of a posture nobody can hold as though it
+  were the statics of a posture somebody is holding."
+  [pose-data]
+  (let [xs (for [{:keys [base proximal distal]} (:segments pose-data)
+                 :when (= "foot" base)
+                 pt [proximal distal]]
+             (first pt))]
+    (when (seq xs) {:back (apply min xs) :front (apply max xs)})))
+
+(defn centre-of-pressure
+  "Where the ground pushes back: `[x y z]` for one foot, or nil when the pose has
+  no feet.
+
+  ITS POSITION IS NOT A PARAMETER — it is the equilibrium condition. A body held
+  still has no angular acceleration, so the resultant ground reaction must pass
+  through the line of gravity; the centre of pressure is therefore under the
+  whole-body centre of mass, and this function computes it there rather than
+  taking it as an input. Stating it as `some fraction along the foot` instead
+  looks like more anatomy and is less physics: it lets the model report a
+  plantarflexor moment for a body that, on its own numbers, is toppling.
+
+  EQUAL SPLIT, stated because it is a limitation and not a derivation. Each foot
+  is given half the body weight at the same anterior position, so the model cannot
+  represent single-leg stance or a body leaning onto one foot. `z` is the foot's
+  own, so the frontal component about a hip is not nonsense; the split that would
+  make it correct for an asymmetric posture is not solved here."
+  [body pose-data side]
+  (let [gy (ground-y pose-data)
+        foot (seg-at pose-data (placed-name "foot" side))]
+    (when (and gy foot)
+      [(first (:point (whole-body-com body pose-data))) gy (nth (:com foot) 2)])))

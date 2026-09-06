@@ -270,6 +270,140 @@
     :insertion {:segment "head_neck" :along 0.16 :ant 0.0040 :lat 0.0150}
     :source "representative; lateral flexor of the cervical spine"}
 
+
+   ;; --- the lower limb ---------------------------------------------------------
+   ;; Added 2026-09-07. PCSA is the one number here that is MEASURED rather than
+   ;; representative: Ward, Eng, Smallwood & Lieber (2009), "Are current
+   ;; measurements of lower extremity muscle architecture accurate?", Clinical
+   ;; Orthopaedics and Related Research 467(4), Table 3 — 27 muscles taken from 21
+   ;; formaldehyde-fixed human lower extremities, mean age 83 ± 9 years. Where a
+   ;; group below is several of their muscles, its PCSA is their sum and the
+   ;; arithmetic is written out so it can be checked.
+   ;;
+   ;; ⚠ THE SPECIMENS WERE 83 YEARS OLD. Ward's own point is that these are the
+   ;; best-characterised human values available, not that they are a young adult's;
+   ;; a young adult's PCSA is larger. Using them makes every lower-limb %MVC in
+   ;; this actor an OVERSTATEMENT of the effort for a young body. That is the
+   ;; direction to be wrong in for a model that reports load, and it is stated here
+   ;; rather than corrected by a factor nobody measured.
+   ;;
+   ;; The moment arms are the other way round: representative targets consistent
+   ;; with reported ranges, calibrated the way the upper limb's were — the offsets
+   ;; are chosen so the neutral arm lands on the target, and everything away from
+   ;; neutral is geometry. They are NOT measurements of anybody.
+
+   "gluteus_maximus"
+   {:name "gluteus_maximus" :paired? true :pcsa-cm2 33.4
+    :acts-about :hip :task :hip-extension
+    ;; posterior ilium and sacrum -> gluteal tuberosity of the femur
+    :origin {:segment "pelvis" :along 0.35 :ant -0.0360 :lat 0.0350}
+    :insertion {:segment "thigh" :along 0.30 :ant -0.0360 :lat 0.0100}
+    ;; the ischium and the back of the femoral head, which the tendon lies over.
+    ;; Measured 2026-09-07: the straight chord's extension arm falls from 60 mm at
+    ;; neutral through ZERO at about 55 degrees of hip flexion and is +32 mm at
+    ;; 85 — so without this surface the model reports the principal hip EXTENSOR
+    ;; as a flexor in a squat, which is the posture the muscle exists for. Nobody
+    ;; was then left to carry the squat's hip moment and `recruit` declined the
+    ;; whole equilibrium. It is the same defect the cervical group and the
+    ;; anterior deltoid had, in the joint where it costs the most.
+    :wrap {:radius-m 0.058 :sign -1.0}
+    :source "PCSA Ward et al. 2009 Table 3 (33.4 cm2). Neutral hip-extension arm calibrated to a representative 0.060 m; wrap radius 0.058 m, which is why the arm stays roughly constant through flexion as the reported values do."}
+
+   "iliopsoas"
+   {:name "iliopsoas" :paired? true :pcsa-cm2 17.6
+    :acts-about :hip :task :hip-extension
+    ;; lumbar bodies + iliac fossa -> lesser trochanter. Its insertion is
+    ;; posteromedial, so a straight chord from it passes BEHIND the hip and the
+    ;; model would report the principal hip flexor as an extensor. It does not,
+    ;; because the tendon crosses the pelvic brim and the front of the femoral
+    ;; head: that is a wrapping surface, and it is why the psoas moment arm is
+    ;; famously flat through flexion where other muscles' are not.
+    :origin {:segment "thorax_abdomen" :along 0.05 :ant 0.0100 :lat 0.0200}
+    :insertion {:segment "thigh" :along 0.10 :ant -0.0050 :lat 0.0050}
+    :wrap {:radius-m 0.035 :sign 1.0}
+    :source "PCSA Ward et al. 2009 Table 3, psoas 7.7 + iliacus 9.9 = 17.6 cm2. Wrap radius representative (~0.035 m, the reported flexion arm near neutral)."}
+
+   "vasti"
+   {:name "vasti" :paired? true :pcsa-cm2 72.4
+    :acts-about :knee :task :knee-extension
+    ;; femoral shaft -> patella -> tibial tuberosity. One joint: both ends are
+    ;; below the hip, which is the whole difference between this and rectus
+    ;; femoris and the reason they are separate entries rather than a quadriceps.
+    :origin {:segment "thigh" :along 0.55 :ant 0.0150 :lat 0.0}
+    :insertion {:segment "shank" :along 0.06 :ant 0.0280 :lat 0.0}
+    ;; THE PATELLA. It is a sesamoid the extensor tendon passes OVER, so it holds
+    ;; the line of action away from the knee centre and floors the moment arm at
+    ;; its own radius — the same machinery as the humeral head, not a second one.
+    ;; Without it the chord swings toward the joint as the knee flexes and the
+    ;; force required to hold a squat diverges.
+    :wrap {:radius-m 0.042 :sign 1.0}
+    :source "PCSA Ward et al. 2009 Table 3, vastus lateralis 35.1 + medialis 20.6 + intermedius 16.7 = 72.4 cm2. Patellar radius representative (~0.042 m)."}
+
+   "rectus_femoris"
+   {:name "rectus_femoris" :paired? true :pcsa-cm2 13.5
+    :acts-about :knee :task :knee-extension
+    :crosses {:joint :hip}
+    ;; anterior inferior iliac spine -> the same patellar tendon. TWO-JOINT: it
+    ;; extends the knee and flexes the hip, and this model solves it at the knee
+    ;; and REPORTS what it does at the hip. See `secondary-arm`.
+    :origin {:segment "pelvis" :along 0.80 :ant 0.0200 :lat 0.0200}
+    :insertion {:segment "shank" :along 0.06 :ant 0.0280 :lat 0.0}
+    :wrap {:radius-m 0.042 :sign 1.0}
+    :source "PCSA Ward et al. 2009 Table 3 (13.5 cm2). Shares the patellar tendon with the vasti, so the same wrapping surface and the same insertion."}
+
+   "hamstrings"
+   {:name "hamstrings" :paired? true :pcsa-cm2 34.5
+    :acts-about :knee :task :knee-extension
+    :crosses {:joint :hip}
+    ;; ischial tuberosity -> posterior proximal tibia and fibula. TWO-JOINT, and
+    ;; the reason the knee's flexor side cannot be filled by a one-joint muscle:
+    ;; there is no one-joint knee flexor of any size in the body. That is anatomy
+    ;; rather than a modelling shortcut.
+    :origin {:segment "pelvis" :along 0.90 :ant -0.0250 :lat 0.0200}
+    :insertion {:segment "shank" :along 0.08 :ant -0.0200 :lat 0.0100}
+    :wrap {:radius-m 0.030 :sign -1.0}
+    :source "PCSA Ward et al. 2009 Table 3, semimembranosus 18.4 + biceps femoris long head 11.3 + semitendinosus 4.8 = 34.5 cm2."}
+
+   "gastrocnemius"
+   {:name "gastrocnemius" :paired? true :pcsa-cm2 30.8
+    :acts-about :ankle :task :ankle-plantarflexion
+    :crosses {:joint :knee}
+    ;; femoral condyles -> calcaneus by the Achilles tendon. TWO-JOINT: it
+    ;; plantarflexes the ankle and flexes the knee, solved at the ankle here.
+    :origin {:segment "thigh" :along 0.95 :ant -0.0200 :lat 0.0100}
+    :insertion {:segment "foot" :along 0.05 :ant 0.0050 :lat 0.0}
+    :wrap {:radius-m 0.030 :sign -1.0}
+    :source "PCSA Ward et al. 2009 Table 3, medial head 21.1 + lateral head 9.7 = 30.8 cm2."}
+
+   "soleus"
+   {:name "soleus" :paired? true :pcsa-cm2 51.8
+    :acts-about :ankle :task :ankle-plantarflexion
+    ;; posterior tibia and fibula -> the same Achilles tendon. ONE joint: it does
+    ;; not cross the knee, which is why it and not gastrocnemius is the muscle
+    ;; that holds a body up in quiet standing whatever the knee is doing.
+    ;;
+    ;; The largest PCSA in the lower limb, by a distance — 51.8 cm2 against the
+    ;; gluteus maximus's 33.4 — which is what a muscle that works all day looks
+    ;; like.
+    :origin {:segment "shank" :along 0.30 :ant -0.0150 :lat 0.0}
+    :insertion {:segment "foot" :along 0.05 :ant 0.0050 :lat 0.0}
+    :wrap {:radius-m 0.030 :sign -1.0}
+    :source "PCSA Ward et al. 2009 Table 3 (51.8 cm2, the largest in their series)."}
+
+   "tibialis_anterior"
+   {:name "tibialis_anterior" :paired? true :pcsa-cm2 10.9
+    :acts-about :ankle :task :ankle-plantarflexion
+    ;; anterior tibia -> medial cuneiform and first metatarsal base. Its tendon
+    ;; runs under the extensor retinacula, which strap it against the front of the
+    ;; ankle: a RETINACULUM, not a wrapping surface, so the arm is pinned in both
+    ;; directions. A straight chord to a mid-foot insertion would give it 5 cm of
+    ;; leverage, half again what a dorsiflexor is measured to have, because the
+    ;; retinaculum is exactly what stops the tendon bowstringing forward.
+    :origin {:segment "shank" :along 0.25 :ant 0.0120 :lat 0.0050}
+    :insertion {:segment "foot" :along 0.45 :ant 0.0120 :lat 0.0}
+    :wrap {:radius-m 0.035 :sign 1.0 :retinaculum true}
+    :source "PCSA Ward et al. 2009 Table 3 (10.9 cm2). Retinacular radius representative (~0.035 m)."}
+
    "erector_spinae"
    {:name "erector_spinae" :pcsa-cm2 34.0
     :acts-about :l5s1 :task :trunk-extension
@@ -434,8 +568,15 @@
         ;; placed per side too, and a muscle acting about `:elbow` on the right has
         ;; to be told about `:elbow/right` or it takes its moment about the left
         ;; one — which is a wrong answer, not an error.
-        (cond-> (#{:shoulder :elbow :wrist} (:acts-about muscle))
-          (assoc :acts-about (keyword (name (:acts-about muscle)) (name side)))))))
+        (cond-> (#{:shoulder :elbow :wrist :hip :knee :ankle} (:acts-about muscle))
+          (assoc :acts-about (keyword (name (:acts-about muscle)) (name side))))
+        ;; a two-joint muscle's OTHER joint is paired too, and forgetting it here
+        ;; would report the right-side rectus femoris's hip moment about the left
+        ;; hip — a wrong answer rather than an error, which is the same trap the
+        ;; line above exists for
+        (cond-> (:crosses muscle)
+          (assoc-in [:crosses :joint]
+                    (keyword (name (get-in muscle [:crosses :joint])) (name side)))))))
 
 (def instances
   "Every muscle the solver works with: midline groups once, paired groups twice.
@@ -493,6 +634,45 @@
                 (get-in pose-data [:joints (:acts-about muscle)])
                 (axis-of muscle))))
 
+(defn secondary-arm
+  "The moment arm a TWO-JOINT muscle has at the joint its own task does not solve,
+  or nil for a muscle that crosses one joint.
+
+  WHAT THIS IS HONEST ABOUT. A muscle that spans two joints appears in two
+  equilibria at once, and the two are coupled: the force that balances the knee is
+  the same force that appears at the hip. Solving that needs an optimisation with
+  two equality constraints, and the Crowninshield–Brand form `recruit` uses is the
+  closed solution for ONE. There is no closed form of that shape for two, so this
+  model does not have one.
+
+  What it does instead is state the consequence rather than hide it. Each
+  two-joint muscle is solved in the equilibrium where it is the primary actor, and
+  the moment it simultaneously exerts at its other joint is computed here and
+  reported as `:secondary-moment-nm` — a real moment, in the model's own numbers,
+  that the other joint's equilibrium was NOT told about.
+  `muscle/tension-summary` totals it per joint as `:two-joint-unfed-nm` so the
+  size of the approximation is visible at every posture instead of being a
+  sentence in a docstring.
+
+  WHICH JOINT IS PRIMARY, and why:
+
+    rectus femoris   knee. It shares the patellar tendon with the vasti and is
+                     part of the same extensor mechanism; its hip flexion is
+                     reported.
+    hamstrings       knee. Not because they matter less at the hip — they matter
+                     a great deal there — but because the knee has no one-joint
+                     flexor to fill that side of its equilibrium, and the hip has
+                     two one-joint muscles that fill both of its. Assigning the
+                     hamstrings to the hip would leave the knee with an agonist
+                     and no antagonist at all.
+    gastrocnemius    ankle, alongside soleus, which is the redundancy the
+                     criterion exists to resolve. Its knee flexion is reported."
+  [pose-data stature-m muscle]
+  (when-let [j (get-in muscle [:crosses :joint])]
+    (moment-arm pose-data stature-m muscle
+                (get-in pose-data [:joints j])
+                (axis-of muscle))))
+
 (def reference-posture
   "Anatomical neutral: every joint at zero. Each muscle's OPTIMAL length is its
   line length here — derived from the same geometry as everything else rather than
@@ -501,7 +681,8 @@
   {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0
    :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0
    :wrist-extension-deg 0.0 :shoulder-abduction-deg 0.0
-   :trunk-lateral-bend-deg 0.0 :head-rotation-deg 0.0})
+   :trunk-lateral-bend-deg 0.0 :head-rotation-deg 0.0
+   :hip-flexion-deg 0.0 :knee-flexion-deg 0.0 :ankle-dorsiflexion-deg 0.0})
 
 (defn optimal-lengths
   "Every muscle instance's length at the reference posture, keyed by name.

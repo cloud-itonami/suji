@@ -289,7 +289,9 @@
     `:absent-from-source` the reference has no curve for this at all.
 
   THE NECK IS `:absent-from-source`, AND IT IS THE ONE THAT MATTERS. Frey Law &
-  Avin's regions are ankle, knee, trunk, shoulder, elbow and hand/grip. This
+  Avin's regions are ankle, knee, trunk, shoulder, elbow and hand/grip. (The HIP is
+  missing too — the paper lists `hip` among its search terms and fits no hip curve —
+  but the hip has a defensible nearest region and the neck does not.) This
   actor's headline verdict — the `very-high` band on the comparison table — is
   produced by the cervical extensors, and there is no published neck curve here to
   hold them to. Falling back to the pooled curve and not saying so would be the
@@ -310,7 +312,21 @@
                               :note (str "the reference's hand/grip region is grip "
                                          "FORCE held to failure; this task is the "
                                          "wrist held in a posture. Same limb "
-                                         "segment, different contraction.")}})
+                                         "segment, different contraction.")}
+   :knee-extension           {:region :knee :basis :named-in-source}
+   :ankle-plantarflexion     {:region :ankle :basis :named-in-source}
+   :hip-extension            {:region :trunk :basis :nearest-region
+                              :note (str "the reference searched for `hip` and "
+                                         "fitted no hip curve — its six regions "
+                                         "are ankle, knee, trunk, shoulder, elbow "
+                                         "and hand/grip. `:trunk` is the nearest, "
+                                         "and the reference's own discussion "
+                                         "groups them: it reports the prior review "
+                                         "considering `general fatigue models, "
+                                         "upper limb (shoulder, elbow, hand) "
+                                         "models, and trunk/hip models`, and calls "
+                                         "that grouping `consistent with our power "
+                                         "ET models`. Nearest, not named.")}})
 
 ;; --- endurance ---------------------------------------------------------------
 

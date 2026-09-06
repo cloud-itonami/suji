@@ -288,6 +288,31 @@
         "a nearest-region comparison must not be presented as a named-region one")
     (is (number? (:ratio c)))))
 
+(deftest the-lower-limb-routes-to-the-regions-the-reference-actually-fitted
+  ;; The knee and the ankle ARE in the meta-analysis by name, so the lower limb
+  ;; that landed 2026-09-07 can be held to its own curves rather than to the
+  ;; pooled one. The HIP is not: the paper lists `hip` among its search terms and
+  ;; fits no hip curve. Unlike the neck it has a defensible nearest region — the
+  ;; reference's own discussion groups trunk and hip — so it routes to `:trunk`
+  ;; and is labelled `:nearest-region`, which is a different claim from `:named`.
+  (is (= :knee (:region (strain/task->reference-region :knee-extension))))
+  (is (= :named-in-source (:basis (strain/task->reference-region :knee-extension))))
+  (is (= :ankle (:region (strain/task->reference-region :ankle-plantarflexion))))
+  (is (= :named-in-source (:basis (strain/task->reference-region :ankle-plantarflexion))))
+  (is (= :trunk (:region (strain/task->reference-region :hip-extension))))
+  (is (= :nearest-region (:basis (strain/task->reference-region :hip-extension)))
+      "there is no hip curve in the reference; calling this one `named` would claim there is")
+  (is (not-any? #{:hip} (keys (:power-models strain/frey-law-2010))))
+  ;; every task this actor's anatomy declares must be routed, or a muscle silently
+  ;; falls through to the default and is reported as having no curve when the
+  ;; reference has one
+  (doseq [t [:cervical-extension :cervical-lateral-flexion :scapular-suspension
+             :shoulder-flexion :shoulder-abduction :trunk-extension
+             :trunk-lateral-flexion :elbow-flexion :wrist-flexion
+             :knee-extension :ankle-plantarflexion :hip-extension]]
+    (is (contains? strain/task->reference-region t)
+        (str "task " t " is not routed to a reference region"))))
+
 ;; --- a whole posture ---------------------------------------------------------
 
 (deftest a-session-cross-check-separates-what-was-checked-from-what-was-not

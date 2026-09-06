@@ -8,6 +8,7 @@
   That is what these pin."
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
+            [clojure.set]
             [suji.methods.attachment :as att]
             [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]
@@ -135,6 +136,31 @@
     ;; and the real anterior deltoid, whose origin is on the trunk, does vary
     (is (not (apply = (mapv #(math/round-to (arm (at :shoulder-flexion-deg (double %)) "anterior_deltoid/left") 9)
                             [0 30 60]))))))
+
+(deftest supporting-the-forearms-unloads-the-girdle
+  ;; A BRANCH THAT COULD NOT FIRE, until 2026-09-07. `muscle/suspended-weight-n`
+  ;; read the flag from `(meta p)`, and `pose` calls `with-meta` nowhere and never
+  ;; has — so the lookup returned nil at every call and the function's whole
+  ;; documented effect was unreachable. Measured on this body at `laptop-on-desk`:
+  ;; supported and unsupported both gave 34.32 N, which is the UNSUPPORTED answer.
+  ;; The desk transferred nothing. Nothing downstream was wrong because
+  ;; `solve-muscle-tensions` used a private twin that took the flag properly, and
+  ;; that duplicate body is the other half of the defect — it is what let the
+  ;; public one rot with nobody noticing.
+  ;;
+  ;; The numbers are pinned rather than merely compared, because `supported <
+  ;; unsupported` would also pass against a model that shaved a gram off.
+  (let [ws (posture/posture-from-workstation posture/laptop-on-desk)
+        w (fn [sup] (muscle/suspended-weight-n
+                     body (pose/solve-pose body (assoc ws :arms-supported sup)) :left sup))
+        g (fn [n] (* (:mass-kg (segment/seg body n)) segment/gravity))]
+    (is (math/nearly= (+ (g "upper_arm") (g "forearm") (g "hand")) (w false) 1e-9)
+        (str "an unsupported girdle hangs the whole arm: " (w false) " N"))
+    (is (math/nearly= (g "upper_arm") (w true) 1e-9)
+        (str "resting the forearms transfers two segments to the desk: " (w true) " N"))
+    (is (> (w false) (* 1.5 (w true)))
+        (str "which is a large difference and not a rounding one: "
+             (w false) " vs " (w true) " N"))))
 
 (deftest suspension-muscles-are-not-given-a-moment-arm
   ;; asking for the shoulder moment arm of a suspension muscle returns a number,
@@ -316,20 +342,39 @@
 
 ;; --- the wrist ---------------------------------------------------------------
 
-(deftest every-placed-joint-except-the-hip-has-an-equilibrium
+(def ^:private landmarks
+  "Points `pose` places that are NOT joints, so nothing is expected to take a
+  moment about them. `:pelvis-base` is the bottom of the pelvis segment on the
+  midline — the femoral heads are `:hip/left` and `:hip/right`, to either side of
+  it — and the heels and toes are the two edges of the base of support."
+  #{:vertex :pelvis-base :heel/left :heel/right :toe/left :toe/right})
+
+(def ^:private awaiting-muscles
+  "Joints the kinematics places and the kinetics does not solve YET.
+
+  EMPTY, as of 2026-09-07. It held the six lower-limb joints for exactly as long
+  as it took to give them muscles. It used to be the sentence `the hip is
+  deliberately unsolved, because a seated model has no thigh` — true when it was
+  written, false the moment `segment/build-body` grew a thigh, and it would have
+  gone on reading as a decision. A set that has to be emptied is harder to forget
+  than a paragraph that has to be reread; leaving it here, empty, is what makes
+  the next gap cheap to state."
+  #{})
+
+(deftest every-placed-joint-has-an-equilibrium-or-is-named-as-a-gap
   ;; The coverage question, asked of the data rather than of a comment: which
-  ;; joints does the kinematics place, and which does the kinetics solve? The hip
-  ;; is the one exception and it is not an oversight — this is a SEATED model whose
-  ;; base is the pelvis, and a hip moment would need a thigh segment that
-  ;; `segment/build-body` does not have. An absent segment, not a forgotten
-  ;; equilibrium.
+  ;; joints does the kinematics place, and which does the kinetics solve?
   (let [p (pose/solve-pose body (merge neutral {:elbow-flexion-deg 90.0}))
         placed (set (keys (:joints p)))
         acted (set (map :acts-about att/instances))
-        skeletal (disj placed :hip :vertex)]
+        skeletal (clojure.set/difference placed landmarks awaiting-muscles)]
     (doseq [j skeletal]
       (is (contains? acted j) (str j " is placed by the kinematics and must be solved")))
-    (is (not (contains? acted :hip)) "the hip is deliberately unsolved; see the docstring")))
+    (doseq [j awaiting-muscles]
+      (is (contains? placed j)
+          (str j " is listed as awaiting muscles but is not even placed")))
+    (doseq [j landmarks]
+      (is (contains? placed j) (str j " is listed as a landmark but is not placed")))))
 
 (deftest a-held-out-hand-loads-the-wrist-extensors
   ;; palm down, forearm horizontal: gravity drops the hand, and the muscles that

@@ -19,6 +19,15 @@
  {:db/ident :posture/trunk-flex-deg    :db/valueType :db.type/double :db/cardinality :db.cardinality/one}
  {:db/ident :posture/shoulder-flex-deg :db/valueType :db.type/double :db/cardinality :db.cardinality/one}
  {:db/ident :posture/arms-supported    :db/valueType :db.type/boolean :db/cardinality :db.cardinality/one}
+ ;; ── the lower limb + what the body is resting on (2026-09-07) ──
+ ;; :support is load-bearing, not descriptive. Two postures with identical upper-body
+ ;; angles load the hip, knee and ankle by a factor of about thirty differently
+ ;; depending on it, so a posture datom without it does not identify the posture that
+ ;; was solved. See suji.methods.posture/support-mode.
+ {:db/ident :posture/support           :db/valueType :db.type/keyword :db/cardinality :db.cardinality/one}   ;; :seated | :standing
+ {:db/ident :posture/hip-flex-deg      :db/valueType :db.type/double :db/cardinality :db.cardinality/one}
+ {:db/ident :posture/knee-flex-deg     :db/valueType :db.type/double :db/cardinality :db.cardinality/one}
+ {:db/ident :posture/ankle-dorsiflex-deg :db/valueType :db.type/double :db/cardinality :db.cardinality/one}
  {:db/ident :posture/as-of         :db/valueType :db.type/long    :db/cardinality :db.cardinality/one}   ;; Wellbecoming trajectory stamp (非終末論)
 
  ;; ── joint load (static inverse dynamics — RNEA gravity term) ───────────────────
@@ -28,6 +37,10 @@
  {:db/ident :load/moment-nm       :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}
  {:db/ident :load/compressive-kgf :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}   ;; cervical only (the Hansraj unit)
  {:db/ident :load/mult-vs-head    :db/valueType :db.type/double  :db/cardinality :db.cardinality/one}   ;; cervical: load / head weight
+ ;; lower limb only: the axial force the joint transmits, both sides summed. It is the
+ ;; quantity the support mode decides, and a moment alone cannot express it — a seated
+ ;; and a standing knee can carry the same small moment through 42 N and through 301 N.
+ {:db/ident :load/supported-weight-n :db/valueType :db.type/double :db/cardinality :db.cardinality/one}
 
  ;; ── muscle tension (Hill-type moment-arm; %MVC = 緊張) ─────────────────────────
  {:db/ident :muscle/id            :db/valueType :db.type/string  :db/cardinality :db.cardinality/one :db/unique :db.unique/identity}

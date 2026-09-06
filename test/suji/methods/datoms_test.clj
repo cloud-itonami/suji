@@ -9,7 +9,12 @@
             [clojure.edn :as edn]
             [clojure.string :as str]
             [suji.methods.analyze :as analyze]
-            [suji.methods.datoms :as datoms]))
+            [suji.methods.datoms :as datoms]
+            [suji.methods.load :as load]
+            [suji.methods.muscle :as muscle]
+            [suji.methods.posture :as posture]
+            [suji.methods.segment :as segment]
+            [suji.methods.strain :as strain]))
 
 (def ^:private schema-path (str (clojure.java.io/file "schema" "kotoba.edn")))
 
@@ -73,3 +78,70 @@
       (is (= (:body/representative body) true)))
     (let [cerv (first (filter #(= (:load/joint %) :cervicothoracic) back))]
       (is (= (:load/joint cerv) :cervicothoracic)))))
+
+;; --- the support mode is part of the posture's identity ----------------------
+
+(defn- scenario-for
+  "One scenario result for a stated posture, the shape `scenario-datoms` consumes."
+  [nm p]
+  (let [body (segment/build-body 70.0 1.70)
+        loads (load/solve-posture-loads body p)
+        tensions (muscle/solve-muscle-tensions body p loads)]
+    {:workstation nm :posture p :loads loads :tensions tensions
+     :strains (strain/session-strain tensions 120.0)}))
+
+(deftest test-the-emitted-posture-distinguishes-standing-from-sitting
+  ;; THE DEFECT THIS IS WRITTEN AGAINST. Until 2026-09-07 the posture datom carried
+  ;; head, trunk and shoulder angles and `arms-supported`, and nothing else. Two
+  ;; postures with the same upper-body angles and different support modes load the
+  ;; hip, knee and ankle by a factor of about thirty apart — and would have emitted
+  ;; BYTE-IDENTICAL posture datoms. A replayable log that records two different
+  ;; bodies as the same one is not replayable.
+  (let [angles {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0 :shoulder-flexion-deg 0.0
+                :elbow-flexion-deg 0.0 :wrist-extension-deg 0.0 :arms-supported false
+                :hip-flexion-deg 0.0 :knee-flexion-deg 0.0 :ankle-dorsiflexion-deg 0.0}
+        sit (datoms/scenario-datoms (scenario-for "x" (assoc angles :support :seated)) "b" 0)
+        stand (datoms/scenario-datoms (scenario-for "x" (assoc angles :support :standing)) "b" 0)
+        posture-of (fn [ds] (first (filter #(contains? % ":posture/id") ds)))
+        ankle-of (fn [ds] (first (filter #(= ":ankle" (get % ":load/joint")) ds)))]
+    (is (not= (posture-of sit) (posture-of stand))
+        "the two postures must not emit the same datom")
+    (is (= ":seated" (get (posture-of sit) ":posture/support")))
+    (is (= ":standing" (get (posture-of stand) ":posture/support")))
+    ;; and the difference it makes is emitted too, so a reader of the log can see
+    ;; the consequence and not only the flag
+    (is (number? (get (ankle-of sit) ":load/supported-weight-n")))
+    (is (> (get (ankle-of stand) ":load/supported-weight-n")
+           (* 20.0 (get (ankle-of sit) ":load/supported-weight-n")))
+        (str "standing must transmit an order of magnitude more through the ankles: "
+             (get (ankle-of stand) ":load/supported-weight-n") " vs "
+             (get (ankle-of sit) ":load/supported-weight-n") " N"))
+    ;; the lower-limb angles are in the log, so the posture can be rebuilt from it
+    (doseq [k [":posture/hip-flex-deg" ":posture/knee-flex-deg" ":posture/ankle-dorsiflex-deg"]]
+      (is (number? (get (posture-of stand) k)) (str k " must be emitted")))))
+
+(deftest test-every-lower-limb-load-reaches-the-log
+  ;; ⚠ THIS TEST USED TO BE CALLED `…-emitted-with-declared-keywords`, and it could
+  ;; not fail for that reason. `joint-kw` maps a joint name to the keyword the
+  ;; schema declares AND falls back to deriving one from the name, and for "hip"
+  ;; both paths produce exactly ":hip" — so removing the three explicit entries
+  ;; changed no output and the test stayed green. Measured 2026-09-07 by removing
+  ;; them: 8 tests, 0 failures. A test that cannot fail for the reason it names is
+  ;; a defect whatever it asserts, so it now names the claim it CAN discriminate.
+  ;;
+  ;; (The explicit entries are still there and still worth having — an explicit
+  ;; table is easier to read than a fallback — but nothing here guards them, and
+  ;; saying so is the difference between a safety net and a belief.)
+  ;;
+  ;; What IS checkable is that the lower limb's loads reach the log at all: a
+  ;; solver that computes a hip moment and an emitter that drops it is the same
+  ;; kind of silence this actor keeps finding.
+  (let [ds (datoms/scenario-datoms
+            (scenario-for "x" posture/quiet-standing) "b" 0)
+        joints (into #{} (keep #(get % ":load/joint")) ds)]
+    (doseq [j [":hip" ":knee" ":ankle"]]
+      (is (contains? joints j) (str j " must appear in the emitted load datoms")))
+    (is (contains? joints ":cervicothoracic") "and the old ones are still there")
+    (is (= 8 (count (filter #(contains? % ":load/joint") ds)))
+        (str "every joint the solver reports must be emitted exactly once, got "
+             (mapv #(get % ":load/joint") (filter #(contains? % ":load/joint") ds))))))

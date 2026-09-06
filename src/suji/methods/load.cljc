@@ -18,6 +18,7 @@
   Records are kebab-keyword maps; joints kept as an ordered vector (Python list order)."
   (:require [suji.methods.math :as math]
             [suji.methods.pose :as pose]
+            [suji.methods.posture :as posture]
             [suji.methods.segment :as segment]))
 
 ;; --- Cervical lever model (Hansraj-calibrated) -------------------------------
@@ -149,11 +150,11 @@
   and the wrist extensors holding it there are the muscles a typist complains
   about. Resting the forearms rests the hands with them.
 
-  NOT THE HIP. `pose` also places a hip, and there is deliberately no moment about
-  it: this is a SEATED model whose base is the pelvis, and a hip moment would need
-  a thigh segment that `segment/build-body` does not have. That is an absent
-  segment, not a forgotten equilibrium, and it is said here so the two cannot be
-  confused."
+  THE HIP USED TO BE EXCLUDED HERE, and this paragraph used to explain why: there
+  was no thigh segment, so there was nothing for a hip moment to be a moment of.
+  That was true and it is no longer — see `lower-limb-loads`. The exclusion was
+  never about the hip being uninteresting; it was about an absent segment, which is
+  exactly the kind of gap that gets read as a decision if nobody comes back."
   [body posture]
   (let [p (pose/solve-pose body posture)
         w (pose/segment-weights body p)
@@ -214,6 +215,103 @@
                               (concat (pose/segments-on p ["thorax_abdomen" "head_neck"])
                                       (pose/segments-on p arm-bases)))}))
 
+(def lower-limb-chain
+  "Each lower-limb joint, the segments DISTAL to it, and the name it is reported
+  under. Proximal to distal.
+
+  The list is the same for standing and for sitting, which is the point: the two
+  support modes do not disagree about what the leg is made of. They disagree about
+  whether the floor is pushing on the end of it."
+  [{:joint :hip   :name "hip"   :distal ["thigh" "shank" "foot"]}
+   {:joint :knee  :name "knee"  :distal ["shank" "foot"]}
+   {:joint :ankle :name "ankle" :distal ["foot"]}])
+
+(defn- lower-limb-forces
+  "Every external force on the free body distal to one lower-limb joint, as
+  `[point force-vector]` pairs — the segment weights, plus the ground reaction when
+  the body is standing on that foot."
+  [body pose-data posture w joint-spec side]
+  (let [standing (posture/standing? posture)
+        seated-hip-is-empty (and (= :hip (:joint joint-spec))
+                                 (posture/thigh-supported? posture))
+        weights (when-not seated-hip-is-empty
+                  (for [seg (pose/segments-on pose-data (:distal joint-spec) side)]
+                    [(:com seg) [0.0 (- (get w (:name seg))) 0.0]]))
+        cop (when (and standing (not seated-hip-is-empty))
+              (pose/centre-of-pressure body pose-data side))]
+    (cond-> (vec weights)
+      cop (conj [cop [0.0 (* 0.5 (:weight-n (pose/whole-body-com body pose-data))) 0.0]]))))
+
+(defn lower-limb-loads
+  "Hip, knee and ankle: the moment each has to hold and the axial force each has to
+  transmit, per side.
+
+  THE SUPPORT MODE IS THE WHOLE ANSWER. `posture/support-mode` explains why in
+  words; here is what it costs. The free body distal to each joint holds the same
+  segments in both modes. Standing adds ONE force — the ground reaction, half the
+  body's weight, pushing up at the centre of pressure — and that force is about
+  thirty times the weight of the foot it acts on. Every difference between the
+  statics of standing and the statics of sitting in this model is that one term,
+  which is why it is added by a `cond->` rather than by a second code path: a
+  second code path is a place for the two to drift.
+
+  WHERE THE GROUND REACTION ACTS is not a parameter of this function. Static
+  equilibrium puts the centre of pressure under the line of gravity, and
+  `pose/centre-of-pressure` computes it there. The consequence is that a
+  perfectly-stacked standing posture reports almost no ankle moment (true — a body
+  balanced over its ankles asks nothing of its calves) and a posture that leans
+  reports one proportional to the lean (also true, and it is what makes soleus work
+  in quiet standing).
+
+  WHAT IT DOES NOT DO. It does not refuse a posture whose centre of pressure falls
+  outside the feet; it reports `:cop-inside-base?` and leaves the judgement to the
+  consumer, because a body outside its base of support is a real thing — it is a
+  step, or a fall — and a static model can describe the instant without claiming
+  the body can hold it. It splits the ground reaction equally between the two feet,
+  so single-leg stance is out of range. And it solves the SAGITTAL plane only;
+  `:frontal-per-side` is reported and no muscle in this model carries it, exactly
+  as the upper limb's frontal moments were reported before muscles for them
+  existed.
+
+  Returns
+  `{:joints [{:joint :moment-nm :per-side :frontal-per-side :supported-weight-n}…]
+    :support {…}}`."
+  [body posture]
+  (let [p (pose/solve-pose body posture)
+        w (pose/segment-weights body p)
+        {com-point :point body-weight :weight-n} (pose/whole-body-com body p)
+        base (pose/base-of-support p)
+        standing (posture/standing? posture)
+        per-joint
+        (fn [spec]
+          (let [f (into {} (for [side [:left :right]]
+                             [side (lower-limb-forces body p posture w spec side)]))
+                vecs (into {} (for [side [:left :right]]
+                                [side (pose/external-moment-vec
+                                       (get-in p [:joints (keyword (name (:joint spec))
+                                                                   (name side))])
+                                       (get f side))]))]
+            {:name (name (:joint spec))
+             :moment-nm (+ (nth (:left vecs) 2) (nth (:right vecs) 2))
+             :per-side (into {} (for [side [:left :right]] [side (nth (side vecs) 2)]))
+             :frontal-per-side (into {} (for [side [:left :right]] [side (nth (side vecs) 0)]))
+             ;; the axial force the joint transmits: the joint reaction balances the
+             ;; net vertical external force on the free body below it
+             :supported-weight-n
+             (into {} (for [side [:left :right]]
+                        [side (math/abs* (reduce + 0.0 (map #(second (second %))
+                                                            (get f side))))]))}))]
+    {:joints (mapv per-joint lower-limb-chain)
+     :support {:mode (posture/support-mode posture)
+               :thigh-supported (posture/thigh-supported? posture)
+               :body-weight-n body-weight
+               :com-x com-point
+               :ground-reaction-per-foot-n (if standing (* 0.5 body-weight) 0.0)
+               :base-of-support base
+               :cop-inside-base?
+               (when (and standing base)
+                 (<= (:back base) (first com-point) (:front base)))}}))
+
 (defn solve-posture-loads
   "Full static inverse-dynamics solve for a posture (the RNEA gravity term).
 
@@ -237,5 +335,22 @@
                                   "hands rest with the forearms"
                                   "hand held out")
                                 per-side))
-                (lumbosacral-moment body (:trunk-flexion-deg posture) cerv)]]
-    {:cervical cerv :joints joints :frontal (frontal-moments body posture)}))
+                (lumbosacral-moment body (:trunk-flexion-deg posture) cerv)]
+        lower (lower-limb-loads body posture)
+        ;; the lower-limb entries carry two keys the upper-limb ones do not
+        ;; (`:supported-weight-n` and `:frontal-per-side`) and are otherwise the
+        ;; same shape, so a consumer that walks `:joints` reading `:joint` and
+        ;; `:moment-nm` — which is every consumer this actor has — needs no special
+        ;; case for them. That was the requirement.
+        lower-joints (mapv (fn [j]
+                             (-> j
+                                 (assoc :joint (:name j)
+                                        :note (if (= :standing (get-in lower [:support :mode]))
+                                                "standing: the ground reaction under this foot"
+                                                "seated: only what hangs below this joint"))
+                                 (dissoc :name)))
+                           (:joints lower))]
+    {:cervical cerv
+     :joints (into (vec joints) lower-joints)
+     :frontal (frontal-moments body posture)
+     :support (:support lower)}))
