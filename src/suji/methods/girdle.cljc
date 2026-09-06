@@ -367,12 +367,21 @@
 
   A distributed pressure is statically equivalent to its resultant acting at one
   point, and where that point sits is set by the moment the contact has to supply.
-  Given the tangential moment `m-tan` (a world 3-vector, N.m) the contact must
-  supply about the patch centre, the offset that produces it is
+  Given the moment `m-demand` (a world 3-vector, N.m) the contact must supply
+  about the patch centre, the offset that produces it is
 
-      d = (n x m-tan) / N
+      d = (n x m-demand) / N
 
-  because for d perpendicular to n, d x (N n) = N (d x n) = m-tan exactly.
+  because for d perpendicular to n, d x (N n) = N (d x n) is the TANGENTIAL part
+  of m-demand exactly.
+
+  THE TWIST DROPS OUT OF THAT CROSS PRODUCT BY ITSELF, and that is the algebraic
+  form of the physical fact rather than something this function has to arrange:
+  n x (t n) = 0 for any t, so the component of the demand along the normal
+  contributes nothing to the offset and cannot be supplied at any centre of
+  pressure. An earlier draft projected it out first, which computed the same
+  vector by a longer route and read as though the projection were doing the work.
+  It is reported instead.
 
   BOUNDED BY THE PATCH, which is the whole difference from a point contact — and
   clamped rather than refused when the bound is reached, following this repo's
@@ -388,9 +397,8 @@
   `:unbalanced-twist-nm` and stays the model's to answer for."
   [{:keys [centre normal circumferential-half-m axial-half-m]} normal-n m-demand]
   (let [twist (math/vdot m-demand normal)
-        m-tan (math/v- m-demand (math/v* normal twist))
         raw (if (> normal-n 1e-9)
-              (math/v* (math/vcross normal m-tan) (/ 1.0 normal-n))
+              (math/v* (math/vcross normal m-demand) (/ 1.0 normal-n))
               [0.0 0.0 0.0])
         reach (math/vlen raw)
         ;; the patch is not round; the tightest bound in the direction the offset

@@ -232,9 +232,13 @@
         pure-twist (math/v* n 7.0)
         cop (girdle/centre-of-pressure r 100.0 pure-twist)]
     (is (math/nearly= 7.0 (:unbalanced-twist-nm cop) 1e-9)
-        "the whole of a pure twist must be reported as unbalanced")
+        "the whole of a pure twist must be REPORTED as unbalanced, not dropped")
     (is (math/nearly= 0.0 (math/vlen (:offset cop)) 1e-9)
         "and no centre-of-pressure offset can supply any of it")
+    (is (math/nearly= 0.0 (math/vlen (:supplied-nm cop)) 1e-9)
+        "so the contact supplies none of it")
+    (is (false? (:at-patch-edge? cop))
+        "and it is not a patch-edge event — the patch is not the limit here")
     ;; whatever the contact DOES supply is perpendicular to the normal, always
     (let [mixed (math/v+ pure-twist (math/v* (math/vnorm (math/vcross n [0.0 1.0 0.0])) 2.0))
           c (girdle/centre-of-pressure r 100.0 mixed)]
@@ -378,7 +382,11 @@
   ;; sliders offer, every contact that was NOT refused reports a non-negative
   ;; normal force and a non-negative pressure — there is no path through this
   ;; namespace that returns a tensile contact.
-  (let [postures (for [trunk [0.0 30.0 60.0]
+  ;; The posture range deliberately includes trunk EXTENSION. Without it the
+  ;; sweep never reaches the region where a contact would have to pull, so the
+  ;; guard it is testing is never consulted and the test passes whether the guard
+  ;; is there or not — measured, and this range is the repair.
+  (let [postures (for [trunk [-60.0 -30.0 0.0 30.0 60.0]
                        head [0.0 30.0 60.0]
                        sh [0.0 45.0 90.0]
                        bend [0.0 40.0]
@@ -388,8 +396,14 @@
                     :trunk-lateral-bend-deg bend :arms-supported sup})
         results (for [p postures side [:left :right]]
                   (girdle/solve-contact body p side))
-        forces (keep #(get-in % [:contact :normal-n]) results)]
-    (is (= 216 (count results)) "the sweep really ran")
+        forces (keep #(get-in % [:contact :normal-n]) results)
+        refused (filter #(get-in % [:contact :refused]) results)]
+    (is (= 360 (count results)) "the sweep really ran")
+    (is (seq refused)
+        "and it reaches postures where the contact WOULD have had to pull — a
+         sweep that never gets there cannot discriminate the guard")
+    (is (every? #(= :contact-would-pull (get-in % [:contact :refused])) refused)
+        "which it refuses by name")
     (is (seq forces))
     (is (every? #(>= % 0.0) forces) "no contact transmits tension")
     (is (every? #(or (nil? %) (>= % 0.0)) (map girdle/contact-pressure-kpa results))
