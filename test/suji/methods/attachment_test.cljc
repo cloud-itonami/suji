@@ -11,6 +11,7 @@
             [suji.methods.attachment :as att]
             [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]
+            [suji.methods.load]
             [suji.methods.pose :as pose]
             [suji.methods.segment :as segment]))
 
@@ -112,3 +113,22 @@
     (is (> a-t a-s))
     (is (math/nearly= (/ 2.00 1.70) (/ a-t a-s) 0.05)
         "the arm should scale with stature, not with something else")))
+
+(deftest a-frontal-load-is-reported-as-carried-by-nobody
+  ;; This actor has no frontal-plane musculature. Accepting an abduction input,
+  ;; moving the picture with it, and leaving the load out of every number would be
+  ;; the worst of the three options; the model computes the frontal moment and
+  ;; says nobody is carrying it.
+  (let [sagittal (merge neutral {:shoulder-flexion-deg 20.0 :elbow-flexion-deg 90.0})
+        abducted (assoc sagittal :shoulder-abduction-deg 40.0)
+        run (fn [posture]
+              (let [l (suji.methods.load/solve-posture-loads body posture)]
+                (muscle/tension-summary (muscle/solve-muscle-tensions body posture l) l)))
+        s (run sagittal)
+        a (run abducted)]
+    (is (math/nearly= 0.0 (:unassigned-frontal-nm s) 1e-12)
+        "a sagittal posture leaves nothing unassigned in the frontal plane")
+    (is (> (:unassigned-frontal-nm a) 1.0)
+        "an abducted posture creates a real frontal moment")
+    (is (not (:complete? a))
+        "and an answer that leaves a load unassigned must not read as complete")))

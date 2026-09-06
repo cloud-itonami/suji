@@ -115,12 +115,32 @@
 
 (defn tension-summary
   "Which parts of the load this solve could place, for a consumer that must not
-  present an incomplete answer as a complete one."
-  [tensions]
-  {:total (count tensions)
-   :refused (count (filter :refused tensions))
-   :complete? (not-any? :refused tensions)
-   :max-mvc-pct (let [xs (keep :mvc-pct tensions)] (when (seq xs) (apply max xs)))})
+  present an incomplete answer as a complete one.
+
+  Two independent ways an answer can be incomplete, and they are reported
+  separately because they have different fixes:
+
+    :refused         a muscle exists but its leverage is unresolvable HERE — a
+                     straight-line model with no wrapping surface. Fixed by
+                     wrapping surfaces, not by more muscles.
+    :unassigned-*    a load exists and no muscle in this model can carry it at
+                     all. This actor has no frontal-plane musculature, so any
+                     frontal moment is unassigned by construction. Fixed by adding
+                     muscles, not by better geometry."
+  ([tensions] (tension-summary tensions nil))
+  ([tensions loads]
+   (let [frontal (:frontal loads)
+         unassigned (when frontal
+                      (+ (math/abs* (:shoulder-nm frontal 0.0))
+                         (math/abs* (:lumbosacral-nm frontal 0.0))))]
+     (cond-> {:total (count tensions)
+              :refused (count (filter :refused tensions))
+              :complete? (not-any? :refused tensions)
+              :max-mvc-pct (let [xs (keep :mvc-pct tensions)] (when (seq xs) (apply max xs)))}
+       frontal (assoc :unassigned-frontal-nm unassigned
+                      :frontal frontal
+                      :complete? (and (not-any? :refused tensions)
+                                      (< unassigned 1e-9)))))))
 
 (defn fmt-mvc
   "Display helper: a %MVC, or the reason there is not one."
