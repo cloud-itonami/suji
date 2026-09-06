@@ -70,15 +70,27 @@
   This emitter was re-joining what the anatomy layer had taken apart. Where those
   keys are present they are used verbatim; `strain/muscle-strain` carries only
   `:name` forward, so for a strain record the pair is recovered by splitting the
-  name — see the note on `strain-group+side` below."
+  name.
+
+  THE STRING FALLBACK IS GONE (2026-09-07). Until then, a record without `:group`
+  had its pair recovered by looking for a `/` in `:name` — a parser for a grammar
+  nothing declared, which silently produced `[name :midline]` for any instance
+  whose name happened not to contain one. `strain/muscle-strain` was the only
+  producer that needed it, because it dropped the two keys its input already
+  carried; it now carries them, so the fallback has no callers and every way of
+  reaching it would be a bug.
+
+  It REFUSES rather than guessing. A record that reaches here without `:group` is
+  a producer that has not been updated — and there is one in the repo:
+  `suji.cells.strain-accumulate.state-machine` builds the same published
+  `strainReport` record with bare keys, no side, and no `:group`. Its `solve`
+  throws today (R0 scaffold) so it is not a live producer, but if it becomes one
+  this must say so rather than emit a plausible record with the side guessed."
   [m]
-  (if (:group m)
-    [(kw-str (:group m)) (kw-str (name (:side m)))]
-    (let [n (str (:name m))
-          i (str/index-of n "/")]
-      (if i
-        [(kw-str (subs n 0 i)) (kw-str (subs n (inc i)))]
-        [(kw-str n) ":midline"]))))
+  (when-not (:group m)
+    (throw (ex-info "record has no :group; a muscle instance must carry the structure and the side as separate facts"
+                    {:type :value-error :missing :group :name (:name m)})))
+  [(kw-str (:group m)) (kw-str (name (:side m)))])
 
 (def ^:private omit
   "Marker for a field that is NOT EMITTED, as distinct from a field emitted with a
