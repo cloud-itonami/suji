@@ -1126,14 +1126,14 @@
     (is (neg? (:moment-nm ao))
         (str "gravity must EXTEND the head here, got " (:moment-nm ao) " N·m"))
     (doseq [m upper-cervical-flexors]
-      (is (pos? (:active-n (by m)))
+      (is (pos? (or (:active-n (by m)) 0.0))
           (str m " must carry it, got " (by m))))
     ;; and the suboccipital extensors are asked for nothing — a PLACED zero, not a
     ;; refusal, which is the distinction `atlanto-occipital-moment` exists to keep
     (doseq [m ["rectus_capitis_posterior_major" "rectus_capitis_posterior_minor"
                "obliquus_capitis_superior"]]
       (is (nil? (:refused (by m))) (str m " is not refused here: " (by m)))
-      (is (math/nearly= 0.0 (:active-n (by m)) 1e-12)
+      (is (math/nearly= 0.0 (or (:active-n (by m)) 0.0) 1e-12)
           (str m " is asked for nothing here: " (by m))))
     ;; the whole demand is gravity, with no decomposition surplus in it at all,
     ;; which is what makes this posture the control for the desk ones below
@@ -1171,7 +1171,22 @@
           (str (:name w) ": the head is tipped forward, so gravity asks the flexors "
                "for nothing: " ao))
       (is (pos? (:decomposition-surplus-nm ao))
-          (str (:name w) ": and the surplus is all of it: " ao)))))
+          (str (:name w) ": and the surplus is all of it: " ao))
+      ;; AND THE SOLVE IS WIRED TO THE GRAVITATIONAL HALF, which is the half of this
+      ;; claim the arithmetic above does not reach. Splitting the number and then
+      ;; handing the task the whole of `:over-supplied-nm` would satisfy every
+      ;; assertion so far and would put the flexors at 185% MVC — that was the first
+      ;; draft, and this is what catches it.
+      (let [tens (muscle/solve-muscle-tensions
+                  body p (suji.methods.load/solve-posture-loads body p))
+            by (into {} (map (juxt :name identity)) tens)]
+        (doseq [m upper-cervical-flexors]
+          (is (math/nearly= (:gravitational-flexion-nm ao) (:task-load-nm (by m)) 1e-12)
+              (str (:name w) " " m
+                   ": the flexion task is given the gravitational half, not the "
+                   "surplus — load " (:task-load-nm (by m)) " vs gravity "
+                   (:gravitational-flexion-nm ao) " and surplus "
+                   (:decomposition-surplus-nm ao))))))))
 
 (deftest the-surplus-is-larger-than-the-flexors-that-would-carry-it
   ;; WHY THE SURPLUS IS REPORTED AND NOT ASSIGNED, as a computation rather than as a
@@ -1200,7 +1215,7 @@
     ;; muscle in the report is not one of the flexors
     (is (zero? (:over-mvc s)) (str "nothing is over MVC at this posture: " s))
     (doseq [m upper-cervical-flexors]
-      (is (< (:mvc-pct (by m)) 1.0)
+      (is (< (or (:mvc-pct (by m)) 0.0) 1.0)
           (str m " is not charged the surplus, got " (:mvc-pct (by m)) " %MVC")))
     (is (> (:atlanto-occipital-surplus-mvc-pct s) (:max-mvc-pct s))
         (str "the surplus would dominate every real load in this posture, which is "
