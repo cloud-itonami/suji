@@ -122,7 +122,28 @@
                                     shared))]
     (- carried load)))
 
-(defn complete?
-  "True when every candidate got a force — i.e. the whole load was placed."
+(defn carried?
+  "True when the load was placed — some candidate took it, or there was none to
+  take.
+
+  THIS IS NOT `every candidate got a force`. For a mirror-paired task — lateral
+  flexion, abduction — exactly one side resists at any instant and the other is
+  its antagonist, which a static optimum does not co-contract. Refusing the
+  antagonist is the right answer, not an incomplete one, and counting it as
+  incomplete made every frontal-plane posture look unanswerable the moment the
+  frontal muscles were added."
+  [shared]
+  (boolean (or (empty? shared) (some :force-n shared))))
+
+(defn all-placed?
+  "True when EVERY candidate got a force. Rarely what a consumer wants — for a
+  mirror-paired task it is false by construction — but it is what a test of the
+  refusal machinery itself is asking."
   [shared]
   (every? #(contains? % :force-n) shared))
+
+(defn complete?
+  "True when the load was placed. Kept as the name consumers already use;
+  see `carried?` for why it is not `every candidate got a force`."
+  [shared]
+  (carried? shared))

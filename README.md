@@ -99,8 +99,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 108 tests / 1610 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  —  92 tests /  406 assertions
+clojure -M:test                                   # JVM   — 112 tests / 2674 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  —  96 tests /  462 assertions
 clojure -M:lint                                   # 0 errors
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -166,7 +166,28 @@ hand-written expressions. `recruit` shares them by minimum cubed stress
 moves. The old trapezius expression also charged the head's extension load a second
 time, on top of the cervical group; that term is gone.
 
-**The frontal plane is computed and reported as unassigned.** `pose` accepts
+**The frontal plane is CARRIED (2026-09-06).** Six muscle groups were added for
+it — middle deltoid and latissimus dorsi at each shoulder, quadratus lumborum and
+obliques at L5/S1, scalenes at C7, plus middle trapezius for the girdle in postures
+where the upper fibres' occipital origin has swung below the acromion. Swept over
+5,760 postures spanning the ranges this app's sliders offer, **every one now has
+its whole load placed**; before, 3,264 of them had a load nobody could carry.
+
+Extreme postures outside that range (trunk 60° and head 60° and 40° of bend and 90°
+of abduction at once) still run out, and the model says which muscle and why rather
+than producing a number.
+
+A mirror-paired task refuses its antagonist by construction: exactly one side
+resists at any instant and a static optimum does not co-contract. That is reported
+as `:antagonist?` and is NOT counted as an unanswered load — counting it as one
+made every frontal-plane posture look unanswerable the moment these muscles landed.
+
+**%MVC above 100 is reported, not clamped.** It says the posture asks the modelled
+muscles for more force than they can produce, which means a body holding it is
+being held by something this model does not contain — ligaments, passive tissue,
+flexion-relaxation. Clamping would erase the finding.
+
+### Superseded: the frontal plane as unassigned load `pose` accepts
 abduction, lateral bend and head rotation; `load/frontal-moments` computes the
 moments they create. This actor has no frontal-plane musculature — no scalenes,
 no latissimus, no gluteus medius — so there is nobody to assign them to, and
