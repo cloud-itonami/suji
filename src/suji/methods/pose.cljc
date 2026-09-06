@@ -135,7 +135,7 @@
   ADDED 2026-09-07, and it is a pure addition: nothing that read a placed segment
   before reads `:attaches-to`, and no value that was already there changed. It
   exists because `solve-pose` has always KNOWN this — it threads `c7` into
-  `head_neck` and into each `arm-chain`, and `pelvis-seg`'s distal into each
+  the cervical chain and into each `arm-chain`, and `pelvis-seg`'s distal into each
   `leg-chain` — and then threw the fact away, leaving every consumer to guess the
   skeleton's shape from world coordinates. `spine/crosses?` guessed it from
   HEIGHT, and so counted a wrist extensor as loading somebody's neck.
@@ -149,6 +149,135 @@
   exactly."
   [seg parent-name along]
   (assoc seg :attaches-to (when parent-name {:segment parent-name :along along})))
+
+(def atlanto-occipital-rom-deg
+  "Sagittal range of the atlanto-occipital joint, in degrees — 14.5.
+
+  MEASURED, and it is the only sourced number in the partition below. Bogduk N,
+  Mercer S, `Biomechanics of the cervical spine. I: Normal kinematics`, Clinical
+  Biomechanics 15(9):633-648, 2000: \"Most studies agree that the average range of
+  motion is 14-15 deg (Table 1)\" (p.639). Full text read 2026-09-07 from
+  https://squareonephysio.com.au/wp-content/uploads/2021/08/Bogduk-2000-Biomechanics-Cervical-Spine.pdf
+  — not an abstract. Table 1 collects Brocher 14.3 (range 0-25), Lewit & Krausova
+  15, Markuske 14.5, Lind et al. 14 (SD 15), Kottke & Mundale (range 0-22), and
+  Fielding 35, which Bogduk calls \"distinctly out of character\" and which is
+  excluded here for that reason and no other. The variance is enormous — Lind's
+  coefficient of variation exceeds 100% — so this is a population centre, not a
+  bound on anybody."
+  14.5)
+
+(def lower-cervical-rom-deg
+  "Sagittal range of C3/C4 through C6/C7 added up — the joints INSIDE this model's
+  `lower_cervical` segment plus the one at its base — in degrees.
+
+  Bogduk & Mercer 2000 Table 5, the Dvorak et al. column (N=28, the study Bogduk
+  says is one of only two with stated observer error): C3-4 15 (SD 3), C4-5 19
+  (SD 4), C5-6 20 (SD 4), C6-7 19 (SD 4). C7/T1 is not in the table, so this sum
+  omits it and is therefore an UNDERSTATEMENT of what the model's C7 joint stands
+  for — which biases the partition slightly toward the C2/C3 joint."
+  73.0)
+
+(def c2c3-rom-deg
+  "Sagittal range of the C2/C3 disc, in degrees. Bogduk & Mercer 2000 Table 5,
+  Dvorak et al.: 10 (SD 3) — the smallest of the lower cervical segments."
+  10.0)
+
+(def cervical-partition
+  "How ONE posture input, `:head-flexion-deg`, becomes THREE joint angles.
+
+  THE INPUT KEEPS ITS MEANING EXACTLY. `:head-flexion-deg` has always been the
+  angle of the head relative to the trunk, and `solve-pose` has always placed the
+  head at `trunk-flexion + head-flexion` from vertical. The three coefficients
+  here SUM TO 1.0 by construction, so the skull still lands at exactly
+  `trunk-flexion + head-flexion`, `load/head-tilt-from-vertical-deg` still returns
+  exactly that number, and the Hansraj-calibrated cervical load is unchanged to
+  the bit. `the-partition-sums-to-one` and
+  `the-head-still-tilts-by-trunk-plus-head-flexion` are the two assertions that
+  keep it true; no new posture key was added, and none is needed.
+
+  THE SHAPE IT PRODUCES IS THE FORWARD-HEAD POSTURE. The atlanto-occipital
+  coefficient is NEGATIVE: as the head flexes on the trunk, the occiput EXTENDS on
+  the atlas and the cervical column below flexes by MORE than the head does. That
+  is what a person at a low screen actually does — the chin tucks under and the
+  head tips back to keep the eyes level — and it is what a single rigid `head_neck`
+  segment could not represent at any angle.
+
+  IT IS NOT INVENTED, BUT IT IS NOT A REGRESSION EITHER. Bogduk & Mercer 2000
+  describe the reversal directly, from van Mameren's cineradiography of 10 normal
+  subjects (p.643): flexion is initiated in the lower cervical spine, and in the
+  final phase \"C0-C2 typically exhibits a reversal of motion (i.e. extension)\".
+  They also state the reason a partition cannot simply be read off the ranges:
+  \"the total range of motion of the neck is not the arithmetic sum of its
+  intersegmental ranges of motion\". So the DIRECTION of each coefficient is
+  sourced and the SIZE of them is representative — the reversal is given the
+  atlanto-occipital joint's own share of the cervical sagittal range
+  (14.5 of 97.5 deg, about 15%), and the remainder is divided between the two
+  flexing joints in proportion to the ranges Bogduk tabulates.
+
+  WHAT THAT COSTS, stated rather than hidden. A fixed proportion is a linear
+  approximation to a motion that is emphatically not linear — van Mameren's
+  subjects move the lower cervical spine first, then the upper, then the lower
+  again, and some of them REVERSE C6/C7 mid-excursion. This model has one number
+  per posture and cannot represent a sequence. What it can now represent, and
+  could not before, is the SHAPE at the end of it.
+
+  A CHECKABLE CONSEQUENCE: at the model's maximum head-flexion input of 60 deg the
+  derived atlanto-occipital extension is 9.0 deg, inside the 14.5 deg the joint
+  has. `the-derived-atlanto-occipital-angle-stays-inside-its-published-range`
+  asserts it across every reference posture, so a partition that asked the joint
+  for motion it does not have would fail rather than be reported."
+  (let [flexing (+ lower-cervical-rom-deg c2c3-rom-deg)
+        reversal (/ atlanto-occipital-rom-deg
+                    (+ atlanto-occipital-rom-deg flexing))
+        forward (+ 1.0 reversal)]
+    {:lower (* forward (/ lower-cervical-rom-deg flexing))
+     :upper (* forward (/ c2c3-rom-deg flexing))
+     :head (- reversal)}))
+
+(defn- cervical-chain
+  "Place the three cervical segments, from C7 upward.
+
+  `head-flex` is the posture's `:head-flexion-deg` — the head on the trunk — and
+  `trunk-tilt` is where the trunk left off. Each segment's tilt from vertical is
+  the previous one's plus its share of `head-flex`, so the chain is stated as a
+  chain and the partition appears once."
+  [body {:keys [lower upper]} c7 trunk-tilt head-flex lateral head-rot]
+  (let [lc (segment/seg body "lower_cervical")
+        uc (segment/seg body "upper_cervical")
+        hd (segment/seg body "head")
+        lc-tilt (+ trunk-tilt (* lower head-flex))
+        uc-tilt (+ lc-tilt (* upper head-flex))
+        ;; THE SKULL'S TILT IS SET, NOT ACCUMULATED, and the difference is a
+        ;; floating-point one that matters. The partition's three coefficients sum
+        ;; to 1.0 in exact arithmetic and to 0.9999999999999999 in a double, so
+        ;; adding the third share to the second segment's tilt puts a head asked
+        ;; for 63.5 deg at 63.49999999999999 — and `load/cervical-load` reads that
+        ;; number, so the one validated quantity in this library would wobble in
+        ;; its last bits for no reason anybody could see. Setting it makes
+        ;; `trunk + head-flexion` exact and pushes the rounding into the
+        ;; atlanto-occipital ANGLE instead, which is a derived quantity with no
+        ;; anchor. `:head` is therefore not read here; `the-partition-sums-to-one`
+        ;; is what keeps it consistent with the two that are.
+        hd-tilt (+ trunk-tilt head-flex)
+        lc-seg (hangs-from (place "lower_cervical" :midline c7
+                                  (segment-frame lc-tilt lateral 0.0 true)
+                                  (:length-m lc) (:com-frac lc) lc-tilt true)
+                           "thorax_abdomen" 1.0)
+        c2c3 (:distal lc-seg)
+        uc-seg (hangs-from (place "upper_cervical" :midline c2c3
+                                  (segment-frame uc-tilt lateral 0.0 true)
+                                  (:length-m uc) (:com-frac uc) uc-tilt true)
+                           "lower_cervical" 1.0)
+        ao (:distal uc-seg)
+        ;; axial rotation of the head on the neck rides on the SKULL, which is the
+        ;; bone that turns; before the split it rode on the whole block, which
+        ;; turned the neck with it.
+        hd-seg (hangs-from (place "head" :midline ao
+                                  (segment-frame hd-tilt lateral head-rot true)
+                                  (:length-m hd) (:com-frac hd) hd-tilt true)
+                           "upper_cervical" 1.0)]
+    {:c2c3 c2c3 :atlanto-occipital ao :vertex (:distal hd-seg)
+     :segments [lc-seg uc-seg hd-seg]}))
 
 (def biacromial-frac
   "Shoulder (biacromial) breadth as a fraction of stature — Winter/Drillis. Half of
@@ -342,7 +471,6 @@
         stature-m (:stature-m body)
         pelvis (segment/seg body "pelvis")
         thorax (segment/seg body "thorax_abdomen")
-        head (segment/seg body "head_neck")
         l5s1 [0.0 0.0 0.0]
         ;; The trunk is the ROOT of this chain and the pelvis hangs off its
         ;; proximal end. Both start at L5/S1, so either could have been called the
@@ -359,11 +487,13 @@
                                  trunk-flexion-deg true)
                           nil nil)
         c7 (:distal t-seg)
-        head-tilt (+ trunk-flexion-deg head-flexion-deg)
-        h-seg (hangs-from (place "head_neck" :midline c7
-                                 (segment-frame head-tilt lateral head-rot true)
-                                 (:length-m head) (:com-frac head) head-tilt true)
-                          "thorax_abdomen" 1.0)
+        ;; THREE cervical segments since 2026-09-07, hinged at C2/C3 and at the
+        ;; atlanto-occipital joint. `:head-flexion-deg` is unchanged in meaning and
+        ;; is divided between them by `cervical-partition`, whose coefficients sum
+        ;; to 1.0 — so the SKULL still lands at trunk + head flexion, exactly where
+        ;; the single `head_neck` block put the whole complex.
+        neck (cervical-chain body cervical-partition c7 trunk-flexion-deg
+                             head-flexion-deg lateral head-rot)
         ;; the girdle is carried by the trunk, so its lateral axis is the trunk's —
         ;; leaning sideways carries both shoulders with it
         lat-axis (:lat t-frame)
@@ -401,8 +531,13 @@
               :heel/right (:heel leg-right)
               :toe/left (:toe leg-left)
               :toe/right (:toe leg-right)
-              :vertex (:distal h-seg)}
-     :segments (vec (concat [p-seg t-seg h-seg]
+              ;; the two joints the split created. `:c2c3` is the most cranial
+              ;; intervertebral disc; `:atlanto-occipital` is the nodding joint,
+              ;; and it is the one the suboccipitals act about.
+              :c2c3 (:c2c3 neck)
+              :atlanto-occipital (:atlanto-occipital neck)
+              :vertex (:vertex neck)}
+     :segments (vec (concat (into [p-seg t-seg] (:segments neck))
                             (:segments left) (:segments right)
                             (:segments leg-left) (:segments leg-right)))}))
 
