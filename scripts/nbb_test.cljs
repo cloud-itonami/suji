@@ -23,6 +23,7 @@
             [suji.methods.articulation-dict-test]
             [suji.methods.attachment-test]
             [suji.methods.load-sensitivity-test]
+            [suji.methods.force-length-test]
             [suji.methods.load-test]
             [suji.methods.math-test]
             [suji.methods.moment-balance-test]
@@ -37,6 +38,7 @@
     suji.methods.articulation-dict-test
     suji.methods.attachment-test
     suji.methods.load-sensitivity-test
+    suji.methods.force-length-test
     suji.methods.load-test
     suji.methods.math-test
     suji.methods.moment-balance-test
