@@ -18,65 +18,65 @@
 
 | muscle | tension %MVC | endurance | stiffness (強張り) | dose | band |
 |---|---|---|---|---|---|
+| cervical_extensors | 39% | 2 min | ≥1.00 | 68.58 | very-high |
 | erector_spinae | 57% | 1 min | ≥1.00 | 166.63 | very-high |
 | anterior_deltoid/left | 28% | 4 min | 1.00 | 30.86 | very-high |
 | anterior_deltoid/right | 28% | 4 min | 1.00 | 30.86 | very-high |
-| cervical_extensors | 22% | 7 min | 1.00 | 18.21 | very-high |
-| semispinalis_capitis | 19% | 9 min | 1.00 | 13.51 | very-high |
-| splenius_capitis | 18% | 11 min | 1.00 | 10.80 | very-high |
+| semispinalis_capitis | 16% | 15 min | 1.00 | 8.33 | very-high |
 | biceps_brachii/left | 12% | 27 min | 0.99 | 4.54 | very-high |
 | biceps_brachii/right | 12% | 27 min | 0.99 | 4.54 | very-high |
 | wrist_extensors/left | 10% | 38 min | 0.96 | 3.23 | very-high |
 | wrist_extensors/right | 10% | 38 min | 0.96 | 3.23 | very-high |
+| longus_capitis | 10% | 42 min（適合域より下） | 0.95 | 2.90 | very-high |
 | brachialis/left | 10% | 45 min（適合域より下） | 0.94 | 2.76 | very-high |
 | brachialis/right | 10% | 45 min（適合域より下） | 0.94 | 2.76 | very-high |
 | upper_trapezius/left | 9% | 49 min（適合域より下） | 0.92 | 2.49 | very-high |
 | upper_trapezius/right | 9% | 49 min（適合域より下） | 0.92 | 2.49 | very-high |
 | levator_scapulae/left | 8% | 64 min（適合域より下） | 0.86 | 1.93 | very-high |
 | levator_scapulae/right | 8% | 64 min（適合域より下） | 0.86 | 1.93 | very-high |
+| rectus_capitis_anterior | 7% | ∞（モデルの床未満） | 0.04 | 0.04 | low |
 | middle_trapezius/left | 6% | ∞（モデルの床未満） | 0.04 | 0.04 | low |
 | middle_trapezius/right | 6% | ∞（モデルの床未満） | 0.04 | 0.04 | low |
+| iliopsoas/left | 6% | ∞（モデルの床未満） | 0.03 | 0.04 | low |
+| iliopsoas/right | 6% | ∞（モデルの床未満） | 0.03 | 0.04 | low |
 | tibialis_anterior/left | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | tibialis_anterior/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| hamstrings/left | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| hamstrings/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| splenius_capitis | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| sternocleidomastoid | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_capitis_posterior_major | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_capitis_posterior_minor | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | obliquus_capitis_superior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| longus_capitis | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| rectus_capitis_anterior | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | middle_deltoid/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | latissimus_dorsi/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | quadratus_lumborum/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | obliques/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | scalenes/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | gluteus_maximus/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| iliopsoas/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | vasti/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| rectus_femoris/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| rectus_femoris/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| gastrocnemius/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| soleus/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | middle_deltoid/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | latissimus_dorsi/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | quadratus_lumborum/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | obliques/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | scalenes/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | gluteus_maximus/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| iliopsoas/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | vasti/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| rectus_femoris/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| sternocleidomastoid | — | — | — | — | not-computed |
+| rectus_femoris/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| gastrocnemius/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| soleus/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | posterior_lumbar_ligaments | — | — | — | — | not-computed |
 | nuchal_ligament | — | — | — | — | not-computed |
 | triceps_brachii/left | — | — | — | — | not-computed |
 | wrist_flexors/left | — | — | — | — | not-computed |
-| hamstrings/left | — | — | — | — | not-computed |
-| gastrocnemius/left | — | — | — | — | not-computed |
-| soleus/left | — | — | — | — | not-computed |
 | triceps_brachii/right | — | — | — | — | not-computed |
 | wrist_flexors/right | — | — | — | — | not-computed |
-| hamstrings/right | — | — | — | — | not-computed |
-| gastrocnemius/right | — | — | — | — | not-computed |
-| soleus/right | — | — | — | — | not-computed |
 
 無い理由（%MVC 欄が — の行）:
-- `acts-the-wrong-way` — sternocleidomastoid、triceps_brachii/left、wrist_flexors/left、hamstrings/left、gastrocnemius/left、soleus/left、triceps_brachii/right、wrist_flexors/right、hamstrings/right、gastrocnemius/right、soleus/right
+- `acts-the-wrong-way` — triceps_brachii/left、wrist_flexors/left、triceps_brachii/right、wrist_flexors/right
 - `no-mvc` — posterior_lumbar_ligaments、nuchal_ligament
 
 - worst: **erector_spinae** stiffness 1.00 (very-high)
@@ -88,25 +88,30 @@
 
 | muscle | tension %MVC | endurance | stiffness (強張り) | dose | band |
 |---|---|---|---|---|---|
+| cervical_extensors | 19% | 9 min | 1.00 | 13.64 | very-high |
 | erector_spinae | 15% | 17 min | 1.00 | 7.33 | very-high |
-| cervical_extensors | 12% | 30 min | 0.98 | 4.10 | very-high |
-| splenius_capitis | 10% | 39 min | 0.96 | 3.19 | very-high |
-| semispinalis_capitis | 9% | 51 min（適合域より下） | 0.91 | 2.43 | very-high |
+| splenius_capitis | 9% | 52 min（適合域より下） | 0.91 | 2.37 | very-high |
+| iliopsoas/left | 6% | ∞（モデルの床未満） | 0.03 | 0.03 | low |
+| iliopsoas/right | 6% | ∞（モデルの床未満） | 0.03 | 0.03 | low |
 | anterior_deltoid/left | 5% | ∞（モデルの床未満） | 0.03 | 0.03 | low |
 | anterior_deltoid/right | 5% | ∞（モデルの床未満） | 0.03 | 0.03 | low |
+| longus_capitis | 5% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | levator_scapulae/left | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | levator_scapulae/right | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | upper_trapezius/left | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | upper_trapezius/right | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | tibialis_anterior/left | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | tibialis_anterior/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| rectus_capitis_anterior | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| hamstrings/left | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| hamstrings/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | middle_trapezius/left | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | middle_trapezius/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| semispinalis_capitis | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| sternocleidomastoid | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_capitis_posterior_major | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_capitis_posterior_minor | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | obliquus_capitis_superior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| longus_capitis | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| rectus_capitis_anterior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | biceps_brachii/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | brachialis/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | triceps_brachii/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
@@ -118,9 +123,10 @@
 | obliques/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | scalenes/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | gluteus_maximus/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| iliopsoas/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | vasti/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| rectus_femoris/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| rectus_femoris/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| gastrocnemius/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| soleus/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | biceps_brachii/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | brachialis/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | triceps_brachii/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
@@ -132,24 +138,17 @@
 | obliques/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | scalenes/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | gluteus_maximus/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| iliopsoas/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | vasti/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| rectus_femoris/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| sternocleidomastoid | — | — | — | — | not-computed |
+| rectus_femoris/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| gastrocnemius/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| soleus/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | posterior_lumbar_ligaments | — | — | — | — | not-computed |
 | nuchal_ligament | — | — | — | — | not-computed |
-| hamstrings/left | — | — | — | — | not-computed |
-| gastrocnemius/left | — | — | — | — | not-computed |
-| soleus/left | — | — | — | — | not-computed |
-| hamstrings/right | — | — | — | — | not-computed |
-| gastrocnemius/right | — | — | — | — | not-computed |
-| soleus/right | — | — | — | — | not-computed |
 
 無い理由（%MVC 欄が — の行）:
-- `acts-the-wrong-way` — sternocleidomastoid、hamstrings/left、gastrocnemius/left、soleus/left、hamstrings/right、gastrocnemius/right、soleus/right
 - `no-mvc` — posterior_lumbar_ligaments、nuchal_ligament
 
-- worst: **erector_spinae** stiffness 1.00 (very-high)
+- worst: **cervical_extensors** stiffness 1.00 (very-high)
 
 ## external-monitor+keyboard
 
@@ -159,24 +158,29 @@
 | muscle | tension %MVC | endurance | stiffness (強張り) | dose | band |
 |---|---|---|---|---|---|
 | erector_spinae | 11% | 32 min | 0.98 | 3.89 | very-high |
+| iliopsoas/left | 6% | ∞（モデルの床未満） | 0.03 | 0.03 | low |
+| iliopsoas/right | 6% | ∞（モデルの床未満） | 0.03 | 0.03 | low |
 | levator_scapulae/left | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | levator_scapulae/right | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | upper_trapezius/left | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | upper_trapezius/right | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | anterior_deltoid/left | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | anterior_deltoid/right | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
+| cervical_extensors | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | tibialis_anterior/left | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | tibialis_anterior/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| hamstrings/left | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| hamstrings/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | middle_trapezius/left | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | middle_trapezius/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| semispinalis_capitis | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | splenius_capitis | 2% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| cervical_extensors | 2% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| semispinalis_capitis | 2% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| sternocleidomastoid | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_capitis_posterior_major | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_capitis_posterior_minor | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | obliquus_capitis_superior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| longus_capitis | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| rectus_capitis_anterior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| longus_capitis | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| rectus_capitis_anterior | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | biceps_brachii/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | brachialis/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | triceps_brachii/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
@@ -188,9 +192,10 @@
 | obliques/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | scalenes/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | gluteus_maximus/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| iliopsoas/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | vasti/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| rectus_femoris/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| rectus_femoris/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| gastrocnemius/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| soleus/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | biceps_brachii/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | brachialis/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | triceps_brachii/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
@@ -202,21 +207,14 @@
 | obliques/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | scalenes/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | gluteus_maximus/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| iliopsoas/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | vasti/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| rectus_femoris/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
-| sternocleidomastoid | — | — | — | — | not-computed |
+| rectus_femoris/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| gastrocnemius/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| soleus/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | posterior_lumbar_ligaments | — | — | — | — | not-computed |
 | nuchal_ligament | — | — | — | — | not-computed |
-| hamstrings/left | — | — | — | — | not-computed |
-| gastrocnemius/left | — | — | — | — | not-computed |
-| soleus/left | — | — | — | — | not-computed |
-| hamstrings/right | — | — | — | — | not-computed |
-| gastrocnemius/right | — | — | — | — | not-computed |
-| soleus/right | — | — | — | — | not-computed |
 
 無い理由（%MVC 欄が — の行）:
-- `acts-the-wrong-way` — sternocleidomastoid、hamstrings/left、gastrocnemius/left、soleus/left、hamstrings/right、gastrocnemius/right、soleus/right
 - `no-mvc` — posterior_lumbar_ligaments、nuchal_ligament
 
 - worst: **erector_spinae** stiffness 0.98 (very-high)

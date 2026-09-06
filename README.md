@@ -37,7 +37,9 @@ laptop workstation ──▶ posture (joint angles)        posture.cljc
                    ──▶ muscle moment arms             attachment.cljc ← from the anatomy,
                        (geometric, angle-dependent)                    not a constant table
                    ──▶ load sharing between synergists recruit.cljc  ← Crowninshield-Brand
-                       (minimum cubed stress, closed form)              min sum (F/Fmax)^3
+                       (minimum cubed stress; closed form                min sum (F/Fmax)^3
+                        for one constraint, a COUPLED SOLVE              s.t. C.F = T, F >= 0
+                        for joints that share a muscle)
                    ──▶ muscle %MVC  (緊張 / tension)   muscle.cljc
                    ──▶ stiffness index (強張り)        strain.cljc   ← sustained-isometric dose,
                                                                       ANSWERS TO Frey Law & Avin 2010
@@ -59,7 +61,7 @@ curve of the family Rohmert's belongs to — *not* Rohmert's own equation, and s
 | workstation | head tilt from vertical | neck load | ×head-weight | worst-muscle stiffness |
 |---|---|---|---|---|
 | laptop-on-lap | 64° | **27.9 kgf** | 4.9× | erector-spinae **1.00** (very-high) |
-| laptop-on-desk | 32° | 19.8 kgf | 3.5× | erector-spinae 1.00 (very-high) |
+| laptop-on-desk | 32° | 19.8 kgf | 3.5× | **cervical-extensors** 1.00 (very-high) |
 | external-monitor + keyboard @ eye level | 10° | **10.5 kgf** | 1.9× | erector-spinae **0.98** (very-high) |
 
 → raising the screen to eye level cuts the cervical compressive load **−62%**.
@@ -80,6 +82,18 @@ hold the head up (see **The upper cervical spine had no muscles** below) split t
 extensor moment three ways, cervical-extensors fell from 56.2 %MVC to 22.2 %MVC, and
 erector-spinae became the sole maximum. **The neck-load columns did not move at all** — those
 come from `load/cervical-load`, which this change does not touch.
+
+⚠ **And a fourth time, on 2026-09-08, in the same column and for the opposite reason.** The
+coupled neck solve (see **The coupled solve** below) stops loading the two capitis muscles to
+hold C7 — they are better levered about the joint *above* it — and puts the work on
+`cervical_extensors` at its shorter arm: 22.08 → **39.18 %MVC** at `laptop-on-lap`, 11.56 →
+**19.48 %** at `laptop-on-desk`. At `laptop-on-desk` that makes it the sole maximum and the
+column changes. At `laptop-on-lap` it merely ties erector-spinae at exactly 1.00 again, which
+is why `analyze/worst-stiffness` now breaks ties **by dose** instead of by emit order — the
+same tie-break this note flagged as a hazard on 2026-09-07, fixed rather than re-recorded.
+**The neck-load columns still did not move**: they come from `load/cervical-load`, which does
+not go through `recruit` at all, and that is now asserted by
+`spine-test/the-model-reports-where-it-disagrees-with-the-validated-leg` rather than assumed.
 
 **THE COLUMN IS HEAD TILT FROM VERTICAL, not head flexion** (changed 2026-09-07). The cervical
 model is a function of the head's angle from vertical, which is trunk flexion plus head flexion,
@@ -1373,6 +1387,16 @@ range. Break the split and the arm goes flat at 26.72 mm at every angle, which i
 
 ### And then they carry nothing at a desk, which is a result
 
+> ⚠ **SUPERSEDED 2026-09-08 by the coupled solve.** Everything in this subsection describes
+> the *uncoupled* decomposition — `:residual-nm`, `:over-supplied-nm` and the third argument
+> to `load/atlanto-occipital-moment` that produced them are **gone**, along with
+> `load/capitis-groups`. The joint's demand (2.648 N·m at `laptop-on-lap`) is unchanged,
+> because it is gravity on the skull and no muscle force enters it; what changed is that the
+> muscle side is now chosen with this joint in the problem, so there is no leftover to hand
+> anybody. The suboccipitals still carry 0 N at a desk and the reason is different — see
+> **The coupled solve** below. The paragraph is kept because the measurement in it is what
+> motivated the change.
+
 The atlanto-occipital equilibrium is given the **residual**, not the demand:
 
 ```
@@ -1398,6 +1422,14 @@ constraints in sequence: the suboccipitals act *only* at the atlanto-occipital j
 that joint can be satisfied by muscles that also serve C7, so a minimum-cubed-stress
 optimum over both constraints together would still prefer the large capitis muscles.
 `:over-supplied-nm` is reported at every posture.
+
+> ⚠ **That last prediction was made in 2026-09-07 and tested on 2026-09-08. It is half
+> right.** The coupled optimum does still prefer the capitis muscles at the
+> atlanto-occipital joint and the suboccipitals still take 0 N at a desk — but it does **not**
+> load them as heavily as the uncoupled solve did, because it now pays for what they do at
+> the joint above: splenius capitis falls 87.29 → 3.81 N and semispinalis 125.25 → 101.56 N,
+> and the work moves to `cervical_extensors`. The direction was right; the forces were not.
+> There was no way to know which without running it.
 
 > **This paragraph ended *"and this model has none of them"* until 2026-09-08.** It has
 > two now — and the surplus is still not balanced, for a reason the flexors made
@@ -1485,9 +1517,12 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
   sagittal model has nowhere to spend it.
 - ~~**Any upper cervical flexor**~~ **Closed 2026-09-08** — `longus_capitis` (PCSA
   measured) and `rectus_capitis_anterior` (PCSA representative) act about the
-  atlanto-occipital joint in `:atlanto-occipital-flexion`. What is *not* closed is the
-  surplus: carrying it would take 185% and 116% of what those two can produce, so the
-  joint still does not balance and the reason is a coupled solve, not a missing muscle.
+  atlanto-occipital joint. ~~What is *not* closed is the surplus: carrying it would take
+  185% and 116% of what those two can produce.~~ **The surplus is closed too, later the
+  same day**: `recruit/solve` satisfies C7 and this joint together, so the surplus is not
+  smaller — it does not exist. The flexors now carry 9.94% and 6.81% MVC at
+  `laptop-on-lap`, which is a coupled force rather than a decomposition error charged to a
+  muscle. See **The coupled solve**.
 - **Any muscle solved AT C2/C3.** Still true — but *not* because the segmentation cannot
   express one. See *C2/C3: expressible, and blocked by provenance*.
 - **Rectus capitis lateralis**, the third upper cervical flexor named in the source, is
@@ -1495,9 +1530,10 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
   the occiput and its function is **lateral bending**, not sagittal flexion; a midline
   sagittal model has nowhere to put it, and Kamibayashi & Richmond do not measure it
   either.
-- **A coupled solve over the C7 and atlanto-occipital constraints.**
-  `recruit`'s closed form takes one equality constraint. This is the one gap the flexors
-  turned from a suspicion into a measurement.
+- ~~**A coupled solve over the C7 and atlanto-occipital constraints.**~~ **Closed
+  2026-09-08** — `recruit/solve`, one dual variable per constraint, active set read off
+  the KKT prices. The gap the flexors turned from a suspicion into a measurement is the
+  gap that measurement closed. See **The coupled solve**.
 - **A motion sequence.** The partition is a fixed proportion; real cervical flexion moves
   the lower column, then the upper, then the lower again.
 - **Lateral bend within the neck.** `pose` gives all three cervical segments the same
@@ -1609,6 +1645,16 @@ exactly the shape `pose/cervical-partition` produces.
 
 ### The load is gravity. The surplus is reported, not assigned.
 
+> ⚠ **SUPERSEDED 2026-09-08.** This subsection is the record of a decision that was right
+> while the solve took one constraint, and the keys it describes — `:surplus-force-n`,
+> `:surplus-mvc-pct`, `:atlanto-occipital-surplus-mvc-pct`, `:gravitational-flexion-nm`,
+> `:decomposition-surplus-nm` — have all been **removed** rather than reinterpreted, because
+> a key whose meaning inverts is worse than one that is gone. The 184.82% headline it exists
+> to keep out of the report is still out of it: the flexors carry **9.94%** at
+> `laptop-on-lap` now, and that is a force chosen by an optimisation over both constraints
+> rather than a surplus divided by a muscle. Kept for the reasoning, which is the part that
+> generalises.
+
 `:over-supplied-nm` turned out to be **two different things added together**, and
 `load/atlanto-occipital-moment` now splits them:
 
@@ -1649,7 +1695,27 @@ have to absorb it**. Adding the flexors did not close the joint. It measured how
 closing it is, and named what would close it — a solve over both constraints together,
 which `recruit` does not have and which no further muscle supplies.
 
+> **`recruit` has one now** (2026-09-08). The named thing was built and the surplus went to
+> zero — not smaller, absent, because the two constraints are satisfied by one choice of
+> forces. `:coupled-residual-nm` is 0 to floating point at both joints at every reference
+> workstation, and `load-test/the-coupled-solve-balances-the-atlanto-occipital-joint`
+> asserts it along with the discriminating half: semispinalis capitis is still recruited,
+> at **less** than the 125.249 N the uncoupled solve gave it. Break the coupling — hand the
+> neck group only the `:c7` constraint — and that number returns to
+> **125.24866077557766 N** exactly, which is how the test knows it is measuring the coupling
+> and not something else.
+
 ### The sweep: they carry where gravity flexes the head, and nowhere else
+
+> ⚠ **The equivalence in this heading is FALSE after 2026-09-08, and the reason is
+> mechanical rather than a regression.** It was true of the uncoupled model *by
+> construction* — the flexors' task load was the gravitational flexion moment, which is zero
+> unless the head is tipped back — so what this sweep checked was the wiring. Under the
+> coupled solve they also **co-contract** wherever the head is forward, because the capitis
+> muscles are better levered about the atlanto-occipital joint than about C7 and any force
+> they produce for C7 over-extends it. The claim is now about **size**, and the size is the
+> finding: 11.23 %MVC worst forward-head co-contraction against 38.06 % worst genuine
+> flexion demand. See `attachment-test/the-flexors-co-contract-and-the-size-of-it-is-the-finding`.
 
 Over 365 postures (head −15…60° × trunk 0…45° × shoulder 0…90° × arms supported/not,
 plus the three reference workstations and two standing references), 70 kg / 1.70 m:
@@ -1741,6 +1807,14 @@ basiocciput, so the level now carries an **anterior** line for the first time. I
 | suboccipital forces, all 365 swept postures | 0 N | **0 N** |
 | worst muscle in the generated report | `erector_spinae` | **`erector_spinae`** |
 
+> ⚠ **This table is that wave's, not today's.** Four of its rows moved on 2026-09-08 when
+> the neck became a coupled group: the cervical cross-check ratios (1.7188 → 1.7036,
+> 1.4120 → 1.3716, 1.2220 → 1.2494), the C7/T1 compression (470.2991 → 466.1425 N), the
+> `:task-over-supplied-nm` row (**the key is gone**), and the worst muscle at
+> `laptop-on-desk` (`erector_spinae` → `cervical_extensors`). The Hansraj multipliers and
+> `lumbar-cross-check` are the two that are still byte-identical, and *why* they cannot move
+> is now checked rather than stated. See **The coupled solve**.
+
 The cervical cross-check ratio not moving is the point: neither flexor crosses C7/T1
 (`longus_capitis` originates halfway up `lower_cervical`, above the level;
 `rectus_capitis_anterior` runs C1 → skull and crosses no disc at all). The only rows that
@@ -1749,7 +1823,8 @@ capitis passive term at a posture where its active force is zero.
 
 ### What the upper cervical spine still cannot express
 
-- **The surplus.** 1.85× the flexors' capacity. It needs a coupled solve, not a muscle.
+- ~~**The surplus.** 1.85× the flexors' capacity. It needs a coupled solve, not a muscle.~~
+  **Closed 2026-09-08.** The coupled solve was built; there is no surplus.
 - **Rectus capitis lateralis** — a lateral bender, and a midline sagittal model has
   nowhere to put it. Also unmeasured by the source.
 - **Longus colli**, all three parts. Its superior oblique part is expressible (above); its
@@ -1819,7 +1894,7 @@ produces is a measurement, and the way to get it is to run the posture and read
 
 There is one entry that is NOT a refusal and belongs in the table anyway:
 
-| `:two-joint-unfed-nm` | a two-joint muscle is pulling on a second joint whose equilibrium was not told about it | a solver with more than one equality constraint — see the lower limb, below |
+| `:two-joint-unfed-nm` | a two-joint muscle is pulling on a second joint whose equilibrium was not told about it | ~~a solver with more than one equality constraint~~ — **built 2026-09-08**, so this now contains only `:c2c3`, the one joint with no equilibrium at all |
 
 **The stiffness index saturates and now says so.** It is mathematically in [0,1) but
 reaches exactly 1.0 in double precision once the dose passes ~37 — roughly 50 %MVC
@@ -1996,7 +2071,22 @@ angle moved, which is the reason to ask the model rather than the README:
 that is always zero means a coupled model and an uncoupled one produce identical
 output.
 
-Which joint is primary is anatomy, not preference. The hip has two one-joint
+> ⚠ **CLOSED 2026-09-08 — this is now the part the model *does*.** *"There is no closed
+> form of that shape for two"* is true and was never the obstacle: the coupled problem has
+> one **dual** variable per constraint, and the forces are still closed-form in the
+> multipliers. `muscle/coupled-groups` solves the hip, the knee and the ankle of one leg
+> together, so `:two-joint-unfed-nm` no longer contains any lower-limb joint — the deep
+> squat's 3.6348762211480548 N·m at each hip is **fed**, and
+> `:coupled-residual-nm` is 0 to floating point at all six lower-limb joints. What is left
+> in that map is `:c2c3` alone. See **The coupled solve**. The test that asserted the unfed
+> moment is non-zero has been rewritten to assert the opposite, with the discriminating half
+> the inversion needs: the hamstrings must actually be **recruited** in a squat (456.81 N,
+> where the uncoupled solve refused them as acting the wrong way at the knee), and the
+> gluteus maximus must be doing **less** than the 1072.30 N it did without them.
+
+Which joint is primary is anatomy, not preference — and since 2026-09-08 it decides no
+force, only which task a muscle is emitted under and therefore which of its two joints the
+row calls *secondary*. The hip has two one-joint
 muscles and fills both sides of its equilibrium. The knee has an extensor and **no
 one-joint flexor**, because the body does not have one of any size — so the
 hamstrings go to the knee.
@@ -2015,6 +2105,14 @@ Measured in the deep squat: vasti **26.6 %MVC**, gluteus maximus **55.5 %**; and
 quiet standing the vasti are reported as the **antagonist with no %MVC at all**,
 because the ground reaction passes in front of the knee there. Swept over 240
 lower-limb postures, every load is carried.
+
+> ⚠ **Re-measured 2026-09-08 under the coupled solve.** Deep squat: vasti **36.4 %MVC**
+> (1528.95 N, up from 1116.12), gluteus maximus **43.3 %** (836.02 N, down from 1072.30),
+> hamstrings **23.00 %** (456.81 N, from a refusal), rectus femoris **`:inactive?`** (from
+> 86.54 N). In quiet standing the vasti are no longer an antagonist: the coupled optimum
+> gives them **1.10 %MVC**, a co-contraction the per-joint solve could not express, and the
+> assertion is now that it is *small* rather than that it is absent — a large one would be
+> a finding about the model. The 240-posture sweep still carries every load.
 
 **A defect the legs exposed, in `spine.cljc`.** `above-fraction` decides how much of
 a segment sits above a spinal level from a rank table of the two *spinal* segments,
@@ -2060,6 +2158,216 @@ function is fixed with it: the comparison baseline was looked up by the literal
 name `laptop-on-lap`, so rendering any other set of results returned nil and threw
 two lines later. `report-test` renders the report and asserts on the parsed table
 cells — not on `includes?` of words the prose above the table also uses.
+
+## The coupled solve (2026-09-08)
+
+Three separate waves hit the same wall and each recorded it rather than working around it.
+
+| where | what was reported | how big |
+|---|---|---|
+| the lower limb | `:two-joint-unfed-nm` — rectus femoris, the hamstrings and gastrocnemius each span two joints, were solved at one, and pulled on the other | **3.6348762211480548 N·m at each hip in a deep squat** |
+| the atlanto-occipital joint | `:task-over-supplied-nm` — the two capitis muscles, sized at C7, exerted 6.223 N·m where the joint above demands 2.648 (×2.35) | **3.5746 N·m**, and absorbing it would cost **204.04 N against 110.40 N available — 1.85×** |
+| `longus_capitis` | a `:c2c3` entry in `:two-joint-unfed-nm` | 1.9e-4 N·m at `laptop-on-lap` |
+
+Each of them ends in the same sentence, written by a different agent: *a coupled solve over
+both constraints, which `recruit`'s closed form does not have and which no further muscle
+supplies.* `recruit/solve` is that solve.
+
+### The derivation, and how it was checked
+
+Minimise Σ (F_i/a_i)³ over **F ≥ 0** subject to **m** linear equalities **C·F = T**, with
+a_i the force available to muscle *i* at this posture. The objective is convex and
+**separable** and the constraints are linear, so the Lagrangian splits per muscle. Write
+**s_i = Σ_k λ_k C_ki** — one number per muscle, the price its own coefficients fetch at the
+current multipliers. Stationarity in F_i is
+
+```
+3 F_i² / a_i³ = s_i        ⇒        F_i = a_i^{3/2} √(s_i / 3)
+```
+
+and the KKT condition for the bound F ≥ 0 is that a muscle whose price is non-positive sits
+at the bound — at F_i = 0 the objective's slope is 0, so the bound's multiplier is −s_i, and
+−s_i ≥ 0 means s_i ≤ 0. Both branches are **one expression**:
+
+```
+F_i(λ) = a_i^{3/2} √( max(s_i, 0) / 3 )                              (★)
+```
+
+so there is **one dual variable per constraint** — two for the neck, three for one leg — and
+not one per muscle. Substituting (★) back gives a concave function of λ alone whose gradient
+is the negated residual and whose Hessian is −Σ_{s_i>0} (a_i^{3/2}/(2√3 √s_i)) C_·i C_·iᵀ.
+
+**Non-negativity is the part that needs care, and (★) is how it is handled.** The active set
+is exactly {i : s_i(λ) > 0}, read off the multipliers at every iterate rather than guessed
+and corrected; a muscle can leave it and come back as λ moves. There is no combinatorial
+search over subsets and no pivoting. A muscle whose price goes negative **is not pulling
+backwards — it is switched off**, and the row says `:inactive?` with the price beside it
+rather than `:refused`, because the model did not decline to answer: it computed the force
+and the force is zero. That distinction is the same one this actor already keeps between *a
+placed load of zero* and *a load this model could not place*.
+
+**Checked against the one-constraint case, which is the first test.** With m = 1,
+s_i = λ c_i, and for c_i > 0
+
+```
+F_i = a_i^{3/2} √(c_i) √(λ/3)   and   Σ c_i F_i = T
+⇒ F_i = a_i^{3/2} √(c_i) · T / Σ (a_j c_j)^{3/2}
+```
+
+which is `recruit/share` term for term; muscles with c_i ≤ 0 get s_i ≤ 0 and F_i = 0, which
+is `share`'s `:acts-the-wrong-way`. `recruit-test/the-coupled-solver-reproduces-the-closed-form`
+asserts the agreement over five one-constraint cases, and
+`the-iteration-and-not-the-guess-is-what-lands-on-the-closed-form` re-runs it from four
+deliberately wrong starting multipliers — because `solve`'s own initial guess **is** the
+closed form when there is one constraint, so without that second test the first would pass
+at iteration zero and say nothing about the loop.
+
+⚠ **The `3` in (★) is not a number that can be wrong**, and that is worth knowing before
+trusting a test that appears to check it. Replacing `s/3` with `s/2` is exactly a rescaling
+of λ, so every force is unchanged; measured 2026-09-08, the reproduction test above passes
+with it broken and only `the-iteration-count-is-the-same-on-both-hosts` notices (4 → 16
+iterations, and the answer moves in the 10th digit).
+
+### The iteration: Levenberg–Marquardt, and why not on the dual
+
+q is concave and C¹, so the textbook move is a damped Newton ascent with an Armijo backtrack
+on q itself. That was the first implementation and it **stalls at a relative residual near
+1e-9**: q is a difference of two comparable quantities of order 1e-2, so the improvements
+that remain once the equilibrium holds to nine digits are below what a double can represent
+in q, and the line search can no longer tell an improving step from a worse one. Measured at
+`laptop-on-desk`: the residual sat at **2.574e-9 N·m and did not move again in 2,000 further
+iterations**. Levenberg–Marquardt on ‖g‖² — the quantity being driven to zero rather than a
+functional of it — reaches **1.8e-15 in 19 steps**.
+
+**A Jacobian force floor, because dF/ds is unbounded where F is not.** dF_i/ds_i = F_i/(2 s_i)
+grows without bound as a price approaches zero from above even though the force goes to zero
+with it, so a muscle producing *nothing* can set the conditioning of the whole linear system.
+Measured seated with the hip at 90° and the knee straight: the ankle moment is 1.2e-15 N·m,
+tibialis anterior comes out at a price of 1.2e-35 and a force of 3e-14 N, and its Jacobian
+entry is **1e17 times the vasti's**; the solve spent 60 iterations crawling from a residual
+of 9.94 N·m to 0.023 and refused. Muscles below 1e-12 of the largest force in the group are
+left out of the **derivative** and not out of the answer; with the floor it converges in
+**five**.
+
+### Convergence across the posture space
+
+Swept 3,000 postures — seated and standing × head −15…60° × trunk 0…45° × hip 0…120° ×
+knee 0…120° × ankle −20…20°:
+
+| | |
+|---|---|
+| groups that did not converge | **0** |
+| worst `:coupled-residual-nm` over every joint of every posture | **1.70e-9 N·m**, which is **1.91e-11** of the largest load in its group |
+| postures with a refusal that is not an antagonist | 250 (500 rows) — all of them the **scalenes** at `:coefficient-below-floor` in `:cervical-lateral-flexion`, which is not a coupled task and did not change |
+
+Before the Jacobian floor the same sweep had **one** family of non-convergent postures (hip
+90°, knee 0°, seated — 15 of 3,000), and what it did there is what it still does anywhere it
+cannot converge: it **refuses the whole group** with `:coupled-solve-did-not-converge` and
+returns **no force for any of its muscles**. A multiplier vector that has not converged
+produces forces that satisfy no equilibrium, and those are indistinguishable from solved ones
+once they are in a table. `recruit-test/the-coupled-solve-refuses-rather-than-returning-an-unconverged-iterate`
+drives that path by capping `max-iterations` at 1.
+
+### What is coupled, and what is deliberately not
+
+```clojure
+muscle/coupled-groups
+  :neck        [:c7 :atlanto-occipital]        cervical-extension, atlanto-occipital-
+                                               extension, atlanto-occipital-flexion
+  :lower-limb  [:hip :knee :ankle]  per side   hip-extension, knee-extension,
+                                               ankle-plantarflexion
+```
+
+Everything else stays on `share`. **That is not a gap**: a task whose muscles cross exactly
+one joint has no coupling to represent, and the closed form is the exact optimum for it — the
+same optimum `solve` finds, which is what the reproduction test checks. The shoulder, the
+girdle, the elbow, the wrist, the trunk and the two lateral-flexion tasks are unchanged **to
+the bit**.
+
+### %MVC goes UP, and that is correct
+
+A single-constraint optimum is a **lower bound** on the cost of the coupled one: every point
+feasible for the coupled problem is feasible for each of its constraints taken alone, so
+satisfying more constraints cannot lower Σ(F_i/a_i)³. `recruit/cost` reports the criterion's
+value and `recruit-test/coupling-cannot-lower-the-cost` asserts the inequality, because *the
+numbers went up* and *the solve is wrong* look the same from outside. Nothing here is tuned
+back down.
+
+### What moved, at `laptop-on-lap`, 70 kg / 1.70 m
+
+| | before | after |
+|---|---|---|
+| `:two-joint-unfed-nm`, deep squat | `{:hip/left 3.6348762211480548, :knee/left -0.9496, :hip/right …, :c2c3 0.0}` | **`{:c2c3 -0.0585}`** — the only joint left with no equilibrium at all |
+| `:coupled-residual-nm`, every joint of every group | — (did not exist) | **0 to floating point** |
+| `:task-over-supplied-nm` at the atlanto-occipital joint | 3.5746 N·m | **key removed with the decomposition that produced it** |
+| `:atlanto-occipital-surplus-mvc-pct` | 184.82 | **key removed** |
+| `cervical_extensors` | 22.0757 %MVC (138.3152 N) | **39.1799 %MVC (245.4814 N)** |
+| `semispinalis_capitis` | 19.3959 % (125.2487 N) | **15.7275 % (101.5604 N)** |
+| `splenius_capitis` | 17.6027 % (87.2923 N) | **0.7692 % (3.8142 N — passive only)** |
+| `sternocleidomastoid` | `:refused :acts-the-wrong-way` | **0.0 %MVC, `:inactive?`** |
+| `longus_capitis` | 0.0120 % (0.0133 N) | **9.9405 % (10.9741 N)** |
+| `rectus_capitis_anterior` | 0.6102 % (0.3580 N) | **6.8055 % (3.9934 N)** |
+| `iliopsoas` (each side) | 0.0 % | **5.9125 % (55.4863 N)** |
+| `hamstrings` (each side) | `:refused :acts-the-wrong-way` | **2.9676 % (59.8430 N)** |
+| `soleus`, `gastrocnemius` (each side) | `:refused :acts-the-wrong-way` | **0.0 % / 0.1620 %** |
+| `max-mvc-pct` | 57.4931 (`erector_spinae`) | **57.4931 (`erector_spinae`) — unchanged** |
+| antagonists / inactive | 11 / — | **4 / 11** |
+| worst muscle in the report, `laptop-on-desk` | `erector_spinae` dose 7.33 | **`cervical_extensors` dose 13.64** |
+| deep squat, `gluteus_maximus/left` | 1072.3012 N (55.53 %MVC) | **836.0213 N** — the hamstrings are helping at the hip |
+| deep squat, `hamstrings/left` | `:refused :acts-the-wrong-way` | **456.8078 N (23.00 %MVC)** |
+| deep squat, `rectus_femoris/left` | 86.5447 N | **0.0 N, `:inactive?`** |
+| deep squat, `vasti/left` | 1116.1159 N | **1528.9518 N** |
+
+The lower-limb pattern is the one a squat actually has: the hamstrings extend the hip **and**
+flex the knee at once, which lets the gluteus maximus do less and makes the vasti do more.
+The uncoupled solve could not represent it — it refused the hamstrings for acting the wrong
+way at the knee, which taken alone they do.
+
+### The cross-checks
+
+| | before | after | |
+|---|---|---|---|
+| `cervical-cross-check` ratio, `laptop-on-lap` | 1.7188125731089365 | **1.7036215508461914** | level force 470.2990645067 → **466.1425184871**; lumped **273.6185852166 unchanged** |
+| …`laptop-on-desk` | 1.4120192044 | **1.3715734227** | |
+| …`external-monitor` | 1.2220438632 | **1.2494140835** | it moved the **other way** here |
+| `lumbar-cross-check` | 350.88684032499987 N, ratio 0.6356645658061592 | **byte-identical** | Wilke's posture is upright standing, where `:model-muscle-n` is 0.0 — no muscle force enters it, so nothing `recruit` does can reach it. `:within-reference-spread? false` as before. |
+| Hansraj multipliers | 1.0 / 2.260021051801672 / 3.366025403784438 / 4.242640687119285 / 4.830127018922192 | **identical to the bit** | verified rather than assumed: `load/cervical-load` does not call `recruit` |
+| `strain/session-cross-check` | `:compared 13`, `:acts-the-wrong-way 11`, `:model-returns-no-finite-endurance 20`, `:no-published-curve-for-this-region 10`, `:no-mvc 2` | **`:compared 13`**, `:acts-the-wrong-way 4`, `:model-returns-no-finite-endurance 26`, `:no-published-curve-for-this-region 11`, `:no-mvc 2` | the **disagreement itself did not move** — the same 13 rows are compared against Frey Law & Avin and give the same answer. What changed is the bucket of rows that could not be compared: seven muscles stopped being refused and became lightly loaded instead, which puts them under the endurance floor. |
+
+**Two of the three cervical ratios moved toward 1 and one moved away, and none of that is a
+validation.** The lumped side is the one Hansraj anchors. A profile that agreed with it
+exactly would still be unvalidated, and this repo has now recorded that four times.
+
+### What the coupled solve still cannot express
+
+- **`:c2c3`.** `longus_capitis` crosses it and **no equilibrium in this model covers it**, so
+  its moment there is still reported as `:two-joint-unfed-nm` and still fed to nobody. The
+  blocker is unchanged and is **provenance, not the solver**: see *C2/C3: expressible, and
+  blocked by provenance*. This is the one honest survivor of the original finding.
+- **Co-contraction at the atlanto-occipital joint is now predicted, and its size depends on a
+  `:representative` number.** Semispinalis and splenius capitis have a *larger* arm about the
+  atlanto-occipital joint than about C7 — 26.8 and 32.9 mm against 12.0 mm, where the C7
+  chord is sitting on the cervical column's wrapping radius — so any force they produce for
+  C7 over-extends the joint above, and the cheapest way to close both is a little flexor
+  activity. That is what a coupled Crowninshield–Brand optimum says given these arms, and it
+  is a real phenomenon; but the 12.0 mm radius is `:representative` and the effect is
+  sensitive to it. Measured over 36 postures: **11.23 %MVC** is the worst forward-head
+  co-contraction and **38.06 %** the worst genuine flexion demand (head tipped back), against
+  the **184.82 %** that assigning the old surplus would have produced.
+- **The suboccipitals still carry nothing at a desk**, and the reason is better than it was.
+  It used to be that their load was floored at zero by a decomposition; now the joint *has* a
+  load, the load is *met*, and the coupled optimum simply prefers the muscles that were going
+  to cross that joint anyway. They do take force where the optimum wants them — 0.32 / 0.11 /
+  0.26 N at head −55° on a trunk flexed 75° — which is what makes the desk zero a measurement
+  rather than a constant.
+- **A muscle cannot be in two coupled groups.** `coupled-groups` is a partition. Nothing in
+  this anatomy needs to be in two, but a trunk model that coupled the lumbar spine to the hip
+  would.
+- **Nothing is coupled across the midline.** The two legs are solved separately because they
+  share no muscle. A model with a muscle spanning the midline would need one group for both.
+- **It is still a static optimum.** No co-contraction for stability, no history, no
+  activation dynamics — a coupled static optimum predicts *less* co-contraction than a body
+  produces, not more.
 
 **Honest R0**: design + runnable physics + a cervical model validated **along one line**.
 Anthropometry / muscle / endurance parameters are `:representative` (G7); the cervical leg is
