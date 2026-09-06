@@ -393,6 +393,94 @@ finding, but `:above-maximum-voluntary-contraction` says what it is: an enduranc
 time is how long a *sub-maximal* load is held, and above maximum there is no such
 quantity to extrapolate to.
 
+### The headline band carries one bit, and the discontinuity is why
+
+**`moderate` and `high` are not rare — at this app's session lengths they are
+unreachable.** The band is the column the answer table above and the browser
+comparison view are read through, and it distinguishes two states: *is this
+muscle above 8 %MVC or not*.
+
+The cause is the endurance floor. `endurance-minutes` returns ∞ at or below
+8 %MVC and **70.1 min** immediately above it, so the acute term does not grow
+from zero — it switches on at full size. At a 120 minute session that is 1.71 of
+dose appearing in the width of a rounding error, and the index steps from
+**0.053 to 0.829 across 0.001 %MVC**. That step is wider than `moderate` and
+`high` put together (0.20 → 0.70), so nothing can land in either.
+
+Measured 2026-09-07 on the three reference workstations, 144 muscle entries:
+
+| session | band histogram |
+|---|---|
+| 30 min | `{low 99, moderate 2, high 9, very-high 6, not-computed 28}` |
+| **120 min** (the default) | `{low 99, very-high 17, not-computed 28}` |
+| 480 min (a working day) | `{low 99, very-high 17, not-computed 28}` |
+
+Sweeping %MVC uniformly instead of running the postures gives the same answer:
+at 120 and 480 min only `low` and `very-high` are reachable; at 30 min all four
+are. `strain/band-resolution` computes this by **inverting the model**, and
+`band-resolution-inversion-agrees-with-sampling-the-model` requires the inversion
+and a 0.05 %MVC sweep to agree band by band, so a bug in one cannot make the
+finding look smaller.
+
+**The session lengths at which each band dies are solved, not chosen** — from
+`chronic-weight`, `chronic-threshold-pct`, `endurance-floor-pct` and the
+power-law constants: `moderate` becomes unreachable at **40.6 min** and comes
+back at 495.9 (when the chronic term below the floor finally reaches 0.20);
+`high` dies at **81.8 min** and returns at 1328.5. The app's default is 120 min,
+so both are dead across everything it is used for.
+
+**The top is blind too, by a different mechanism.** The bottom loses resolution
+to a *gap*; the top loses it to a *ceiling*. `strain/band-resolution` reports
+`:saturation-onset-pct` — the %MVC above which the index is exactly 1.0 in double
+precision: **30.2 %MVC at 120 min**, 16.5 at 480. Above it the index is not
+coarse, it is constant: 70 of the 100 points on the axis carry no information at
+all at the default session, and `index-at 50 == index-at 100` is an equality, not
+an approximation. `:saturated?` already marked individual rows; what was missing
+was the size of the region.
+
+**What was NOT done.** No smoothing constant. Fairing the step away needs a blend
+width, and there is nowhere to get one: below 8 %MVC neither the model nor the
+reference has measured anything, so any width would be invented — the exact thing
+this repo has spent days removing. No thresholds were moved and no coefficient
+was touched: re-cutting the bands cannot help, because the defect is in the index
+and no threshold set can put a value inside a gap. And the floor itself was left
+alone, for a reason that cuts **against** it and is now computed rather than
+argued: at the floor the model's 70.1 min and the pooled published fit's 54.3 min
+**agree**, ratio 1.29, inside the reference's own wide (±47%) prediction interval
+and outside the tight (±29%) one. The ∞ is switched on while the power law was
+still inside the literature's spread. That is a reason to *report* the step; it is
+not on its own a reason to delete the floor, because deleting it replaces one
+unmeasured claim (*indefinitely*) with another (*54 minutes*).
+
+**What is reported instead.** `muscle-strain` now emits two things it was
+throwing away or leaving to be reassembled:
+
+| key | what it is |
+|---|---|
+| `:dose` | the sum `acute + chronic` the index is a saturating transform of. It still has range where the index has none: the 17 `very-high` rows at 120 min span 1.93 to 165.95 — a factor of **86** — and at the two decimals the report prints they take only **7** distinct values (1.00, 0.99, 0.98, 0.96, 0.94, 0.92, 0.85) |
+| `:index-resolution` | `:distinguishing` / `:saturated` / `:below-endurance-floor` / `:not-computed` — which regime of the index the row is in, as one keyword instead of three flags |
+
+`:index-resolution` is the **G3** key. This actor exists to compare one member's
+posture against their own other posture. `0.04` against `0.85` reads as a factor
+of twenty and is produced by 0.02 %MVC across the floor; `1.00` against `1.00`
+reads as a tie and can be a factor of two in load. Both are misreadings of a
+correct number, and both are avoidable if the render knows which side of the
+discontinuity each row is on.
+
+**What the consumers should now show** (`analyze/render-report`, the answer table
+above, and the browser comparison view — none of them changed here):
+
+- Do not print `very-high` as though it were the top of a four-rung scale.
+  At 120 min it is one of **two** reachable values. Either print the pair
+  (`above / below the endurance floor`) or print the band together with the dose.
+- Print `:dose` beside the index in the per-muscle table. It is the column that
+  orders the rows the index ties.
+- Render `:index-resolution :saturated` as `≥ 1.00`, and
+  `:index-resolution :below-endurance-floor` with a marker saying the acute term
+  is switched off there — an 0.04 and an 0.85 are not twenty-fold apart in load.
+- Do not compute a ratio of two indices across the floor. It is a ratio of two
+  numbers on either side of a step.
+
 ### What could not be checked at all
 
 **The muscle that produces this app's headline verdict has no published curve
@@ -473,6 +561,100 @@ floor is now `suji.methods.math` and the cljs runner exists to fail. Three test
 namespaces read repo files off disk and stay `.clj`, named for what they are.
 
 ## Corrections
+
+**`:arms-supported` reached the sagittal moments and nothing else (2026-09-07).** The flag means
+the forearms rest on a desk, so the desk carries the forearm and the hand and the body carries
+only the upper arm. It is one of the three reference workstations' distinguishing features and it
+is what the advice line in `analyze`'s report points at. It was read at five call sites in
+`load.cljc` with the two-element answer **written out by hand at each**, and `frontal-moments` did
+not read it at all.
+
+Measured on the 70 kg / 1.70 m body at shoulder 20° / elbow 90° / **abduction 40°**, before and
+after:
+
+| quantity | unsupported | supported (was) | supported (now) |
+|---|---|---|---|
+| shoulder moment, sagittal | 9.922588 N·m | 1.812620 | 1.812620 |
+| shoulder moment, **frontal** (left) | −3.9184149037422804 N·m | **−3.9184149037422804** | **−1.600583792781923** |
+| `middle_deltoid/left` | 21.56177777831644 %MVC | **21.56177777831644** | **8.843874638150753** |
+| L5/S1 weight-above (`spine`) | 367.945508 N | **367.945508** | **367.945508** — see below |
+
+The supported column was **byte-identical** to the unsupported one in the frontal plane. In the
+sagittal plane a forearm rested on a desk; in the frontal plane the same forearm, of the same arm,
+in the same posture, was still hanging in mid-air. `middle_deltoid` is fed entirely by
+`:frontal :shoulder-per-side`, so the abduction equilibrium never heard about the desk at all.
+
+With a laterally-bent trunk the same defect appears one joint down: at 25° of bend the frontal
+L5/S1 moment was −54.91992161403256 N·m in both states and is now −48.67019441729147 N·m
+supported, and `quadratus_lumborum/right` goes 27.882735608784447 → 24.577900226844537 %MVC.
+
+**One place decides now.** `load/body-carries?` answers "does the body still carry this segment,
+or has the desk taken it", `load/desk-borne-bases` is `#{"forearm" "hand"}`, and
+`arm-moment-about`, `elbow-moment`, `wrist-moment`, `lumbar-borne-bases` and `frontal-moments` all
+route through it. `lumbar-borne-bases` **was a map keyed by support state** — a second
+hand-written copy of the same two-element answer — and is derived now; the frontal L5/S1 term
+asks it for its segment list rather than concatenating its own. The idealisation is stated once,
+in `body-carries?`, and therefore holds identically everywhere: *the desk's upward reaction is
+taken to act at the forearm and hand centres of mass, so those segments drop out of the free body
+entirely rather than leaving the small residual couple a real forearm resting on its ulnar border
+at one point leaves.*
+
+**Why nothing noticed.** All three reference workstations are purely sagittal — no abduction, no
+lateral bend — so every frontal term is 0.0 in both support states and the defect is invisible at
+exactly the three postures this README publishes. `clojure -M -m suji.methods.analyze` produces
+**byte-identical output** before and after this change (diffed against `origin/main`'s `src`).
+The tests were the same shape: every test of the flag was a sagittal test. There are seven new
+ones, and `test-every-quantity-the-support-flag-reaches-responds-to-it` is a coverage test rather
+than a physics test — it asserts that each of six quantities MOVES when the flag flips, at a
+posture chosen so that all six are non-zero. Three of the six did not move by a single bit.
+
+**Neither published cross-check moved.** `lumbar-cross-check` holds Wilke's posture, which is
+`:arms-supported false` (model force 350.88684032499987 N, ratio 0.6356645658061592,
+`:within-reference-spread? false` — unchanged to the bit). `cervical-cross-check` at the three
+workstations is unchanged too (ratios 2.379664 / 1.666824 / 1.766411), because the arms load
+trunk levels only and never reached a cervical one.
+
+### What the spine still owes the desk, and the function it can call
+
+`spine/above-fraction` decides how much of each segment sits above a level, and its "a segment the
+rank table does not know is an ARM, which hangs from the girdle and therefore loads every trunk
+level" branch is **right and incomplete**: an arm hangs from the girdle *unless it is lying on a
+desk*. `weight-above-n` is therefore identical in both support states — 367.945508 N at the
+posture above — and `spine.cljc` is the last place in this model where the desk does not exist.
+
+`spine.cljc` already `:require`s `load`, so the call is available with no new dependency:
+
+```clojure
+(load/body-carries? posture (:base seg))   ;; false for "forearm"/"hand" when :arms-supported
+```
+
+It needs the POSTURE, which `above-fraction` and `weight-above-n` do not currently take.
+`profile` has it, and threading it through `level-compression` → `weight-above-n` →
+`above-fraction` is the whole change. Measured with that thread in place and then reverted
+byte-identical, on the same 70 kg / 1.70 m body:
+
+| posture | level | weight-above now | with the flag honoured | force-n now | with the flag |
+|---|---|---|---|---|---|
+| audit, supported | L5/S1 | 367.9455 N | **337.7410** | 400.1093 N | **369.9048** |
+| audit, supported | L4/L5 | 350.8868 | **320.6824** | 383.0506 | **352.8461** |
+| `laptop-on-desk` | L5/S1 | 366.5454 | **336.4558** | 660.4416 | **630.3521** |
+| `laptop-on-desk` | L4/L5 | 349.5516 | **319.4621** | 643.4479 | **613.3583** |
+
+The drop is the same at every lumbar level, because `above-fraction` gives an arm 1.0 at all of
+them: **30.2045 N** at the audit posture and **30.0896 N** at `laptop-on-desk`. Both are the
+weight of two forearms and two hands — 30.204482 N — times the level axis's vertical component,
+which is 1.0 for an upright trunk and cos 5° for that workstation's. Both cross-checks are unmoved by
+it: `lumbar-cross-check` because Wilke's posture is unsupported, `cervical-cross-check` because no
+cervical level ever counted an arm. That is measured, not predicted: 350.8868 N / 0.6357 and
+2.3797 / 1.6668 / 1.7664 with the thread in and with it out.
+
+**An audit finding that did not reproduce.** The same audit reported that
+`muscle/suspended-weight-n` read the flag from `(meta p)` and that `pose` never calls `with-meta`,
+so supported and unsupported both returned 34.32 N. That is fixed on `main` already — the flag is
+an argument and `attachment-test`'s `supporting-the-forearms-unloads-the-girdle` pins
+34.323274999999995 N against 19.221034 N. Putting the metadata read back makes that test fail with
+`resting the forearms transfers two segments to the desk: 34.323274999999995 N`, which is the
+audit's own number, so the guard discriminates for the reason it names.
 
 **Two joint moments that computed their own answer (2026-09-07).** `pose/gravitational-moment`
 is the RNEA gravity term read off the placed chain — the honest answer — and two functions in
@@ -943,7 +1125,9 @@ moments they create. This actor has no frontal-plane musculature — no scalenes
 no latissimus, no gluteus medius — so there is nobody to assign them to, and
 `muscle/tension-summary` reports `:unassigned-frontal-nm` and refuses to call the
 answer complete. 40° of shoulder abduction at a desk creates 7.9 N·m that nothing
-in this model carries. The alternative, which this actor did until 2026-09-06, is
+in this model carries. (That 7.9 N·m is both shoulders' whole arms; it was computed
+before `frontal-moments` read `:arms-supported`, and at a desk — where the forearms
+are rested — the same posture now reports 3.2 N·m, carried by the middle deltoids.) The alternative, which this actor did until 2026-09-06, is
 to accept the input, move the picture with it, and quietly leave the load out of
 every number on the page.
 
@@ -975,6 +1159,23 @@ There is one entry that is NOT a refusal and belongs in the table anyway:
 reaches exactly 1.0 in double precision once the dose passes ~37 — roughly 50 %MVC
 held for two hours, which is an ordinary posture. Two postures, one twice as bad as
 the other, both read 1.00. `:saturated?` marks them.
+
+**And it is blind at the bottom too, which nothing said (2026-09-07).** The
+saturation above is a ceiling; the fault at the other end is a *gap*, and it does
+more damage because it lands on the band — the column a reader actually reads.
+The index steps from 0.053 to 0.829 across 0.001 %MVC at the 8 %MVC endurance
+floor, which is wider than `moderate` and `high` put together, so **neither band
+can be reached at all** at 120 or 480 minutes. Measured on the three reference
+workstations at 120 min the 144 entries come out `{low 99, very-high 17,
+not-computed 28}`, and the 17 `very-high` rows span 8.3 to 57.4 %MVC — a factor
+of 6.9 in load and 86 in dose — under one word. The band function, its
+thresholds and every coefficient are unchanged; what is new is
+`strain/band-resolution` and `strain/floor-discontinuity`, which compute the
+damage by inverting the model, plus `:dose` and `:index-resolution` on every row.
+`lexicon_conformance_test`'s comment that *"`moderate` and `high` are legitimate
+and no reference posture lands in them"* is now false in its second half and
+should be corrected: nothing can land in them. See **The headline band carries
+one bit** above.
 
 **The dose layer was calling itself Rohmert's, and it is not (2026-09-07).** This
 README said "**強張り** is the Rohmert sustained-isometric dose" and `strain.cljc`'s

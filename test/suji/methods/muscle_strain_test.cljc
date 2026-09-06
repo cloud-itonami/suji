@@ -109,3 +109,51 @@
     (is (= 2 (count xs)))
     (is (number? (:stiffness-index (first xs))))
     (is (nil? (:stiffness-index (second xs))))))
+
+;; --- the desk reaches the muscles that carry the frontal plane ---------------
+
+(def ^:private abducted-reach
+  "Shoulder 20 deg flexion, elbow 90 deg, 40 deg of abduction. The abduction is
+  what makes this posture able to answer the question: `middle_deltoid` carries
+  the FRONTAL shoulder moment, and until 2026-09-07 that moment was the one
+  quantity in this model that `:arms-supported` did not reach."
+  {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0
+   :shoulder-flexion-deg 20.0 :elbow-flexion-deg 90.0
+   :shoulder-abduction-deg 40.0 :wrist-extension-deg 0.0
+   :support :seated})
+
+(defn- mvc-at [posture sup muscle-name]
+  (let [body (segment/build-body 70.0 1.70)
+        p (assoc posture :arms-supported sup)
+        loads (load/solve-posture-loads body p)
+        tensions (muscle/solve-muscle-tensions body p loads)]
+    (:mvc-pct (first (filter #(= muscle-name (:name %)) tensions)))))
+
+(deftest resting-the-forearms-unloads-the-middle-deltoid
+  ;; Measured on this body at this posture BEFORE the fix: 21.56177777831644 %MVC
+  ;; supported and 21.56177777831644 %MVC unsupported — byte-identical, because
+  ;; `load/frontal-moments` did not read the flag and the abduction equilibrium is
+  ;; fed entirely by `:frontal :shoulder-per-side`. A forearm resting on a desk
+  ;; was still hanging in mid-air, and the deltoid was still holding it out.
+  (let [unsup (mvc-at abducted-reach false "middle_deltoid/left")
+        sup (mvc-at abducted-reach true "middle_deltoid/left")]
+    (is (math/nearly= 21.56177777831644 unsup 1e-9)
+        (str "an unsupported abducted arm: " unsup " %MVC"))
+    (is (math/nearly= 8.843874638150753 sup 1e-9)
+        (str "with the forearm rested: " sup " %MVC"))
+    (is (< sup (* 0.5 unsup))
+        (str "which is less than half, not a rounding difference: " sup " vs " unsup))))
+
+(deftest resting-the-forearms-unloads-the-quadratus-lumborum
+  ;; The same defect one joint down: the frontal LUMBAR moment fed
+  ;; `:trunk-lateral-flexion`, and it too counted a rested forearm as hanging.
+  ;; Needs a laterally-bent trunk, because an upright posture's two arms cancel
+  ;; about the midline and the load is 2.2e-16 in both support states.
+  (let [bent (assoc abducted-reach :trunk-lateral-bend-deg 25.0)
+        unsup (mvc-at bent false "quadratus_lumborum/right")
+        sup (mvc-at bent true "quadratus_lumborum/right")]
+    (is (math/nearly= 27.882735608784447 unsup 1e-9)
+        (str "bent, arms hanging: " unsup " %MVC"))
+    (is (math/nearly= 24.577900226844537 sup 1e-9)
+        (str "bent, forearms rested: " sup " %MVC"))
+    (is (< sup unsup) "resting the forearms must lower the lateral-flexion demand")))

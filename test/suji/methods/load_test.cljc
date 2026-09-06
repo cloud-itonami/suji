@@ -158,3 +158,38 @@
     (is (math/nearly= 0.0 (frontal 0.0) 1e-9) "no bend, no frontal cervical moment")
     (is (> (math/abs* (frontal 30.0)) 1.0)
         (str "and the bend's load is reported there instead, got " (frontal 30.0)))))
+
+(deftest test-every-quantity-the-support-flag-reaches-responds-to-it
+  ;; A COVERAGE TEST, and it exists because the flag reached the sagittal moments
+  ;; and nothing else. Each of these is computed by different code; what they have
+  ;; in common is that a desk under the forearms has to change all of them, and on
+  ;; 2026-09-07 three of the six did not move by a single bit.
+  ;;
+  ;; The posture abducts and bends, so that the frontal quantities are non-zero at
+  ;; all — an upright, unabducted posture reports 0.0 for every frontal term in
+  ;; both support states, and a test written at one would have passed against the
+  ;; defect.
+  (let [body (segment/build-body 70.0 1.70)
+        p (fn [sup] {:head-flexion-deg 0.0 :trunk-flexion-deg 20.0
+                     :trunk-lateral-bend-deg 25.0
+                     :shoulder-flexion-deg 20.0 :elbow-flexion-deg 90.0
+                     :shoulder-abduction-deg 40.0 :wrist-extension-deg 0.0
+                     :support :seated :arms-supported sup})
+        solve (fn [sup] (load/solve-posture-loads body (p sup)))
+        joint (fn [loads n] (:moment-nm (first (filter #(= n (:joint %)) (:joints loads)))))
+        [a b] [(solve false) (solve true)]
+        quantities {"shoulder (sagittal)" [(joint a "shoulder") (joint b "shoulder")]
+                    "elbow (sagittal)" [(joint a "elbow") (joint b "elbow")]
+                    "wrist (sagittal)" [(joint a "wrist") (joint b "wrist")]
+                    "lumbosacral (sagittal)" [(joint a "lumbosacral") (joint b "lumbosacral")]
+                    "shoulder (frontal)" [(get-in a [:frontal :shoulder-per-side :left])
+                                          (get-in b [:frontal :shoulder-per-side :left])]
+                    "lumbosacral (frontal)" [(get-in a [:frontal :lumbosacral-nm])
+                                             (get-in b [:frontal :lumbosacral-nm])]}]
+    (doseq [[label [unsup sup]] quantities]
+      (is (> (Math/abs (- (double unsup) (double sup))) 1e-6)
+          (str label " is identical supported and unsupported (" unsup " vs " sup
+               ") — the desk does not reach it"))
+      (is (< (Math/abs (double sup)) (Math/abs (double unsup)))
+          (str label " must be SMALLER with the forearms rested, got "
+               sup " against " unsup)))))
