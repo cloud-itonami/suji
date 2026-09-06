@@ -23,6 +23,7 @@
             [suji.methods.articulation-dict-test]
             [suji.methods.attachment-test]
             [suji.methods.load-sensitivity-test]
+            [suji.methods.lower-limb-test]
             [suji.methods.force-length-test]
             [suji.methods.girdle-test]
             [suji.methods.load-test]
@@ -40,6 +41,7 @@
     suji.methods.articulation-dict-test
     suji.methods.attachment-test
     suji.methods.load-sensitivity-test
+    suji.methods.lower-limb-test
     suji.methods.force-length-test
     suji.methods.girdle-test
     suji.methods.load-test

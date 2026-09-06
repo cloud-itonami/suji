@@ -98,7 +98,15 @@
   (let [lvl-rank (chain-order (:segment level))
         seg-rank (chain-order (:base seg))]
     (cond
-      (nil? seg-rank) (if (= 0 lvl-rank) 1.0 0.0)  ;; arms + pelvis: above trunk levels only
+      ;; A segment the spine's rank table does not know is either an ARM, which
+      ;; hangs from the girdle and therefore loads every trunk level, or a LEG,
+      ;; which hangs below the pelvis and loads none of them. Before the lower limb
+      ;; existed the first case was the only case and this branch could simply say
+      ;; 1.0; `segment/below-l5s1` is what makes it stay right — without it a third
+      ;; of body mass was added to the lumbar spine, in every posture, and the only
+      ;; symptom was a number that was 300 N too large.
+      (segment/below-l5s1 (:base seg)) 0.0
+      (nil? seg-rank) (if (= 0 lvl-rank) 1.0 0.0)  ;; arms: above trunk levels only
       (> seg-rank lvl-rank) 1.0
       (< seg-rank lvl-rank) 0.0
       :else (max 0.0 (- 1.0 (:along level))))))
@@ -110,7 +118,6 @@
         {:keys [axis]} (level-point pose-data level)]
     (reduce + 0.0
             (for [seg (:segments pose-data)
-                  :when (not= "pelvis" (:base seg))
                   :let [f (above-fraction level seg)]
                   :when (pos? f)]
               ;; gravity is [0,-w,0]; its compressive component along the spine

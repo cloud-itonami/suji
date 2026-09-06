@@ -8,9 +8,16 @@
             [suji.methods.segment :as segment]))
 
 (deftest test-segment-masses-sum-plausibly
+  ;; One of each segment, so each PAIRED limb is counted once — this is a half-body
+  ;; plus the midline, not a body. The bounds moved on 2026-09-07 when the lower
+  ;; limb landed: with an arm and a leg the one-of-each sum is 0.789 of body mass,
+  ;; where with an arm alone it was 0.628. `lower-limb-test`'s
+  ;; `the-whole-body-is-accounted-for` states the exact claim — every paired
+  ;; segment counted TWICE sums to 1.000 — which is the one that can be asserted
+  ;; sharply rather than as a range.
   (let [body (segment/build-body 70.0 1.70)
         total (reduce + 0.0 (map :mass-kg (vals (:segments body))))]
-    (is (< (* 0.4 70) total (* 0.75 70)))
+    (is (< (* 0.7 70) total (* 0.85 70)))
     (is (> (:mass-kg (segment/seg (segment/build-body 70) "head_neck")) 0))))
 
 (deftest test-head-mass-matches-hansraj-head
