@@ -19,10 +19,16 @@
         tensions (muscle/solve-muscle-tensions body p loads)]
     ;; every instance appears, and every instance belongs to a declared group
     (is (= (set (map :name tensions)) (set (map :name attachment/instances))))
-    (is (every? #(contains? muscle/specs (:group %)) tensions))
-    (doseq [t (remove :refused tensions)]
+    (is (every? #(or (:ligament? %) (contains? muscle/specs (:group %))) tensions))
+    ;; a LIGAMENT has no %MVC — it cannot contract, so there is no maximum
+    ;; voluntary contraction to be a fraction of. Asking `:refused` here would
+    ;; have missed that; asking whether the NUMBER is present does not.
+    (doseq [t (filter muscle/numeric-mvc? tensions)]
       (is (>= (:force-n t) 0))
       (is (and (<= 0 (:mvc-pct t)) (< (:mvc-pct t) 100))))
+    (doseq [t (filter :ligament? tensions)]
+      (is (nil? (:mvc-pct t)) "a ligament has no %MVC")
+      (is (>= (:force-n t) 0) "but it does transmit a force"))
     ;; and a refused entry carries no numbers to mistake for small ones
     (doseq [t (filter :refused tensions)]
       (is (nil? (:force-n t)))

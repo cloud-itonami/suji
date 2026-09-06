@@ -79,17 +79,63 @@
     (is (math/nearly= 0.0 (:active-n a) 1e-9) "no activation is needed")
     (is (math/nearly= 900.0 (:force-n a) 1e-9) "and the tissue still transmits its force")))
 
-(deftest the-passive-term-is-small-here-and-the-model-says-so
-  ;; THE CORRECTION THIS TEST EXISTS FOR. The first draft of `passive-force-n`'s
-  ;; docstring called this the mechanism behind flexion-relaxation. Measured, it is
-  ;; about 4% of the demand at 60° of trunk flexion — real flexion-relaxation is
-  ;; the posterior ligamentous system taking over, and those structures are not in
-  ;; this model. Pinning the fraction keeps the claim honest: if someone later
-  ;; makes the passive term large enough to explain the phenomenon, this fails and
-  ;; they have to say why.
-  (let [{:keys [by]} (run (assoc base :trunk-flexion-deg 60.0))
+(deftest a-muscles-own-passive-tension-is-the-smaller-term
+  ;; THE CORRECTION THIS TEST EXISTS FOR, restated against the right denominator.
+  ;; The first draft of `passive-force-n`'s docstring called a muscle's own passive
+  ;; tension the mechanism behind flexion-relaxation. It is not: measured against
+  ;; the MOMENT the joint has to carry, it supplies a small share. (An earlier
+  ;; version of this test divided by the muscle's own force instead, which reads
+  ;; 1.0 the moment the muscle stops activating — that is the phenomenon, not the
+  ;; share.)
+  (let [posture (assoc base :trunk-flexion-deg 40.0)
+        {:keys [by loads]} (run posture)
         e (by "erector_spinae")
-        frac (/ (:passive-n e) (:force-n e))]
-    (is (< frac 0.15)
-        (str "a muscle's own passive tension is the smaller term here: " frac))
-    (is (> frac 0.01) "but not negligible either")))
+        demand (:moment-nm (first (filter #(= "lumbosacral" (:joint %)) (:joints loads))))
+        share (/ (* (:coeff e) (:passive-n e)) demand)]
+    (is (< share 0.10)
+        (str "a muscle's own passive tension carries a small share of the demand: " share))
+    (is (> share 0.005) "but not nothing")))
+
+(deftest flexion-relaxation
+  ;; The phenomenon the ligaments were added for, and the reason the previous
+  ;; wave's claim about passive muscle tension had to be withdrawn: in deep trunk
+  ;; flexion the erector spinae falls silent while the posterior ligamentous system
+  ;; takes the load. A model without ligaments must report the muscle working
+  ;; hardest exactly where it is measured to be working least.
+  (let [active (fn [t] (:active-n (get (:by (run (assoc base :trunk-flexion-deg (double t))))
+                                       "erector_spinae")))
+        ligament (fn [t] (:force-n (get (:by (run (assoc base :trunk-flexion-deg (double t))))
+                                        "posterior_lumbar_ligaments")))
+        demand (fn [t] (:moment-nm (first (filter #(= "lumbosacral" (:joint %))
+                                                  (:joints (:loads (run (assoc base :trunk-flexion-deg (double t)))))))))]
+    (is (> (demand 60) (demand 20)) "the premise: deeper flexion is a bigger demand")
+    (is (> (active 20) 0.0) "the muscle works in moderate flexion")
+    (is (math/nearly= 0.0 (active 60) 1e-9)
+        (str "and falls silent in deep flexion, got " (active 60)))
+    (is (> (ligament 60) (ligament 40)) "while the ligament takes it")
+    (is (> (ligament 60) (* 5.0 (ligament 20))) "and takes over, not merely helps")))
+
+(deftest a-ligament-has-no-percent-of-a-maximum-it-cannot-contract-to
+  (let [{:keys [by]} (run (assoc base :trunk-flexion-deg 40.0))
+        lig (by "posterior_lumbar_ligaments")]
+    (is (:ligament? lig))
+    (is (nil? (:mvc-pct lig)))
+    (is (math/nearly= 0.0 (:active-n lig) 1e-12) "and no active force")
+    (is (pos? (:force-n lig)) "but it transmits one")))
+
+(deftest a-ligament-says-when-the-posture-has-left-its-calibrated-range
+  ;; the exponential is calibrated between slack and `:ref-stretch` and says
+  ;; nothing beyond. Extrapolating gave the nuchal ligament 52,312 N at an
+  ;; ordinary forward-head posture. It is clamped, and the clamp is announced —
+  ;; a real ligament stiffens further and then FAILS, and this model has no
+  ;; failure law.
+  (let [spec (att/instance "nuchal_ligament")
+        neutral 0.10
+        ref (:ref-stretch spec)]
+    (is (not (muscle/ligament-at-limit? spec (* 1.1 neutral) neutral)))
+    (is (muscle/ligament-at-limit? spec (* (+ ref 0.05) neutral) neutral))
+    ;; and the force does not run away past the limit
+    (let [at-ref (muscle/ligament-force-n spec (* ref neutral) neutral)
+          far (muscle/ligament-force-n spec (* 3.0 neutral) neutral)]
+      (is (math/nearly= at-ref far 1e-9) "clamped, not extrapolated")
+      (is (math/nearly= (:force-at-ref spec) at-ref 1e-9)))))

@@ -88,6 +88,56 @@
   the reason a fully stretched muscle still resists at all."
   0.8)
 
+(defn ligament-force-n
+  "Force a LIGAMENT produces at its current length.
+
+  Not a muscle: it cannot contract, it has no %MVC, and it is slack until the
+  joint has already carried past it. Its stiffness is stated as a force at a
+  STATED stretch rather than derived from a cross-section, because a ligament has
+  no contractile machinery for a specific tension to describe.
+
+  The stretch each structure is calibrated at is its own (`:ref-stretch`), because
+  they do not stretch alike: measured 2026-09-06, 60 degrees of trunk flexion takes
+  the lumbar band to 1.25x its neutral length, while 15 degrees of head flexion
+  already takes the nuchal ligament to 1.18x and 60 degrees to 1.60x — it is short
+  and the head turns through a large angle. Calibrating both at 1.25x put the whole
+  cervical load on a ligament and reported the extensors doing nothing, in the one
+  posture this actor exists to describe.
+
+  This is the structure the previous wave named as missing when it measured its
+  own claim: a muscle's own passive tension supplies about 4% of the demand at 60
+  degrees of trunk flexion, and flexion-relaxation is these taking over."
+  [spec length neutral-length]
+  (if (or (nil? length) (nil? neutral-length) (<= neutral-length 0.0))
+    0.0
+    (let [ratio (/ (double length) (double neutral-length))
+          slack (or (:slack-frac spec) 1.0)]
+      (if (<= ratio slack)
+        0.0
+        ;; CLAMPED AT 1.25x. The exponential is calibrated between slack and 1.25
+        ;; and says nothing beyond it: extrapolating gave the nuchal ligament
+        ;; 52,312 N at an ordinary forward-head posture, because the head flexes
+        ;; far enough to stretch a short ligament well past the calibrated range.
+        ;; A real ligament stiffens and then FAILS; this model has no failure law,
+        ;; so it holds the force at the last value it can defend and
+        ;; `at-limit?` says the posture has left the range.
+        (let [ref-stretch (or (:ref-stretch spec) 1.25)
+              x (math/clamp (/ (- ratio slack) (- ref-stretch slack)) 0.0 1.0)
+              k 4.0]
+          (* (or (:force-at-ref spec) 0.0)
+             (/ (- (Math/exp (* k x)) 1.0) (- (Math/exp k) 1.0))))))))
+
+(defn ligament-at-limit?
+  "True when the posture has stretched this ligament past the range its stiffness
+  is calibrated over (`:ref-stretch`, per structure). The force it reports there is the last defensible value, not
+  a prediction — a real ligament stiffens further and then fails, and this model
+  has no failure law."
+  [spec length neutral-length]
+  (boolean
+   (and (:ligament? spec) length neutral-length (pos? neutral-length)
+        (> (/ (double length) (double neutral-length))
+           (or (:ref-stretch spec) 1.25)))))
+
 (defn passive-force-n
   "Force this muscle's PASSIVE elastic tissue produces at its current length.
 
@@ -167,22 +217,29 @@
 (def emit-order (mapv :name attachment/instances))
 
 (defn passive-of
-  "Passive force for one instance at this posture."
+  "Passive force for one instance at this posture — a ligament's whole force, or a
+  muscle's elastic term."
   [inst lengths optimals]
-  (passive-force-n (get specs (:group inst))
-                   (get lengths (:name inst))
-                   (get optimals (:name inst))))
+  (if (:ligament? inst)
+    (ligament-force-n inst (get lengths (:name inst)) (get optimals (:name inst)))
+    (passive-force-n (get specs (:group inst))
+                     (get lengths (:name inst))
+                     (get optimals (:name inst)))))
 
 (defn f-max-of
   "Force available to one instance at this posture. `lengths` and `optimals` are
   `attachment/lengths` / `attachment/optimal-lengths`; passing neither falls back
   to the peak force, which is what this returned before the force–length relation
   existed."
-  ([inst] (peak-force-n (get specs (:group inst))))
+  ([inst] (if (:ligament? inst) 0.0 (peak-force-n (get specs (:group inst)))))
   ([inst lengths optimals]
-   (available-force-n (get specs (:group inst))
-                      (get lengths (:name inst))
-                      (get optimals (:name inst)))))
+   (if (:ligament? inst)
+     ;; a ligament cannot contract, so it offers the criterion nothing to
+     ;; distribute; its force is already subtracted from the load as a passive term
+     0.0
+     (available-force-n (get specs (:group inst))
+                        (get lengths (:name inst))
+                        (get optimals (:name inst))))))
 
 (defn suspended-weight-n
   "Weight ONE shoulder girdle has to suspend: the arm segments hanging from it.
@@ -250,8 +307,12 @@
   (ligaments, passive tissue, the spine in flexion-relaxation, or a different
   strategy altogether). Clamping it at 100 would erase exactly the finding."
   [shared]
-  (if (:refused shared)
-    (assoc shared :mvc-pct nil)
+  (cond
+    (:refused shared) (assoc shared :mvc-pct nil)
+    ;; a ligament has no maximum voluntary contraction, because it cannot contract
+    (or (nil? (:f-max-n shared)) (zero? (:f-max-n shared)))
+    (assoc shared :mvc-pct nil :over-mvc? false)
+    :else
     (let [pct (/ (* 100.0 (max 0.0 (:force-n shared))) (:f-max-n shared))]
       (assoc shared :mvc-pct pct :over-mvc? (> pct 100.0)))))
 
@@ -331,7 +392,10 @@
     (mapv (fn [n]
             (let [inst (instance-by n)
                   t (->tension (get results n))]
-              (merge (select-keys inst [:group :side :task])
+              (merge (select-keys inst [:group :side :task :ligament?])
+                     (when (:ligament? inst)
+                       {:at-limit? (ligament-at-limit?
+                                    inst (get lens (:name inst)) (get opts (:name inst)))})
                      t
                      (when (and (:refused t) (contains? carried-names n))
                        {:antagonist? true}))))
@@ -373,7 +437,19 @@
               :max-mvc-pct (let [xs (keep :mvc-pct tensions)] (when (seq xs) (apply max xs)))}
        frontal (assoc :frontal frontal)))))
 
+(defn numeric-mvc?
+  "Does this entry have a %MVC at all?
+
+  THE QUESTION EVERY EMIT SITE SHOULD ASK, and the one three of them got wrong in
+  a row by asking `:refused` instead. There are now two ways to have no %MVC — the
+  model declined to compute a force, and the entry is a LIGAMENT, which cannot
+  contract and therefore has no maximum voluntary contraction to be a fraction of.
+  A site that branches on the reason has to be revisited every time a new reason
+  appears; a site that branches on whether the number is there does not."
+  [t]
+  (number? (:mvc-pct t)))
+
 (defn fmt-mvc
   "Display helper: a %MVC, or the reason there is not one."
   [t]
-  (if (:refused t) "—" (str (math/fmt-fixed (:mvc-pct t) 1) " %")))
+  (if (numeric-mvc? t) (str (math/fmt-fixed (:mvc-pct t) 1) " %") "—"))

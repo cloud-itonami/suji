@@ -109,6 +109,39 @@
     :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0090 :lat 0.1225}
     :source "representative; thoracic-spine origin, acromial insertion"}
 
+   ;; --- the posterior ligamentous system ---------------------------------------
+   ;; NOT MUSCLES. They cannot contract, they have no %MVC, and they engage only
+   ;; when the joint has already carried the spine past their slack length. They
+   ;; are here because the previous wave measured its own claim and found it
+   ;; false: a muscle's own passive tension supplies about 4% of the demand at 60
+   ;; degrees of trunk flexion, and flexion-relaxation — the erector spinae going
+   ;; electrically silent in deep flexion — is these structures taking over.
+
+   "posterior_lumbar_ligaments"
+   {:name "posterior_lumbar_ligaments" :ligament? true
+    :acts-about :l5s1 :task :trunk-extension
+    ;; supraspinous + interspinous ligaments and the thoracolumbar fascia, as one
+    ;; posterior band from the sacrum to the mid-thoracic spinous processes
+    :slack-frac 1.055
+    :ref-stretch 1.25
+    :force-at-ref 4200.0
+    :origin {:segment "pelvis" :along 0.15 :ant -0.0330 :lat 0.0}
+    :insertion {:segment "thorax_abdomen" :along 0.34 :ant -0.0520 :lat 0.0}
+    :source "representative; the posterior ligamentous system, slack in neutral and engaging in deep flexion"}
+
+   "nuchal_ligament"
+   {:name "nuchal_ligament" :ligament? true
+    :acts-about :c7 :task :cervical-extension
+    ;; external occipital protuberance → C7 spinous process
+    ;; short, and the head turns through a large angle: 15 deg of head flexion
+    ;; already stretches it 18%. Calibrated over its own range, not the lumbar one.
+    :slack-frac 1.20
+    :ref-stretch 1.60
+    :force-at-ref 150.0
+    :origin {:segment "thorax_abdomen" :along 0.97 :ant -0.0200 :lat 0.0}
+    :insertion {:segment "head_neck" :along 0.07 :ant -0.0130 :lat 0.0}
+    :source "representative; the cervical counterpart, engaging in sustained forward head posture"}
+
    ;; --- the elbow --------------------------------------------------------------
    ;; The chain has placed an elbow since the pose layer existed, and until
    ;; 2026-09-06 no muscle acted about it: the forearm and hand hung off a joint

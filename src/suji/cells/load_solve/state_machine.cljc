@@ -103,11 +103,14 @@
         ;; emitted record says WHY there is no number rather than omitting the
         ;; muscle or inventing a zero.
         mt (mapv (fn [t]
-                   (if (:refused t)
+                   ;; branch on whether the number is THERE, not on why it is
+                   ;; not: a ligament has no %MVC either, and it is not refused
+                   (if-not (muscle/numeric-mvc? t)
                      {"group" (str/replace (:name t) "_" "-")
-                      "forceN" nil
+                      "forceN" (when (number? (:force-n t)) (math/round-to (:force-n t) 2))
                       "mvcPct" nil
-                      "refused" (name (:refused t))
+                      "refused" (when (:refused t) (name (:refused t)))
+                      "ligament" (boolean (:ligament? t))
                       "antagonist" (boolean (:antagonist? t))}
                      {"group" (str/replace (:name t) "_" "-")
                       "forceN" (math/round-to (:force-n t) 2)
