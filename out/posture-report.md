@@ -5,11 +5,11 @@
 
 ## Cervical spine load (forward head / tech-neck)
 
-| workstation | head flexion | neck load | ×head-weight |
+| workstation | head tilt from vertical | neck load | ×head-weight |
 |---|---|---|---|
-| laptop-on-lap | 44° | 23.6 kgf | 4.2× |
-| laptop-on-desk | 27° | 17.9 kgf | 3.2× |
-| external-monitor+keyboard | 5° | 8.1 kgf | 1.4× |
+| laptop-on-lap | 64° | 27.9 kgf | 4.9× |
+| laptop-on-desk | 32° | 19.8 kgf | 3.5× |
+| external-monitor+keyboard | 10° | 10.5 kgf | 1.9× |
 
 ## laptop-on-lap
 
@@ -18,10 +18,10 @@
 
 | muscle | tension %MVC | endurance | stiffness (強張り) | band |
 |---|---|---|---|---|
-| cervical_extensors | 41% | 2 min | 1.00 | very-high |
+| cervical_extensors | 56% | 1 min | 1.00 | very-high |
+| erector_spinae | 57% | 1 min | 1.00 | very-high |
 | anterior_deltoid/left | 28% | 4 min | 1.00 | very-high |
 | anterior_deltoid/right | 28% | 4 min | 1.00 | very-high |
-| erector_spinae | 26% | 5 min | 1.00 | very-high |
 | biceps_brachii/left | 12% | 27 min | 0.99 | very-high |
 | biceps_brachii/right | 12% | 27 min | 0.99 | very-high |
 | wrist_extensors/left | 10% | 38 min | 0.96 | very-high |
@@ -80,8 +80,8 @@
 
 | muscle | tension %MVC | endurance | stiffness (強張り) | band |
 |---|---|---|---|---|
-| cervical_extensors | 24% | 5 min | 1.00 | very-high |
-| erector_spinae | 7% | ∞（モデルの床未満） | 0.04 | low |
+| cervical_extensors | 28% | 4 min | 1.00 | very-high |
+| erector_spinae | 15% | 17 min | 1.00 | very-high |
 | anterior_deltoid/left | 5% | ∞（モデルの床未満） | 0.03 | low |
 | anterior_deltoid/right | 5% | ∞（モデルの床未満） | 0.03 | low |
 | levator_scapulae/left | 4% | ∞（モデルの床未満） | 0.02 | low |
@@ -142,14 +142,14 @@
 
 | muscle | tension %MVC | endurance | stiffness (強張り) | band |
 |---|---|---|---|---|
-| erector_spinae | 7% | ∞（モデルの床未満） | 0.04 | low |
+| erector_spinae | 11% | 32 min | 0.98 | very-high |
+| cervical_extensors | 7% | ∞（モデルの床未満） | 0.04 | low |
 | levator_scapulae/left | 4% | ∞（モデルの床未満） | 0.02 | low |
 | levator_scapulae/right | 4% | ∞（モデルの床未満） | 0.02 | low |
 | upper_trapezius/left | 4% | ∞（モデルの床未満） | 0.02 | low |
 | upper_trapezius/right | 4% | ∞（モデルの床未満） | 0.02 | low |
 | anterior_deltoid/left | 4% | ∞（モデルの床未満） | 0.02 | low |
 | anterior_deltoid/right | 4% | ∞（モデルの床未満） | 0.02 | low |
-| cervical_extensors | 4% | ∞（モデルの床未満） | 0.01 | low |
 | tibialis_anterior/left | 3% | ∞（モデルの床未満） | 0.01 | low |
 | tibialis_anterior/right | 3% | ∞（モデルの床未満） | 0.01 | low |
 | middle_trapezius/left | 3% | ∞（モデルの床未満） | 0.01 | low |
@@ -195,10 +195,10 @@
 - `acts-the-wrong-way` — hamstrings/left、gastrocnemius/left、soleus/left、hamstrings/right、gastrocnemius/right、soleus/right
 - `no-mvc` — posterior_lumbar_ligaments、nuchal_ligament
 
-- worst: **erector_spinae** stiffness 0.04 (low)
+- worst: **erector_spinae** stiffness 0.98 (very-high)
 
 ## Comparison (self-referenced Wellbecoming, G3)
 
-- `laptop-on-lap` neck load 23.6 kgf → `external-monitor+keyboard` 8.1 kgf (**−66%** cervical compressive load).
-- worst-muscle stiffness 1.00 (cervical_extensors) → 0.04 (erector_spinae).
+- `laptop-on-lap` neck load 27.9 kgf → `external-monitor+keyboard` 10.5 kgf (**−62%** cervical compressive load).
+- worst-muscle stiffness 1.00 (cervical_extensors) → 0.98 (erector_spinae).
 - mechanism, not advice: raising the screen toward eye level reduces head flexion (the dominant cervical-load term); supporting the forearms unloads the upper trapezius (the 肩こり muscle). A clinician (mitate/iyashi) owns any health interpretation.

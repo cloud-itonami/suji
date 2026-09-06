@@ -71,7 +71,14 @@
         text (analyze/render-report [{:workstation "all-refused"
                                       :posture {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0
                                                 :shoulder-flexion-deg 0.0 :arms-supported false}
-                                      :loads {:cervical {:head-flexion-deg 0.0
+                                      ;; `:head-tilt-deg`, not `:head-flexion-deg`: the
+                                      ;; cervical model is a function of the head's angle from
+                                      ;; VERTICAL (trunk + head) and the key was renamed with it
+                                      ;; on 2026-09-07. This fixture is hand-built, so it does not
+                                      ;; follow the model on its own — and the report formats the
+                                      ;; value, so a stale key here is an NPE rather than a
+                                      ;; wrong number.
+                                      :loads {:cervical {:head-tilt-deg 0.0
                                                          :compressive-load-kgf 5.0
                                                          :multiplier-vs-head 1.0}}
                                       :tensions []
