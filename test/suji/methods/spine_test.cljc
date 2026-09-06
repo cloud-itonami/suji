@@ -1094,11 +1094,13 @@
   ;; would reproduce Wilke's difference is about 5.7 deg, against the 46.5 deg Cho
   ;; measured — a factor of eight the other way.
   ;;
-  ;; The dominant cause is stated in `pose/lumbar-chord-tilt-deg`: L5/S1 is the
-  ;; root of this chain and does not move, so tilting the lumbar chord translates
-  ;; the whole trunk anteriorly, where a real pelvis rotates about the hips and
-  ;; L5/S1 itself moves back. That translation, not the change in the level's own
-  ;; axis, is most of the 334 N.
+  ;; The dominant cause is stated in `pose/lumbar-chord-tilt-deg`: the chord sits
+  ;; at `trunk + lordosis/2`, so 46.5 deg of lordosis under a vertical thorax puts
+  ;; T12/L1 6.685 cm anterior to L5/S1 and carries the whole 367.9 N above the
+  ;; level out onto that lever. That displacement, not the change in the level's
+  ;; own axis, is most of the 334 N. It is NOT the chain's rooting — this comment
+  ;; said it was until 2026-09-10, and `re-rooting-the-chain-moves-no-moment`
+  ;; measures that the moment does not move when the root does.
   (let [x (spine/sitting-standing-comparison)
         need (spine/lordosis-matching-reference-difference-deg)]
     (is (> (:difference-ratio x) 5.0)
@@ -1216,31 +1218,75 @@
       ;; every term, pinned. These are five figures rather than a tolerance
       ;; because the point of the exercise is that each one is separately
       ;; checkable — a change that moves any of them should have to say which.
+      ;;
+      ;; TWO OF THEM MOVED BY ONE UNIT IN THE LAST PLACE ON 2026-09-10, and the
+      ;; movement is worth reading rather than rounding away. Rooting the standing
+      ;; chain at the feet shifts every x by a constant, and floating-point
+      ;; subtraction is not translation-invariant: `(a+t) - (b+t)` is not bit-for-bit
+      ;; `a - b`. The relative move is 3e-16, four orders inside this tolerance.
+      ;; It is also the EVIDENCE that the translation ran at all — a re-rooting
+      ;; that changed literally nothing would be indistinguishable from one that
+      ;; was never applied. The sitting cross-check is exempt and stayed byte-
+      ;; identical, because a seated pose is re-rooted along y alone.
       (is (math/nearly= -28.330641931507728 (n :lumbar-chord-cosine) 1e-9))
-      (is (math/nearly= 384.37536398936294
+      (is (math/nearly= 384.37536398936305
                         (n :lumbosacral-moment-on-the-neutral-geometry) 1e-9))
       (is (math/nearly= -25.775144221675873 (n :pelvis-origin-moment-arms) 1e-9))
       (is (math/nearly= 2.073382586920559
                         (n :level-axis-under-the-muscle-line) 1e-9))
-      (is (math/nearly= 1.2169405131731992 (n :other-crossing-muscles) 1e-9))
+      (is (math/nearly= 1.2169405131733129 (n :other-crossing-muscles) 1e-9))
       (is (= 0.0 (n :trunk-mass-split))))))
 
-(deftest the-dominant-term-of-the-7x-is-the-chain-being-rooted-at-l5s1
+(deftest the-dominant-term-of-the-7x-is-the-lumbar-chord-and-not-the-root
   ;; WHERE THE SEVENFOLD OVERSHOOT ACTUALLY COMES FROM, and it is not the lordosis
   ;; as such. One term is larger than the whole difference — 384 N of 334 — and it
-  ;; is a moment that exists only because L5/S1 is the root of this chain and does
-  ;; not move: tilting the lumbar chord TRANSLATES everything above L5/S1 forward
-  ;; by 6.7 cm, which a real pelvis rotating about the hips does not do.
+  ;; is the moment the lumbar CHORD's tilt creates: at `trunk + lordosis/2` = 23.25
+  ;; deg on a vertical thorax, T12/L1 sits 6.685 cm anterior to L5/S1 and the whole
+  ;; 367.9 N above the level rides out there.
+  ;;
+  ;; ⚠ THIS TEST WAS NAMED `…-is-the-chain-being-rooted-at-l5s1` UNTIL 2026-09-10
+  ;; AND THE NAME WAS FALSE. The standing chain is rooted at the feet now
+  ;; (`pose/support-landmarks`) and this term did not move by more than one unit
+  ;; in the last place. It could not: re-rooting is a rigid translation, and a
+  ;; moment is a sum of `weight x (x_com - x_joint)` in which both x's move
+  ;; together. `re-rooting-the-chain-moves-no-moment` is the measurement; the
+  ;; assertion below is the same claim in this namespace's own terms.
   ;;
   ;; THE COUNTERFACTUAL IS THE EVIDENCE, and it runs the other way from Wilke.
-  ;; Take that artefact out — leave the lordosis, remove the moment it invents —
-  ;; and what is left of standing is its weight term alone, 320.5 N, which is
-  ;; BELOW sitting's 348.9 N. So the model's agreement with Wilke's direction is
-  ;; produced by the artefact: without it this model says standing unloads L4/L5,
-  ;; and Wilke says it loads it.
+  ;; Take that moment out — leave the lordosis, remove the moment its chord
+  ;; creates — and what is left of standing is its weight term alone, 320.5 N,
+  ;; which is BELOW sitting's 348.9 N. So the model's agreement with Wilke's
+  ;; direction is produced by the term: without it this model says standing
+  ;; unloads L4/L5, and Wilke says it loads it.
   (let [d (spine/standing-sitting-decomposition)
         by (into {} (map (juxt :name identity)) (:contributions d))
         moment-term (:newtons (get by :lumbosacral-moment-on-the-neutral-geometry))]
+    ;; the mechanism, derived rather than pinned: the chord's anterior travel is
+    ;; `L_lumbar x sin(chord tilt)`, and the moment is the weight above L5/S1
+    ;; times the lever that produces
+    (let [stand-pst (:posture (spine/reference-by-id :wilke-1999-relaxed-standing))
+          p (pose/solve-pose wilke-body stand-pst)
+          travel (- (first (get-in p [:joints :t12l1]))
+                    (first (get-in p [:joints :l5s1])))
+          chord (pose/lumbar-chord-tilt-deg (:trunk-flexion-deg stand-pst)
+                                            (:pelvic-tilt-deg stand-pst))]
+      (is (math/nearly= (* (:length-m (segment/seg wilke-body "lumbar"))
+                           (Math/sin (math/radians chord)))
+                        travel 1e-12)
+          (str "the chord carries T12/L1 " travel " m anterior to L5/S1, which is "
+               "L_lumbar x sin(" chord " deg)"))
+      (is (> travel 0.06)
+          (str "and it is the 6.7 cm the decomposition is about: " travel " m"))
+      ;; and re-rooting the very same pose leaves the moment where it was
+      (let [w (pose/segment-weights wilke-body p)
+            bases (load/lumbar-borne-bases stand-pst)
+            m (fn [pd] (pose/gravitational-moment
+                        (get-in pd [:joints :l5s1])
+                        (for [s (pose/segments-on pd bases)] [s (get w (:name s))])))]
+        (doseq [lm [:l5s1 :pelvis-base :mid-ankle]]
+          (is (math/nearly= (m p) (m (pose/rooted-at p lm)) 1e-12)
+              (str "rooted at " lm " the standing lumbosacral moment is still "
+                   (m (pose/rooted-at p lm)) " N·m")))))
     (is (> moment-term (:model-difference-n d))
         (str "one term is larger than the whole difference: " moment-term " N of "
              (:model-difference-n d) " N"))
@@ -1333,3 +1379,48 @@
                        attachment/instances)]
       (is (= 8 (count pelvic))
           (str "eight muscle groups originate on the pelvis: " (pr-str (sort pelvic)))))))
+
+(deftest the-two-wilke-cross-checks-are-pinned-at-full-precision
+  ;; THE REPO CLAIMED THESE WERE BYTE-IDENTICAL THROUGH FOUR WAVES OF CHANGE AND
+  ;; NOTHING ENFORCED IT. The README says so for 2026-09-08 and again for
+  ;; 2026-09-09; the assertions that existed were `ratio < 1 < ratio` and
+  ;; `direction-ratio > 5`, which would not have noticed a 10 N move in either
+  ;; entry. Pinned here so the claim is checkable by something other than a
+  ;; reader's memory.
+  ;;
+  ;; SITTING IS PINNED WITH `=`, exactly. It survives the 2026-09-10 re-rooting to
+  ;; the bit because a seated chain is rooted at the base of its own pelvis, which
+  ;; sits at x = 0 under it: the translation is along y alone, every x is
+  ;; untouched, and a sagittal moment is a sum over x.
+  ;;
+  ;; STANDING IS PINNED TO 1e-9, and the gap is 2 units in the last place
+  ;; (682.4216680362731 -> …33, relative 3e-16). A standing chain is rooted at the
+  ;; ankles, whose x is not zero, so every x moves by a constant and
+  ;; `(a+t) - (b+t)` is not bit-for-bit `a - b`. That is the only difference the
+  ;; re-rooting made anywhere in this library, and it is here rather than hidden.
+  (let [c (spine/sitting-standing-comparison)]
+    (is (= 348.86176709999995 (:model-force-n (:sitting c)))
+        (str "Wilke sitting must not move at all: "
+             (:model-force-n (:sitting c)) " N"))
+    (is (= 0.6319959548913042 (:ratio (:sitting c)))
+        "and neither may its ratio")
+    (is (math/nearly= 682.4216680362731 (:model-force-n (:standing c)) 1e-9)
+        (str "Wilke standing, to 1e-9: " (:model-force-n (:standing c)) " N"))
+    (is (math/nearly= 333.55990093627315 (:model-difference-n c) 1e-9)
+        (str "and the difference: " (:model-difference-n c) " N"))
+    (is (math/nearly= 6.949164602839024 (:difference-ratio c) 1e-9)
+        (str "which is still about seven times Wilke's own: "
+             (:difference-ratio c)))
+    ;; the evidence floor: the two entries are computed on chains rooted at
+    ;; DIFFERENT points, which is why one is pinned exactly and the other is not.
+    ;; Without this a reader could take the looser tolerance for carelessness.
+    (is (= :pelvis-base (:landmark (:root (pose/solve-pose
+                                           wilke-body
+                                           (:posture (spine/reference-by-id
+                                                      :wilke-1999-sitting-relaxed-no-backrest))))))
+        "the sitting entry is a seated chain, rooted on its own pelvis at x = 0")
+    (is (= :mid-ankle (:landmark (:root (pose/solve-pose
+                                         wilke-body
+                                         (:posture (spine/reference-by-id
+                                                    :wilke-1999-relaxed-standing))))))
+        "the standing entry is a foot-rooted chain, whose ankles are not at x = 0")))
