@@ -339,20 +339,47 @@
                tk))
           (range (count loads)) loads)))
 
+(def ^:private jacobian-force-floor
+  "A muscle producing less than this FRACTION of the largest force in the group is
+  left out of the Jacobian — not out of the answer, out of the derivative.
+
+  WHY IT HAS TO BE LEFT OUT. dF_i/ds_i = F_i / (2 s_i), which is UNBOUNDED as a
+  muscle's price approaches zero from above even though its force goes to zero
+  with it. So a muscle that is producing nothing can put an arbitrarily large
+  entry in the Jacobian and set the conditioning of the whole linear system,
+  including the rows of the joints that are actually loaded.
+
+  Measured 2026-09-08, seated with the hip at 90° and the knee straight: the ankle
+  moment is 1.2e-15 N·m, tibialis anterior comes out at a price of 1.2e-35 and a
+  force of 3e-14 N, and its Jacobian entry is 1e17 times the vasti's. The solve
+  spent 60 iterations crawling from a residual of 9.94 N·m to 0.023 and refused.
+  With the floor it converges in nine.
+
+  1e-12 of the largest force in the group is far below `tolerance` times any load
+  those forces balance, so what is dropped cannot matter to whether the
+  equilibrium is satisfied — only to how the step toward it is computed. The
+  force itself is still reported."
+  1.0e-12)
+
 (defn- hessian-neg
-  "−∇²q = Σ_{s_i>0} (a_i^{3/2} / (2√3 √s_i)) C_·i C_·iᵀ, positive semidefinite."
+  "−∇²q = Σ_{s_i>0} (a_i^{3/2} / (2√3 √s_i)) C_·i C_·iᵀ, positive semidefinite.
+
+  Muscles below `jacobian-force-floor` are omitted; see there."
   [actives m lambda]
-  (reduce (fn [h {:keys [a32 cvec]}]
-            (let [s (price cvec lambda)]
-              (if (pos? s)
-                (let [w (/ a32 (* 2.0 sqrt3 (Math/sqrt s)))]
-                  (mapv (fn [k row]
-                          (mapv (fn [l x] (+ x (* w (nth cvec k) (nth cvec l))))
-                                (range m) row))
-                        (range m) h))
-                h)))
-          (vec (repeat m (vec (repeat m 0.0))))
-          actives))
+  (let [fs (mapv (fn [{:keys [a32 cvec]}] (force-at a32 (price cvec lambda))) actives)
+        fmax (reduce max 0.0 fs)
+        floor (* jacobian-force-floor fmax)]
+    (reduce (fn [h [{:keys [a32 cvec]} f]]
+              (let [s (price cvec lambda)]
+                (if (and (pos? s) (> f floor))
+                  (let [w (/ a32 (* 2.0 sqrt3 (Math/sqrt s)))]
+                    (mapv (fn [k row]
+                            (mapv (fn [l x] (+ x (* w (nth cvec k) (nth cvec l))))
+                                  (range m) row))
+                          (range m) h))
+                  h)))
+            (vec (repeat m (vec (repeat m 0.0))))
+            (map vector actives fs))))
 
 (defn- initial-lambda
   "Each constraint solved ALONE by the closed form, ignoring the coupling.
