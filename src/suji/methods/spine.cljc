@@ -35,7 +35,14 @@
   that IS validated (Hansraj 2014) and reports which of the two carries that
   validation. `lumbar-cross-check` compares the lumbar profile against a published
   in-vivo measurement (Wilke 1999). Neither makes this profile validated; the
-  second one measures, in newtons, how far from a measurement it is."
+  second one measures, in newtons, how far from a measurement it is.
+
+  BOTH WERE RE-MEASURED ON 2026-09-07, when `crosses?` stopped deciding by height.
+  The cervical ratio fell from 2.38 to 1.70 because the C7/T1 row lost muscles that
+  do not reach a neck. The lumbar figure did not move at all — 350.887 N before and
+  after — because at Wilke's zero-flexion posture the crossing set at L4/L5 was
+  already empty under both rules: the muscles carrying force there are the girdle
+  trio and three leg muscles per side, and none of them ever passed either test."
   (:require [suji.methods.attachment :as attachment]
             [suji.methods.load :as load]
             [suji.methods.math :as math]
@@ -77,52 +84,12 @@
     {:point (math/v+ proximal (math/v* (:long frame) (* (:along level) length-m)))
      :axis (:long frame)}))
 
-;; --- what sits above a level -------------------------------------------------
-
-(def ^:private chain-order
-  "Segments in ascending order along the spine. A level on the trunk has the whole
-  neck above it; a level on the neck has only the neck above it. The arms hang
-  from the girdle, which is on the trunk, so they load every trunk level and no
-  cervical one."
-  {"thorax_abdomen" 0 "head_neck" 1})
-
-(defn- above-fraction
-  "How much of `seg` sits above `level` — 1.0 for a segment higher up the chain,
-  0.0 for one lower, and the remaining fraction for the segment the level is on.
-
-  UNIFORM along the segment, which is not how mass is actually distributed (see
-  `segment`'s `:com-frac`). Stated here because it biases levels near a segment's
-  ends, and a reader comparing two adjacent levels should know the bias is in the
-  model rather than in the body."
-  [level seg]
-  (let [lvl-rank (chain-order (:segment level))
-        seg-rank (chain-order (:base seg))]
-    (cond
-      ;; A segment the spine's rank table does not know is either an ARM, which
-      ;; hangs from the girdle and therefore loads every trunk level, or a LEG,
-      ;; which hangs below the pelvis and loads none of them. Before the lower limb
-      ;; existed the first case was the only case and this branch could simply say
-      ;; 1.0; `segment/below-l5s1` is what makes it stay right — without it a third
-      ;; of body mass was added to the lumbar spine, in every posture, and the only
-      ;; symptom was a number that was 300 N too large.
-      (segment/below-l5s1 (:base seg)) 0.0
-      (nil? seg-rank) (if (= 0 lvl-rank) 1.0 0.0)  ;; arms: above trunk levels only
-      (> seg-rank lvl-rank) 1.0
-      (< seg-rank lvl-rank) 0.0
-      :else (max 0.0 (- 1.0 (:along level))))))
-
-(defn- weight-above-n
-  "Axial component of the weight sitting above a level."
-  [body pose-data level]
-  (let [w (pose/segment-weights body pose-data)
-        {:keys [axis]} (level-point pose-data level)]
-    (reduce + 0.0
-            (for [seg (:segments pose-data)
-                  :let [f (above-fraction level seg)]
-                  :when (pos? f)]
-              ;; gravity is [0,-w,0]; its compressive component along the spine
-              ;; axis is w × (axis · up)
-              (* f (get w (:name seg)) (nth axis 1))))))
+;; --- the shape of the skeleton, which two questions below both need ---------
+;;
+;; Where a level sits and what a muscle spans are the same question asked from
+;; two ends, so they read the same structure. Before 2026-09-07 they read two
+;; different ones: `above-fraction` had a rank table and `crosses?` had world
+;; heights, and only one of them was right.
 
 (defn- placed-segment-name
   "The name of the placed segment an attachment site rides on, for this muscle's
@@ -185,6 +152,58 @@
         :else (if-let [{p :segment a :along} (get tree seg)]
                 (recur p a (conj seen seg))
                 :proximal)))))
+
+;; --- what sits above a level -------------------------------------------------
+
+(defn- above-fraction
+  "How much of `seg` sits above `level` — 1.0 for a segment the level's cut leaves
+  entirely up the chain, 0.0 for one it leaves entirely below, and the remaining
+  fraction for the segment the level is on.
+
+  DERIVED FROM THE SAME CUT AS `crosses?` SINCE 2026-09-07, and that is the point
+  of the rewrite rather than a side effect. This used to be a rank table —
+  mapping thorax_abdomen to rank 0 and head_neck to rank 1, with a branch for
+  segments the table did not know, which meant an unrecognised segment was `an arm` and had to be told
+  about legs separately through `segment/below-l5s1`. It answered correctly, and it
+  answered from a second hand-written copy of the skeleton's shape sitting in the
+  same file as the first. Two copies of a topology is one place for it to be
+  corrected and one place for it to be forgotten; there is now one, and it is the
+  one `pose` states.
+
+  Take the segment's two ends and ask which side of the cut each is on. Both above
+  the cut is 1.0, both below is 0.0, and a segment the cut passes through
+  contributes the part of it that is above — which for the level's own segment is
+  `1 − :along`.
+
+  UNIFORM along the segment, which is not how mass is actually distributed (see
+  `segment`'s `:com-frac`). Stated here because it biases levels near a segment's
+  ends, and a reader comparing two adjacent levels should know the bias is in the
+  model rather than in the body.
+
+  Measured 2026-09-07: this returns the same value as the rank table for every
+  segment at every level across the eight reference postures — the weight term did
+  not move by one bit."
+  [tree level seg]
+  (let [name (:name seg)
+        end (fn [along] (side-of-level tree level {:segment name :along along}))]
+    (case [(end 0.0) (end 1.0)]
+      [:distal :distal] 1.0
+      [:proximal :proximal] 0.0
+      (max 0.0 (- 1.0 (:along level))))))
+
+(defn- weight-above-n
+  "Axial component of the weight sitting above a level."
+  [body pose-data level]
+  (let [w (pose/segment-weights body pose-data)
+        tree (attachment-tree pose-data)
+        {:keys [axis]} (level-point pose-data level)]
+    (reduce + 0.0
+            (for [seg (:segments pose-data)
+                  :let [f (above-fraction tree level seg)]
+                  :when (pos? f)]
+              ;; gravity is [0,-w,0]; its compressive component along the spine
+              ;; axis is w × (axis · up)
+              (* f (get w (:name seg)) (nth axis 1))))))
 
 (defn- crosses?
   "Does this muscle's line of force pass THROUGH the level?
@@ -328,9 +347,20 @@
   to within 10% — and it gets there with an effective lever fitted to that table.
   This namespace instead adds the muscle force computed from the muscle's actual
   geometric moment arm, which at large flexion is much shorter and therefore
-  demands much more force, all of which presses the joint together. Measured
-  2026-09-06 at the laptop-on-lap posture: 232 N lumped, 519 N by level, a ratio
-  of 2.2.
+  demands much more force, all of which presses the joint together.
+
+  UNTIL 2026-09-07 THAT WAS NOT THE WHOLE CAUSE. `crosses?` was a half-space test
+  on height, so the C7/T1 muscle term also contained 62.4 N per side of anterior
+  deltoid and 30.7 N per side of wrist extensor — 186 N of 588 N that is not
+  transmitted through a neck. The ratio was therefore not measuring the quantity
+  this docstring named. Measured at laptop-on-lap, 70 kg / 1.70 m: 273.6 N lumped
+  and 651.1 N by level before the repair (ratio 2.38), 273.6 N lumped and 464.9 N
+  by level after it (ratio 1.70).
+
+  THE PROFILE MOVING CLOSER TO THE VALIDATED LEG IS NOT EVIDENCE THAT IT GOT
+  BETTER. It is the arithmetic consequence of removing forces that were never in
+  the neck. Agreement obtained by fixing an unrelated defect is not a validation,
+  and `:validated :lumped` still says which of the two carries one.
 
   Neither number is offered as the right one here. What is offered is the ratio,
   so a consumer cannot read the level profile as though it inherited the lumped
