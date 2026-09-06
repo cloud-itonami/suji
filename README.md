@@ -20,10 +20,16 @@ kizashi senses  →  suji simulates the loads  →  mitate diagnoses  →  iyash
 
 ```
 laptop workstation ──▶ posture (joint angles)        posture.cljc
+     OR a standing   ──▶ + SUPPORT MODE                posture.cljc  ← seated or standing:
+        posture              (seated / standing)                       what is under the pelvis
                    ──▶ forward kinematics (3-D)       pose.cljc     ← world-space chain,
                                                                       shared by physics + renderer
+                                                                      head · trunk · both arms
+                                                                      · BOTH LEGS · the ground
                    ──▶ static inverse dynamics        load.cljc     ← kami-genesis PlanarChain
                        (RNEA gravity term)                          Featherstone statics
+                   ──▶ hip / knee / ankle moment      load.cljc     ← + the ground reaction,
+                       + the weight each transmits                    at the line of gravity
                    ──▶ cervical compressive load      load.cljc     ← VALIDATED vs Hansraj 2014
                    ──▶ muscle moment arms             attachment.cljc ← from the anatomy,
                        (geometric, angle-dependent)                    not a constant table
@@ -34,8 +40,9 @@ laptop workstation ──▶ posture (joint angles)        posture.cljc
                    ──▶ A/B/C ergonomic comparison      analyze.cljc
 ```
 
-The **skeleton** is a sagittal articulated segment chain (head → cervical → thorax → lumbar + arm)
-built from de Leva / Winter anthropometry — exactly the `PlanarChain` articulation kami-genesis
+The **skeleton** is a sagittal articulated segment chain — head → cervical → thorax → lumbar,
+with an arm branch (shoulder → elbow → wrist) and, since 2026-09-07, a leg branch
+(hip → knee → ankle) on each side — built from Winter (4e) Table 4.1 anthropometry — exactly the `PlanarChain` articulation kami-genesis
 solves (ADR-2605311500/1800). The **bones load** is the static special case of Featherstone RNEA
 (the gravity term), computable in stdlib and independently checkable. The **muscles** are a Hill-type
 moment-arm model (force = moment / arm; %MVC = force / F_max). **強張り** is the Rohmert
@@ -85,7 +92,7 @@ them is comparable**, and the other three say why not:
 | sitting relaxed, without backrest | **0.46 MPa** (0.45–0.50, p.758) | **yes** — p.758 also states the posture: "Relaxed sitting on a stool with a **normally straight back**" |
 | sitting with maximum flexion | 0.83 MPa | no — the paper gives the pressure but **not the trunk angle** |
 | standing, bent forward | 1.10 MPa | no — same, no angle |
-| relaxed standing | 0.50 MPa (0.48–0.50) | no — **this model cannot stand.** Its base is the pelvis and it has no thigh segment, so it returns the same force for standing and sitting; Wilke measures them apart (0.50 vs 0.46) |
+| relaxed standing | 0.50 MPa (0.48–0.50) | no — but **the reason changed on 2026-09-07 and is worth reading.** It used to be "this model cannot stand": no thigh segment, no support mode. It has both now. It still returns **the same 351 N at L4/L5 for standing and for sitting** — measured, not assumed — because in this model sitting and standing differ only BELOW L5/S1, and the lumbar spine cannot tell. What separates Wilke's two figures (0.50 vs 0.46) is pelvic tilt and the lordosis that goes with it, and this model's pelvis does not rotate. A missing segment became a missing degree of freedom; the entry stays refused either way |
 
 Refusing the last three is the point. To compare against "maximum flexion" the
 model would have to **choose** a trunk angle, and choosing it is exactly the move
@@ -225,8 +232,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 159 tests / 4276 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 143 tests /  807 assertions
+clojure -M:test                                   # JVM   — 200 tests / 6302 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 182 tests / 1253 assertions
 clojure -M:lint                                   # 0 errors (14 pre-existing warnings)
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -365,6 +372,13 @@ solver repos — and this actor compiles into a browser bundle. `force-length-te
 pins the values so the two can be compared by hand; it cannot notice biomech
 changing, and that is the price.
 
+**Superseded on 2026-09-07 by the lower limb: the hip is solved.** The paragraph
+below was true when it was written, and its last sentence is why it is still here —
+it named the gap as an absent segment rather than as a decision, and the segment
+arrived. `every-placed-joint-except-the-hip-has-an-equilibrium` is now
+`every-placed-joint-has-an-equilibrium-or-is-named-as-a-gap`, and its pending set
+is empty.
+
 **Every placed joint is solved, except the hip on purpose (2026-09-06).** The
 wrist was the last one the kinematics placed and the kinetics did not, and it had
 the opposite problem from the elbow: no wrist ANGLE existed, so the hand continued
@@ -476,15 +490,131 @@ Kinds of incompleteness, reported separately because they have different fixes:
 The second used to be reported as the first, because `suspension-effectiveness`
 clamped its cosine at zero — so a muscle pulling the girdle *down* was described as
 "below the leverage floor — a straight-line model has no wrapping surface here",
-which sends the reader to a repair that cannot help. The remaining refusals in this
-model are all of that kind, and they occur where the head folds past horizontal
-(combined trunk + head flexion beyond about 100°), where a one-sided schematic
-suspension line genuinely stops representing the anatomy.
+which sends the reader to a repair that cannot help.
+
+⚠ **This section used to end by claiming the remaining refusals are all of that
+kind. Do not read it that way** — it was a count of one sweep on one day, and two
+waves have landed since. The kinds are a taxonomy; which of them a given posture
+produces is a measurement, and the way to get it is to run the posture and read
+`muscle/tension-summary`.
+
+There is one entry that is NOT a refusal and belongs in the table anyway:
+
+| `:two-joint-unfed-nm` | a two-joint muscle is pulling on a second joint whose equilibrium was not told about it | a solver with more than one equality constraint — see the lower limb, below |
 
 **The stiffness index saturates and now says so.** It is mathematically in [0,1) but
 reaches exactly 1.0 in double precision once the dose passes ~37 — roughly 50 %MVC
 held for two hours, which is an ordinary posture. Two postures, one twice as bad as
 the other, both read 1.00. `:saturated?` marks them.
+
+**The lower limb (2026-09-07), and the support mode that is the whole of it.**
+Thigh, shank and foot, bilateral, with muscles at the hip, knee and ankle. The
+model covered head, neck, trunk, shoulder, elbow and wrist; for standing, and for
+getting out of a chair, the joints it did not have are the ones carrying the most.
+
+The load at a lower-limb joint does not follow from the posture. Those three joints
+sit BETWEEN the mass and the thing holding the mass up, so what they carry depends
+on what the body is resting on. Seated, the chair takes the trunk through the
+ischial tuberosities and that load never reaches them: each carries only what hangs
+below it, a few kilograms of limb. Standing, there is nothing under the pelvis and
+each carries everything above it. Measured on a 70 kg body: **333 N through a
+standing ankle against 10 N through a seated one**, and 301 N against 42 N at the
+knee.
+
+In the statics the two modes differ by **exactly one force**. The free body below
+each joint holds the same segments either way; standing adds the ground reaction,
+which is about thirty times the weight of the foot it acts on. It is added by a
+`cond->` and not by a second code path, and a test asserts that standing minus
+seated IS that term and nothing else, at all three joints. A model that silently
+put body weight through a seated knee would report a plausible 300 N at every desk
+posture it has ever been asked about, and the only way to notice would be to
+already know the answer.
+
+**Where the ground pushes is not a parameter.** Static equilibrium puts the centre
+of pressure under the line of gravity, so `pose/centre-of-pressure` computes it
+there rather than taking it as a fraction along the foot. Stating it as anatomy
+looks like more anatomy and is less physics: it would let the model report a
+plantarflexor moment for a body that, on its own numbers, is toppling. The model
+does not refuse such a posture — a body outside its base of support is a step, or a
+fall — but it reports `:cop-inside-base?`, so nobody reads the statics of a posture
+nobody can hold as the statics of one somebody is holding.
+
+The consequence is the checkable prediction: **in quiet standing soleus works and
+is never silent.** The line of gravity passes 3.6 cm anterior to the ankle, the
+plantarflexors hold 12 N·m per ankle, and soleus reads **5.1 %MVC / 159 N**. The
+control is the perfect vertical stack, where soleus reads **0 N** — because a body
+balanced exactly over its ankles asks nothing of its calves. Without that control
+the test would pass against a model that gave soleus a floor, which is the cheapest
+way to make the number non-zero and the one that would mean nothing. (Verified by
+putting a floor in: the control fails, at 152 N.)
+
+**PCSA is measured here, and the specimens were 83 years old.** Ward, Eng,
+Smallwood & Lieber (2009), *Clin Orthop Relat Res* 467(4), Table 3, from 21 human
+lower extremities — the first values in this actor that are not representative.
+Where a group is several of their muscles the sum is written out: vasti =
+35.1 + 20.6 + 16.7 = 72.4 cm², hamstrings = 18.4 + 11.3 + 4.8 = 34.5, iliopsoas =
+7.7 + 9.9 = 17.6. Their age makes every lower-limb %MVC here an **overstatement**
+of a young body's effort. That is the right direction to be wrong in for a model
+that reports load, and it is stated rather than corrected by a factor nobody
+measured. The moment arms are representative and calibrated as the upper limb's
+were.
+
+**The two-joint muscles are the part this model cannot do.** Rectus femoris, the
+hamstrings and gastrocnemius each span two joints, so they appear in two equilibria
+at once and the two are coupled. `recruit`'s Crowninshield–Brand form is the closed
+solution for ONE equality constraint, and there is no closed form of that shape for
+two. So each is solved where it is the primary actor, and the moment it is
+simultaneously exerting at its other joint is computed and reported — per muscle as
+`:secondary-moment-nm`, per joint as `tension-summary`'s `:two-joint-unfed-nm`. In
+the deep squat that is 4.2 N·m of hip flexion the hip's equilibrium was never told
+about. A test asserts it is non-zero somewhere, because a reported approximation
+that is always zero means a coupled model and an uncoupled one produce identical
+output.
+
+Which joint is primary is anatomy, not preference. The hip has two one-joint
+muscles and fills both sides of its equilibrium. The knee has an extensor and **no
+one-joint flexor**, because the body does not have one of any size — so the
+hamstrings go to the knee.
+
+**The patella is a wrapping surface**, the existing kind: a sesamoid the extensor
+tendon passes over, floor and not pin, radius 42 mm. Adding the hip turned up the
+same defect one joint up. Gluteus maximus's straight chord falls from 60 mm of
+extension arm at neutral through **zero near 55° of flexion** and is +32 mm at 85°,
+so a straight-line model reports the principal hip extensor as a **flexor** in the
+posture the muscle exists for; nobody carried the squat's hip moment and `recruit`
+declined the equilibrium. It wraps the ischium now. Tibialis anterior takes the
+other kind — the extensor retinacula pin its arm at 35 mm where the bare chord
+would give 53, which is exactly the bowstringing a retinaculum prevents.
+
+Measured in the deep squat: vasti **26.6 %MVC**, gluteus maximus **55.5 %**; and in
+quiet standing the vasti are reported as the **antagonist with no %MVC at all**,
+because the ground reaction passes in front of the knee there. Swept over 240
+lower-limb postures, every load is carried.
+
+**A defect the legs exposed, in `spine.cljc`.** `above-fraction` decides how much of
+a segment sits above a spinal level from a rank table of the two *spinal* segments,
+and treated anything it did not recognise as sitting above every trunk level. Right
+for the arms, which hang from the girdle; wrong for the legs the moment they
+existed. A third of body mass was being added to L5/S1 in every posture and the
+only symptom was a number 220 N too large.
+
+**And one that could not fire at all.** `muscle/suspended-weight-n` read
+`:arms-supported` from `(meta p)`, and `pose` calls `with-meta` nowhere and never
+has — so the lookup returned nil at every call, and the desk documented in that
+function's own docstring as taking two segments took none: supported and
+unsupported both gave 34.32 N, the unsupported answer. Nothing downstream was
+wrong, because `solve-muscle-tensions` used a private twin that took the flag as an
+argument — and that duplicate body is the other half of the defect, since it is what
+let the public one rot unnoticed. One body now, 34.32 N against 19.22 N.
+
+**What the lower limb does not do.** No hip abduction and no frontal-plane
+lower-limb muscle, so `:frontal-per-side` is reported and carried by nobody —
+exactly as the upper limb's frontal moments were before muscles for them existed.
+The ground reaction is split equally between the two feet, so single-leg stance is
+out of range. The hip, knee and ankle joint centres are stacked on one vertical
+line with no anterior-posterior offsets, so the small characteristic knee and hip
+moments of quiet standing come out near zero where a real body has them. A seated
+person's feet are unloaded.
 
 **Honest R0**: design + runnable physics + a validated cervical model. Anthropometry / muscle /
 endurance parameters are `:representative` (G7); the cervical leg is validated, the muscle %MVC and

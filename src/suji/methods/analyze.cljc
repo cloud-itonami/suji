@@ -113,7 +113,15 @@
          (add! (str "- posture: head " (fmt-f 0 (:head-flexion-deg p)) "° · trunk "
                     (fmt-f 0 (:trunk-flexion-deg p)) "° · shoulder "
                     (fmt-f 0 (:shoulder-flexion-deg p)) "° · arms "
-                    (if (:arms-supported p) "supported" "UNSUPPORTED"))))
+                    (if (:arms-supported p) "supported" "UNSUPPORTED")))
+         ;; The support mode belongs on the page for the same reason it belongs in
+         ;; the datom: it is what decides the hip, knee and ankle loads, and every
+         ;; scenario in this report is SEATED. A reader who takes these figures for
+         ;; a standing body is out by a factor of about thirty at the lower limb.
+         (add! (str "- support: " (name (posture/support-mode p)) " · hip "
+                    (fmt-f 0 (or (:hip-flexion-deg p) 0.0)) "° · knee "
+                    (fmt-f 0 (or (:knee-flexion-deg p) 0.0)) "° · ankle "
+                    (fmt-f 0 (or (:ankle-dorsiflexion-deg p) 0.0)) "°")))
        (add! "")
        (add! "| muscle | tension %MVC | endurance | stiffness (強張り) | band |")
        (add! "|---|---|---|---|---|")

@@ -20,6 +20,7 @@
             [suji.methods.analyze :as analyze]
             [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]
+            [suji.methods.posture :as posture]
             [suji.methods.strain :as strain]
             #?(:clj [clojure.java.io :as io])))
 
@@ -29,7 +30,8 @@
   ;; forgetting it here is the obvious mistake, so the fallback derives the
   ;; keyword instead of returning nothing.
   {"cervicothoracic" ":cervicothoracic" "shoulder" ":shoulder"
-   "elbow" ":elbow" "wrist" ":wrist" "lumbosacral" ":lumbosacral"})
+   "elbow" ":elbow" "wrist" ":wrist" "lumbosacral" ":lumbosacral"
+   "hip" ":hip" "knee" ":knee" "ankle" ":ankle"})
 
 (defn- muscle-kw [name]
   (str ":" (str/replace name "_" "-")))
@@ -53,7 +55,17 @@
                    ":posture/head-flex-deg" (math/round-to (:head-flexion-deg p) 2)
                    ":posture/trunk-flex-deg" (math/round-to (:trunk-flexion-deg p) 2)
                    ":posture/shoulder-flex-deg" (math/round-to (:shoulder-flexion-deg p) 2)
-                   ":posture/arms-supported" (:arms-supported p) ":posture/as-of" idx)
+                   ":posture/arms-supported" (:arms-supported p)
+                   ;; THE SUPPORT MODE IS PART OF THE POSTURE'S IDENTITY, not a note
+                   ;; about it. Two postures with these same upper-body angles load
+                   ;; the hip, knee and ankle by a factor of about thirty apart
+                   ;; depending on it, so a datom log without it records two
+                   ;; different bodies as the same one.
+                   ":posture/support" (str (posture/support-mode p))
+                   ":posture/hip-flex-deg" (math/round-to (or (:hip-flexion-deg p) 0.0) 2)
+                   ":posture/knee-flex-deg" (math/round-to (or (:knee-flexion-deg p) 0.0) 2)
+                   ":posture/ankle-dorsiflex-deg" (math/round-to (or (:ankle-dorsiflexion-deg p) 0.0) 2)
+                   ":posture/as-of" idx)
         cerv-d (array-map
                 ":load/id" (str pid "-load-cerv") ":load/posture" pid
                 ":load/joint" ":cervicothoracic"
@@ -63,10 +75,19 @@
         joint-ds (->> (get-in result [:loads :joints])
                       (remove #(= (:joint %) "cervicothoracic"))
                       (mapv (fn [j]
-                              (array-map
-                               ":load/id" (str pid "-load-" (:joint j)) ":load/posture" pid
-                               ":load/joint" (or (joint-kw (:joint j)) (str ":" (:joint j)))
-                               ":load/moment-nm" (math/round-to (:moment-nm j) 4)))))
+                              (cond-> (array-map
+                                       ":load/id" (str pid "-load-" (:joint j))
+                                       ":load/posture" pid
+                                       ":load/joint" (or (joint-kw (:joint j))
+                                                         (str ":" (:joint j)))
+                                       ":load/moment-nm" (math/round-to (:moment-nm j) 4))
+                                ;; the lower limb carries one more quantity than a
+                                ;; moment, and it is the one the support mode decides
+                                (:supported-weight-n j)
+                                (assoc ":load/supported-weight-n"
+                                       (math/round-to (+ (:left (:supported-weight-n j))
+                                                         (:right (:supported-weight-n j)))
+                                                      2))))))
         muscle-ds (mapv (fn [t]
                           ;; a REFUSED muscle has no force and no %MVC; rounding
                           ;; a nil threw here the moment a refusal could reach
