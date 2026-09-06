@@ -18,10 +18,12 @@
 
 | muscle | tension %MVC | endurance | stiffness (強張り) | dose | band |
 |---|---|---|---|---|---|
-| cervical_extensors | 56% | 1 min | ≥1.00 | 158.35 | very-high |
 | erector_spinae | 57% | 1 min | ≥1.00 | 165.95 | very-high |
 | anterior_deltoid/left | 28% | 4 min | 1.00 | 30.86 | very-high |
 | anterior_deltoid/right | 28% | 4 min | 1.00 | 30.86 | very-high |
+| cervical_extensors | 22% | 7 min | 1.00 | 18.41 | very-high |
+| semispinalis_capitis | 20% | 9 min | 1.00 | 13.79 | very-high |
+| splenius_capitis | 18% | 11 min | 1.00 | 11.04 | very-high |
 | biceps_brachii/left | 12% | 27 min | 0.99 | 4.54 | very-high |
 | biceps_brachii/right | 12% | 27 min | 0.99 | 4.54 | very-high |
 | wrist_extensors/left | 10% | 38 min | 0.96 | 3.23 | very-high |
@@ -54,6 +56,7 @@
 | iliopsoas/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | vasti/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_femoris/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| sternocleidomastoid | — | — | — | — | not-computed |
 | posterior_lumbar_ligaments | — | — | — | — | not-computed |
 | nuchal_ligament | — | — | — | — | not-computed |
 | triceps_brachii/left | — | — | — | — | not-computed |
@@ -68,10 +71,10 @@
 | soleus/right | — | — | — | — | not-computed |
 
 無い理由（%MVC 欄が — の行）:
-- `acts-the-wrong-way` — triceps_brachii/left、wrist_flexors/left、hamstrings/left、gastrocnemius/left、soleus/left、triceps_brachii/right、wrist_flexors/right、hamstrings/right、gastrocnemius/right、soleus/right
+- `acts-the-wrong-way` — sternocleidomastoid、triceps_brachii/left、wrist_flexors/left、hamstrings/left、gastrocnemius/left、soleus/left、triceps_brachii/right、wrist_flexors/right、hamstrings/right、gastrocnemius/right、soleus/right
 - `no-mvc` — posterior_lumbar_ligaments、nuchal_ligament
 
-- worst: **cervical_extensors** stiffness 1.00 (very-high)
+- worst: **erector_spinae** stiffness 1.00 (very-high)
 
 ## laptop-on-desk
 
@@ -80,8 +83,10 @@
 
 | muscle | tension %MVC | endurance | stiffness (強張り) | dose | band |
 |---|---|---|---|---|---|
-| cervical_extensors | 28% | 4 min | 1.00 | 32.53 | very-high |
 | erector_spinae | 15% | 17 min | 1.00 | 7.21 | very-high |
+| cervical_extensors | 11% | 32 min | 0.98 | 3.89 | very-high |
+| splenius_capitis | 10% | 39 min | 0.96 | 3.18 | very-high |
+| semispinalis_capitis | 9% | 54 min（適合域より下） | 0.90 | 2.29 | very-high |
 | anterior_deltoid/left | 5% | ∞（モデルの床未満） | 0.03 | 0.03 | low |
 | anterior_deltoid/right | 5% | ∞（モデルの床未満） | 0.03 | 0.03 | low |
 | levator_scapulae/left | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
@@ -120,6 +125,7 @@
 | iliopsoas/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | vasti/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_femoris/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| sternocleidomastoid | — | — | — | — | not-computed |
 | posterior_lumbar_ligaments | — | — | — | — | not-computed |
 | nuchal_ligament | — | — | — | — | not-computed |
 | hamstrings/left | — | — | — | — | not-computed |
@@ -130,10 +136,10 @@
 | soleus/right | — | — | — | — | not-computed |
 
 無い理由（%MVC 欄が — の行）:
-- `acts-the-wrong-way` — hamstrings/left、gastrocnemius/left、soleus/left、hamstrings/right、gastrocnemius/right、soleus/right
+- `acts-the-wrong-way` — sternocleidomastoid、hamstrings/left、gastrocnemius/left、soleus/left、hamstrings/right、gastrocnemius/right、soleus/right
 - `no-mvc` — posterior_lumbar_ligaments、nuchal_ligament
 
-- worst: **cervical_extensors** stiffness 1.00 (very-high)
+- worst: **erector_spinae** stiffness 1.00 (very-high)
 
 ## external-monitor+keyboard
 
@@ -143,7 +149,6 @@
 | muscle | tension %MVC | endurance | stiffness (強張り) | dose | band |
 |---|---|---|---|---|---|
 | erector_spinae | 11% | 32 min | 0.98 | 3.87 | very-high |
-| cervical_extensors | 7% | ∞（モデルの床未満） | 0.04 | 0.04 | low |
 | levator_scapulae/left | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | levator_scapulae/right | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
 | upper_trapezius/left | 4% | ∞（モデルの床未満） | 0.02 | 0.02 | low |
@@ -154,6 +159,9 @@
 | tibialis_anterior/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | middle_trapezius/left | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
 | middle_trapezius/right | 3% | ∞（モデルの床未満） | 0.01 | 0.01 | low |
+| splenius_capitis | 2% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| cervical_extensors | 2% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| semispinalis_capitis | 2% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | biceps_brachii/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | brachialis/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | triceps_brachii/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
@@ -182,6 +190,7 @@
 | iliopsoas/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | vasti/right | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_femoris/right | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| sternocleidomastoid | — | — | — | — | not-computed |
 | posterior_lumbar_ligaments | — | — | — | — | not-computed |
 | nuchal_ligament | — | — | — | — | not-computed |
 | hamstrings/left | — | — | — | — | not-computed |
@@ -192,7 +201,7 @@
 | soleus/right | — | — | — | — | not-computed |
 
 無い理由（%MVC 欄が — の行）:
-- `acts-the-wrong-way` — hamstrings/left、gastrocnemius/left、soleus/left、hamstrings/right、gastrocnemius/right、soleus/right
+- `acts-the-wrong-way` — sternocleidomastoid、hamstrings/left、gastrocnemius/left、soleus/left、hamstrings/right、gastrocnemius/right、soleus/right
 - `no-mvc` — posterior_lumbar_ligaments、nuchal_ligament
 
 - worst: **erector_spinae** stiffness 0.98 (very-high)
@@ -200,6 +209,6 @@
 ## Comparison (self-referenced Wellbecoming, G3)
 
 - `laptop-on-lap` neck load 27.9 kgf → `external-monitor+keyboard` 10.5 kgf (**−62%** cervical compressive load).
-- worst-muscle stiffness ≥1.00 (cervical_extensors) → 0.98 (erector_spinae).
-  dose 158.35 → 3.87 —— 指数は前者で天井に達しているので、指数の差は改善を過小に示す。順序を決めているのはドーズの側である。
+- worst-muscle stiffness ≥1.00 (erector_spinae) → 0.98 (erector_spinae).
+  dose 165.95 → 3.87 —— 指数は前者で天井に達しているので、指数の差は改善を過小に示す。順序を決めているのはドーズの側である。
 - mechanism, not advice: raising the screen toward eye level reduces head flexion (the dominant cervical-load term); supporting the forearms unloads the upper trapezius (the 肩こり muscle). A clinician (mitate/iyashi) owns any health interpretation.

@@ -57,8 +57,8 @@ curve of the family Rohmert's belongs to — *not* Rohmert's own equation, and s
 
 | workstation | head tilt from vertical | neck load | ×head-weight | worst-muscle stiffness |
 |---|---|---|---|---|
-| laptop-on-lap | 64° | **27.9 kgf** | 4.9× | cervical-extensors **1.00** (very-high) |
-| laptop-on-desk | 32° | 19.8 kgf | 3.5× | cervical-extensors 1.00 (very-high) |
+| laptop-on-lap | 64° | **27.9 kgf** | 4.9× | erector-spinae **1.00** (very-high) |
+| laptop-on-desk | 32° | 19.8 kgf | 3.5× | erector-spinae 1.00 (very-high) |
 | external-monitor + keyboard @ eye level | 10° | **10.5 kgf** | 1.9× | erector-spinae **0.98** (very-high) |
 
 → raising the screen to eye level cuts the cervical compressive load **−62%**.
@@ -70,6 +70,15 @@ column said `anterior-deltoid 0.05` where the report said `erector_spinae 0.04`,
 unnoticed because until 2026-09-07 `clojure -M -m suji.methods.analyze` **threw** and nobody
 was reading its output; then, later the same day, every figure in it moved when
 `lumbosacral-moment` and `cervical-load` were corrected. Regenerate rather than trusting it.
+
+⚠ **It went stale a third time, in the last column, later on 2026-09-07.** The first two rows
+said `cervical-extensors`, and what was really happening is that cervical-extensors and
+erector-spinae were BOTH at exactly 1.00 — `analyze/worst-stiffness` returns the first maximum
+on ties, so the winner was decided by emit order rather than by load. Adding the muscles that
+hold the head up (see **The upper cervical spine had no muscles** below) split the cervical
+extensor moment three ways, cervical-extensors fell from 56.2 %MVC to 22.2 %MVC, and
+erector-spinae became the sole maximum. **The neck-load columns did not move at all** — those
+come from `load/cervical-load`, which this change does not touch.
 
 **THE COLUMN IS HEAD TILT FROM VERTICAL, not head flexion** (changed 2026-09-07). The cervical
 model is a function of the head's angle from vertical, which is trunk flexion plus head flexion,
@@ -344,7 +353,10 @@ omitting the head's own lever and both arms — see **Two joint moments that com
 their own answer**. The bucket counts below did not move, and neither did any other
 row: this is the one muscle whose load that correction changed. `session-cross-check`
 re-measured 2026-09-07 after it: 13 of 48 compared, same four refusal reasons, same
-counts.)
+counts. Re-measured again later that day, after the muscles that hold the head up
+landed: still 13 compared and this table is unchanged row for row — the new muscles
+are cervical, and the reference has no neck curve, so all three land in
+`:no-published-curve-for-this-region` or `:acts-the-wrong-way`.)
 
 **That is not a calibration error, it is the shape of the model.** The reference's
 own between-joint spread at 20 %MVC runs from **4.7 min (shoulder) to 15.9 min
@@ -502,10 +514,14 @@ fitted by name.
 
 `session-cross-check` reports the buckets so a reader cannot skim forty rows and
 conclude everything was checked. On `laptop-on-lap` (measured 2026-09-07, after the
-lower limb landed): **13 of 48 entries produced a ratio**; the rest declined for one
-of four distinct, non-interchangeable reasons — no published curve for the neck (3),
-no %MVC because the entry is a ligament (2), the model's own floor (20 — a seated
-posture asks almost nothing of the leg), and a muscle `recruit` refused (10).
+lower limb landed, and re-measured after the upper cervical muscles did): **13 of 51
+entries produced a ratio**; the rest declined for one of four distinct,
+non-interchangeable reasons — no published curve for the neck (5), no %MVC because
+the entry is a ligament (2), the model's own floor (20 — a seated posture asks almost
+nothing of the leg), and a muscle `recruit` refused (11). The three neck muscles
+added on 2026-09-07 moved two of those counts (3 → 5 and 10 → 11) and none of the
+ratios: **there is still no published endurance curve for the neck**, which is the
+one bucket this actor's headline muscles have always been in.
 
 ## Isaac Sim / kami-genesis
 
@@ -985,14 +1001,19 @@ wrist extensor, admitted by a crossing rule that compared heights. Removing them
 took the ratio from 2.38 to 1.70 — **closer to the validated leg, and that is not
 evidence of anything.** Agreement bought by deleting a defect somewhere else is not
 a validation; what the profile inherited from the repair is a smaller number, not a
-measurement. At the lumbar spine it has a published measurement to answer to, and
+measurement. Later the same day the muscles that reach the skull were added and the
+ratio went **1.70 → 1.72**, i.e. *away* from 1 — which is not evidence of anything
+either, in the other direction. The lumped side is 273.62 N and has not moved
+through any of this; it is the side Hansraj anchors, and the level profile is the
+side that is unvalidated whatever the ratio happens to be. At the lumbar spine it has a published measurement to answer to, and
 it disagrees with that too — in the other direction. See **The lumbar spine against
 the literature** below.
 
 **The ratio is not written here on purpose.** It moves whenever the muscle set
 moves — it was 2.24 when the level profile landed, 2.44 after the ligaments, 2.38
-after the cervical load stopped ignoring trunk flexion, and 1.70 once the crossing
-rule stopped admitting arms — and a number in a standing document gets quoted with
+after the cervical load stopped ignoring trunk flexion, 1.70 once the crossing
+rule stopped admitting arms, and 1.72 once the head got the muscles that hold it
+up — and a number in a standing document gets quoted with
 its date dropped. Ask for it:
 
 ```clojure
@@ -1085,14 +1106,132 @@ from C7/T1 (1.302 MPa) to L2/L3 (0.996 MPa)**, which is the more consequential
 change: the level this actor named as the most stressed one was being named by
 wrist extensors and deltoids.
 
-⚠ **C3/C4 now carries no muscle at all**, and that is reported rather than filled.
-This model's most cranial muscle attachment is `levator_scapulae` at 0.22 of the
-head_neck segment; C3/C4 sits at 0.24, so nothing in the set spans it and the level
-reports the weight above it and nothing else. A real upper cervical spine is
-spanned by muscles that reach the skull and this set has none of them. That is a
+⚠ **C3/C4 then carried no muscle at all**, and that was reported rather than filled.
+This model's most cranial muscle attachment was `levator_scapulae` at 0.22 of the
+head_neck segment; C3/C4 sits at 0.24, so nothing in the set spanned it and the level
+reported the weight above it and nothing else. A real upper cervical spine is
+spanned by muscles that reach the skull and this set had none of them. That was a
 gap in the model's anatomy, not a statement about a neck — and it is exactly what
 the old rule was hiding, because a wrist extensor was standing in for the muscles
-that are missing.
+that are missing. **It is closed as of later the same day; see the next section.**
+
+## The upper cervical spine had no muscles (2026-09-07)
+
+The finding above is what this section answers. Nothing in this model reached the
+skull, so the region a forward-head posture actually loads was carried by nobody:
+
+| level | muscle force before | after | crossed by, after |
+|---|---|---|---|
+| C7/T1 | 401.56 N | **407.38 N** | cervical extensors, semispinalis capitis, splenius capitis, levator scapulae ×2, upper trapezius ×2 |
+| C6/C7 | 68.66 N | **276.11 N** | semispinalis capitis, splenius capitis, levator scapulae ×2, upper trapezius ×2 |
+| C5/C6 | 34.51 N | **241.96 N** | semispinalis capitis, splenius capitis, levator scapulae ×2 |
+| C4/C5 | 34.51 N | **241.96 N** | semispinalis capitis, splenius capitis, levator scapulae ×2 |
+| C3/C4 | **0.00 N** | **207.44 N** | semispinalis capitis, splenius capitis |
+
+(laptop-on-lap, 70 kg / 1.70 m. The lumbar rows are byte-identical before and after,
+and so is `lumbar-cross-check` at 350.887 N — nothing added here reaches a lumbar
+level, and `spine/levels-crossed` is asked rather than told.)
+
+**Three muscles, all running thorax → skull.** `semispinalis_capitis` and
+`splenius_capitis` on the extensor side and `sternocleidomastoid` on the flexor
+side. Each has its two ends on *different* segments, so its moment arm changes with
+head tilt — which is the whole difference between a muscle and a table.
+
+**PCSA here is MEASURED**, the second measured column in this actor after the lower
+limb's. Kamibayashi LK & Richmond FJR, *Morphometry of human neck muscles*, Spine
+23(12):1314–1323, 1998 — 14 neck muscles from 10 human cadavers — read as Table 3-3
+of Vasavada's chapter 3 of *Rothman-Simeone The Spine*, which reprints it with the
+attribution under the table. Full text obtained 2026-09-07 from
+<https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf> and read in full, not
+as an abstract. Per-side means with the reported range: semispinalis capitis 5.40
+(3.93–7.32) cm², splenius 4.26 (2.57–5.48) cm², sternocleidomastoideus 3.72
+(1.81–5.26) cm². A midline group here carries the bilateral sum, so each is doubled.
+The moment arms are *not* measured — they are representative targets calibrated the
+way the rest of `attachment` is — but their **order** is sourced: the same chapter
+(p.68) states that "the semispinalis capitis has shorter fascicle lengths, but also
+a smaller moment arm than the splenius capitis", so splenius gets 38 mm and
+semispinalis 30 mm rather than the other way round.
+
+### The double-counting decision: added, not carved out
+
+`cervical_extensors` is a lumped group and `load/cervical-load` is calibrated
+against it, so adding named extensors beside it is exactly where a model
+double-counts. The decision is **add only what the lump excludes**, and the evidence
+is the lump's own geometry rather than its name:
+
+- its insertion is at 0.05 of `head_neck` = **15.5 mm above C7**, which is *below*
+  C6/C7 at 18.6 mm, so it crosses **exactly one** intervertebral level;
+- an occipital insertion would have to reach 0.42 — continue `spine/levels`' own
+  0.06-per-level spacing past C3/C4 and C2/C3 is 0.30, C1/C2 is 0.36 and the
+  occipito-atlantal joint is 0.42, i.e. 130 mm above C7;
+- its 0.020 m calibration target is `load/cervical-ext-arm-m`, the **Hansraj
+  effective lever**, not a measured muscle moment arm.
+
+So what it places is the deep cervical group spanning the cervicothoracic junction —
+semispinalis cervicis, multifidus, longissimus and spinalis cervicis — and Kamibayashi
+& Richmond do not measure any of those, which is why it keeps its representative
+12.0 cm² rather than being carved up against numbers that do not cover it.
+
+**The arithmetic, and what it costs.** Cervical extensor cross-section goes
+12.00 → 12.00 + 10.80 + 8.52 = **31.32 cm²**, a factor of 2.61. *If* a reader's view
+is that the 12.00 was always meant as the whole posterior neck, then this model now
+overstates neck extensor capacity by 12.00 cm² and every cervical %MVC it reports is
+correspondingly low. **That cannot be settled from inside the model**, because the
+12.00 has no provenance to check — it is `:representative` with no citation. The
+one-line change that would settle it the other way is `muscle/specs`
+`"cervical_extensors" :pcsa-cm2 12.0 → 3.356` — that is 12.0 × 7.50/26.82, the
+suboccipital residual's share of the measured bilateral total 10.80 + 8.52 + 7.50 =
+26.82 cm². It is **not** made here: `muscle.cljc` is landed, and this is reported
+instead of quietly done.
+
+**What did move because of it.** `cervical_extensors` fell from 56.2 %MVC to
+22.2 %MVC at laptop-on-lap and stopped saturating the 120-minute stiffness index
+(dose 158.35 → 18.41), which is what changed the worst-muscle column of the headline
+table. The *moment* is not double-counted at any capacity: the equilibrium
+Σ cᵢFᵢ = T holds exactly whatever the split, so C7/T1 moved only 401.56 → 407.38 N.
+All the change is in the levels above it, which is the point.
+
+### What this still cannot express
+
+- **The suboccipitals are absent on purpose.** Rectus capitis posterior major and
+  minor and obliquus capitis superior and inferior run from C1 and C2 to the
+  occiput. This model has ONE rigid `head_neck` segment and no atlanto-occipital or
+  atlanto-axial joint, so **both ends of each would ride on that one segment** —
+  the shape `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm`
+  names as the error that produced a constant-looking arm. It would be that error
+  here and not the exception `middle_trapezius` earned, because that one is a
+  SUSPENSION whose coefficient is a cosine against the world vertical (which the
+  segment does not carry) and a suboccipital is a MOMENT about an axis the segment
+  does carry. Its arm could not vary and its length could not change. **What is
+  missing is a joint, and no attachment can supply one.** Kamibayashi & Richmond
+  measure them at 3.75 cm² per side, so this is not a small omission.
+- **The sternocleidomastoid is refused in every posture this actor reports**, and
+  that is the correct answer: about C7 it is a flexor, `:cervical-extension` shares
+  an unsigned load, so it comes back `:refused :acts-the-wrong-way` and is marked
+  `:antagonist?` rather than counted as a gap. But a refused instance carries no
+  `:force-n`, so **it contributes nothing to the compression at levels its line
+  crosses** — a real sternocleidomastoid holding a head against a headrest
+  compresses the neck and this model cannot say so.
+- **It is modelled midline, so its lateral flexion and axial rotation are absent.**
+  Those would need it paired and in `:cervical-lateral-flexion`, and a muscle
+  belongs to one task here.
+- **The wrap radius is the cervical column's own, 0.012 m**, shared with
+  `cervical_extensors` because it is the same column. A muscle lying further out
+  from the bone has a larger effective radius and this model does not know how much
+  larger, so the floor is a *lower* bound on the leverage — and therefore an
+  **overstatement** of the force and of the compression that follows from it. It is
+  needed rather than decorative: the unwrapped chord of `semispinalis_capitis` is
+  +29.8 mm at neutral and **−10.3 mm at 45° of head flexion**, so without it the
+  model's principal head extensor would be reported as a flexor in the posture this
+  actor exists to describe.
+- **The splenius entry is capitis + cervicis.** The source gives one mass and one
+  PCSA for both and separates them only by fascicle length, so this entry puts a
+  share of splenius cervicis's cross-section on a cranial insertion it does not have
+  (cervicis runs to the C1–C3 transverse processes). It crosses the same five levels
+  either way, so the error is in *where on the skull* the force is applied.
+- **The specimens were cadavers.** Kamibayashi & Richmond's own N is 9 or 10 per
+  muscle and the ranges are wide — semispinalis capitis spans 3.93 to 7.32 cm²,
+  nearly a factor of two.
 
 **The frontal plane is CARRIED (2026-09-06).** Six muscle groups were added for
 it — middle deltoid and latissimus dorsi at each shoulder, quadratus lumborum and
