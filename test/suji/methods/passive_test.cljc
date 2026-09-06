@@ -97,23 +97,84 @@
     (is (> share 0.005) "but not nothing")))
 
 (deftest flexion-relaxation
-  ;; The phenomenon the ligaments were added for, and the reason the previous
-  ;; wave's claim about passive muscle tension had to be withdrawn: in deep trunk
-  ;; flexion the erector spinae falls silent while the posterior ligamentous system
-  ;; takes the load. A model without ligaments must report the muscle working
-  ;; hardest exactly where it is measured to be working least.
+  ;; The phenomenon the ligaments were added for: in deep trunk flexion the erector
+  ;; spinae quietens while the posterior ligamentous system takes the load. A model
+  ;; without ligaments reports the muscle working hardest exactly where it is
+  ;; measured to be working least.
+  ;;
+  ;; ⚠ THIS TEST ASSERTED SILENCE UNTIL 2026-09-07, AND THE SILENCE WAS AN
+  ;; ARTEFACT. `lumbosacral-moment` omitted the head's own lever and both arms, so
+  ;; the demand at 60° of trunk flexion came out 75.24 N·m where the placed chain
+  ;; says 121.36. The ligament's moment there is 108.18 N·m — MORE than the
+  ;; understated demand — so the remainder went negative and `recruit` clamped the
+  ;; erector spinae at exactly 0.0. It was not the model reproducing
+  ;; flexion-relaxation; it was the model running out of load.
+  ;;
+  ;; Measured with the corrected demand, erector spinae ACTIVE force (N) and %MVC:
+  ;;
+  ;;      trunk    was      now     %MVC now
+  ;;      20°      473.5    977.0    51.7
+  ;;      40°      266.9   1295.8    80.6
+  ;;      60°        0.0    441.2    40.8
+  ;;      61°        —      392.7    38.0   ← the minimum, then the ligament clamps
+  ;;
+  ;; So the phenomenon SURVIVES in the shape that can be checked — the muscle peaks
+  ;; near 40° and falls by about 70% by 61° while the ligament force triples — and
+  ;; does NOT survive as silence. That is what this test now asserts, because that
+  ;; is what the model does. It is a real limitation and not a tuning target: the
+  ;; ligament's `:force-at-ref` was chosen against the understated demand, and the
+  ;; only honest way to decide whether the corrected model should reach silence is
+  ;; EMG from a real trunk, which this repository does not have. Re-tuning the
+  ;; ligament to restore a 0 would be fitting the tissue to a bug.
   (let [active (fn [t] (:active-n (get (:by (run (assoc base :trunk-flexion-deg (double t))))
                                        "erector_spinae")))
+        mvc (fn [t] (:mvc-pct (get (:by (run (assoc base :trunk-flexion-deg (double t))))
+                                   "erector_spinae")))
         ligament (fn [t] (:force-n (get (:by (run (assoc base :trunk-flexion-deg (double t))))
                                         "posterior_lumbar_ligaments")))
         demand (fn [t] (:moment-nm (first (filter #(= "lumbosacral" (:joint %))
                                                   (:joints (:loads (run (assoc base :trunk-flexion-deg (double t)))))))))]
     (is (> (demand 60) (demand 20)) "the premise: deeper flexion is a bigger demand")
     (is (> (active 20) 0.0) "the muscle works in moderate flexion")
-    (is (math/nearly= 0.0 (active 60) 1e-9)
-        (str "and falls silent in deep flexion, got " (active 60)))
+    ;; THE RELAXATION. The demand keeps growing and the muscle's share of it falls:
+    ;; that is the whole content of the phenomenon, and it does not need a zero.
+    (is (> (active 40) (active 20)) "the muscle is still taking up load at 40°")
+    (is (< (active 61) (* 0.35 (active 40)))
+        (str "and by 61° it has given up most of it: " (active 61) " vs " (active 40)))
+    (is (< (mvc 61) (* 0.55 (mvc 40)))
+        (str "which is a fall in effort, not just in force: " (mvc 61) "% vs " (mvc 40) "%"))
+    ;; AND IT IS NOT SILENT, stated as an assertion so that a future change which
+    ;; restores the zero has to come here and say why.
+    (is (> (active 60) 100.0)
+        (str "the corrected model does NOT silence the erector spinae at 60°, and the "
+             "0 N this test used to assert was `recruit` clamping a demand that was "
+             "understated by the missing head and arm terms. Got " (active 60)))
     (is (> (ligament 60) (ligament 40)) "while the ligament takes it")
     (is (> (ligament 60) (* 5.0 (ligament 20))) "and takes over, not merely helps")))
+
+(deftest the-ligament-carries-more-moment-than-the-old-lumbosacral-term-asked-for
+  ;; The mechanism of the artefact above, isolated so it cannot be argued about.
+  ;; The posterior ligamentous system's moment at 60° of trunk flexion exceeds what
+  ;; `lumbosacral-moment` used to report as the WHOLE demand there. A load-sharing
+  ;; model handed less load than one of its passive elements already supplies has
+  ;; nothing left to share, and clamps.
+  (let [{:keys [by loads]} (run (assoc base :trunk-flexion-deg 60.0))
+        lig (by "posterior_lumbar_ligaments")
+        lig-moment (* (:coeff lig) (:force-n lig))
+        ;; the pre-2026-09-07 formula, written out: thorax lever + head weight
+        ;; placed AT C7, no arms.
+        thorax (segment/seg body "thorax_abdomen")
+        head-w (* (segment/head-mass-kg 70.0) segment/gravity)
+        s (Math/sin (math/radians 60.0))
+        old-demand (+ (* (segment/weight-n thorax) (:length-m thorax) (:com-frac thorax) s)
+                      (* head-w (:length-m thorax) s))
+        new-demand (:moment-nm (first (filter #(= "lumbosacral" (:joint %)) (:joints loads))))]
+    (is (> lig-moment old-demand)
+        (str "the ligament alone (" lig-moment " N·m) exceeded the old demand ("
+             old-demand " N·m), which is why the muscle came out at exactly zero"))
+    (is (< lig-moment new-demand)
+        (str "and does not exceed the real one (" new-demand " N·m), which is why "
+             "the muscle is still working"))))
 
 (deftest a-ligament-has-no-percent-of-a-maximum-it-cannot-contract-to
   (let [{:keys [by]} (run (assoc base :trunk-flexion-deg 40.0))
