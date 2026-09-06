@@ -145,6 +145,17 @@
   ;; `:acts-the-wrong-way` refusal expressed as an active set. That is compared as
   ;; "no active force" rather than as an equal `:force-n`, because the two report
   ;; it differently on purpose — see `the-coupled-solve-does-not-refuse-what-it-can-answer`.
+  ;;
+  ;; ⚠ WHAT THIS TEST CANNOT SEE, measured 2026-09-08 rather than reasoned about.
+  ;; The constant 3 in F_i = a_i^{3/2} √(s_i/3) is a REPARAMETERISATION of λ: change
+  ;; it and every multiplier scales to compensate, so no force moves. Breaking
+  ;; `(/ s 3.0)` to `(/ s 2.0)` leaves this test green, and the only assertion in
+  ;; the suite that notices is `the-iteration-count-is-the-same-on-both-hosts`
+  ;; (4 → 16 iterations, and the answer moves in the 10th digit). That is not a
+  ;; hole in this test — the constant genuinely cannot be wrong — but it is worth
+  ;; knowing before treating a green here as covering the whole expression. What
+  ;; this test does discriminate is the exponent and the √c: replacing a_i^{3/2}
+  ;; with a_i fails it at once (638.477 → 589.201 N on the first case).
   (doseq [[label cands load]
           [["two synergists" [(c "a" 600.0 0.05) (c "b" 300.0 0.04)] 40.0]
            ["one antagonist" [(c "a" 600.0 0.05) (c "b" 400.0 -0.04)] 20.0]
