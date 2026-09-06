@@ -46,9 +46,23 @@
   (let [body (segment/build-body 70.0 1.70)
         p (posture/posture-from-workstation posture/laptop-on-lap)
         tensions (muscle/solve-muscle-tensions body p (load/solve-posture-loads body p))
-        high (first (filter #(= (:name %) "cervical_extensors") tensions))
+        by (fn [n] (first (filter #(= (:name %) n) tensions)))
+        cerv (by "cervical_extensors")
+        ;; ⚠ THE SATURATION HALF MOVED TO `erector_spinae` ON 2026-09-07, and which
+        ;; muscle it is asked of is now stated rather than assumed. It used to be
+        ;; `cervical_extensors`, which at this posture carried the WHOLE cervical
+        ;; extensor moment at 56.2% MVC on a 12.0 cm² lump. Adding the muscles that
+        ;; hold the head up (semispinalis capitis, splenius capitis) splits that
+        ;; same moment three ways over 31.32 cm², so cervical_extensors fell to
+        ;; 22.2% MVC and its 120-minute dose fell 158.35 -> 18.41 — still an index
+        ;; of 1.00 to two decimals, but no longer 1.0 in double precision. That is
+        ;; reported below rather than hidden by moving the assertion quietly.
+        ;; erector_spinae is unaffected by the neck (57.4% MVC, dose 165.95) and is
+        ;; what "a load this high" means at this posture now.
+        high (by "erector_spinae")
         s-short (strain/muscle-strain high 10.0)
-        s-long (strain/muscle-strain high 120.0)]
+        s-long (strain/muscle-strain high 120.0)
+        c-long (strain/muscle-strain cerv 120.0)]
     (is (<= 0 (:stiffness-index s-short)))
     (is (<= (:stiffness-index s-short) (:stiffness-index s-long)))
     ;; The index is bounded above by 1 and mathematically never reaches it, but in
@@ -57,7 +71,18 @@
     ;; a ceiling presented as a measurement cannot be told apart from a value.
     (is (<= (:stiffness-index s-long) 1.0))
     (is (:saturated? s-long)
-        "a load this high for two hours saturates the index and has to say so")))
+        "a load this high for two hours saturates the index and has to say so")
+    ;; and the muscle that used to be asked this: it still grows with time and is
+    ;; still 1.00 to display precision, and it is no longer at the double-precision
+    ;; ceiling. Asserting the direction as well as the flag means a future change
+    ;; that pushed it back over would be visible here rather than silently absorbed.
+    (is (< (:stiffness-index (strain/muscle-strain cerv 10.0))
+           (:stiffness-index c-long))
+        "the cervical extensors' index still grows with time")
+    (is (not (:saturated? c-long))
+        (str "cervical_extensors no longer saturates at 120 min; its dose fell "
+             "158.35 -> " (:dose c-long) " when the cervical extensor moment was "
+             "split with the muscles that reach the skull"))))
 
 (deftest test-saturation-is-flagged-only-when-it-happens
   ;; the flag has to discriminate, or it is decoration

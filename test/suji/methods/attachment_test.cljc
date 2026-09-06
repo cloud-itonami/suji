@@ -15,7 +15,8 @@
             [suji.methods.load]
             [suji.methods.pose :as pose]
             [suji.methods.posture :as posture]
-            [suji.methods.segment :as segment]))
+            [suji.methods.segment :as segment]
+            [suji.methods.spine :as spine]))
 
 (def ^:private body (segment/build-body 70.0 1.70))
 (def ^:private neutral
@@ -27,12 +28,198 @@
 
 (deftest neutral-arms-reproduce-the-constants-they-replaced
   ;; the anchor. ±3% — the offsets are stated to 4 decimals, not fitted exactly.
+  ;;
+  ;; THE TOLERANCE IS TAKEN ON THE MAGNITUDE since 2026-09-07, and that is a
+  ;; correction rather than a loosening. `math/nearly=` compares `|a-b| < tol`, so
+  ;; a negative `tol` makes it FALSE for every input — and `sternocleidomastoid`'s
+  ;; calibration target is negative, because about C7 it is a flexor. Written the
+  ;; old way this test would have failed on a correct value and there would have
+  ;; been no way to tell that from failing on a wrong one.
   (doseq [m ["cervical_extensors" "anterior_deltoid/left" "anterior_deltoid/right"
-             "erector_spinae"]]
+             "erector_spinae"
+             "semispinalis_capitis" "splenius_capitis" "sternocleidomastoid"]]
     (let [want (:moment-arm-m (get muscle/specs (:group (att/instance m))))
           got (arm (at) m)]
-      (is (math/nearly= want got (* 0.03 want))
+      (is (math/nearly= want got (* 0.03 (math/abs* want)))
           (str m ": neutral arm " got " must reproduce the tabulated " want)))))
+
+;; --- the muscles that hold the head up ---------------------------------------
+;;
+;; Until 2026-09-07 nothing in this model reached the skull: the most cranial
+;; attachment in the whole set was `levator_scapulae` at 0.22 of `head_neck` and
+;; `spine/levels` puts C3/C4 at 0.24, so the top cervical level was crossed by
+;; nothing. These pin the anatomy that closed it, and — more importantly — the
+;; three ways it could have been closed dishonestly.
+
+(def ^:private cranial
+  "The three groups added 2026-09-07, by name."
+  ["semispinalis_capitis" "splenius_capitis" "sternocleidomastoid"])
+
+(deftest the-head-muscles-run-between-two-different-bones
+  ;; THE FIRST WAY TO GET THIS WRONG, and the reason the suboccipitals are absent.
+  ;; A suboccipital runs from C1 or C2 to the occiput; this model has ONE rigid
+  ;; `head_neck` segment and no atlanto-occipital joint, so both of its ends would
+  ;; ride on that segment and
+  ;; `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm` names
+  ;; that shape as the error that produced a constant-looking arm. It would BE that
+  ;; error here rather than the exception `middle_trapezius` earned, because a
+  ;; suboccipital is solved as a MOMENT about an axis the segment carries, not as a
+  ;; suspension cosine against the world vertical which it does not.
+  ;;
+  ;; `exactly-one-muscle-has-both-ends-on-one-segment-and-it-is-a-suspender` already
+  ;; forbids the shape globally. This says the positive half for these three: each
+  ;; runs thorax → head, so its arm CAN move, and it does.
+  (doseq [m cranial]
+    (let [spec (att/instance m)]
+      (is (= "thorax_abdomen" (get-in spec [:origin :segment])) (str m " origin"))
+      (is (= "head_neck" (get-in spec [:insertion :segment])) (str m " insertion"))
+      (let [arms (mapv #(math/round-to (arm (at :head-flexion-deg (double %)) m) 9)
+                       [0 15 30])]
+        (is (< 1 (count (distinct arms)))
+            (str m ": its arm must move with head flexion, got " arms))))))
+
+(deftest the-head-muscles-attach-above-the-top-cervical-level
+  ;; THE SECOND WAY: attach them to the skull in the docstring and to the base of
+  ;; the neck in the data. `cervical_extensors` did exactly that — its `:source`
+  ;; said `occipital insertion` while its insertion sat at 0.05 of `head_neck`,
+  ;; 15.5 mm above C7 and below C6/C7 at 18.6 mm — and that sentence is why nobody
+  ;; looked for the gap. So the claim is checked against `spine/levels` rather than
+  ;; against a comment.
+  (let [c34 (:along (first (filter #(= "C3/C4" (:name %)) spine/levels)))]
+    (is (= 0.24 c34) "the premise: C3/C4 is at 0.24 of the head_neck segment")
+    (doseq [m cranial]
+      (is (> (get-in (att/instance m) [:insertion :along]) c34)
+          (str m " must insert above C3/C4 at " c34)))
+    ;; and the lumped group, whose source string used to claim the skull, does not
+    (is (< (get-in (att/instance "cervical_extensors") [:insertion :along]) 0.06)
+        "cervical_extensors inserts below C6/C7 — it is not, and never was, occipital")))
+
+(deftest the-head-extensors-stay-extensors-through-a-forward-head-posture
+  ;; THE THIRD WAY, and the one the geometry actually forces. A high insertion
+  ;; swings a long way forward as the head folds: measured 2026-09-07, the
+  ;; UNWRAPPED chord of `semispinalis_capitis` is +29.8 mm at neutral and −10.3 mm
+  ;; at 45° of head flexion, so without a wrapping surface the model's principal
+  ;; head extensor is reported as a FLEXOR in the posture this actor exists to
+  ;; describe. Both halves are asserted: the straight line does cross (so the wrap
+  ;; is not decoration), and the reported arm does not.
+  (doseq [m ["semispinalis_capitis" "splenius_capitis"]]
+    (let [spec (att/instance m)
+          r (get-in spec [:wrap :radius-m])
+          dets (mapv (fn [d]
+                       (let [p (at :head-flexion-deg (double d))]
+                         (att/moment-arm-detail p 1.70 spec (get-in p [:joints :c7]))))
+                     [0 15 30 45 60 75])]
+      (is (= 0.012 r)
+          (str m ": one column, one radius — the same cervical column "
+               "cervical_extensors wraps, which declares "
+               (get-in (att/instance "cervical_extensors") [:wrap :radius-m])))
+      (is (some #(neg? (:straight %)) dets)
+          (str m ": the straight chord must cross to the wrong side somewhere, or "
+               "the wrapping surface is not doing anything: "
+               (mapv #(math/round-to (:straight %) 5) dets)))
+      (is (every? #(>= (:arm %) (- r 1e-12)) dets)
+          (str m ": but no reported arm may fall below the column radius: "
+               (mapv #(math/round-to (:arm %) 5) dets)))
+      (is (some (complement :wrapped?) dets)
+          (str m ": and the chord must beat the floor somewhere, or the floor is a "
+               "tabulated arm wearing a wrap — which is what middle_deltoid's "
+               "0.022 m was")))))
+
+(deftest the-superficial-extensor-has-the-longer-arm
+  ;; Sourced ordering, not a sourced value. Vasavada (Rothman-Simeone The Spine,
+  ;; chapter 3, p.68) states that `the semispinalis capitis has shorter fascicle
+  ;; lengths, but also a smaller moment arm than the splenius capitis`. The two
+  ;; targets here are representative; their ORDER is not, and getting it backwards
+  ;; would hand the bigger muscle the better leverage as well and let the criterion
+  ;; give it almost everything.
+  (let [p (at)]
+    (is (> (arm p "splenius_capitis") (arm p "semispinalis_capitis"))
+        (str "splenius " (arm p "splenius_capitis")
+             " must exceed semispinalis " (arm p "semispinalis_capitis")))))
+
+(deftest the-flexor-is-refused-for-being-a-flexor
+  ;; The sternocleidomastoid is an antagonist in every posture this actor reports,
+  ;; and that is the correct answer rather than a failure — but WHICH refusal it is
+  ;; matters, because the three kinds have three different fixes.
+  ;; `:acts-the-wrong-way` says the posture has left the range this line of action
+  ;; represents and no wrapping surface changes it. `:no-line-of-action` would say
+  ;; the geometry is degenerate, and `:coefficient-below-floor` would say a
+  ;; wrapping surface is missing. Asserting only "refused" cannot tell them apart,
+  ;; which is the shape `recruit`'s own docstring warns about.
+  (let [posture (posture/posture-from-workstation posture/laptop-on-lap)
+        l (suji.methods.load/solve-posture-loads body posture)
+        ts (muscle/solve-muscle-tensions body posture l)
+        by (into {} (map (juxt :name identity)) ts)
+        scm (by "sternocleidomastoid")]
+    (is (= :acts-the-wrong-way (:refused scm))
+        (str "the sternocleidomastoid must be refused for pulling the wrong way, "
+             "not for having no line of action: " (pr-str scm)))
+    (is (neg? (:coeff scm))
+        (str "and the reason must be visible in the coefficient: " (:coeff scm)))
+    (is (:antagonist? scm)
+        "the cervical extension load WAS placed, so this is an antagonist and not a gap")
+    (is (nil? (:mvc-pct scm)) "a refused muscle gets no %MVC")
+    ;; the discriminating half: the extensors in the SAME task are not refused, so
+    ;; this is a statement about one muscle's direction and not about the task
+    ;; having failed
+    (doseq [m ["cervical_extensors" "semispinalis_capitis" "splenius_capitis"]]
+      (is (pos? (:mvc-pct (by m))) (str m " carries load in the same equilibrium")))
+    (is (:complete? (muscle/tension-summary ts l))
+        "and an antagonist must not make the solve incomplete")))
+
+(deftest the-head-muscles-cross-every-cervical-level
+  ;; The point of the whole exercise, asked of `spine`'s rule rather than of a
+  ;; number: `levels-crossed` decides from which bone each site rides on and which
+  ;; bone hangs from which, so this is a test of the anatomy and not of a list.
+  (let [p (pose/solve-pose body (merge neutral {:head-flexion-deg 30.0}))
+        cerv (mapv :name (filter #(= :cervical (:region %)) spine/levels))]
+    (is (= 5 (count cerv)) "the premise: five cervical levels")
+    (doseq [m cranial]
+      (is (= cerv (mapv :name (spine/levels-crossed p (att/instance m))))
+          (str m " must span every cervical level")))
+    ;; and none of them reaches the lumbar spine, which would mean a muscle running
+    ;; from the skull past L1/L2 — the mirror of the wrist extensor that used to
+    ;; load a neck
+    (doseq [m cranial]
+      (is (empty? (filter #(= :lumbar (:region %))
+                          (spine/levels-crossed p (att/instance m))))
+          (str m " must not cross a lumbar level")))
+    ;; the lumped group still crosses exactly one, which is the measurement that
+    ;; makes "added alongside" rather than "carved out of" the honest description
+    (is (= ["C7/T1"] (mapv :name (spine/levels-crossed
+                                  p (att/instance "cervical_extensors"))))
+        "cervical_extensors spans the cervicothoracic junction and nothing above it")))
+
+(deftest the-neck-pcsa-is-measured-and-the-numbers-are-the-source-s
+  ;; PCSA here is one of only two measured columns in this actor (the other is the
+  ;; lower limb's, from Ward et al. 2009). Kamibayashi LK & Richmond FJR,
+  ;; "Morphometry of human neck muscles", Spine 23(12):1314–1323, 1998, read as
+  ;; Table 3-3 of Vasavada's chapter 3 of Rothman-Simeone The Spine (full text
+  ;; obtained 2026-09-07 from
+  ;; https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf). Per-side means:
+  ;; semispinalis capitis 5.40, splenius 4.26, sternocleidomastoideus 3.72 cm².
+  ;; A midline group in this model carries the BILATERAL sum, so each is doubled —
+  ;; and a doubling done in the head is exactly the kind of arithmetic that rots,
+  ;; so it is written out here.
+  (doseq [[m per-side] [["semispinalis_capitis" 5.40]
+                        ["splenius_capitis" 4.26]
+                        ["sternocleidomastoid" 3.72]]]
+    (is (math/nearly= (* 2.0 per-side) (:pcsa-cm2 (get muscle/specs m)) 1e-9)
+        (str m ": " per-side " cm² per side × 2 sides"))
+    (is (= :midline (:side (att/instance m)))
+        (str m " is midline, which is what makes the bilateral sum the right number")))
+  ;; the double-counting decision, as arithmetic rather than as prose: the lumped
+  ;; group is UNCHANGED, so the model's cervical extensor cross-section is the sum
+  ;; of the three. If a later change carves the lump up instead, this fails and the
+  ;; decision has to be restated rather than drifted into.
+  (is (math/nearly= 12.0 (:pcsa-cm2 (get muscle/specs "cervical_extensors")) 1e-9)
+      "the lumped group was not reduced; the capitis muscles were added alongside it")
+  (is (math/nearly= 31.32
+                    (reduce + 0.0 (map #(:pcsa-cm2 (get muscle/specs %))
+                                       ["cervical_extensors" "semispinalis_capitis"
+                                        "splenius_capitis"]))
+                    1e-9)
+      "12.00 + 10.80 + 8.52 = 31.32 cm² of cervical extensor, a factor of 2.61"))
 
 (deftest an-extensor-stays-an-extensor-through-its-range
   ;; THE DEFECT THIS CATCHES. A straight line from a high insertion crosses to the

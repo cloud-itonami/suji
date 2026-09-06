@@ -218,7 +218,17 @@
         (str "the dose does not separate them either: " (:dose a) " vs " (:dose b)))
     (is (< (Math/abs (- (:stiffness-index a) (:stiffness-index b))) 0.1)
         "the indices are not close, so the understatement this guards is not present")
-    (is (str/includes? text "dose 158.35 → 3.87")
+    ;; ⚠ THE NUMBER MOVED ON 2026-09-07 AND THE MUSCLE UNDER IT CHANGED, so the
+    ;; pin is re-measured rather than loosened. `worst-stiffness` returns the FIRST
+    ;; maximum on ties, and cervical_extensors and erector_spinae were BOTH exactly
+    ;; 1.0 at this posture — the winner was decided by emit order, not by load.
+    ;; Adding the muscles that hold the head up split the cervical extensor moment
+    ;; three ways, so cervical_extensors fell 56.2% -> 22.2% MVC and its index left
+    ;; double-precision saturation (dose 158.35 -> 18.41). erector_spinae, dose
+    ;; 165.95 and unchanged, is now the sole maximum. The comparison this test
+    ;; guards is unaffected: the laptop end is still at the ceiling and the dose
+    ;; behind it still separates the two workstations by a factor of 43.
+    (is (str/includes? text "dose 165.95 → 3.87")
         "the comparison does not state the dose beside the indices")
     (is (str/includes? text "≥1.00")
         "the comparison does not mark the saturated end")))
