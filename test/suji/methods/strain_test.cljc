@@ -349,3 +349,223 @@
   ;; the model at that intensity is more than twice the measured handgrip time —
   ;; recorded, not tuned away
   (is (> (/ (strain/endurance-minutes 15.0) (:minutes strain/measured-single-point)) 2.0)))
+
+;; --- what the headline band can actually resolve ------------------------------
+;;
+;; The band is the column the README's answer table and the browser comparison
+;; view are read through. These tests pin the finding that at this app's session
+;; lengths it distinguishes two states, and they pin it from BOTH sides: by
+;; inverting the model (`band-resolution`) and by sweeping it, so an inversion bug
+;; and a modelling change cannot cancel.
+
+(defn- sweep
+  "The %MVC axis at 0.05 steps. `(/ i 20.0)` rather than `(* 0.05 i)` because the
+  latter is not exact at 8.0 and the floor is the point under test."
+  []
+  (map #(/ % 20.0) (range 0 2001)))
+
+(defn- in-segment?
+  "The endpoint convention `band-resolution` documents: `[a, b)`, open at `a` when
+  `a` is the endurance floor, closed at `b` when `b` is the floor or the top of
+  the axis."
+  [[a b] f]
+  (and (if (= a strain/endurance-floor-pct) (> f a) (>= f a))
+       (if (or (= b strain/endurance-floor-pct) (= b 100.0)) (<= f b) (< f b))))
+
+(deftest the-two-middle-bands-are-unreachable-at-this-app-s-session-lengths
+  ;; NOT "no reference posture happens to land there" — unreachable. The index
+  ;; steps across their entire combined width at the endurance floor, so no %MVC
+  ;; whatsoever maps into them.
+  (doseq [t [120.0 480.0]]
+    (let [r (strain/band-resolution t)]
+      (is (= ["moderate" "high"] (:unreachable-bands r))
+          (str "at " t " min the middle bands must be unreachable, not merely unvisited"))
+      (is (= ["low" "very-high"] (:reachable-bands r)))
+      (doseq [b (:bands r) :when (#{"moderate" "high"} (:band b))]
+        (is (zero? (:mvc-pct-width b))
+            (str (:band b) " claims " (:mvc-pct-width b) " %MVC of the axis")))))
+  ;; and at 30 min all four ARE reachable, so the assertion above is about the
+  ;; session length and not about a band function that can only return two things
+  (is (= ["low" "moderate" "high" "very-high"]
+         (:reachable-bands (strain/band-resolution 30.0)))
+      "at 30 min the floor step is not yet wide enough to clear `moderate`"))
+
+(deftest the-session-length-at-which-each-band-dies-is-solved-not-sampled
+  ;; `:unreachable-window-minutes` is closed form from `chronic-weight`,
+  ;; `chronic-threshold-pct`, `endurance-floor-pct` and the power-law constants.
+  ;; It is checked here by asking `band-resolution` on either side of each end,
+  ;; which is a different computation (the inversion) than the one that produced
+  ;; the window.
+  (doseq [band ["moderate" "high"]]
+    (let [b (first (filter #(= band (:band %)) (:bands (strain/band-resolution 120.0))))
+          [from to] (:unreachable-window-minutes b)]
+      (is (number? from))
+      (is (number? to))
+      (is (< from to))
+      (is (some #(and (= band (:band %)) (:reachable? %))
+                (:bands (strain/band-resolution (* from 0.99))))
+          (str band " must still be reachable just before " from " min"))
+      (is (some #(and (= band (:band %)) (not (:reachable? %)))
+                (:bands (strain/band-resolution (* from 1.01))))
+          (str band " must be unreachable just after " from " min"))
+      (is (some #(and (= band (:band %)) (:reachable? %))
+                (:bands (strain/band-resolution (* to 1.01))))
+          (str band " returns above " to " min, from the chronic term below the floor"))))
+  ;; the numbers themselves, recomputed longhand from the model's constants — the
+  ;; window is `-ln(1-hi)/k_above` and `-ln(1-lo)/k_below`, where k is d(dose)/dT
+  ;; on each side of the floor. Asking `band-resolution` for its own answer would
+  ;; only check that it is self-consistent.
+  (let [bands (:bands (strain/band-resolution 120.0))
+        w (fn [n] (:unreachable-window-minutes (first (filter #(= n (:band %)) bands))))
+        k-below (* strain/chronic-weight
+                   (/ (- strain/endurance-floor-pct strain/chronic-threshold-pct) 100.0)
+                   (/ 1.0 60.0))
+        k-above (+ k-below (/ 1.0 (model-minutes* strain/endurance-floor-pct)))]
+    (is (math/nearly= (first (w "moderate")) (/ (- (Math/log 0.55)) k-above) 1e-9))
+    (is (math/nearly= (first (w "high")) (/ (- (Math/log 0.30)) k-above) 1e-9))
+    (is (math/nearly= (second (w "moderate")) (/ (- (Math/log 0.80)) k-below) 1e-9))
+    ;; and the values those come out at, so moving a coefficient is visible
+    (is (math/nearly= (first (w "moderate")) 40.6398 1e-3))
+    (is (math/nearly= (first (w "high")) 81.8437 1e-3))
+    (is (math/nearly= (second (w "moderate")) 495.8746 1e-3))))
+
+(deftest band-resolution-inversion-agrees-with-sampling-the-model
+  ;; The inversion is the claim; this sweeps the model itself and requires the two
+  ;; to agree exactly, band by band, at three session lengths. An inversion that
+  ;; quietly widened a segment would make the finding look smaller than it is.
+  (doseq [t [30.0 120.0 480.0 600.0]]
+    (let [r (strain/band-resolution t)
+          xs (sweep)
+          sampled (frequencies (map #(strain/stiffness-band (strain/index-at % t)) xs))]
+      (doseq [b (:bands r)]
+        (let [predicted (count (filter (fn [f] (some #(in-segment? % f) (:mvc-pct-segments b))) xs))]
+          (is (= (get sampled (:band b) 0) predicted)
+              (str "at " t " min, band " (:band b) ": swept "
+                   (get sampled (:band b) 0) " of " (count xs)
+                   " samples, inversion predicts " predicted)))))))
+
+(deftest the-floor-step-is-wider-than-the-two-middle-bands-put-together
+  (let [d (strain/floor-discontinuity 120.0)
+        middle (- 0.70 0.20)]
+    (is (math/nearly= (:index-below d) 0.0525679 1e-6))
+    (is (math/nearly= (:index-above d) 0.8288604 1e-6))
+    (is (> (:index-gap d) middle)
+        (str "the step is " (:index-gap d) " and the two middle bands span " middle))
+    (is (= "low" (:band-below d)))
+    (is (= "very-high" (:band-above d)))
+    ;; and it is a step in the ACUTE term, not in the curve: endurance goes from
+    ;; unbounded straight to 70 minutes
+    (is (math/infinite? (:endurance-minutes-below d)))
+    (is (math/nearly= (:endurance-minutes-above d) 70.1231 1e-3))))
+
+(deftest at-the-floor-the-model-and-the-published-fit-still-agree
+  ;; This is the part of the finding that cuts AGAINST the floor, so it is pinned
+  ;; in both directions. The model's power law at the floor is 70.12 min; the
+  ;; pooled fit is 54.27; the ratio 1.29 is inside the reference's own wide (47%)
+  ;; interval and outside the tight (29%) one. So the infinity is switched on
+  ;; while the two curves were still agreeing — which is a reason to report the
+  ;; step, and not on its own a reason to remove the floor: below it neither side
+  ;; has measured anything.
+  (let [d (strain/floor-discontinuity 120.0)]
+    (is (math/nearly= (:reference-minutes-at-floor d)
+                      (reference-minutes* :general strain/endurance-floor-pct) 1e-9)
+        "recomputed from Table 2 longhand, not read back out of `strain`")
+    (is (math/nearly= (:ratio-just-above-floor d) 1.29208 1e-4))
+    (is (true? (:model-and-reference-agree-at-the-floor? d)))
+    (is (false? (:agree-under-narrow-reading? d))
+        "the tight reading of the reference's own range does NOT cover it; collapsing the two would hide that")
+    (is (true? (:floor-is-a-modelling-choice d)))))
+
+(deftest the-index-is-blind-at-the-top-before-the-axis-ends
+  ;; `:saturated?` already marked individual rows. This states the size of the
+  ;; blind region: at 120 min the index is exactly 1.0 from 30.2 %MVC upward, so
+  ;; 70 of the 100 points on the axis carry no information at all.
+  (let [r (strain/band-resolution 120.0)
+        onset (:saturation-onset-pct r)]
+    (is (number? onset))
+    (is (< onset 100.0))
+    (is (math/nearly= onset 30.1551 1e-3))
+    (is (math/nearly= (:saturated-width-pct r) (- 100.0 onset) 1e-9))
+    (is (> (:saturated-width-pct r) 50.0)
+        "more than half the axis maps to one value")
+    ;; the consequence, stated as an identity rather than as a caveat
+    (is (= (strain/index-at 50.0 120.0) (strain/index-at 100.0 120.0)))
+    (is (= 1.0 (strain/index-at 50.0 120.0)))
+    ;; and it moves with the session, so it is not a property of the axis
+    (is (< (:saturation-onset-pct (strain/band-resolution 480.0)) onset))
+    (is (> (:saturation-onset-pct (strain/band-resolution 30.0)) onset))))
+
+(deftest the-dose-still-has-range-where-the-index-has-none
+  ;; The reason the dose is now reported. Two loads the index cannot tell apart at
+  ;; all differ by a factor of five in the quantity the index is a transform of.
+  (let [a (strain/dose 50.0 120.0)
+        b (strain/dose 100.0 120.0)]
+    (is (= (strain/index-at 50.0 120.0) (strain/index-at 100.0 120.0)))
+    (is (> (/ (:total b) (:total a)) 4.0)
+        (str "dose " (:total a) " vs " (:total b))))
+  ;; and it is the same arithmetic muscle-strain used to do inline
+  (doseq [f [0.0 1.0 5.0 8.0 12.0 41.0 100.0]]
+    (let [d (strain/dose f 120.0)
+          t-end (strain/endurance-minutes f)
+          acute* (if (math/infinite? t-end) 0.0 (/ 120.0 t-end))
+          chronic* (* strain/chronic-weight
+                      (/ (max 0.0 (- f strain/chronic-threshold-pct)) 100.0)
+                      (/ 120.0 60.0))]
+      (is (= acute* (:acute d)))
+      (is (= chronic* (:chronic d)))
+      (is (= (+ acute* chronic*) (:total d)))
+      (is (= (- 1.0 (Math/exp (- (:total d)))) (strain/index-at f 120.0))))))
+
+(deftest every-strain-row-names-which-regime-of-the-index-it-is-in
+  (let [row (fn [f] (strain/muscle-strain {:name "m" :task :trunk-extension :mvc-pct f} 120.0))]
+    (is (= :below-endurance-floor (:index-resolution (row 5.0))))
+    (is (= :distinguishing (:index-resolution (row 12.0))))
+    (is (= :saturated (:index-resolution (row 60.0))))
+    (is (= :not-computed
+           (:index-resolution (strain/muscle-strain
+                               {:name "m" :task :trunk-extension :refused :diverges} 120.0)))))
+  ;; the keyword must agree with the flags it summarises, on every row of a real
+  ;; posture, or it is a second opinion rather than a convenience
+  (let [body (segment/build-body 70.0 1.70)
+        p (posture/posture-from-workstation posture/laptop-on-lap)
+        strains (strain/session-strain
+                 (muscle/solve-muscle-tensions body p (load/solve-posture-loads body p)) 120.0)]
+    (is (seq strains))
+    (doseq [s strains]
+      (is (= (:index-resolution s)
+             (cond (nil? (:stiffness-index s)) :not-computed
+                   (:unbounded-endurance? s) :below-endurance-floor
+                   (:saturated? s) :saturated
+                   :else :distinguishing))))
+    ;; the dose is present wherever an index is, and absent where none was computed
+    (doseq [s strains]
+      (is (= (some? (:dose s)) (some? (:stiffness-index s)))))))
+
+(deftest the-reference-postures-produce-two-computed-bands-and-hide-a-factor-of-seven
+  ;; The finding on the data the product actually reports, not on a uniform sweep
+  ;; of an axis nothing occupies.
+  (let [body (segment/build-body 70.0 1.70)
+        strains (mapcat (fn [ws]
+                          (let [p (posture/posture-from-workstation ws)]
+                            (strain/session-strain
+                             (muscle/solve-muscle-tensions body p (load/solve-posture-loads body p))
+                             120.0)))
+                        posture/reference-workstations)
+        hist (frequencies (map #(strain/stiffness-band (:stiffness-index %)) strains))
+        vh (filter #(= "very-high" (strain/stiffness-band (:stiffness-index %))) strains)
+        mvcs (map :mvc-pct vh)]
+    (is (= #{"low" "very-high" "not-computed"} (set (keys hist)))
+        (str "the reference postures reach " (pr-str hist)
+             " — `moderate` and `high` are structurally unavailable, not merely unvisited"))
+    (is (pos? (count vh)))
+    (is (> (/ (apply max mvcs) (apply min mvcs)) 6.0)
+        (str "the `very-high` rows span " (apply min mvcs) " to " (apply max mvcs)
+             " %MVC under one word"))
+    ;; and the dose, which is now reported, does distinguish them
+    (let [doses (map :dose vh)]
+      ;; measured 2026-09-07: 1.93 to 165.95, a factor of 86. The bound is stated
+      ;; below what was measured so that this asserts the separation exists, not
+      ;; that it has one exact size.
+      (is (> (/ (apply max doses) (apply min doses)) 50.0)
+          (str "the quantity the index is a transform of separates the same rows "
+               (apply min doses) " .. " (apply max doses))))))

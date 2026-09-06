@@ -31,7 +31,7 @@
   muscle entries come out `{low 99, not-computed 28, very-high 17}`; at 480 min,
   identical. Only at 30 min do all four bands appear, because below 40.6 min the
   step is not yet wide enough to clear `moderate`. The 17 `very-high` rows span
-  8.3 to 57.4 %MVC — a factor of 6.9 in load, 88 in endurance time, 500 in dose —
+  8.3 to 57.4 %MVC — a factor of 6.9 in load, 88 in endurance time, 86 in dose —
   under one word. `band-resolution` computes all of this by inverting the model,
   and `floor-discontinuity` reports the step, including the part that cuts against
   the floor: at the floor the model's 70.1 min and the pooled published fit's 54.3
@@ -614,7 +614,7 @@
   transform is the right shape for a probability and the wrong shape for a
   comparison of magnitudes, which is what this actor exists to make (G3, the same
   member's postures against each other). Over the three reference workstations at
-  120 min the doses run 0.0 to 917; the indices they map to run 0.0 to 1.0 and
+  120 min the doses run 0.0 to 166; the indices they map to run 0.0 to 1.0 and
   three of them are 1.00 to two decimals. The dose is the figure that still has
   range where the index has none, so it is now reported."
   [mvc-pct session-minutes]
@@ -770,8 +770,8 @@
   entire combined width in one discontinuity at the endurance floor. Measured
   2026-09-07 on the three reference workstations at 120 min, the 144 muscle
   entries come out `{low 99, not-computed 28, very-high 17}`, and the 17
-  `very-high` span 8.3 %MVC to 57.4 %MVC — a factor of 6.9 in load and 88 in
-  endurance time — under one word. Nothing here is tuned to hide that; the
+  `very-high` span 8.3 %MVC to 57.4 %MVC — a factor of 6.9 in load, 88 in
+  endurance time and 86 in dose — under one word. Nothing here is tuned to hide that; the
   thresholds are unchanged and `band-resolution` computes the damage."
   [stiffness-index]
   (if (nil? stiffness-index)
