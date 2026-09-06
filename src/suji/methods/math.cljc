@@ -71,7 +71,10 @@
 
 (defn clamp [x lo hi] (max lo (min hi x)))
 
-(defn abs* [x] (if (neg? x) (- x) x))
+(defn abs* [x]
+  ;; `(+ 0.0)` normalises -0.0, which is not negative and so survives a plain
+  ;; `neg?` guard and prints as "-0.0" in every report downstream.
+  (+ 0.0 (if (neg? x) (- x) x)))
 
 (defn nearly=
   "Absolute-tolerance float comparison, for tests and cross-host parity checks."

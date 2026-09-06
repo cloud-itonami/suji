@@ -197,10 +197,39 @@
   [joint-point placed]
   (- (first (:com placed)) (first joint-point)))
 
+(defn gravitational-moment-vec
+  "The static moment the musculature must GENERATE about `joint-point`, as a
+  3-vector (N·m): −Σ r × W, with W = [0, −w, 0] because gravity acts down the
+  world −Y axis.
+
+  SIGN. The negation is not cosmetic. `r × W` is the moment gravity applies; this
+  actor's scalar `gravitational-moment` has always reported the moment the muscles
+  must produce, which is its opposite. Returning the raw cross product here would
+  give a vector whose Z component is the negative of the scalar beside it, and a
+  consumer reading one and then the other would get a sign error with no symptom
+  other than a wrong answer. `pose-test` pins the two against each other.
+
+  Its Z component is the sagittal (flexion/extension) moment that
+  `gravitational-moment` returns; its X component is the FRONTAL-plane moment,
+  which is identically zero for a sagittal posture and is not zero as soon as the
+  chain is abducted or laterally bent. Computing the whole vector costs nothing
+  extra and is the difference between a model that does not resolve the frontal
+  plane and one that silently drops it — see `load/solve-posture-loads`, which
+  reports the frontal component so that a consumer can see there is a load nobody
+  in this model is carrying."
+  [joint-point placed-with-weights]
+  (math/v* (reduce (fn [m [placed weight-n]]
+                     (let [r (math/v- (:com placed) joint-point)
+                           w [0.0 (- weight-n) 0.0]]
+                       (math/v+ m (math/vcross r w))))
+                   [0.0 0.0 0.0]
+                   placed-with-weights)
+           -1.0))
+
 (defn gravitational-moment
-  "Static gravitational moment (N·m) about `joint-point` from the placed segments,
-  each weighted by its own weight in newtons. This IS the RNEA gravity term for a
-  chain at rest: no velocity, no acceleration, so every other term vanishes."
+  "Static gravitational moment (N·m) about `joint-point` in the SAGITTAL plane —
+  the Z component of `gravitational-moment-vec`. This IS the RNEA gravity term for
+  a chain at rest: no velocity, no acceleration, so every other term vanishes."
   [joint-point placed-with-weights]
   (reduce (fn [m [placed weight-n]]
             (+ m (* weight-n (anterior-lever joint-point placed))))

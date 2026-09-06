@@ -69,3 +69,10 @@
   (let [r (recruit/share [(c "a" 600.0 0.0001) (c "b" 200.0 0.0002)] 30.0)]
     (is (every? :refused r))
     (is (not-any? :force-n r))))
+
+(deftest abs-normalises-negative-zero
+  ;; -0.0 is not negative, so a plain `neg?` guard passes it through and every
+  ;; report downstream prints "-0.0" for a quantity that is zero.
+  (is (= "0.00" (math/fmt-fixed (math/abs* -0.0) 2)))
+  (is (= "0.00" (math/fmt-fixed (math/abs* 0.0) 2)))
+  (is (math/nearly= 3.5 (math/abs* -3.5))))

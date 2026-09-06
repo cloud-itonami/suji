@@ -99,8 +99,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 94 tests / 1253 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 78 tests /  301 assertions
+clojure -M:test                                   # JVM   — 100 tests / 1273 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  —  84 tests /  321 assertions
 clojure -M:lint                                   # 0 errors
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -152,6 +152,21 @@ hand-written expressions. `recruit` shares them by minimum cubed stress
 (Crowninshield & Brand 1981) in closed form — exact, and it moves when the anatomy
 moves. The old trapezius expression also charged the head's extension load a second
 time, on top of the cervical group; that term is gone.
+
+**The frontal plane is computed and reported as unassigned.** `pose` accepts
+abduction, lateral bend and head rotation; `load/frontal-moments` computes the
+moments they create. This actor has no frontal-plane musculature — no scalenes,
+no latissimus, no gluteus medius — so there is nobody to assign them to, and
+`muscle/tension-summary` reports `:unassigned-frontal-nm` and refuses to call the
+answer complete. 40° of shoulder abduction at a desk creates 7.9 N·m that nothing
+in this model carries. The alternative, which this actor did until 2026-09-06, is
+to accept the input, move the picture with it, and quietly leave the load out of
+every number on the page.
+
+Two kinds of incompleteness, reported separately because they have different
+fixes: `:refused` means a muscle exists but its leverage is unresolvable here
+(wrapping surfaces would fix it); `:unassigned-frontal-nm` means no muscle in this
+model can carry that load at all (more muscles would fix it).
 
 **The stiffness index saturates and now says so.** It is mathematically in [0,1) but
 reaches exactly 1.0 in double precision once the dose passes ~37 — roughly 50 %MVC

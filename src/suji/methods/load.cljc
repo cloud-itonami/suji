@@ -118,8 +118,34 @@
         m (+ m0 (* (:head-weight-n head) head-x))]
     (->joint-load "lumbosacral" m "trunk lean + carried head")))
 
+(defn frontal-moments
+  "The FRONTAL-plane (about X) gravitational moments this posture creates, which
+  are identically zero for a sagittal posture and are not zero as soon as the
+  chain is abducted or laterally bent.
+
+  These are reported, not solved. This actor has no frontal-plane musculature —
+  no scalenes, no latissimus, no gluteus medius — so there is nobody to assign
+  them to, and `muscle/tension-summary` says so. Reporting a load the model cannot
+  carry is the difference between an incomplete answer and a wrong one; the
+  alternative, which this actor did until 2026-09-06, is to accept a frontal-plane
+  input, move the picture with it, and quietly leave the load out of every number
+  on the page."
+  [body posture]
+  (let [p (pose/solve-pose body posture)
+        w (pose/segment-weights body p)
+        m-about (fn [joint-key names]
+                  (nth (pose/gravitational-moment-vec
+                        (get-in p [:joints joint-key])
+                        (for [n names] [(pose/seg-at p n) (get w n)]))
+                       0))]
+    {:shoulder-nm (* 2.0 (m-about :shoulder ["upper_arm" "forearm" "hand"]))
+     :lumbosacral-nm (m-about :l5s1 ["thorax_abdomen" "head_neck"])}))
+
 (defn solve-posture-loads
-  "Full static inverse-dynamics solve for a posture (the RNEA gravity term)."
+  "Full static inverse-dynamics solve for a posture (the RNEA gravity term).
+
+  `:frontal` carries the frontal-plane moments, which no muscle in this model
+  carries — see `frontal-moments`."
   [body posture]
   (let [head-w (* (segment/head-mass-kg (:total-mass-kg body)) segment/gravity)
         cerv (cervical-load (:head-flexion-deg posture) head-w)
@@ -128,4 +154,4 @@
                 (shoulder-moment body (:shoulder-flexion-deg posture)
                                  (:elbow-flexion-deg posture) (:arms-supported posture))
                 (lumbosacral-moment body (:trunk-flexion-deg posture) cerv)]]
-    {:cervical cerv :joints joints}))
+    {:cervical cerv :joints joints :frontal (frontal-moments body posture)}))
