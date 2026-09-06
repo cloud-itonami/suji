@@ -18,6 +18,12 @@
         t (muscle/solve-muscle-tensions body posture l)]
     {:loads l :tensions t :rows (spine/profile body posture t)}))
 
+(defn- refusal-data
+  "The ex-data of whatever `f` threw, or nil if it returned."
+  [f]
+  (try (f) nil
+       (catch #?(:clj Throwable :cljs :default) e (ex-data e))))
+
 (def ^:private lap (posture/posture-from-workstation posture/laptop-on-lap))
 (def ^:private monitor (posture/posture-from-workstation posture/external-monitor-eye-level))
 
@@ -97,25 +103,69 @@
         (str "the two paths really do disagree, and by how much is the point: " x))
     (is (< (:ratio x) 4.0) "but not by an order of magnitude")))
 
-(deftest the-step-detector-reports-steps-and-only-steps
+(defn- row
+  "A profile row as `attachment-steps` needs it: named, in a region, and carrying
+  the muscles that cross it with the force each contributes."
+  [name region crossing]
+  {:name name :region region :muscle-crossing crossing
+   :muscle-n (reduce + 0.0 (map second crossing))})
+
+(deftest the-step-detector-names-the-muscle-that-stopped-crossing
   ;; A real muscle attaches over a range of vertebrae; this one attaches at a
-  ;; point, so a level just past it can lose the whole force at once. Reporting
-  ;; those is the difference between a reader seeing an artefact and a reader
-  ;; believing a spine.
+  ;; point, so a level just past it loses the whole force at once.
   ;;
-  ;; This used to assert that the CURRENT model has such steps, and it did until
-  ;; passive tension landed: a stretched muscle now contributes across levels
-  ;; where it previously contributed exactly zero, and the steps filled in. That
-  ;; is a real improvement and not a reason to keep asserting the artefact — so
-  ;; what is tested is the DETECTOR, on inputs that do and do not contain one.
-  (let [with-step [{:name "A" :muscle-n 100.0} {:name "B" :muscle-n 0.0}
-                   {:name "C" :muscle-n 50.0} {:name "D" :muscle-n 0.0}]
-        without [{:name "A" :muscle-n 100.0} {:name "B" :muscle-n 60.0}
-                 {:name "C" :muscle-n 20.0} {:name "D" :muscle-n 5.0}]]
-    (is (= [{:after "A" :at "B"} {:after "C" :at "D"}] (spine/attachment-steps with-step)))
-    (is (empty? (spine/attachment-steps without)))
+  ;; The detector asked whether `:muscle-n` was EXACTLY 0.0, which passive tension
+  ;; made unreachable — see `the-profile-steps-and-the-detector-says-where`. What
+  ;; replaced it is not a smaller threshold: `crosses?` is all-or-nothing, so the
+  ;; model already knows WHICH muscles stop crossing, and the detector reports that
+  ;; fact with the newtons attached. This exercises it on both answers.
+  (let [with-step [(row "A" :lumbar [["m1" 100.0] ["m2" 20.0]])
+                   (row "B" :lumbar [["m2" 20.0]])]
+        ;; the discriminating control, and the reason this is not a magnitude test:
+        ;; the same muscle set, and a 99% fall in the force it contributes. That is
+        ;; the line of action swinging, not an attachment artefact, and a detector
+        ;; tuned to a percentage would call it one.
+        big-fall-same-muscles [(row "A" :lumbar [["m1" 100.0]])
+                               (row "B" :lumbar [["m1" 1.0]])]
+        ;; and the mirror: a whole muscle lost, but a small one. Still a step —
+        ;; the artefact is losing the muscle, not losing a lot of newtons.
+        small-loss [(row "A" :lumbar [["m1" 100.0] ["m2" 0.05]])
+                    (row "B" :lumbar [["m1" 100.0]])]]
+    (is (= [{:after "A" :at "B" :lost ["m1"] :lost-n 100.0
+             :muscle-n-before 120.0 :muscle-n-after 20.0}]
+           (spine/attachment-steps with-step)))
+    (is (empty? (spine/attachment-steps big-fall-same-muscles))
+        "a fall with no muscle lost is the line of action moving, not a step")
+    (is (= ["m2"] (:lost (first (spine/attachment-steps small-loss))))
+        "and a small whole muscle lost is still a step")
     (is (empty? (spine/attachment-steps [])))
-    (is (empty? (spine/attachment-steps [{:name "A" :muscle-n 0.0}])))))
+    (is (empty? (spine/attachment-steps [(row "A" :lumbar [])])))
+    ;; L1/L2 and C7/T1 are adjacent in the vector and are not neighbours in a
+    ;; spine: this model has no thoracic levels. Pairing them would report the
+    ;; missing region as an attachment artefact.
+    (is (empty? (spine/attachment-steps [(row "L1/L2" :lumbar [["erector" 400.0]])
+                                         (row "C7/T1" :cervical [["cervical" 100.0]])]))
+        "the lumbar and cervical regions are not neighbours in this model")))
+
+(deftest the-step-detector-refuses-rows-it-cannot-read
+  ;; THE FAILURE MODE THIS CLASS OF DETECTOR HAS. A detector handed input it
+  ;; cannot see must not return the same value as one that looked and found
+  ;; nothing — `[]` would read as `no steps` and be indistinguishable from
+  ;; `no data`. The reason is pinned, not merely the throw: without the guard a
+  ;; missing `:muscle-crossing` would simply produce an empty `lost` and the
+  ;; predicate would go quiet, which is the shape of the bug being removed.
+  (let [without-crossing [{:name "A" :region :lumbar :muscle-n 100.0}
+                          {:name "B" :region :lumbar :muscle-n 0.0}]
+        without-region [(dissoc (row "A" :lumbar [["m1" 100.0]]) :region)
+                        (dissoc (row "B" :lumbar []) :region)]
+        d (fn [rows] (refusal-data #(spine/attachment-steps rows)))]
+    (is (= :value-error (:type (d without-crossing)))
+        (str "rows with no :muscle-crossing are refused as a value error: "
+             (pr-str (d without-crossing))))
+    (is (= "A" (:name (:row (d without-crossing))))
+        "and the refusal carries the row it could not read")
+    (is (= :value-error (:type (d without-region)))
+        "so are rows that do not say which region they are in")))
 
 ;; --- the lumbar spine against the literature ---------------------------------
 
@@ -134,12 +184,6 @@
   (is (= 1.5 (:mean spine/nachemson-pressure-index)))
   (is (= [1.5 1.7] (:range spine/nachemson-pressure-index)))
   (is (= :full-text (:obtained spine/nachemson-pressure-index))))
-
-(defn- refusal-data
-  "The ex-data of whatever `f` threw, or nil if it returned."
-  [f]
-  (try (f) nil
-       (catch #?(:clj Throwable :cljs :default) e (ex-data e))))
 
 (deftest a-conversion-without-an-index-refuses-for-the-reason-it-names
   ;; This asserted only `thrown?` at first, and it could not fail: with the guard
@@ -321,11 +365,45 @@
     (is (false? (:above-hazardous? b))
         "but not the higher one, which this model reaches only past 650 kgf")))
 
-(deftest passive-tension-smoothed-the-profile
-  ;; the measured consequence, kept so that losing it would be visible
+(deftest no-level-is-left-with-exactly-no-muscle-force
+  ;; THE LABEL IS THE FIX. This was called `passive-tension-smoothed-the-profile`
+  ;; and asserted `(empty? (attachment-steps rows))` under the sentence `no level
+  ;; loses its whole muscle term any more`. What it actually checked was that
+  ;; nothing was EXACTLY zero, because that is all the old detector could see —
+  ;; and passive tension had made exact zeros unreachable, so the assertion could
+  ;; not fail. The profile went on stepping the whole time.
+  ;;
+  ;; What is true, and is what this now says: passive tension keeps every level
+  ;; carrying SOME muscle force. That is worth pinning on its own.
   (let [rows (:rows (run lap))]
-    (is (empty? (spine/attachment-steps rows))
-        (str "no level loses its whole muscle term any more: "
-             (mapv (juxt :name :muscle-n) rows)))
-    (is (every? #(pos? (:muscle-n %)) (remove #(= "C3/C4" (:name %)) rows))
-        "every level below the top of the neck carries some muscle force")))
+    (is (every? #(pos? (:muscle-n %)) rows)
+        (str "every level carries some muscle force: "
+             (mapv (juxt :name :muscle-n) rows)))))
+
+(deftest the-profile-steps-and-the-detector-says-where
+  ;; THE FINDING. `attachment-steps` required `:muscle-n` to be exactly 0.0, which
+  ;; passive tension made unreachable, so it returned `[]` on data full of steps —
+  ;; and its unit test went on exercising it against constructed rows that do
+  ;; reach zero, which the model no longer produces. The README published the
+  ;; silence as `the attachment steps are GONE`.
+  ;;
+  ;; Measured 2026-09-07 at laptop-on-lap: the erector spinae inserts at 0.25 of
+  ;; the trunk, which lies between L2/L3 (0.21) and L1/L2 (0.28), so it crosses
+  ;; every level below and none above. The muscle term falls 482.86 N → 4.19 N,
+  ;; 99.1% of it, in one level.
+  (let [rows (:rows (run lap))
+        steps (spine/attachment-steps rows)
+        lumbar (filterv #(= "L1/L2" (:at %)) steps)
+        s (first lumbar)]
+    (is (seq steps) "this profile steps; a detector that says otherwise is not looking")
+    (is (= 1 (count lumbar)))
+    (is (= "L2/L3" (:after s)))
+    (is (= ["erector_spinae"] (:lost s))
+        (str "and it is the erector spinae's point insertion: " s))
+    (is (math/nearly= 482.855 (:muscle-n-before s) 0.01))
+    (is (math/nearly= 4.187 (:muscle-n-after s) 0.01))
+    (is (math/nearly= 478.668 (:lost-n s) 0.01)
+        "the newtons that went with it, so the size is reported rather than judged")
+    ;; the drop is 99.1%, and the old predicate saw none of it because 4.19 is not 0
+    (is (math/nearly= 0.991 (- 1.0 (/ (:muscle-n-after s) (:muscle-n-before s))) 0.001)
+        (str "a 99.1% fall the exact-zero test could not see: " s))))
