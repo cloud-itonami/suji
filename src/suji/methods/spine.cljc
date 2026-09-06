@@ -40,12 +40,31 @@
   so a forward-head posture reaches these levels as a shape rather than as a tilt.
 
   C2/C3 HAS NO MUSCLE SOLVED AT IT. It is a real disc — the most cranial one there
-  is — and three muscles cross it, but every one of them belongs to another joint's
-  equilibrium. The muscles that act on the upper cervical spine specifically (rectus
-  capitis anterior and lateralis, longus capitis, the cervicis fascicles ending on
-  C2) are not in this model, so C2/C3's compression is a LOWER BOUND. It is the one
-  row where the model is knowingly short of a muscle rather than short of a
-  measurement, and `attachment-test`'s `awaiting-muscles` names it.
+  is — and four muscles cross it, but every one of them belongs to another joint's
+  equilibrium, so C2/C3's compression is a LOWER BOUND.
+
+  ⚠ THE REASON GIVEN HERE WAS WRONG UNTIL 2026-09-08. This paragraph said the
+  blocker was that the muscles which act on the upper cervical spine specifically
+  (rectus capitis anterior and lateralis, longus capitis, the cervicis fascicles
+  ending on C2) are not in this model. Two of those were added on 2026-09-08 and
+  this row is still unsolved, because they act about the ATLANTO-OCCIPITAL joint —
+  a name on that list was not a muscle at this one.
+
+  What blocks it is PROVENANCE, measured in
+  `spine-test/the-segmentation-can-express-a-c2c3-muscle` and
+  `spine-test/nothing-is-solved-at-c2c3-and-the-reason-is-provenance`. The
+  segmentation can express all three muscles that act here — semispinalis cervicis,
+  the cervical multifidus and the superior oblique part of longus colli all have
+  their ends on different segments of this model and all have moment arms about
+  `:c2c3` that move — but none of their cross-sections is published in the source
+  every measured PCSA here comes from, and the lumped `cervical_extensors` already
+  declares that it stands for two of them off an unprovenanced 12.0 cm². The lower
+  bound is one measurement away, not one segmentation away.
+
+  What DID move on 2026-09-08 is the composition of the crossing set: the flexor
+  `longus_capitis` runs up the front of the column to the basiocciput, so this row
+  now carries an ANTERIOR line for the first time. `attachment-test`'s
+  `awaiting-muscles` still names the joint.
 
   VALIDATION STATUS. Two cross-checks live here and they answer different questions.
   `cervical-cross-check` compares this profile against the lumped cervical model

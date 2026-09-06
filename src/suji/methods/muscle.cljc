@@ -216,6 +216,20 @@
    "rectus_capitis_posterior_major" {:name "rectus_capitis_posterior_major" :pcsa-cm2 1.86}
    "rectus_capitis_posterior_minor" {:name "rectus_capitis_posterior_minor" :pcsa-cm2 1.00}
    "obliquus_capitis_superior"      {:name "obliquus_capitis_superior"      :pcsa-cm2 2.06}
+   ;; the upper cervical FLEXORS, added 2026-09-08 — the antagonists the three
+   ;; suboccipitals above had none of, so the joint they act about could not close
+   ;; its equilibrium from both sides. `longus_capitis`'s PCSA is MEASURED from the
+   ;; same Kamibayashi & Richmond table; `rectus_capitis_anterior`'s is
+   ;; REPRESENTATIVE and is not, because that table does not contain the muscle —
+   ;; the basis for the number and the one-line change that removes the model's
+   ;; dependence on it are in that entry's `:source` in `attachment/muscles`.
+   ;; NO `:moment-arm-m` for either, for the reason the suboccipitals have none:
+   ;; there is no legacy constant and no obtained published moment arm about the
+   ;; atlanto-occipital joint to calibrate against, so `attachment` places them from
+   ;; bony landmarks, checks the resulting LENGTH against the measurement, and lets
+   ;; the arms be whatever the geometry gives.
+   "longus_capitis"                 {:name "longus_capitis"                 :pcsa-cm2 1.84}
+   "rectus_capitis_anterior"        {:name "rectus_capitis_anterior"        :pcsa-cm2 1.00}
    "upper_trapezius"    {:name "upper_trapezius"    :pcsa-cm2 9.0  :moment-arm-m 0.025}
    "levator_scapulae"   {:name "levator_scapulae"   :pcsa-cm2 5.0  :moment-arm-m 0.020}
    "anterior_deltoid"   {:name "anterior_deltoid"   :pcsa-cm2 10.0 :moment-arm-m 0.030}
@@ -406,6 +420,17 @@
             (into {} (for [x cervical-shared
                            :when (contains? load/capitis-groups (:name x))]
                        [(:name x) (:force-n x)])))
+        ;; the flexors, solved twice against two different loads. The first is the
+        ;; answer; the second is never emitted as a force and exists only so the
+        ;; surplus can be quoted in %MVC on the rows below. Sharing the SAME
+        ;; candidates through the SAME criterion is what makes the comparison mean
+        ;; anything — a surplus divided by a hand-picked moment arm would not.
+        ao-flexors (candidates :atlanto-occipital-flexion nil coeffs)
+        ao-flexion (recruit/share ao-flexors (:gravitational-flexion-nm ao))
+        ao-surplus-share
+        (into {} (for [x (recruit/share ao-flexors (:decomposition-surplus-nm ao))
+                       :when (number? (:force-n x))]
+                   [(:name x) (:force-n x)]))
         task-list
         (concat
          [[[:cervical-extension :midline] cervical-shared]
@@ -419,6 +444,39 @@
           [[:atlanto-occipital-extension :midline]
            (recruit/share (candidates :atlanto-occipital-extension nil coeffs)
                           (:residual-nm ao))]
+          ;; THE OTHER SIDE OF THAT JOINT, new on 2026-09-08 — the flexors the
+          ;; suboccipital extensors above had none of.
+          ;;
+          ;; ITS LOAD IS GRAVITY AND NOT `:over-supplied-nm`, and that is the whole
+          ;; decision. The flexion side of this joint is two different things added
+          ;; together (see `load/atlanto-occipital-moment`): the moment gravity
+          ;; applies when the skull's centre of mass sits behind the condyles — a head
+          ;; tipped back, or held against a headrest — and the surplus the two capitis
+          ;; muscles leave because they were sized at C7 and solved without this
+          ;; joint's constraint. Only the first is a load on a person.
+          ;;
+          ;; Assigning the second was tried first and rejected on the measurement.
+          ;; With it, `longus_capitis` came out at 185% MVC at `laptop-on-lap`, 97% at
+          ;; `laptop-on-desk` and the WORST-LOADED MUSCLE IN THE WHOLE REPORT at all
+          ;; three reference workstations — a headline manufactured by a
+          ;; decomposition, which is the same thing `atlanto-occipital-moment` refused
+          ;; when it declined to charge the suboccipitals the joint's whole demand.
+          ;; A muscle cannot be shown carrying 1.85 times what it can produce as
+          ;; though that were a finding about a posture.
+          ;;
+          ;; The surplus is not hidden by that. It is REPORTED, and for the first
+          ;; time in muscle terms: every flexor row carries `:surplus-force-n` and
+          ;; `:surplus-mvc-pct`, which is what THIS muscle would have to produce if
+          ;; the surplus were assigned, by the same criterion. That converts a moment
+          ;; nobody could size into the statement that the model's own inconsistency
+          ;; is larger than the anatomy that would have to absorb it.
+          ;;
+          ;; IT IS TWO TASKS RATHER THAN ONE SIGNED ONE ON PURPOSE. `share-signed`
+          ;; refuses the idle side as an antagonist; two complementary loads leave
+          ;; the idle side with a PLACED load of zero, which is the distinction
+          ;; `load/atlanto-occipital-moment` exists to keep — 0 N because nothing is
+          ;; asked here, not 0 N because the model could not answer.
+          [[:atlanto-occipital-flexion :midline] ao-flexion]
           [[:trunk-extension :midline]
            (recruit/share (candidates :trunk-extension nil coeffs)
                           (:moment-nm (joint "lumbosacral")))]
@@ -505,9 +563,32 @@
                      ;; indistinguishable from a muscle nobody thought about, so
                      ;; the reason travels with it — see
                      ;; `load/atlanto-occipital-moment`.
-                     (when (= :atlanto-occipital-extension (:task inst))
-                       {:task-load-nm (:residual-nm ao)
-                        :task-over-supplied-nm (:over-supplied-nm ao)})
+                     (when (#{:atlanto-occipital-extension :atlanto-occipital-flexion}
+                            (:task inst))
+                       (let [flexor? (= :atlanto-occipital-flexion (:task inst))]
+                         (cond->
+                          {:task-load-nm (if flexor?
+                                           (:gravitational-flexion-nm ao)
+                                           (:residual-nm ao))
+                           :task-over-supplied-nm (:over-supplied-nm ao)
+                           ;; the two halves of `:over-supplied-nm`, so a consumer
+                           ;; cannot read a decomposition error as a load
+                           :task-gravitational-flexion-nm (:gravitational-flexion-nm ao)
+                           :task-decomposition-surplus-nm (:decomposition-surplus-nm ao)}
+                           ;; WHAT THE SURPLUS WOULD COST THIS MUSCLE, on the rows of
+                           ;; the muscles it would fall on. Not a force it is
+                           ;; producing — `:force-n` is the answer — and deliberately
+                           ;; not folded into `:mvc-pct`, so nothing downstream ranks,
+                           ;; bands or doses a body by a number this model does not
+                           ;; claim.
+                           flexor?
+                           (merge
+                            (let [f (get ao-surplus-share n)
+                                  fmax (f-max-of inst lens opts)]
+                              (when (number? f)
+                                {:surplus-force-n f
+                                 :surplus-mvc-pct (when (and fmax (pos? fmax))
+                                                    (/ (* 100.0 f) fmax))}))))))
                      (when (and (:refused t) (contains? carried-names n))
                        {:antagonist? true}))))
           emit-order)))
@@ -564,7 +645,17 @@
        ;; not have to know which muscles to look at to find it.
        (some :task-over-supplied-nm tensions)
        (assoc :atlanto-occipital-over-supplied-nm
-              (reduce max 0.0 (keep :task-over-supplied-nm tensions)))
+              (reduce max 0.0 (keep :task-over-supplied-nm tensions))
+              ;; THE SURPLUS, SIZED AGAINST THE ANATOMY THAT WOULD HAVE TO ABSORB IT.
+              ;; The moment above says how big this model's inconsistency at the
+              ;; atlanto-occipital joint is; this says what it would cost to make it
+              ;; go away. Over 100 means the decomposition error exceeds every newton
+              ;; the modelled upper cervical flexors can produce, which is why the
+              ;; surplus is reported here rather than assigned to them — see
+              ;; `solve-muscle-tensions`. It is NOT counted in `:max-mvc-pct` and NOT
+              ;; counted in `:over-mvc`: no muscle is producing it.
+              :atlanto-occipital-surplus-mvc-pct
+              (let [xs (keep :surplus-mvc-pct tensions)] (when (seq xs) (apply max xs))))
        true (assoc :two-joint-unfed-nm
                    (reduce (fn [m t]
                              (if-let [j (:crosses-joint t)]

@@ -542,20 +542,28 @@
 
   SO THE RESIDUAL IS USUALLY NEGATIVE, AND THAT IS A RESULT RATHER THAN A BUG. The
   big superficial extensors, sized by the load at C7, over-extend the joint above
-  them; what a real neck balances that with is its upper cervical FLEXORS — longus
-  capitis, rectus capitis anterior and lateralis — and this model has none of them.
-  `:over-supplied-nm` is that surplus, reported at every posture. The suboccipitals
-  are given `:residual-nm`, which is the surplus floored at zero, so in an ordinary
-  desk posture they carry nothing and the model says why.
+  them. `:over-supplied-nm` is that surplus, reported at every posture. The
+  suboccipitals are given `:residual-nm`, which is the surplus floored at zero, so
+  in an ordinary desk posture they carry nothing and the model says why.
 
-  ⚠ IT IS AN UNCOUPLED SOLVE AND THE SURPLUS IS PARTLY AN ARTEFACT OF THAT. A
-  simultaneous solve over both constraints would have chosen smaller capitis forces
-  and non-zero suboccipital ones. This model does not have one — the same
-  limitation `attachment/secondary-arm` states for the two-joint muscles of the leg
-  — so the surplus is an upper bound on the real disagreement, not a measurement of
-  it. What can be said without the coupled solve is the direction: the model is
-  short an upper cervical flexor, and until it has one this joint's equilibrium
-  cannot close from both sides.
+  ⚠ IT IS AN UNCOUPLED SOLVE AND THE SURPLUS IS AN ARTEFACT OF THAT, AND SINCE
+  2026-09-08 THAT IS MEASURED RATHER THAN SUSPECTED. A simultaneous solve over both
+  constraints would have chosen smaller capitis forces and non-zero suboccipital
+  ones. This model does not have one — the same limitation
+  `attachment/secondary-arm` states for the two-joint muscles of the leg.
+
+  THIS PARAGRAPH USED TO END: the model is short an upper cervical flexor, and
+  until it has one this joint's equilibrium cannot close from both sides. It has
+  two now — `longus_capitis` and `rectus_capitis_anterior`, in
+  `:atlanto-occipital-flexion` — and the equilibrium STILL does not close from both
+  sides, for a reason the flexors made visible rather than removed: carrying the
+  surplus would take 185% and 116% of what those two muscles can produce at
+  `laptop-on-lap`, 1.85 times the anatomy that would have to absorb it. So the
+  surplus is not a small residual that a missing muscle was hiding. It is a
+  decomposition error bigger than the muscles it is charged against, and what it
+  needs is a coupled solve and not another muscle.
+
+  That is why `:over-supplied-nm` is split below rather than handed to the flexors.
 
   `capitis-forces` is `{muscle-name force-n}`; without it only the gravitational
   terms are computed, because the demand does not depend on who carries it."
@@ -583,7 +591,37 @@
        capitis-forces
        (assoc :capitis-nm capitis
               :residual-nm (max 0.0 (- m capitis))
-              :over-supplied-nm (max 0.0 (- capitis m)))))))
+              :over-supplied-nm (max 0.0 (- capitis m))
+              ;; --- THE TWO HALVES OF THE FLEXION SIDE, SPLIT 2026-09-08 ---------
+              ;; `:over-supplied-nm` is one number made of two things that must not
+              ;; be spent alike, and until the joint had flexors nothing had to tell
+              ;; them apart because nothing could carry either.
+              ;;
+              ;; `:gravitational-flexion-nm` is what GRAVITY asks the flexors for:
+              ;; it is non-zero exactly when the skull's centre of mass sits BEHIND
+              ;; the occipital condyles, which is a head tipped back — looking up, or
+              ;; held against a headrest. It is computed from the placed chain with
+              ;; no muscle force in it, so it is free of every decomposition this
+              ;; model makes. At `head-flexion -15 deg` on a 70 kg / 1.70 m body it
+              ;; is 0.766 N·m and the capitis term is exactly zero.
+              ;;
+              ;; `:decomposition-surplus-nm` is the rest: the moment the two capitis
+              ;; muscles exert here IN EXCESS of what this joint's own gravity
+              ;; demands, which exists because they were sized by the equilibrium at
+              ;; C7 and `recruit`'s closed form takes one constraint. It is not a
+              ;; load on anybody. It is the size of this model's own inconsistency,
+              ;; and `muscle/solve-muscle-tensions` reports what carrying it WOULD
+              ;; cost the flexors rather than charging them for it — because the
+              ;; answer, measured 2026-09-08, is that carrying it takes 1.85x every
+              ;; newton the modelled flexors can produce. A surplus larger than the
+              ;; anatomy that would have to absorb it is evidence about the
+              ;; decomposition, not about a neck.
+              ;;
+              ;; The two sum to `:over-supplied-nm` by construction, which
+              ;; `the-atlanto-occipital-flexion-load-is-gravity-and-not-the-surplus`
+              ;; asserts rather than assumes.
+              :gravitational-flexion-nm (max 0.0 (- m))
+              :decomposition-surplus-nm (- (max 0.0 (- capitis m)) (max 0.0 (- m))))))))
 
 (defn solve-posture-loads
   "Full static inverse-dynamics solve for a posture (the RNEA gravity term).
