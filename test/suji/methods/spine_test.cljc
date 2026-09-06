@@ -4,6 +4,7 @@
   where it disagrees with the leg this actor actually validated."
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
+            [clojure.string :as str]
             [suji.methods.attachment :as attachment]
             [suji.methods.load :as load]
             [suji.methods.math :as math]
@@ -1169,3 +1170,148 @@
              tilted " vs " (* flat (Math/cos (math/radians (* 0.5 46.5))))))
     (is (> (- flat tilted) 25.0)
         (str "which is " (- flat tilted) " N of real load arriving nowhere"))))
+
+;; --- the 7x, decomposed ------------------------------------------------------
+
+(deftest the-standing-sitting-decomposition-accounts-for-every-newton
+  ;; THE FLOOR UNDER EVERY OTHER CLAIM IN THIS SECTION. A decomposition that does
+  ;; not sum to the thing it decomposes is a list of numbers, and a list of numbers
+  ;; can be adjusted until it reads well. This asserts closure first and the
+  ;; individual sizes second.
+  ;;
+  ;; AND THE IDENTITY THE SPLIT RESTS ON is asserted separately, because it is an
+  ;; assumption about the model rather than about this posture: the erector-spinae
+  ;; terms are `moment / arm x projection`, which is the solved force only while
+  ;; the erector spinae is the one trunk-extension candidate carrying load. The day
+  ;; a second one does, `:chain-identity-residual-nm` grows and this goes red —
+  ;; rather than the split quietly attributing that muscle's share to the pelvis.
+  (let [d (spine/standing-sitting-decomposition)]
+    (is (< (math/abs* (:residual-n d)) 1e-9)
+        (str "the contributions must sum to the difference they decompose; "
+             "residual " (:residual-n d) " N"))
+    (is (< (math/abs* (:chain-identity-residual-nm d)) 1e-9)
+        (str "force x arm must equal the lumbosacral moment, or the erector-spinae "
+             "split is mis-attributing another muscle's share: residual "
+             (:chain-identity-residual-nm d) " N·m"))
+    (let [by (into {} (map (juxt :name identity)) (:contributions d))
+          n (fn [k] (:newtons (get by k)))]
+      ;; every term, pinned. These are five figures rather than a tolerance
+      ;; because the point of the exercise is that each one is separately
+      ;; checkable — a change that moves any of them should have to say which.
+      (is (math/nearly= -28.330641931507728 (n :lumbar-chord-cosine) 1e-9))
+      (is (math/nearly= 384.37536398936294
+                        (n :lumbosacral-moment-on-the-neutral-geometry) 1e-9))
+      (is (math/nearly= -25.775144221675873 (n :pelvis-origin-moment-arms) 1e-9))
+      (is (math/nearly= 2.073382586920559
+                        (n :level-axis-under-the-muscle-line) 1e-9))
+      (is (math/nearly= 1.2169405131731992 (n :other-crossing-muscles) 1e-9))
+      (is (= 0.0 (n :trunk-mass-split))))))
+
+(deftest the-dominant-term-of-the-7x-is-the-chain-being-rooted-at-l5s1
+  ;; WHERE THE SEVENFOLD OVERSHOOT ACTUALLY COMES FROM, and it is not the lordosis
+  ;; as such. One term is larger than the whole difference — 384 N of 334 — and it
+  ;; is a moment that exists only because L5/S1 is the root of this chain and does
+  ;; not move: tilting the lumbar chord TRANSLATES everything above L5/S1 forward
+  ;; by 6.7 cm, which a real pelvis rotating about the hips does not do.
+  ;;
+  ;; THE COUNTERFACTUAL IS THE EVIDENCE, and it runs the other way from Wilke.
+  ;; Take that artefact out — leave the lordosis, remove the moment it invents —
+  ;; and what is left of standing is its weight term alone, 320.5 N, which is
+  ;; BELOW sitting's 348.9 N. So the model's agreement with Wilke's direction is
+  ;; produced by the artefact: without it this model says standing unloads L4/L5,
+  ;; and Wilke says it loads it.
+  (let [d (spine/standing-sitting-decomposition)
+        by (into {} (map (juxt :name identity)) (:contributions d))
+        moment-term (:newtons (get by :lumbosacral-moment-on-the-neutral-geometry))]
+    (is (> moment-term (:model-difference-n d))
+        (str "one term is larger than the whole difference: " moment-term " N of "
+             (:model-difference-n d) " N"))
+    (is (> (:share (get by :lumbosacral-moment-on-the-neutral-geometry)) 1.0)
+        "so its share exceeds 100% and the rest of the split is net negative")
+    (is (= 0.0 (:moment-nm (:sitting d)))
+        "the sitting posture asks nothing of the erector spinae")
+    (is (> (:moment-nm (:standing d)) 20.0)
+        (str "and the standing one asks " (:moment-nm (:standing d)) " N·m of it, "
+             "from a posture whose trunk flexion is zero"))
+    ;; the counterfactual, stated as the sign it produces
+    (is (< (:weight-n (:standing d)) (:weight-n (:sitting d)))
+        (str "with the invented moment removed the model contradicts Wilke's "
+             "direction: standing " (:weight-n (:standing d)) " N against sitting "
+             (:weight-n (:sitting d)) " N"))))
+
+(deftest the-trunk-mass-split-contributes-nothing-to-the-standing-sitting-difference
+  ;; ONE OF THE FIVE TERMS IS EXACTLY ZERO AND THAT IS A RESULT. The T12/L1 split
+  ;; took 2.0251 N off L4/L5 and moved the sitting cross-check AWAY from Wilke;
+  ;; it cannot move the DIFFERENCE, because both postures carry the same segments
+  ;; above the level and the subtraction cancels.
+  ;;
+  ;; Asserted on the weight BEFORE the tilt takes its cosine, which is the
+  ;; quantity the mass split changes. If a future change made the two postures
+  ;; carry different mass above L4/L5 — a desk under one of them, a support mode
+  ;; that reached the trunk — this would go red, and the zero above would have
+  ;; stopped being true without anybody noticing.
+  (let [d (spine/standing-sitting-decomposition)
+        {:keys [sitting standing]} (:weight-above-n d)]
+    (is (math/nearly= sitting standing 1e-9)
+        (str "the same weight sits above L4/L5 in both postures: " sitting
+             " vs " standing " N"))
+    ;; and the compressive terms differ by exactly the cosine of the chord
+    (is (math/nearly= (* (:weight-n (:sitting d)) (:axis-vertical (:standing d)))
+                      (:weight-n (:standing d)) 1e-9)
+        "so the whole of the weight term's move is the chord's cosine")))
+
+(deftest the-compression-the-tilt-drops-and-the-shear-it-creates-are-different-numbers
+  ;; THIS NAMESPACE'S OWN HEADER GOT THIS WRONG, and it is worth the test rather
+  ;; than a correction alone. It said the weight term falling 348.862 -> 320.531
+  ;; means `28.3 N of real load leaves the model and arrives nowhere`. 28.3 N is
+  ;; what leaves the COMPRESSIVE term, `W x (1 - cos)`. What appears transverse to
+  ;; the level — the shear nothing here carries — is `W x sin`, and on Wilke's body
+  ;; that is 137.7 N. The uncarried load was understated by a factor of about five.
+  ;;
+  ;; Derived from the level's own axis rather than pinned to an angle, so a change
+  ;; to the chord rule moves both together.
+  (let [d (spine/standing-sitting-decomposition)
+        lost (:compression-lost-to-tilt-n d)
+        shear (:shear-nothing-carries-n d)
+        {:keys [axis-vertical axis-horizontal]} (:standing d)
+        w (:standing (:weight-above-n d))]
+    (is (math/nearly= (* w (- 1.0 axis-vertical)) lost 1e-9)
+        (str "the compression lost is W x (1 - cos): " lost " N"))
+    (is (math/nearly= (* w axis-horizontal) shear 1e-9)
+        (str "the shear created is W x sin: " shear " N"))
+    (is (> shear (* 4.0 lost))
+        (str "and the second is several times the first — " shear " N against "
+             lost " N — so a reader told only the smaller one under-reads what "
+             "this model fails to carry"))
+    ;; nothing carries it: the level reports a compression and no transverse term
+    (is (nil? (:shear-n (first (filter #(= "L4/L5" (:name %)) (:rows (run posture/standing-neutral))))))
+        "and there is no field for it anywhere in the profile")))
+
+(deftest the-pelvis-origin-arms-unload-this-posture-and-would-load-the-mirror-of-it
+  ;; THE SECOND PATH, SIZED. `pelvic-tilt-reaches-l4l5-by-a-second-path-that-is-not-
+  ;; lordosis` shows the path exists; this says how much of the 334 N it is worth
+  ;; at the posture that matters, and it is -25.8 N — SEVEN PER CENT, and negative.
+  ;;
+  ;; That is the honest correction to a story this repo has told loosely. An
+  ;; anterior pelvic tilt LENGTHENS the erector spinae's moment arm (0.05447 ->
+  ;; 0.05838 m), so the same moment costs less force. The 2121.6 N reported for a
+  ;; POSTERIOR tilt with the lumbar spine held straight is the same path with the
+  ;; arms collapsing instead, and the asymmetry between the two is why the model
+  ;; answers `the tilted posture loads more` for either sign.
+  (let [d (spine/standing-sitting-decomposition)
+        by (into {} (map (juxt :name identity)) (:contributions d))
+        arm-term (:newtons (get by :pelvis-origin-moment-arms))]
+    (is (neg? arm-term)
+        (str "at an ANTERIOR tilt this path unloads the level: " arm-term " N"))
+    (is (< (math/abs* (:share (get by :pelvis-origin-moment-arms))) 0.10)
+        "and it is under a tenth of the difference, not the story")
+    (is (> (:arm-m (:standing d)) (:arm-m (:sitting d)))
+        (str "because the arm is longer, not shorter: " (:arm-m (:sitting d))
+             " -> " (:arm-m (:standing d)) " m"))
+    ;; the eight groups the second path runs through, counted from the skeleton
+    ;; rather than listed here — the number is a fact about the attachments
+    (let [pelvic (into #{} (comp (filter #(= "pelvis" (:segment (:origin %))))
+                                 (map #(first (str/split (:name %) #"/"))))
+                       attachment/instances)]
+      (is (= 8 (count pelvic))
+          (str "eight muscle groups originate on the pelvis: " (pr-str (sort pelvic)))))))

@@ -32,6 +32,7 @@
             [suji.methods.muscle-strain-test]
             [suji.methods.passive-test]
             [suji.methods.pose-test]
+            [suji.methods.posture-test]
             [suji.methods.recruit-test]
             [suji.methods.report-test]
             [suji.methods.spine-test]
@@ -52,6 +53,7 @@
     suji.methods.muscle-strain-test
     suji.methods.passive-test
     suji.methods.pose-test
+    suji.methods.posture-test
     suji.methods.recruit-test
     suji.methods.report-test
     suji.methods.spine-test

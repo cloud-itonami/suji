@@ -103,6 +103,7 @@
             [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]
             [suji.methods.pose :as pose]
+            [suji.methods.posture :as posture]
             [suji.methods.segment :as segment]))
 
 (def reference-stature-m 1.70)
@@ -607,7 +608,12 @@
               :wrist-extension-deg 0.0 :arms-supported false
               :support :seated :hip-flexion-deg 90.0 :knee-flexion-deg 90.0
               :ankle-dorsiflexion-deg 0.0
-              :pelvic-tilt-deg 0.0}
+              ;; DERIVED SINCE 2026-09-09, exactly as the standing entry's is:
+              ;; `0.6 - 0.6`, which is Cho's stool measured against Cho's stool.
+              ;; The number is zero and it is a MEASUREMENT, and writing it as a
+              ;; literal made it look like the same zero the unset postures were
+              ;; carrying.
+              :pelvic-tilt-deg (posture/pelvic-tilt-for :stool)}
     :posture-basis (str "p.758 `Relaxed sitting on a stool with a normally straight "
                         "back` — a straight back is zero trunk flexion. The paper does "
                         "not state where the arms were; they hang, which is what a "
@@ -667,7 +673,13 @@
               :wrist-extension-deg 0.0 :arms-supported false
               :support :standing :hip-flexion-deg 0.0 :knee-flexion-deg 5.0
               :ankle-dorsiflexion-deg 5.0
-              :pelvic-tilt-deg 46.5}
+              ;; DERIVED SINCE 2026-09-09, and the number did not move: this was
+              ;; the literal 46.5, which is `47.1 - 0.6` and equals it to the bit
+              ;; in double. Reading it from `posture/lumbar-lordosis` means the
+              ;; day Cho's table is corrected, or a second cohort replaces it,
+              ;; this entry follows instead of quietly disagreeing with the table
+              ;; it says it came from.
+              :pelvic-tilt-deg (posture/pelvic-tilt-for :standing)}
     :posture-basis (str "Table 1 p.757 / p.758 `relaxed standing`. The upper body is "
                         "held at exactly the angles the sitting entry holds it at, so "
                         "that the only thing that differs between the two comparisons "
@@ -824,6 +836,175 @@
      (str "any lordosis of either sign raises compression in this model, so the "
           "sign of this difference follows from which posture was given the "
           "smaller lordosis and could not have come out the other way")
+     :validated :reference
+     :model-validated? false}))
+
+(defn standing-sitting-decomposition
+  "The 333.6 N this model puts between Wilke's standing and his sitting, split
+  into named contributions that can each be checked on their own.
+
+  WHY A DECOMPOSITION AND NOT A SMALLER NUMBER. `sitting-standing-comparison`
+  reports a difference ratio of about 7, and a ratio is one number: it says the
+  model is wrong and says nothing about which part. Dividing the chord's
+  sensitivity by 8 brings that ratio to 1.03, and this repo has refused that five
+  times, because a fitted divisor makes the ratio smaller without making anything
+  checkable. What is checkable is a SPLIT — five terms that sum to the difference
+  exactly, each isolated by a different mechanism, each with its own test.
+
+  THE TERMS, and what isolates each.
+
+    :lumbar-chord-cosine
+      The weight above L4/L5 no longer acts along the level's axis, so only
+      `W x cos(chord tilt)` of it compresses the disc. NEGATIVE: the lordosis
+      UNLOADS this term. Isolated by the identity `weight-standing =
+      weight-sitting x cos(chord)`, which also proves the trunk mass split
+      contributes nothing here — the same `W` appears on both sides.
+
+    :lumbosacral-moment-on-the-neutral-geometry
+      Tilting the lumbar chord translates everything above L5/S1 anteriorly,
+      because L5/S1 is the ROOT of this chain and does not move. That creates a
+      flexion moment out of nothing — 0 N.m sitting, 21.4 N.m standing — and the
+      erector spinae has to hold it. Priced at the NEUTRAL posture's moment arm
+      and the NEUTRAL posture's line projection, so this term is the moment alone.
+      This is the dominant one and it is an artefact: a real pelvis rotates about
+      the hips and carries L5/S1 backward.
+
+    :pelvis-origin-moment-arms
+      Then swap the moment arm for the tilted posture's. Eight muscle groups
+      originate on the pelvis, and rotating it moves their origins; anteriorly it
+      LENGTHENS the erector spinae's arm (0.05447 -> 0.05838 m, +7.2%), so the
+      same moment costs less force. NEGATIVE. This is the path
+      `pelvic-tilt-reaches-l4l5-by-a-second-path-that-is-not-lordosis` named, and
+      at this posture it is a 7% correction rather than the story.
+
+    :level-axis-under-the-muscle-line
+      Then swap the projection. The level's axis has rotated with the lumbar
+      chord and the muscle's line has rotated with the pelvis, so the fraction of
+      the muscle's force that presses the disc together changes (0.9780 ->
+      0.9837). Small and positive.
+
+    :other-crossing-muscles
+      Whatever crosses L4/L5 that is not the erector spinae. At this posture it is
+      the two obliques and it is 1.2 N.
+
+  THE ORDER IS STATED BECAUSE IT MATTERS. Three of those terms are factors of one
+  product, so attributing them one at a time is order-dependent; this function
+  swaps moment, then arm, then projection, and says so rather than pretending the
+  split is unique. What is NOT order-dependent is the sum, which is checked.
+
+  THE CHAIN IDENTITY IS CHECKED, NOT ASSUMED. The whole erector-spinae split rests
+  on `force x arm = moment` — true only while the erector spinae is the one
+  trunk-extension candidate carrying load. `:chain-identity-residual-nm` measures
+  it, and `the-standing-sitting-decomposition-accounts-for-every-newton` refuses a
+  split whose residual has grown, so the day a second extensor carries force this
+  goes red instead of quietly mis-attributing its share.
+
+  AND THE SHEAR IS REPORTED FROM BOTH ENDS. `:compression-lost-to-tilt-n` is what
+  leaves the compressive term, `W x (1 - cos)`; `:shear-nothing-carries-n` is what
+  appears transverse to the level, `W x sin`. They are DIFFERENT NUMBERS - 28.3 N
+  and 137.7 N on Wilke's body - and this namespace's own header called the first
+  of them the load that `arrives nowhere`, which understates the second by a
+  factor of five. Nothing carries either."
+  []
+  (let [sit-ref (reference-by-id :wilke-1999-sitting-relaxed-no-backrest)
+        stand-ref (reference-by-id :wilke-1999-relaxed-standing)
+        {:keys [subject disc-area-mm2]} wilke-1999
+        body (segment/build-body (:mass-kg subject) (:stature-m subject))
+        stature-m (:stature-m body)
+        l45 (first (filter #(= "L4/L5" (:name %)) levels))
+        es-instance (first (filter #(= "erector_spinae" (:name %))
+                                   attachment/instances))
+        state
+        (fn [pst]
+          (let [p (pose/solve-pose body pst)
+                loads (load/solve-posture-loads body pst)
+                tensions (muscle/solve-muscle-tensions body pst loads)
+                row (first (filter #(= "L4/L5" (:name %)) (profile body pst tensions)))
+                axis (:axis (level-point p l45))
+                arms (attachment/arms p stature-m)
+                dir (:dir (attachment/line-of-action p stature-m es-instance))
+                es-force (:force-n (first (filter #(= "erector_spinae" (:name %))
+                                                  tensions)))
+                proj (math/abs* (math/vdot dir axis))]
+            {:row row
+             :moment-nm (:moment-nm (first (filter #(= "lumbosacral" (:joint %))
+                                                   (:joints loads))))
+             :arm-m (get arms "erector_spinae")
+             :projection proj
+             :axis-vertical (nth axis 1)
+             ;; the level's own axis, kept so the transverse (shear) component can
+             ;; be taken with `math/vlen` rather than with a square root spelled
+             ;; out here — this file is `.cljc` and the numeric floor is `math`
+             :axis-horizontal (math/vlen [(nth axis 0) 0.0 (nth axis 2)])
+             :erector-force-n es-force
+             :erector-n (* es-force proj)
+             :weight-n (:weight-n row)
+             :muscle-n (:muscle-n row)
+             :ligament-n (:ligament-n row)
+             :force-n (:force-n row)}))
+        s (state (:posture sit-ref))
+        t (state (:posture stand-ref))
+        d-model (- (:force-n t) (:force-n s))
+        d-ref (- (pressure->compressive-force-n (:pressure-mpa stand-ref) disc-area-mm2
+                                                (:mean nachemson-pressure-index))
+                 (pressure->compressive-force-n (:pressure-mpa sit-ref) disc-area-mm2
+                                                (:mean nachemson-pressure-index)))
+        ;; the erector chain, swapped one factor at a time in the stated order
+        es-sit (:erector-n s)
+        es-moment (* (/ (:moment-nm t) (:arm-m s)) (:projection s))
+        es-arm (* (/ (:moment-nm t) (:arm-m t)) (:projection s))
+        es-proj (* (/ (:moment-nm t) (:arm-m t)) (:projection t))
+        ;; the weight above the level, before the tilt takes its cosine
+        w-above-sit (/ (:weight-n s) (:axis-vertical s))
+        w-above-stand (/ (:weight-n t) (:axis-vertical t))
+        contributions
+        [{:name :lumbar-chord-cosine
+          :newtons (- (:weight-n t) (:weight-n s))
+          :how (str "weight above the level x (cos chord - 1); the same W on both "
+                    "sides, which is why the trunk mass split cancels here")
+          :sourced :derived}
+         {:name :lumbosacral-moment-on-the-neutral-geometry
+          :newtons (- es-moment es-sit)
+          :how (str "the standing lumbosacral moment divided by the SITTING arm "
+                    "and projected on the SITTING axis")
+          :sourced :artefact-of-rooting-the-chain-at-l5s1}
+         {:name :pelvis-origin-moment-arms
+          :newtons (- es-arm es-moment)
+          :how "then swap the erector spinae's moment arm for the tilted one"
+          :sourced :derived}
+         {:name :level-axis-under-the-muscle-line
+          :newtons (- es-proj es-arm)
+          :how "then swap the projection of the muscle's line on the level's axis"
+          :sourced :derived}
+         {:name :other-crossing-muscles
+          :newtons (- (- (+ (:muscle-n t) (:ligament-n t)) (:erector-n t))
+                      (- (+ (:muscle-n s) (:ligament-n s)) (:erector-n s)))
+          :how "everything crossing L4/L5 that is not the erector spinae"
+          :sourced :derived}
+         {:name :trunk-mass-split
+          :newtons 0.0
+          :how (str "exactly zero BY CONSTRUCTION of the comparison: both postures "
+                    "carry the same segments above the level, so the 2.0251 N the "
+                    "T12/L1 split took off this level is subtracted on both sides. "
+                    "`:weight-above-n` is reported for each so the cancellation can "
+                    "be seen rather than believed")
+          :sourced :derived}]
+        summed (reduce + 0.0 (map :newtons contributions))]
+    {:sitting s
+     :standing t
+     :model-difference-n d-model
+     :reference-difference-n d-ref
+     :difference-ratio (when-not (zero? d-ref) (/ d-model d-ref))
+     :contributions (mapv #(assoc % :share (when-not (zero? d-model)
+                                             (/ (:newtons %) d-model)))
+                          contributions)
+     :summed-n summed
+     :residual-n (- d-model summed)
+     :weight-above-n {:sitting w-above-sit :standing w-above-stand}
+     :compression-lost-to-tilt-n (- (:weight-n s) (:weight-n t))
+     :shear-nothing-carries-n (* w-above-stand (:axis-horizontal t))
+     :chain-identity-residual-nm (- (:moment-nm t)
+                                    (* (:erector-force-n t) (:arm-m t)))
      :validated :reference
      :model-validated? false}))
 
