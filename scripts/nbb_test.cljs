@@ -21,29 +21,33 @@
   (:require [cljs.test]
             [suji.cells.state-machines-test]
             [suji.methods.articulation-dict-test]
+            [suji.methods.attachment-test]
             [suji.methods.load-sensitivity-test]
             [suji.methods.load-test]
             [suji.methods.math-test]
             [suji.methods.moment-balance-test]
             [suji.methods.muscle-strain-test]
             [suji.methods.pose-test]
+            [suji.methods.recruit-test]
             [suji.murakumo-test]))
 
 (def namespaces
   '[suji.cells.state-machines-test
     suji.methods.articulation-dict-test
+    suji.methods.attachment-test
     suji.methods.load-sensitivity-test
     suji.methods.load-test
     suji.methods.math-test
     suji.methods.moment-balance-test
     suji.methods.muscle-strain-test
     suji.methods.pose-test
+    suji.methods.recruit-test
     suji.murakumo-test])
 
 ;; An evidence floor: a runner that loads no namespace, or that silently stops
 ;; finding vars, must not be able to print a pass. Cf. the workspace rule that a
 ;; check which could not run has to be distinguishable from a check that passed.
-(def ^:private min-tests 40)
+(def ^:private min-tests 60)
 
 (defmethod cljs.test/report [:cljs.test/default :end-run-tests] [m]
   (let [{:keys [test pass fail error]} m]

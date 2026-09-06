@@ -85,6 +85,41 @@
 (defn vlen [[x y z]] (Math/sqrt (+ (* x x) (* y y) (* z z))))
 (defn vmid [a b] (v* (v+ a b) 0.5))
 
+(defn vdot [[ax ay az] [bx by bz]] (+ (* ax bx) (* ay by) (* az bz)))
+
+(defn vcross
+  "a x b. The moment-arm layer is built on this: the moment a force along a line
+  exerts about a point is r x F, and its component about a joint axis is that
+  cross product projected onto the axis."
+  [[ax ay az] [bx by bz]]
+  [(- (* ay bz) (* az by))
+   (- (* az bx) (* ax bz))
+   (- (* ax by) (* ay bx))])
+
+(defn vnorm
+  "Unit vector, or nil for a zero-length input. nil rather than a silent [0 0 0]:
+  a direction that does not exist must not be usable as if it pointed somewhere."
+  [v]
+  (let [l (vlen v)]
+    (when (> l 1e-12) (v* v (/ 1.0 l)))))
+
+;; --- rotations about the three anatomical axes -------------------------------
+;; Frame (shared with suji.methods.pose): +X anterior, +Y superior, +Z to the
+;; person's left. So flexion/extension is a rotation about Z, lateral bend and
+;; abduction about X, and axial rotation about Y.
+
+(defn rot-z [[x y z] deg]
+  (let [t (radians deg) c (Math/cos t) s (Math/sin t)]
+    [(- (* x c) (* y s)) (+ (* x s) (* y c)) z]))
+
+(defn rot-x [[x y z] deg]
+  (let [t (radians deg) c (Math/cos t) s (Math/sin t)]
+    [x (- (* y c) (* z s)) (+ (* y s) (* z c))]))
+
+(defn rot-y [[x y z] deg]
+  (let [t (radians deg) c (Math/cos t) s (Math/sin t)]
+    [(+ (* x c) (* z s)) y (- (* z c) (* x s))]))
+
 (defn fmt-fixed
   "n-decimal fixed-point string on both hosts (display only)."
   [v n]

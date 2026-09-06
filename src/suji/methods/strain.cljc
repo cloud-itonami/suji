@@ -6,8 +6,17 @@
   A static posture is an isometric contraction sustained for the length of a work session,
   and isometric load has a known endurance limit that falls steeply with %MVC (Rohmert).
 
-  Endurance model: T_end(f) ≈ 0.2 · f^-2.32 minutes. Stiffness index ∈ [0,1) =
-  1 - exp(-dose), where dose combines the acute and chronic terms over the session.
+  Endurance model: T_end(f) ≈ 0.2 · f^-2.32 minutes. Stiffness index = 1 - exp(-dose),
+  where dose combines the acute and chronic terms over the session.
+
+  THE INDEX SATURATES, AND SAYS SO. Mathematically it lies in [0,1) and never
+  reaches 1; in double precision it reaches exactly 1.0 as soon as the dose passes
+  about 37, because 1 - x rounds to 1.0 for any x below 2⁻⁵³. That happens at
+  ordinary loads — roughly 50 %MVC held for two hours — which is to say the index
+  loses ALL resolution exactly where the load is worst: two postures, one twice as
+  demanding as the other, both read 1.00. `:saturated?` marks those, so a consumer
+  can render a `>=` rather than presenting a ceiling as a measurement. (Found
+  2026-09-06 by a test that asserted `< 1.0` and was right to.)
 
   NON-DIAGNOSTIC (G1): a stiffness index is a normalised load-time dose, not a medical
   finding. SELF-REFERENCED (G3): indices compared against the SAME member's other postures.
@@ -43,7 +52,10 @@
         excess (/ (max 0.0 (- mvc-pct chronic-threshold-pct)) 100.0)
         chronic (* chronic-weight excess (/ session-minutes 60.0))
         dose (+ acute chronic)
-        stiffness (- 1.0 (Math/exp (- dose)))]
+        stiffness (- 1.0 (Math/exp (- dose)))
+        ;; `>= 1.0` rather than `= 1.0`: the comparison is about what the double
+        ;; can still distinguish, not about an exact value.
+        saturated? (>= stiffness 1.0)]
     {:name (:name t)
      :mvc-pct mvc-pct
      :session-minutes session-minutes
@@ -51,6 +63,7 @@
      :acute-dose acute
      :chronic-dose chronic
      :stiffness-index stiffness
+     :saturated? saturated?
      :over-endurance (and (not (math/infinite? t-end)) (> session-minutes t-end))}))
 
 (defn session-strain

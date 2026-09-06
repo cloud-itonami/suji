@@ -23,9 +23,21 @@
       +Y  superior (up)
       +Z  to the person's left
 
-  The sagittal plane is XY and every flexion in this model is a rotation about −Z.
-  A segment is stored with both endpoints, so a consumer never re-derives one from
-  an angle. `:euler-z` is handed to renderers that want a transform instead.
+  The sagittal plane is XY. Flexion is a rotation about Z, abduction and lateral
+  bend are rotations about X, and axial rotation is about the segment's own long
+  axis. A segment is stored with both endpoints, so a consumer never re-derives one
+  from an angle; `:euler-z` is handed to renderers that want a sagittal transform.
+
+  EVERY SEGMENT CARRIES A FRAME, not just a direction (2026-09-06). A direction is
+  enough to place a rod and hang a mass on it; it is NOT enough to place a muscle,
+  because a muscle attaches at a point offset from the bone's axis and the size of
+  that offset in the plane of the joint IS the moment arm. `:frame` is an
+  orthonormal basis `{:long :ant :lat}` in the segment's own terms, so an
+  attachment is stated once in local coordinates and lands correctly at every
+  posture rather than being re-tabulated per angle.
+
+  Out-of-plane input is optional and defaults to zero, so a purely sagittal posture
+  places exactly as it did before frames existed.
 
   NON-DIAGNOSTIC (G1): a coordinate is a coordinate. Nothing here is a finding.
   REPRESENTATIVE (G7): lengths come from `segment`, i.e. Winter/Drillis regressions
@@ -43,22 +55,62 @@
         c (Math/cos t)]
     [s (if up? c (- c)) 0.0]))
 
+(defn- rotate-frame
+  "Apply flexion (about Z), abduction/lateral bend (about X) and axial rotation
+  (about the segment's own long axis, after the first two) to a base frame.
+
+  Order is fixed and stated rather than inferred: flexion, then abduction, then
+  axial. Euler angles do not commute, so an unstated order is an unstated model."
+  [{:keys [long ant lat]} flex-deg abduct-deg axial-deg z-sign]
+  (let [rz (fn [v] (math/rot-z v (* z-sign flex-deg)))
+        rx (fn [v] (math/rot-x v abduct-deg))
+        [long' ant' lat'] (map (comp rx rz) [long ant lat])
+        ;; axial rotation is about the segment's OWN long axis, which only exists
+        ;; after the first two rotations have placed it
+        axial (fn [v] (if (zero? axial-deg)
+                        v
+                        (let [t (math/radians axial-deg)
+                              c (Math/cos t) s (Math/sin t)
+                              k long']
+                          ;; Rodrigues about k
+                          (math/v+ (math/v+ (math/v* v c)
+                                            (math/v* (math/vcross k v) s))
+                                   (math/v* k (* (math/vdot k v) (- 1.0 c)))))))]
+    {:long long' :ant (axial ant') :lat (axial lat')}))
+
+(defn segment-frame
+  "Orthonormal frame for a segment.
+
+  `up?` says whether the segment rises from its proximal joint (trunk, head) or
+  descends from it (the arm chain); that flips the sense in which a forward
+  flexion rotates the long axis, which is geometry rather than convention —
+  rotating about +Z carries +Y toward −X and −Y toward +X."
+  [flex-deg abduct-deg axial-deg up?]
+  (let [base {:long (if up? [0.0 1.0 0.0] [0.0 -1.0 0.0])
+              :ant [1.0 0.0 0.0]
+              :lat [0.0 0.0 1.0]}]
+    (rotate-frame base flex-deg abduct-deg axial-deg (if up? -1.0 1.0))))
+
 (defn- place
-  "One placed segment: proximal point, direction, length → the record every
-  consumer reads. `tilt-deg` is kept so a renderer can build a transform without
+  "One placed segment: proximal point, frame, length → the record every consumer
+  reads. `tilt-deg` is kept so a renderer can build a sagittal transform without
   inverting the direction, and so a test can state the intent it is checking."
-  [name proximal dir length-m com-frac tilt-deg up?]
-  (let [distal (math/v+ proximal (math/v* dir length-m))
+  [name proximal frame length-m com-frac tilt-deg up?]
+  (let [dir (:long frame)
+        distal (math/v+ proximal (math/v* dir length-m))
         com (math/v+ proximal (math/v* dir (* com-frac length-m)))]
     {:name name
      :proximal proximal
      :distal distal
      :com com
      :dir dir
+     :frame frame
      :length-m length-m
+     :com-frac com-frac
      :tilt-deg tilt-deg
      ;; Rotation about −Z takes +Y (or −Y) onto `dir`; a renderer applies this to a
-     ;; unit cylinder aligned with its own up axis.
+     ;; unit cylinder aligned with its own up axis. Sagittal only — a renderer that
+     ;; needs the out-of-plane placement reads `:frame` or the endpoints.
      :euler-z (math/radians (if up? (- tilt-deg) (- 180.0 tilt-deg)))}))
 
 (defn solve-pose
@@ -66,12 +118,23 @@
 
   Returns {:joints {…point} :segments [placed…] :frame {…}}. Joint keys are the
   anatomical landmarks the moment solver takes moments about; segments are in
-  proximal-to-distal order. The arm chain is placed ONCE — both arms are mirror
-  images across the sagittal plane and carry the same lever, so the loads multiply
-  by two rather than the geometry."
+  proximal-to-distal order. The arm chain is placed ONCE — in a purely sagittal
+  posture both arms are mirror images across the plane and carry the same lever,
+  so the loads multiply by two rather than the geometry. The placed arm is the
+  person's LEFT (the +Z side); with a non-zero abduction the two arms are no
+  longer interchangeable, and `:arm-side` says which one this is so a consumer
+  cannot silently read it as both.
+
+  Out-of-plane angles are optional and default to zero:
+    :trunk-lateral-bend-deg   trunk away from the midline (about X)
+    :shoulder-abduction-deg   arm away from the midline
+    :head-rotation-deg        axial rotation of the head on the neck"
   [body posture]
   (let [{:keys [head-flexion-deg trunk-flexion-deg
                 shoulder-flexion-deg elbow-flexion-deg]} posture
+        lateral (or (:trunk-lateral-bend-deg posture) 0.0)
+        abduct (or (:shoulder-abduction-deg posture) 0.0)
+        head-rot (or (:head-rotation-deg posture) 0.0)
         pelvis (segment/seg body "pelvis")
         thorax (segment/seg body "thorax_abdomen")
         head (segment/seg body "head_neck")
@@ -80,39 +143,40 @@
         hand (segment/seg body "hand")
         l5s1 [0.0 0.0 0.0]
         ;; pelvis descends from L5/S1; seated, it is the base the chain stands on.
-        pelvis-dir [0.0 -1.0 0.0]
-        p-seg (place "pelvis" l5s1 pelvis-dir (:length-m pelvis) (:com-frac pelvis) 0.0 false)
+        p-seg (place "pelvis" l5s1 (segment-frame 0.0 0.0 0.0 false)
+                     (:length-m pelvis) (:com-frac pelvis) 0.0 false)
         ;; trunk rises from L5/S1, tilted forward by the trunk flexion
-        t-dir (dir-from-vertical trunk-flexion-deg true)
-        t-seg (place "thorax_abdomen" l5s1 t-dir (:length-m thorax) (:com-frac thorax)
-                     trunk-flexion-deg true)
+        t-seg (place "thorax_abdomen" l5s1
+                     (segment-frame trunk-flexion-deg lateral 0.0 true)
+                     (:length-m thorax) (:com-frac thorax) trunk-flexion-deg true)
         c7 (:distal t-seg)
         ;; the head's tilt is measured from the trunk it sits on, so world tilt adds
         head-tilt (+ trunk-flexion-deg head-flexion-deg)
-        h-dir (dir-from-vertical head-tilt true)
-        h-seg (place "head_neck" c7 h-dir (:length-m head) (:com-frac head) head-tilt true)
-        ;; glenohumeral ≈ C7 in a 2-D chain: this model has no scapula segment, and
-        ;; the shoulder moment is taken about the joint, so a shared origin with C7
-        ;; is the honest simplification rather than an invented offset.
+        h-seg (place "head_neck" c7 (segment-frame head-tilt lateral head-rot true)
+                     (:length-m head) (:com-frac head) head-tilt true)
+        ;; glenohumeral ≈ C7 in this chain: there is no scapula segment, and the
+        ;; shoulder moment is taken about the joint, so a shared origin with C7 is
+        ;; the honest simplification rather than an invented offset.
         shoulder c7
-        ;; the upper arm descends from the shoulder, carried forward by its flexion
-        ua-dir (dir-from-vertical shoulder-flexion-deg false)
-        ua-seg (place "upper_arm" shoulder ua-dir (:length-m ua) (:com-frac ua)
-                      shoulder-flexion-deg false)
+        ua-seg (place "upper_arm" shoulder
+                      (segment-frame shoulder-flexion-deg (- abduct) 0.0 false)
+                      (:length-m ua) (:com-frac ua) shoulder-flexion-deg false)
         elbow (:distal ua-seg)
-        ;; THE CORRECTION. Elbow flexion is the angle BETWEEN the forearm and the
-        ;; upper arm (0° = straight arm hanging, 90° = right angle). In world terms
-        ;; the forearm's tilt from vertical is therefore the upper arm's tilt PLUS
-        ;; the elbow angle. With a 15° shoulder and a 90° elbow that reaches forward
-        ;; and slightly up — a keyboard posture. The old `(- 90.0 elbow)` gave 0°,
-        ;; i.e. straight down, for the same posture.
+        ;; Elbow flexion is the angle BETWEEN the forearm and the upper arm (0° =
+        ;; straight arm hanging, 90° = right angle), so the forearm's tilt from
+        ;; vertical is the upper arm's tilt PLUS the elbow angle. With a 15°
+        ;; shoulder and a 90° elbow that reaches forward and slightly up — a
+        ;; keyboard posture. The pre-2026-09-06 `(- 90.0 elbow)` gave 0°, i.e.
+        ;; straight down, for the same posture.
         fa-tilt (+ shoulder-flexion-deg elbow-flexion-deg)
-        fa-dir (dir-from-vertical fa-tilt false)
-        fa-seg (place "forearm" elbow fa-dir (:length-m fa) (:com-frac fa) fa-tilt false)
+        fa-frame (segment-frame fa-tilt (- abduct) 0.0 false)
+        fa-seg (place "forearm" elbow fa-frame (:length-m fa) (:com-frac fa) fa-tilt false)
         wrist (:distal fa-seg)
         ;; no wrist flexion in this model: the hand continues the forearm
-        hand-seg (place "hand" wrist fa-dir (:length-m hand) (:com-frac hand) fa-tilt false)]
+        hand-seg (place "hand" wrist fa-frame (:length-m hand) (:com-frac hand)
+                        fa-tilt false)]
     {:frame {:units :metres :origin "L5/S1" :axes {:x :anterior :y :superior :z :left}}
+     :arm-side :left
      :joints {:l5s1 l5s1
               :hip (:distal p-seg)
               :c7 c7

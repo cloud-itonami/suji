@@ -25,7 +25,11 @@ laptop workstation ──▶ posture (joint angles)        posture.cljc
                    ──▶ static inverse dynamics        load.cljc     ← kami-genesis PlanarChain
                        (RNEA gravity term)                          Featherstone statics
                    ──▶ cervical compressive load      load.cljc     ← VALIDATED vs Hansraj 2014
-                   ──▶ muscle %MVC  (緊張 / tension)   muscle.cljc   ← Hill-type moment-arm
+                   ──▶ muscle moment arms             attachment.cljc ← from the anatomy,
+                       (geometric, angle-dependent)                    not a constant table
+                   ──▶ load sharing between synergists recruit.cljc  ← Crowninshield-Brand
+                       (minimum cubed stress, closed form)              min sum (F/Fmax)^3
+                   ──▶ muscle %MVC  (緊張 / tension)   muscle.cljc
                    ──▶ stiffness index (強張り)        strain.cljc   ← Rohmert sustained dose
                    ──▶ A/B/C ergonomic comparison      analyze.cljc
 ```
@@ -95,8 +99,8 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 79 tests / 1177 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 63 tests / 225 assertions
+clojure -M:test                                   # JVM   — 94 tests / 1253 assertions
+nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 78 tests /  301 assertions
 clojure -M:lint                                   # 0 errors
 clojure -M -m suji.methods.analyze                # the laptop-posture report
 ```
@@ -123,6 +127,36 @@ and the moment read off it as Σ weight × anterior lever. `pose-test` states th
 that names its own reason: a mass under its joint has no lever.
 
 **The cervical leg is untouched** and still reproduces the Hansraj (2014) table.
+
+**Moment arms, redundancy and refusal (2026-09-06).** Every moment arm used to be a
+constant in `muscle/specs`, which asserts that a muscle's leverage does not change
+when the joint moves — false for every muscle in the body. `attachment.cljc` places
+each muscle's attachments on the bones `pose` placed and derives the perpendicular
+distance; the old constants are the calibration anchor (the neutral arms reproduce
+them to within 0.2%) and everything away from neutral is now geometry. Measured
+consequence: the cervical extensor arm falls from 20.0 mm at neutral to 6.1 mm at
+60° of head flexion, so the same neck moment costs three times the muscle force —
+which is why laptop-on-lap's cervical extensors read 50 %MVC now and 27 %MVC before.
+
+A straight line goes wrong in two ways, and both are in the tests. It can cross to
+the far side of the joint as the joint flexes, at which point the model reports the
+extensors as flexors — the cervical group did this at 30° and erector spinae near
+55° before the insertions were moved. And its line of action can pass *through* the
+joint, where the required force diverges: this model's anterior deltoid does at 90°
+of shoulder flexion, because a straight line has no wrapping surface. `recruit`
+**refuses** below a stated leverage floor rather than returning the large number.
+
+Upper trapezius and levator scapulae both suspend the girdle, so the equilibrium
+does not determine their forces; they used to be assigned by two unrelated
+hand-written expressions. `recruit` shares them by minimum cubed stress
+(Crowninshield & Brand 1981) in closed form — exact, and it moves when the anatomy
+moves. The old trapezius expression also charged the head's extension load a second
+time, on top of the cervical group; that term is gone.
+
+**The stiffness index saturates and now says so.** It is mathematically in [0,1) but
+reaches exactly 1.0 in double precision once the dose passes ~37 — roughly 50 %MVC
+held for two hours, which is an ordinary posture. Two postures, one twice as bad as
+the other, both read 1.00. `:saturated?` marks them.
 
 **Honest R0**: design + runnable physics + a validated cervical model. Anthropometry / muscle /
 endurance parameters are `:representative` (G7); the cervical leg is validated, the muscle %MVC and
