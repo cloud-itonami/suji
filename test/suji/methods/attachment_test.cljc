@@ -240,6 +240,69 @@
           "and whoever does not is the antagonist, not an unanswered load")
       (is (:complete? (:summary r))))))
 
+(deftest the-abduction-arm-is-not-a-constant
+  ;; THE DEFECT THIS CATCHES, and it is the one this whole namespace exists to
+  ;; prevent. `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm`
+  ;; asserts that the ANTERIOR deltoid varies; the same assertion for the middle
+  ;; deltoid was never written, and until 2026-09-07 it would have failed. Its
+  ;; wrap radius was 0.022 m, which is not a bone radius at all — it is the top of
+  ;; the `~20-25 mm` moment-arm range its own `:source` quoted, used as a floor.
+  ;; A floor taken from the arm's own target sits ABOVE the arm, so it binds
+  ;; everywhere: measured over 3,072 postures the wrap was in force 3,072 times
+  ;; and the arm was −0.022 m at all of them. A moment arm that never moves is a
+  ;; table, and a table is what this file replaced.
+  (let [arms (mapv #(arm (at :shoulder-abduction-deg (double %)) "middle_deltoid/left")
+                   [0 15 30 45 60 75 90])]
+    (is (< 1 (count (distinct (mapv #(math/round-to % 9) arms))))
+        (str "the middle deltoid's abduction arm must move with the joint: " arms))
+    ;; and by enough to matter — a variation of a few microns would satisfy the
+    ;; line above while still being a constant to any consumer
+    (is (> (/ (apply max (map math/abs* arms)) (apply min (map math/abs* arms))) 1.2)
+        (str "and by enough that a constant would not have done: " arms))))
+
+(deftest the-abduction-floor-is-the-humeral-head-and-it-is-a-floor
+  ;; A wrapping surface is a FLOOR the chord can beat (`moment-arm-detail`). A
+  ;; floor that is in force at every posture is not a floor, it is a tabulated
+  ;; value wearing one — which is exactly what 0.022 m produced. Both halves are
+  ;; asserted here: the radius is the humeral head's, shared with the anterior
+  ;; deltoid because it is the same bone; and the chord actually beats it
+  ;; somewhere, so the wrap is doing the job it claims.
+  (let [md (att/instance "middle_deltoid/left")
+        ad (att/instance "anterior_deltoid/left")
+        r (get-in md [:wrap :radius-m])
+        dets (mapv (fn [d]
+                     (let [p (at :shoulder-abduction-deg (double d))]
+                       (att/moment-arm-detail p 1.70 md (get-in p [:joints :shoulder/left])
+                                              att/frontal-axis)))
+                   (range 0 181 5))]
+    (is (= r (get-in ad [:wrap :radius-m]))
+        (str "one bone, one radius: the two deltoids wrap the same humeral head, "
+             "and declared " r " and " (get-in ad [:wrap :radius-m])))
+    (is (some (complement :wrapped?) dets)
+        "the chord must beat the floor somewhere, or the floor is a table")
+    (is (some :wrapped? dets)
+        "and the floor must bind somewhere, or it is not doing anything")
+    ;; the floor is a floor: nothing may be reported closer to the joint than the
+    ;; bone the tendon lies on
+    (is (every? #(>= (math/abs* (:arm %)) (- r 1e-12)) dets)
+        (str "no arm may fall below the head radius " r ": "
+             (mapv #(math/round-to (:arm %) 5) dets)))))
+
+(deftest the-abductor-does-not-become-an-adductor-in-its-own-range
+  ;; WHAT THE CONSTANT WAS HIDING. With the acromion at the joint's own height the
+  ;; chord's abduction leverage was largest at 0° and fell through zero near 78°,
+  ;; so the model's principal abductor was an ADDUCTOR through the top half of its
+  ;; range. Nobody could see it, because the floor was above the chord's whole
+  ;; range and reported ±22 mm at every posture. Sign, then shape.
+  (doseq [d [0 30 60 90 120 150 180]]
+    (let [a (arm (at :shoulder-abduction-deg (double d)) "middle_deltoid/left")]
+      (is (neg? a) (str d "°: the left middle deltoid abducts, got " a))))
+  ;; and the shape: leverage is poorest at the extremes and best in mid-range,
+  ;; which is the opposite of what an origin level with the joint produced
+  (let [mag #(math/abs* (arm (at :shoulder-abduction-deg (double %)) "middle_deltoid/left"))]
+    (is (> (mag 45) (mag 0)) "leverage rises off the side of the body")
+    (is (> (mag 45) (mag 120)) "and falls again toward the top of the range")))
+
 (deftest the-abductor-and-the-adductor-are-opposites
   ;; They share a task precisely because they act in opposite senses; if both came
   ;; out the same sign the equilibrium would have no candidate for one direction.
