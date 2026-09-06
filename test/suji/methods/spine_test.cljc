@@ -117,6 +117,210 @@
     (is (empty? (spine/attachment-steps [])))
     (is (empty? (spine/attachment-steps [{:name "A" :muscle-n 0.0}])))))
 
+;; --- the lumbar spine against the literature ---------------------------------
+
+(deftest the-pressure-index-converts-a-pressure-into-a-force-and-nothing-else
+  ;; A pressure is not a force, and the number that turns one into the other is a
+  ;; modelling assumption rather than a measurement. It is pinned here by hand so
+  ;; that changing it is a visible act: 1 MPa is 1 N/mm², so 0.46 MPa through
+  ;; 1800 mm² is 828 N of applied pressure-times-area, and Nachemson's index of
+  ;; 1.5 divides that to 552 N of compressive force.
+  (is (math/nearly= 552.0 (spine/pressure->compressive-force-n 0.46 1800.0 1.5) 1e-9)
+      "0.46 MPa x 1800 mm2 / 1.5 = 552 N")
+  (is (math/nearly= 828.0 (spine/pressure->compressive-force-n 0.46 1800.0 1.0) 1e-9)
+      "an index of 1.0 is pressure x area, i.e. no conversion at all")
+  ;; and the index this namespace uses is the one Nachemson measured for a NORMAL
+  ;; lumbar disc, with the spread he tabulated, not a single number chosen here
+  (is (= 1.5 (:mean spine/nachemson-pressure-index)))
+  (is (= [1.5 1.7] (:range spine/nachemson-pressure-index)))
+  (is (= :full-text (:obtained spine/nachemson-pressure-index))))
+
+(defn- refusal-data
+  "The ex-data of whatever `f` threw, or nil if it returned."
+  [f]
+  (try (f) nil
+       (catch #?(:clj Throwable :cljs :default) e (ex-data e))))
+
+(deftest a-conversion-without-an-index-refuses-for-the-reason-it-names
+  ;; This asserted only `thrown?` at first, and it could not fail: with the guard
+  ;; deleted, a zero index divides and a nil index dereferences, and BOTH throw —
+  ;; so the test went green while measuring nothing about the guard. Pinning the
+  ;; reason is what makes it a check. An index of zero must be refused because it
+  ;; is not a usable index, not because arithmetic happened to object.
+  (let [zero (refusal-data #(spine/pressure->compressive-force-n 0.46 1800.0 0.0))
+        missing (refusal-data #(spine/pressure->compressive-force-n 0.46 1800.0 nil))]
+    (is (= :value-error (:type zero))
+        (str "a zero index is refused as a value error, not as an incidental "
+             "divide-by-zero: " (pr-str zero)))
+    (is (= 0.0 (:index zero)) "and the refusal carries the offending value")
+    (is (= :value-error (:type missing)) (str "so is a missing one: " (pr-str missing)))
+    (is (contains? missing :index))))
+
+(deftest every-lumbar-reference-carries-the-provenance-of-its-number
+  ;; The whole deliverable here IS reference values, so a value without a source,
+  ;; a URL and a statement of whether the full text or only an abstract was read
+  ;; is indistinguishable from an invented one. An evidence floor as well: a
+  ;; reference list that quietly emptied must not pass this by having nothing to
+  ;; check.
+  (is (<= 4 (count spine/lumbar-references)) "the reference set is not empty")
+  (doseq [r spine/lumbar-references]
+    (is (keyword? (:id r)) (str r " needs an id"))
+    (is (pos? (:pressure-mpa r)) (str (:id r) " needs a published pressure"))
+    ;; either it is comparable and states the posture it was measured at, or it
+    ;; says why it is not — never neither
+    (is (or (and (:posture r) (:posture-basis r))
+            (and (:not-comparable r) (:not-comparable-note r)))
+        (str (:id r) " must either pin a posture or say why it cannot")))
+  (let [x (spine/lumbar-cross-check)]
+    (is (string? (:citation x)))
+    (is (string? (:url x)))
+    (is (= :full-text (:obtained x)) "the source was read, not summarised")))
+
+(deftest the-lumbar-check-scales-the-model-to-the-reference-subject
+  ;; A reference value is stated for a particular body. Scaling the reference to
+  ;; the model would silently rewrite the measurement; scaling the model to the
+  ;; reference is the only direction that keeps the published number intact. The
+  ;; check therefore takes no body at all — it builds Wilke's subject, 70 kg and
+  ;; 1.68 m — and this asserts that it really is that body and not this file's
+  ;; 70 kg / 1.70 m default.
+  (let [x (spine/lumbar-cross-check)]
+    (is (= {:mass-kg 70.0 :stature-m 1.68} (:subject x)))
+    (let [wilke-body (segment/build-body 70.0 1.68)
+          posture (:posture x)
+          l (load/solve-posture-loads wilke-body posture)
+          t (muscle/solve-muscle-tensions wilke-body posture l)
+          row (first (filter #(= "L4/L5" (:name %))
+                             (spine/profile wilke-body posture t)))]
+      (is (math/nearly= (:force-n row) (:model-force-n x) 1e-9)
+          "the reported model force is the one this body produces"))
+    ;; The two dimensions of the subject discriminate DIFFERENT outputs here, and
+    ;; a control that used the wrong one would pass without testing anything.
+    ;; MASS moves the force: at this posture the force is the weight stacked
+    ;; above, so a heavier body must give a bigger one.
+    (let [heavy (segment/build-body 90.0 1.68)
+          posture (:posture x)
+          l (load/solve-posture-loads heavy posture)
+          t (muscle/solve-muscle-tensions heavy posture l)
+          row (first (filter #(= "L4/L5" (:name %))
+                             (spine/profile heavy posture t)))]
+      (is (> (:force-n row) (* 1.2 (:model-force-n x)))
+          (str "a 90 kg body must not report a 70 kg body's force: "
+               (:force-n row) " vs " (:model-force-n x))))
+    ;; STATURE does NOT move the force at this posture — segment masses are
+    ;; fractions of total mass, and with no tissue term there is no lever for a
+    ;; length to act through. It moves the DISC AREA, which scales with stature²,
+    ;; and that is what discriminates 1.68 m from this file's 1.70 m default.
+    (is (math/nearly= (* 1e6 (spine/disc-area-m2
+                              (first (filter #(= "L4/L5" (:name %)) spine/levels))
+                              1.68))
+                      (:model-disc-area-mm2 x) 1e-6)
+        "the reported disc area is the one a 1.68 m body has")
+    (is (not (math/nearly= (* 1e6 (spine/disc-area-m2
+                                   (first (filter #(= "L4/L5" (:name %)) spine/levels))
+                                   1.70))
+                           (:model-disc-area-mm2 x) 1e-6))
+        "and not the one this file's 1.70 m default has")))
+
+(deftest the-model-disagrees-with-the-in-vivo-measurement-and-the-check-says-so
+  ;; THE FINDING, and the reason this file exists. At relaxed unsupported sitting
+  ;; Wilke telemetered 0.46 MPa from a living L4/L5 disc of 1800 mm²; through
+  ;; Nachemson's index that is 552 N, and 476-600 N once both sources' own
+  ;; spreads are carried through. This model returns about 351 N — BELOW the
+  ;; reference's own spread, by about a third.
+  ;;
+  ;; It is below it for a reason this namespace's docstring already predicts: at
+  ;; exactly zero trunk flexion the extensor moment is zero, so the tissue term
+  ;; is exactly zero and the force is nothing but the weight stacked above. A
+  ;; real spine at rest is not unloaded — it has lordosis, resting muscle tone
+  ;; and abdominal pressure, and this model has none of the three.
+  ;;
+  ;; This test asserts TODAY'S DISAGREEMENT. If someone improves the model until
+  ;; it agrees, this fails, and that is correct: the finding recorded in the
+  ;; README would then be false and has to be rewritten. What must not happen is
+  ;; the model being tuned to the reference with the disagreement quietly
+  ;; disappearing from the output.
+  (let [x (spine/lumbar-cross-check)
+        [lo hi] (:reference-force-range-n x)]
+    (is (= :reference (:validated x))
+        "the in-vivo measurement is the validated side, not the profile")
+    (is (false? (:model-validated? x)))
+    (is (math/nearly= 552.0 (:reference-force-n x) 1e-9)
+        "0.46 MPa through 1800 mm2 at index 1.5")
+    (is (math/nearly= 476.470588 lo 1e-5) "0.45 MPa at index 1.7")
+    (is (math/nearly= 600.0 hi 1e-9) "0.50 MPa at index 1.5")
+    (is (false? (:within-reference-spread? x))
+        (str "the model is outside the reference's own spread: " (:model-force-n x)
+             " N against " lo "-" hi " N"))
+    (is (= :model-below-reference (:direction x))
+        (str "and it is below it, not above: " (select-keys x [:model-force-n :ratio])))
+    (is (< (:model-force-n x) lo))
+    (is (< 0.5 (:ratio x) 0.8)
+        (str "the model reads about two thirds of the measurement: " (:ratio x)))))
+
+(deftest the-disagreement-is-the-absent-tissue-term-not-the-weight
+  ;; Naming WHICH part of the model is short. The weight above L4/L5 is ordinary
+  ;; anthropometry and there is no reason to doubt it; what is missing is
+  ;; everything else, and at zero trunk flexion this model has exactly none of it.
+  (let [x (spine/lumbar-cross-check)]
+    (is (math/nearly= 0.0 (:model-muscle-n x) 1e-9)
+        "at zero trunk flexion the muscle term is exactly zero")
+    (is (math/nearly= 0.0 (:model-ligament-n x) 1e-9)
+        "and so is the ligament term")
+    (is (math/nearly= (:model-force-n x) (:model-weight-n x) 1e-9)
+        "so the whole modelled force is the weight stacked above, and nothing else")))
+
+(deftest a-reference-whose-posture-the-source-does-not-state-refuses-a-ratio
+  ;; Wilke reports `sitting with maximum flexion, 0.83 MPa` and does not report the
+  ;; trunk angle. Comparing against it would mean CHOOSING an angle, and choosing
+  ;; it is the move that turns a validation into a fit. So the entry keeps the
+  ;; published pressure and refuses the ratio, and the refusal names its reason —
+  ;; which is a different output from agreement and from disagreement both.
+  (let [x (spine/lumbar-cross-check
+           (spine/reference-by-id :wilke-1999-sitting-maximum-flexion))]
+    (is (= :posture-angle-not-stated-in-source (:could-not-obtain x)))
+    (is (nil? (:model-force-n x)) "no force is produced for a posture nobody stated")
+    (is (nil? (:ratio x)))
+    (is (= 0.83 (:reference-pressure-mpa x))
+        "the published pressure is still carried; it is the comparison that is refused"))
+  ;; and standing is refused for a different reason: a seated model with no thigh
+  ;; segment cannot tell standing from sitting, while Wilke measures them apart
+  (let [x (spine/lumbar-cross-check
+           (spine/reference-by-id :wilke-1999-relaxed-standing))]
+    (is (= :standing-is-not-representable (:could-not-obtain x)))
+    (is (nil? (:ratio x)))))
+
+(deftest the-niosh-scale-is-the-published-kilogram-force-figures-times-g
+  ;; NIOSH's 1981 guide states these as kilogram-force — 350 kg and 650 kg — and
+  ;; the familiar 3400 N and 6400 N are those two times g. Deriving them rather
+  ;; than typing the round numbers keeps the published figure as the source of
+  ;; truth and the newtons as the derived value.
+  (let [c spine/niosh-1981-compression-criteria]
+    (is (= 350.0 (:design-upper-limit-kgf c)))
+    (is (= 650.0 (:hazardous-above-kgf c)))
+    (is (math/nearly= 3432.33 (:design-upper-limit-n c) 0.01))
+    (is (math/nearly= 6374.32 (:hazardous-above-n c) 0.01))
+    (is (= 2 (count (:citations c))) "both the 1981 guide and the 1993 revision")
+    (is (every? #(= :full-text (:obtained %)) (:citations c)))))
+
+(deftest the-niosh-comparison-discriminates-in-both-directions
+  ;; A threshold check that only ever answers one way is not a check. Both sides
+  ;; are exercised on this model's own numbers: an ordinary seated posture sits
+  ;; an order of magnitude under the design figure, and 60 degrees of unsupported
+  ;; trunk flexion passes it.
+  (let [seated (:model-force-n (spine/lumbar-cross-check))
+        deep (:force-n (first (filter #(= "L5/S1" (:name %))
+                                      (:rows (run (merge lap {:trunk-flexion-deg 60.0
+                                                              :arms-supported false}))))))
+        a (spine/niosh-compression-comparison seated)
+        b (spine/niosh-compression-comparison deep)]
+    (is (false? (:above-design-upper-limit? a))
+        (str "relaxed sitting is well under the design figure: " seated " N"))
+    (is (< (:ratio-to-design-upper-limit a) 0.2))
+    (is (true? (:above-design-upper-limit? b))
+        (str "60 degrees of unsupported trunk flexion passes it: " deep " N"))
+    (is (false? (:above-hazardous? b))
+        "but not the higher one, which this model reaches only past 650 kgf")))
+
 (deftest passive-tension-smoothed-the-profile
   ;; the measured consequence, kept so that losing it would be visible
   (let [rows (:rows (run lap))]
