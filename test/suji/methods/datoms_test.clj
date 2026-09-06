@@ -61,11 +61,56 @@
       (is (and (contains? d ":load/compressive-kgf") (contains? d ":load/mult-vs-head")))
       (is (> (get d ":load/compressive-kgf") 0)))))
 
-(deftest test-endurance-infinity-encoded-as-minus-one
-  (let [strains (filter #(contains? % ":strain/endurance-min") (the-datoms))]
-    (is (some #(= (get % ":strain/endurance-min") -1.0) strains))
-    (is (every? #(or (= (get % ":strain/endurance-min") -1.0)
-                     (> (get % ":strain/endurance-min") 0)) strains))))
+(deftest test-the-endurance-field-says-which-kind-of-missing-number
+  ;; ⚠ THIS TEST USED TO BE `…-infinity-encoded-as-minus-one`, and it ASSERTED the
+  ;; defect: `(is (some #(= … -1.0) strains))`. Measured 2026-09-07 on the reference
+  ;; scenarios, that -1.0 was standing for two opposite facts — 101 datoms where the
+  ;; %MVC is below the model's endurance floor and the power fit returns ∞
+  ;; (endurance effectively unlimited: the SAFEST case) and 28 where the model
+  ;; refused the muscle and there is no dose at all. Same value, in a numeric field.
+  ;; A consumer sorting the column ranks the least-loaded muscles next to the ones
+  ;; nobody solved, which is the failure the browser band function had when a nil
+  ;; fell into the LOWEST band.
+  (let [ds (the-datoms)
+        strains (filter #(contains? % ":strain/endurance-limit") ds)
+        by (group-by #(get % ":strain/endurance-limit") strains)]
+    (is (seq strains))
+    ;; all three answers occur, so the assertions below can actually discriminate
+    (doseq [k [":finite" ":unbounded" ":not-computed"]]
+      (is (seq (get by k)) (str "no strain datom carries endurance-limit " k)))
+    (is (every? #(pos? (get % ":strain/endurance-min" 0)) (get by ":finite"))
+        "a :finite endurance must carry a positive number of minutes")
+    (doseq [k [":unbounded" ":not-computed"]]
+      (is (not-any? #(contains? % ":strain/endurance-min") (get by k))
+          (str k " must carry no number at all, not a stand-in for one")))
+    (is (not-any? (fn [d] (some #(and (number? %) (neg? %)) (vals d))) ds)
+        "no emitted number is negative; a negative would be a sentinel")))
+
+(deftest test-the-structure-and-the-side-are-separate-facts
+  ;; THE DEFECT THIS IS WRITTEN AGAINST. Until 2026-09-07 `:muscle/group` carried
+  ;; both (`:upper-trapezius/left`), so the published `group` enum was a list of
+  ;; modelled INSTANCES rather than a vocabulary of mechanical structures: it grew
+  ;; by two every time a muscle was made bilateral, and the field's grammar varied
+  ;; by value, because the four midline groups carried no suffix and nothing in the
+  ;; schema said when to expect one.
+  (let [ds (the-datoms)
+        muscles (filter #(contains? % ":muscle/id") ds)
+        strains (filter #(contains? % ":strain/id") ds)]
+    (is (seq muscles))
+    (doseq [d (concat muscles strains)]
+      (let [attr (if (contains? d ":muscle/id") ":muscle/group" ":strain/group")
+            side (if (contains? d ":muscle/id") ":muscle/side" ":strain/side")]
+        (is (not (str/includes? (get d attr) "/"))
+            (str attr " must name a structure only, got " (get d attr)))
+        (is (contains? #{":left" ":right" ":midline"} (get d side))
+            (str side " must be present on every record, got " (pr-str (get d side))))))
+    ;; and both sides of a paired group are present under the SAME group term —
+    ;; the thing the concatenated key made impossible to ask
+    (let [trap (filter #(= ":upper-trapezius" (get % ":muscle/group")) muscles)]
+      (is (= #{":left" ":right"} (into #{} (map #(get % ":muscle/side")) trap))
+          "a paired group must appear once per side under one group name"))
+    (let [midline (filter #(= ":cervical-extensors" (get % ":muscle/group")) muscles)]
+      (is (= #{":midline"} (into #{} (map #(get % ":muscle/side")) midline))))))
 
 (deftest test-rendered-edn-reparses-to-same-count
   ;; The Python test round-trips through its own reader; here we assert the rendered EDN is
