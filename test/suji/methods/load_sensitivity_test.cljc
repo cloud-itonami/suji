@@ -1,12 +1,12 @@
-#!/usr/bin/env bb
 ;; suji 筋 — tests for the marginal cervical-load sensitivity.
-;; Run:  bb test
 (ns suji.methods.load-sensitivity-test
   "Tests for cervical-load-sensitivity — the marginal cervical compressive load per degree of forward
   head flexion (the local slope of the Hansraj model). Pins the finite-difference slope against the
   ANALYTICAL derivative of the model, and the G1 mechanical-only / non-diagnostic output shape."
   (:require [suji.methods.load :as l]
-            [clojure.test :refer [deftest is run-tests]]))
+            [suji.methods.math :as math]
+            #?(:clj  [clojure.test :refer [deftest is]]
+               :cljs [cljs.test :refer [deftest is]])))
 
 (def ^:private W 50.0)
 
@@ -15,8 +15,8 @@
   the closed-form derivative of the Hansraj compressive-load formula."
   [theta-deg]
   (let [rho (/ l/head-com-lever-m l/cervical-ext-arm-m)
-        th (Math/toRadians theta-deg)]
-    (* W (- (* rho (Math/cos th)) (Math/sin th)) (/ Math/PI 180.0))))
+        th (math/radians theta-deg)]
+    (* W (- (* rho (Math/cos th)) (Math/sin th)) (/ math/pi 180.0))))
 
 (deftest reports-the-actual-cervical-load-at-the-posture
   (doseq [a [0.0 30.0 60.0]]
@@ -41,7 +41,3 @@
          (set (keys (l/cervical-load-sensitivity 30.0 W))))
       "only mechanical quantities — no diagnosis/prescription/condition key (G1)"))
 
-#?(:clj
-   (when (= *file* (System/getProperty "babashka.file"))
-     (let [{:keys [fail error]} (run-tests 'suji.methods.load-sensitivity-test)]
-       (System/exit (if (zero? (+ fail error)) 0 1)))))

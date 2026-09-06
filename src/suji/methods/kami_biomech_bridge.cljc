@@ -23,14 +23,8 @@
   BigDecimal.(double) + HALF_EVEN → nearest double (same helper as datoms.cljc). The Python
   @dataclasses become kebab-keyword maps; links/joints kept as ordered vectors (list order)."
   (:require [suji.methods.segment :as segment]
+            [suji.methods.math :as math]
             [suji.methods.load :as load]))
-
-;; ── Python round(v, n): round-half-EVEN to n decimals, nearest double ──────────
-(defn- py-round [v n]
-  #?(:clj (-> (java.math.BigDecimal. (double v))
-              (.setScale (int n) java.math.RoundingMode/HALF_EVEN)
-              .doubleValue)
-     :cljs (let [f (Math/pow 10 n)] (/ (Math/round (* (double v) f)) f))))
 
 ;; KamiLink / KamiJoint / KamiArticulation @dataclasses → kebab-keyword maps.
 
@@ -64,8 +58,8 @@
   [body posture]
   (let [;; body.segments.values() iteration order = the segment insertion order.
         links (mapv (fn [s]
-                      (kami-link (:name s) (py-round (:mass-kg s) 4)
-                                 (py-round (:length-m s) 4) (:com-frac s)))
+                      (kami-link (:name s) (math/round-to (:mass-kg s) 4)
+                                 (math/round-to (:length-m s) 4) (:com-frac s)))
                     (vals (:segments body)))
         ;; pelvis is the base link (seat support); thorax connects above it.
         angles {:trunk-flexion-deg (:trunk-flexion-deg posture)
@@ -86,8 +80,8 @@
   [body posture]
   (let [loads (load/solve-posture-loads body posture)
         head (conj [{"joint" "cervicothoracic"
-                     "moment_nm" (py-round (:extensor-moment-nm (:cervical loads)) 4)}])]
+                     "moment_nm" (math/round-to (:extensor-moment-nm (:cervical loads)) 4)}])]
     (into head
           (comp (remove #(= (:joint %) "cervicothoracic"))
-                (map (fn [j] {"joint" (:joint j) "moment_nm" (py-round (:moment-nm j) 4)})))
+                (map (fn [j] {"joint" (:joint j) "moment_nm" (math/round-to (:moment-nm j) 4)})))
           (:joints loads))))

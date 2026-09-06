@@ -13,15 +13,16 @@
   NON-DIAGNOSTIC (G1, 医師法 §17): every output is a mechanical quantity — a moment (N·m),
   a muscle force (N), a compressive load (N / kg-force). None is a diagnosis.
 
-  Numerics: math.sin/cos/radians map directly to Math/ (last-ULP identical on the JVM).
+  Numerics: sin/cos resolve on both hosts; degree conversion goes through
+  suji.methods.math (Math/toRadians is JVM-only — see that ns).
   Records are kebab-keyword maps; joints kept as an ordered vector (Python list order)."
-  (:require [suji.methods.segment :as segment]))
+  (:require [suji.methods.math :as math]
+            [suji.methods.pose :as pose]
+            [suji.methods.segment :as segment]))
 
 ;; --- Cervical lever model (Hansraj-calibrated) -------------------------------
 (def head-com-lever-m 0.10)     ;; effective horizontal lever of head CoM at full flexion
 (def cervical-ext-arm-m 0.02)   ;; cervical extensor moment arm
-
-(defn- radians [deg] (Math/toRadians deg))
 
 (defn cervical-load
   "Forward-head-posture cervical load. Reproduces Hansraj (2014) (G7 anchor)."
@@ -32,7 +33,7 @@
      (throw (ex-info "head_weight_n must be positive" {:type :value-error})))
    (when (<= extensor-arm-m 0)
      (throw (ex-info "extensor_arm_m must be positive" {:type :value-error})))
-   (let [theta (radians head-flexion-deg)
+   (let [theta (math/radians head-flexion-deg)
          rho (/ head-com-lever-m extensor-arm-m)
          moment (* head-weight-n head-com-lever-m (Math/sin theta))
          ext-force (/ moment extensor-arm-m)
@@ -71,27 +72,39 @@
   "Horizontal moment arm of a flexed segment's CoM about its proximal joint:
   length * com-frac * sin(flexion). (Pure-vertical segment → zero lever.)"
   [length-m com-frac flexion-deg]
-  (* length-m com-frac (Math/sin (radians flexion-deg))))
+  (* length-m com-frac (Math/sin (math/radians flexion-deg))))
 
 (defn shoulder-moment
   "Gravitational moment about the glenohumeral joint from the held-out arm(s). Both arms
-  load the shoulder girdle → ×2."
+  load the shoulder girdle → ×2.
+
+  GEOMETRY CORRECTION (2026-09-06). This used to place the forearm and hand with
+  `(- 90.0 elbow-flexion-deg)` degrees of tilt from vertical. That is backwards at
+  both ends of the range: a straight arm (0°) came out HORIZONTAL, and the 90° elbow
+  of a typing posture came out VERTICAL — hanging straight down from the elbow, with
+  no lever of its own, so the forearm and hand contributed only the elbow's own
+  offset and the shoulder moment of every keyboard posture was under-stated. Elbow
+  flexion is the angle between forearm and upper arm, so the forearm's tilt from
+  vertical is the upper arm's tilt PLUS the elbow angle. The chain is now placed once
+  by `pose/solve-pose` and the moment read off it as Σ weight × anterior lever, which
+  is the definition of the RNEA gravity term rather than a re-derivation of it."
   [body shoulder-flexion-deg elbow-flexion-deg arms-supported]
-  (let [ua (segment/seg body "upper_arm")
-        fa (segment/seg body "forearm")
-        hand (segment/seg body "hand")
-        m0 (* (segment/weight-n ua)
-              (horizontal-lever (:length-m ua) (:com-frac ua) shoulder-flexion-deg))
-        m (if-not arms-supported
-            (let [elbow-x (* (:length-m ua) (Math/sin (radians shoulder-flexion-deg)))
-                  fa-x (+ elbow-x (horizontal-lever (:length-m fa) (:com-frac fa)
-                                                    (- 90.0 elbow-flexion-deg)))
-                  hand-x (+ elbow-x
-                            (* (:length-m fa) (Math/sin (radians (- 90.0 elbow-flexion-deg))))
-                            (horizontal-lever (:length-m hand) (:com-frac hand)
-                                              (- 90.0 elbow-flexion-deg)))]
-              (+ m0 (* (segment/weight-n fa) fa-x) (* (segment/weight-n hand) hand-x)))
-            m0)]
+  (let [;; only the arm chain matters about the shoulder, and in this model the arm's
+        ;; tilt is measured from vertical (gravity's frame), not from the thorax — so
+        ;; the trunk and head angles cannot change this moment and are left at zero.
+        p (pose/solve-pose body {:head-flexion-deg 0.0
+                                 :trunk-flexion-deg 0.0
+                                 :shoulder-flexion-deg shoulder-flexion-deg
+                                 :elbow-flexion-deg elbow-flexion-deg})
+        shoulder (get-in p [:joints :shoulder])
+        w (pose/segment-weights body p)
+        carried (if arms-supported
+                  ;; forearm + hand rest on the desk; the girdle carries the upper arm only
+                  ["upper_arm"]
+                  ["upper_arm" "forearm" "hand"])
+        m (pose/gravitational-moment
+           shoulder
+           (for [n carried] [(pose/seg-at p n) (get w n)]))]
     (->joint-load "shoulder" (* m 2.0)
                   (if arms-supported "forearms supported" "arms unsupported (hanging)"))))
 
@@ -101,7 +114,7 @@
   (let [thorax (segment/seg body "thorax_abdomen")
         m0 (* (segment/weight-n thorax)
               (horizontal-lever (:length-m thorax) (:com-frac thorax) trunk-flexion-deg))
-        head-x (* (:length-m thorax) (Math/sin (radians trunk-flexion-deg)))
+        head-x (* (:length-m thorax) (Math/sin (math/radians trunk-flexion-deg)))
         m (+ m0 (* (:head-weight-n head) head-x))]
     (->joint-load "lumbosacral" m "trunk lean + carried head")))
 

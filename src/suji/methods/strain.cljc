@@ -12,14 +12,16 @@
   NON-DIAGNOSTIC (G1): a stiffness index is a normalised load-time dose, not a medical
   finding. SELF-REFERENCED (G3): indices compared against the SAME member's other postures.
 
-  Numerics: math.inf → Double/POSITIVE_INFINITY; math.exp/pow map to Math/."
-  (:require [suji.methods.muscle :as muscle]))
+  Numerics: exp/pow resolve on both hosts; infinity goes through suji.methods.math
+  (Double/POSITIVE_INFINITY and Double/isInfinite are JVM-only — see that ns)."
+  (:require [suji.methods.math :as math]
+            [suji.methods.muscle :as muscle]))
 
 (def chronic-threshold-pct 2.0)   ;; below this %MVC, essentially no sustained recruitment
 (def chronic-weight 0.45)         ;; weight of the chronic low-load dose vs acute
 (def endurance-floor-pct 8.0)     ;; below this %MVC, acute endurance treated as long
 
-(def ^:private inf Double/POSITIVE_INFINITY)
+(def ^:private inf math/inf)
 
 (defn endurance-minutes
   "Rohmert-type isometric endurance time (minutes) at a given %MVC. Returns ∞ below the
@@ -37,7 +39,7 @@
     (throw (ex-info "session_minutes must be >= 0" {:type :value-error})))
   (let [mvc-pct (:mvc-pct t)
         t-end (endurance-minutes mvc-pct)
-        acute (if (Double/isInfinite t-end) 0.0 (/ session-minutes t-end))
+        acute (if (math/infinite? t-end) 0.0 (/ session-minutes t-end))
         excess (/ (max 0.0 (- mvc-pct chronic-threshold-pct)) 100.0)
         chronic (* chronic-weight excess (/ session-minutes 60.0))
         dose (+ acute chronic)
@@ -49,7 +51,7 @@
      :acute-dose acute
      :chronic-dose chronic
      :stiffness-index stiffness
-     :over-endurance (and (not (Double/isInfinite t-end)) (> session-minutes t-end))}))
+     :over-endurance (and (not (math/infinite? t-end)) (> session-minutes t-end))}))
 
 (defn session-strain
   "Stiffness map for a whole work session (default 2 hours of continuous posture)."

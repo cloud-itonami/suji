@@ -18,6 +18,7 @@
   kebab-keyword map. Strain sort is STABLE (ties keep Python list order)."
   (:require [clojure.string :as str]
             [suji.methods.load :as load]
+            [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]
             [suji.methods.posture :as posture]
             [suji.methods.segment :as segment]
@@ -106,7 +107,7 @@
        (add! "| muscle | tension %MVC | endurance | stiffness (強張り) | band |")
        (add! "|---|---|---|---|---|")
        (doseq [s (stable-sort-by-neg-stiffness (:strains r))]
-         (let [end (if (Double/isInfinite (:endurance-minutes s))
+         (let [end (if (math/infinite? (:endurance-minutes s))
                      "∞"
                      (str (fmt-f 0 (:endurance-minutes s)) " min"))]
            (add! (str "| " (:name s) " | " (fmt-f 0 (:mvc-pct s)) "% | " end " | "

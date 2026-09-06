@@ -17,15 +17,9 @@
   Numerics: Python round(v, n) is round-half-EVEN → `py-round`."
   (:require [clojure.string :as str]
             [suji.methods.load :as load]
+            [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]
             [suji.methods.segment :as segment]))
-
-;; ── Python round(v, n): round-half-EVEN to n decimals, nearest double ──────────
-(defn- py-round [v n]
-  #?(:clj (-> (java.math.BigDecimal. (double v))
-              (.setScale (int n) java.math.RoundingMode/HALF_EVEN)
-              .doubleValue)
-     :cljs (let [f (Math/pow 10 n)] (/ (Math/round (* (double v) f)) f))))
 
 ;; Keys a strain/load payload may NEVER contain (医師法 §17 force-separation, G1).
 (def forbidden-clinical-keys
@@ -81,12 +75,12 @@
         loads (load/solve-posture-loads body (posture-from-state s))
         cerv (:cervical loads)
         head {"joint" "cervicothoracic"
-              "momentNm" (py-round (:extensor-moment-nm cerv) 4)
-              "compressiveKgf" (py-round (:compressive-load-kgf cerv) 2)
-              "multVsHead" (py-round (:multiplier-vs-head cerv) 2)}
+              "momentNm" (math/round-to (:extensor-moment-nm cerv) 4)
+              "compressiveKgf" (math/round-to (:compressive-load-kgf cerv) 2)
+              "multVsHead" (math/round-to (:multiplier-vs-head cerv) 2)}
         rest (->> (:joints loads)
                   (remove #(= (:joint %) "cervicothoracic"))
-                  (mapv (fn [j] {"joint" (:joint j) "momentNm" (py-round (:moment-nm j) 4)})))
+                  (mapv (fn [j] {"joint" (:joint j) "momentNm" (math/round-to (:moment-nm j) 4)})))
         out (into [head] rest)]
     (assoc s
            "joint_loads" out
@@ -103,8 +97,8 @@
         tensions (muscle/solve-muscle-tensions body (posture-from-state s) (get s "_loads"))
         mt (mapv (fn [t]
                    {"group" (str/replace (:name t) "_" "-")
-                    "forceN" (py-round (:force-n t) 2)
-                    "mvcPct" (py-round (:mvc-pct t) 2)})
+                    "forceN" (math/round-to (:force-n t) 2)
+                    "mvcPct" (math/round-to (:mvc-pct t) 2)})
                  tensions)]
     (assoc s "muscle_tensions" mt "phase" phase-distributed)))
 

@@ -18,6 +18,7 @@
   numeric type (idx is a Long, session-minutes stays the float passed in)."
   (:require [clojure.string :as str]
             [suji.methods.analyze :as analyze]
+            [suji.methods.math :as math]
             [suji.methods.strain :as strain]
             #?(:clj [clojure.java.io :as io])))
 
@@ -27,22 +28,11 @@
 (defn- muscle-kw [name]
   (str ":" (str/replace name "_" "-")))
 
-(defn- py-round
-  "Python round(v, n): round-half-EVEN to n decimals, returned as the nearest double
-  (so the float-repr formatter gives Python's shortest str)."
-  [v n]
-  #?(:clj
-     (-> (java.math.BigDecimal. (double v))
-         (.setScale (int n) java.math.RoundingMode/HALF_EVEN)
-         (.doubleValue))
-     :cljs
-     (let [f (Math/pow 10 n)] (/ (Math/round (* (double v) f)) f))))
-
 (defn body-datom [body-id total-mass-kg stature-m]
   (array-map
    ":body/id" body-id
-   ":body/total-mass-kg" (py-round total-mass-kg 2)
-   ":body/stature-m" (py-round stature-m 3)
+   ":body/total-mass-kg" (math/round-to total-mass-kg 2)
+   ":body/stature-m" (math/round-to stature-m 3)
    ":body/representative" true))
 
 (defn scenario-datoms
@@ -54,40 +44,40 @@
         posture-d (array-map
                    ":posture/id" pid ":posture/body" body-id
                    ":posture/workstation" (:workstation result)
-                   ":posture/head-flex-deg" (py-round (:head-flexion-deg p) 2)
-                   ":posture/trunk-flex-deg" (py-round (:trunk-flexion-deg p) 2)
-                   ":posture/shoulder-flex-deg" (py-round (:shoulder-flexion-deg p) 2)
+                   ":posture/head-flex-deg" (math/round-to (:head-flexion-deg p) 2)
+                   ":posture/trunk-flex-deg" (math/round-to (:trunk-flexion-deg p) 2)
+                   ":posture/shoulder-flex-deg" (math/round-to (:shoulder-flexion-deg p) 2)
                    ":posture/arms-supported" (:arms-supported p) ":posture/as-of" idx)
         cerv-d (array-map
                 ":load/id" (str pid "-load-cerv") ":load/posture" pid
                 ":load/joint" ":cervicothoracic"
-                ":load/moment-nm" (py-round (:extensor-moment-nm cerv) 4)
-                ":load/compressive-kgf" (py-round (:compressive-load-kgf cerv) 2)
-                ":load/mult-vs-head" (py-round (:multiplier-vs-head cerv) 2))
+                ":load/moment-nm" (math/round-to (:extensor-moment-nm cerv) 4)
+                ":load/compressive-kgf" (math/round-to (:compressive-load-kgf cerv) 2)
+                ":load/mult-vs-head" (math/round-to (:multiplier-vs-head cerv) 2))
         joint-ds (->> (get-in result [:loads :joints])
                       (remove #(= (:joint %) "cervicothoracic"))
                       (mapv (fn [j]
                               (array-map
                                ":load/id" (str pid "-load-" (:joint j)) ":load/posture" pid
                                ":load/joint" (joint-kw (:joint j))
-                               ":load/moment-nm" (py-round (:moment-nm j) 4)))))
+                               ":load/moment-nm" (math/round-to (:moment-nm j) 4)))))
         muscle-ds (mapv (fn [t]
                           (array-map
                            ":muscle/id" (str pid "-musc-" (:name t)) ":muscle/posture" pid
                            ":muscle/group" (muscle-kw (:name t))
-                           ":muscle/force-n" (py-round (:force-n t) 2)
-                           ":muscle/mvc-pct" (py-round (:mvc-pct t) 2)))
+                           ":muscle/force-n" (math/round-to (:force-n t) 2)
+                           ":muscle/mvc-pct" (math/round-to (:mvc-pct t) 2)))
                         (:tensions result))
         strain-ds (mapv (fn [st]
-                          (let [end (if (Double/isInfinite (:endurance-minutes st))
+                          (let [end (if (math/infinite? (:endurance-minutes st))
                                       -1.0
-                                      (py-round (:endurance-minutes st) 2))]
+                                      (math/round-to (:endurance-minutes st) 2))]
                             (array-map
                              ":strain/id" (str pid "-strain-" (:name st)) ":strain/posture" pid
                              ":strain/group" (muscle-kw (:name st))
                              ":strain/session-min" (:session-minutes st)
                              ":strain/endurance-min" end
-                             ":strain/stiffness" (py-round (:stiffness-index st) 4)
+                             ":strain/stiffness" (math/round-to (:stiffness-index st) 4)
                              ":strain/band" (str ":" (strain/stiffness-band (:stiffness-index st)))
                              ":strain/as-of" idx)))
                         (:strains result))]

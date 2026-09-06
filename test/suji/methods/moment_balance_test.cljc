@@ -1,4 +1,3 @@
-#!/usr/bin/env bb
 ;; suji 筋 — validation of the gravitational-moment formulas (shoulder + lumbosacral).
 ;; Run:  bb test
 (ns suji.methods.moment-balance-test
@@ -13,8 +12,10 @@
     - supporting the forearms removes their lever and strictly lowers the shoulder moment;
     - a heavier carried head raises the L5/S1 moment at the same lean."
   (:require [suji.methods.load :as load]
+            [suji.methods.math :as math]
             [suji.methods.segment :as segment]
-            [clojure.test :refer [deftest is run-tests]]))
+            #?(:clj  [clojure.test :refer [deftest is]]
+               :cljs [cljs.test :refer [deftest is]])))
 
 (def ^:private body (segment/build-body 70.0 1.70))
 (defn- monotone-increasing? [xs] (every? (fn [[a b]] (< a b)) (partition 2 1 xs)))
@@ -24,7 +25,7 @@
   ;; gravitational moment about the glenohumeral joint
   (let [ms (mapv #(:moment-nm (load/shoulder-moment body % 0.0 false)) [0.0 30.0 60.0 90.0])]
     (is (monotone-increasing? ms) (str "shoulder moment must grow with flexion: " ms))
-    (is (every? #(and (>= % 0.0) (Double/isFinite %)) ms) "moments are non-negative + finite")))
+    (is (every? #(and (>= % 0.0) (math/finite? %)) ms) "moments are non-negative + finite")))
 
 (deftest supporting-the-forearms-reduces-shoulder-moment
   ;; resting the forearms (arms-supported) removes the forearm+hand lever → strictly less moment
@@ -40,7 +41,7 @@
     (is (< (Math/abs (double (first ms))) 1e-9)
         "an upright trunk (0° flexion) carries no gravitational L5/S1 moment")
     (is (monotone-increasing? ms) (str "L5/S1 moment must grow with trunk flexion: " ms))
-    (is (every? #(Double/isFinite (double %)) ms) "moments are finite")))
+    (is (every? #(math/finite? (double %)) ms) "moments are finite")))
 
 (deftest lumbosacral-moment-grows-with-carried-head-weight
   ;; a heavier head carried above L5/S1 raises the moment at the same lean
@@ -49,7 +50,3 @@
            (:moment-nm (load/lumbosacral-moment body deg {:head-weight-n 200.0})))
         (str "a heavier carried head must raise the L5/S1 moment at " deg "°"))))
 
-#?(:clj
-   (when (= *file* (System/getProperty "babashka.file"))
-     (let [{:keys [fail error]} (run-tests 'suji.methods.moment-balance-test)]
-       (System/exit (if (zero? (+ fail error)) 0 1)))))

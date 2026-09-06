@@ -5,7 +5,8 @@
   than hardcoding cell names, so it holds regardless of which cells this
   actor's manifest declares."
   (:require [clojure.string :as str]
-            [clojure.test :refer [deftest is testing]]
+            #?(:clj  [clojure.test :refer [deftest is testing]]
+               :cljs [cljs.test :refer [deftest is testing]])
             [suji.murakumo :as m]))
 
 (def full-attestations

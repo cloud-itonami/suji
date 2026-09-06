@@ -1,7 +1,9 @@
 (ns suji.methods.muscle-strain-test
   "suji (筋) — muscle %MVC + Rohmert strain tests. 1:1 Clojure port of
   src/suji/methods/test_muscle_strain.cljc."
-  (:require [clojure.test :refer [deftest is]]
+  (:require #?(:clj  [clojure.test :refer [deftest is]]
+               :cljs [cljs.test :refer [deftest is]])
+            [suji.methods.math :as math]
             [suji.methods.analyze :as analyze]
             [suji.methods.load :as load]
             [suji.methods.muscle :as muscle]
@@ -23,7 +25,7 @@
   (is (< (strain/endurance-minutes 50.0)
          (strain/endurance-minutes 25.0)
          (strain/endurance-minutes 15.0)))
-  (is (Double/isInfinite (strain/endurance-minutes 5.0)))
+  (is (math/infinite? (strain/endurance-minutes 5.0)))
   (is (< (Math/abs (- (strain/endurance-minutes 50.0) 1.0)) 0.6))
   (is (< (Math/abs (- (strain/endurance-minutes 25.0) 5.0)) 2.5)))
 
@@ -49,7 +51,7 @@
         t (first (muscle/solve-muscle-tensions
                   body (posture/posture-from-workstation posture/laptop-on-lap)
                   (load/solve-posture-loads body (posture/posture-from-workstation posture/laptop-on-lap))))]
-    (is (thrown? clojure.lang.ExceptionInfo (strain/muscle-strain t -5.0)))))
+    (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs ExceptionInfo) (strain/muscle-strain t -5.0)))))
 
 (deftest test-end-to-end-lap-worse-than-monitor
   (let [results (analyze/analyze-all 70.0 1.70 120.0)
