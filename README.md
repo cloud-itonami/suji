@@ -24,8 +24,9 @@ laptop workstation ──▶ posture (joint angles)        posture.cljc
         posture              (seated / standing)                       what is under the pelvis
                    ──▶ forward kinematics (3-D)       pose.cljc     ← world-space chain,
                                                                       shared by physics + renderer
-                                                                      head · trunk · both arms
-                                                                      · BOTH LEGS · the ground
+                                                                      SKULL · upper + lower
+                                                                      CERVICAL · trunk · both
+                                                                      arms · BOTH LEGS · ground
                    ──▶ static inverse dynamics        load.cljc     ← kami-genesis PlanarChain
                        (RNEA gravity term)                          Featherstone statics
                    ──▶ hip / knee / ankle moment      load.cljc     ← + the ground reaction,
@@ -1078,8 +1079,10 @@ which each segment hangs on the next; if the walk reaches the level's own segmen
 the answer is whether it arrived past the level, and if it reaches the root without
 ever entering that segment, the level was never between the site and the root. A
 hand and a forearm both reach the root through `upper_arm → thorax_abdomen (1.0)`
-and never enter `head_neck`, so no muscle of the arm chain can load a cervical
-level at any height in any posture.
+and never enter the neck, so no muscle of the arm chain can load a cervical
+level at any height in any posture. (This section was written while the neck was
+one segment called `head_neck`; it is three segments as of later the same day — see
+*The neck had one joint* — and the rule is unchanged, because it never named one.)
 
 **It is derived, not listed.** There is no set of spinal muscles anywhere in
 `spine.cljc` and no name is tested. The answer comes from two things the model
@@ -1094,8 +1097,8 @@ muscle it has never heard of:
                                  :insertion {:segment "hand"    :along 0.25}
                                  :side :left})
 ;; => []                                   ; the same map, sites moved:
-(spine/levels-crossed pose-data {:origin    {:segment "thorax_abdomen" :along 0.97}
-                                 :insertion {:segment "head_neck"      :along 0.20}})
+(spine/levels-crossed pose-data {:origin    {:segment "thorax_abdomen"  :along 0.97}
+                                 :insertion {:segment "lower_cervical" :along 0.667}})
 ;; => C7/T1 C6/C7 C5/C6 C4/C5
 ```
 
@@ -1108,7 +1111,7 @@ wrist extensors and deltoids.
 
 ⚠ **C3/C4 then carried no muscle at all**, and that was reported rather than filled.
 This model's most cranial muscle attachment was `levator_scapulae` at 0.22 of the
-head_neck segment; C3/C4 sits at 0.24, so nothing in the set spanned it and the level
+then-single head-and-neck segment; C3/C4 sits at 0.24, so nothing in the set spanned it and the level
 reported the weight above it and nothing else. A real upper cervical spine is
 spanned by muscles that reach the skull and this set had none of them. That was a
 gap in the model's anatomy, not a statement about a neck — and it is exactly what
@@ -1159,11 +1162,14 @@ against it, so adding named extensors beside it is exactly where a model
 double-counts. The decision is **add only what the lump excludes**, and the evidence
 is the lump's own geometry rather than its name:
 
-- its insertion is at 0.05 of `head_neck` = **15.5 mm above C7**, which is *below*
+- its insertion is at 0.05 of the old `head_neck` span = **15.5 mm above C7**
+  (`lower_cervical` 0.1667 since the split), which is *below*
   C6/C7 at 18.6 mm, so it crosses **exactly one** intervertebral level;
 - an occipital insertion would have to reach 0.42 — continue `spine/levels`' own
   0.06-per-level spacing past C3/C4 and C2/C3 is 0.30, C1/C2 is 0.36 and the
-  occipito-atlantal joint is 0.42, i.e. 130 mm above C7;
+  occipito-atlantal joint is 0.42, i.e. 130 mm above C7. **That derivation became
+  the segmentation later the same day**: `segment` now cuts the neck at exactly
+  those two fractions;
 - its 0.020 m calibration target is `load/cervical-ext-arm-m`, the **Hansraj
   effective lever**, not a measured muscle moment arm.
 
@@ -1193,18 +1199,12 @@ All the change is in the levels above it, which is the point.
 
 ### What this still cannot express
 
-- **The suboccipitals are absent on purpose.** Rectus capitis posterior major and
-  minor and obliquus capitis superior and inferior run from C1 and C2 to the
-  occiput. This model has ONE rigid `head_neck` segment and no atlanto-occipital or
-  atlanto-axial joint, so **both ends of each would ride on that one segment** —
-  the shape `a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm`
-  names as the error that produced a constant-looking arm. It would be that error
-  here and not the exception `middle_trapezius` earned, because that one is a
-  SUSPENSION whose coefficient is a cosine against the world vertical (which the
-  segment does not carry) and a suboccipital is a MOMENT about an axis the segment
-  does carry. Its arm could not vary and its length could not change. **What is
-  missing is a joint, and no attachment can supply one.** Kamibayashi & Richmond
-  measure them at 3.75 cm² per side, so this is not a small omission.
+- ~~**The suboccipitals are absent on purpose.**~~ **Closed later the same day —
+  see *The neck had one joint* below.** The paragraph here said *"what is missing is
+  a joint, and no attachment can supply one"*, and that was right: the neck was split
+  into three segments and three of the four suboccipitals now exist. Obliquus capitis
+  inferior still does not, because it runs C2 → C1 and this model puts the atlas and
+  the axis in one segment.
 - **The sternocleidomastoid is refused in every posture this actor reports**, and
   that is the correct answer: about C7 it is a flexor, `:cervical-extension` shares
   an unsigned load, so it comes back `:refused :acts-the-wrong-way` and is marked
@@ -1232,6 +1232,263 @@ All the change is in the levels above it, which is the point.
 - **The specimens were cadavers.** Kamibayashi & Richmond's own N is 9 or 10 per
   muscle and the ranges are wide — semispinalis capitis spans 3.93 to 7.32 cm²,
   nearly a factor of two.
+
+## The neck had one joint (2026-09-07)
+
+`head_neck` ran from C7 to the vertex as **one rigid body with one joint at its
+base**. Three things followed and none of them was a decision:
+
+- `spine` reported five cervical intervertebral levels and **all five had the same
+  orientation**, because there was only one cervical joint to orient them with. Five
+  samples of one rigid body.
+- **The suboccipitals could not be written down at all** — see the crossed-out bullet
+  above. Both ends of each would have ridden on the same bone.
+- **A forward-head posture is lower cervical flexion with upper cervical extension.**
+  The chin tucks under while the head tips back to keep the eyes level. One block can
+  only tilt.
+
+### Three segments
+
+| segment | spans | length (1.70 m) | mass (70 kg) |
+|---|---|---|---|
+| `lower_cervical` | C7/T1 disc → C2/C3 disc | 92.8 mm | 0.810 kg |
+| `upper_cervical` | C2/C3 disc → occipital condyles (atlas + axis) | 37.1 mm | 0.324 kg |
+| `head` | occipital condyles → vertex (the skull) | 179.5 mm | 4.536 kg |
+
+Two new joints, `:c2c3` and `:atlanto-occipital`. New `:base` names for a renderer:
+**`lower_cervical`, `upper_cervical`, `head`** — `head_neck` is gone.
+
+**Why not two.** `head` + one cervical column, hinged at the atlanto-occipital joint,
+is the minimum change and buys the *same three* suboccipitals, because all three cross
+that joint. What it does not buy is the forward-head shape: with one cervical body
+there is no way for the bottom of the neck to flex while the top extends.
+
+**Why not per-vertebra.** It needs a mass and a centre of mass for each vertebra,
+which none of the three anthropometric tables checked below publishes, and an angle
+for each of seven joints where the posture input supplies **one number**. Seven
+invented numbers dressed as anatomy.
+
+**What a fourth segment would have bought.** Splitting `upper_cervical` into atlas and
+axis makes the atlanto-axial joint real and lets **obliquus capitis inferior** be
+written down — the one suboccipital that still cannot be, and 2.58 cm² of the 7.50.
+It needs a per-vertebra mass, and the joint it opens is principally a *rotation* joint
+(40.5° axial against ~10° sagittal), so a sagittal model pays the cost and collects
+almost none of the benefit.
+
+### Where the mass split came from: nowhere. It is representative.
+
+Three standard tables were checked and **none of them divides head from neck**:
+
+| source | what it says |
+|---|---|
+| Winter 4e, Table 4.1 | one row, `Head and neck`, 0.081. No head row, no neck row. |
+| de Leva 1996, Table 4 | his `Head` segment is **vertex→cervicale (C7), this same span**, 6.94% for males. He also lists it vertex→mid-gonion with the *same* 6.94% and a different length — the endpoints move and the mass does not, because he never divided it either. Full text read 2026-09-07 from <https://ebm.ufabc.edu.br/wp-content/uploads/2013/12/Leva-1996.pdf>. |
+| Plagenhoef, Evans & Abdelnour 1983 | their dissection protocol *does* cut here — p.170, *"For the head: (1) decapitate the skull from the atlas"* — and their tables still report only `Head and neck`, 8.26% for men. Full text read 2026-09-07 from <https://courses.grainger.illinois.edu/me481/sp2021/Anthro1.pdf>. |
+
+So `segment/head-share-of-complex` is **0.80, representative and not measured**. At
+70 kg it puts 4.54 kg in the skull and 1.13 kg in the neck; the neck that leaves is a
+cylinder about 130 mm long and 110 mm across, which at soft-tissue density is roughly a
+kilogram — a plausibility check, not a measurement. A heavier skull raises the moment
+about C7 and about the condyles in a flexed posture, and 0.80 is at the high end of the
+plausible range, so these demands are more likely over- than under-stated.
+
+Everything else in the split is **derived from what the model already stated**: the two
+boundaries are its own 0.06-per-level cervical spacing continued upward (C2/C3 at 0.30
+of C7→vertex, the condyles at 0.42 = 130 mm above C7 — a derivation `attachment` wrote
+down that morning, before there was a segment to use it); the two neck masses divide the
+remainder by length; and the head's `:com-frac` (0.3707) is **solved** from the
+condition that the three together keep the centre of mass the one segment had.
+
+### The posture input did not change
+
+`:head-flexion-deg` still means the head's angle relative to the trunk. The rule that
+turns one number into three joint angles is `pose/cervical-partition`, and its **three
+coefficients sum to 1.0 by construction**, so the skull still lands at exactly
+`trunk-flexion + head-flexion`:
+
+| joint | share of `:head-flexion-deg` | at 43.5° (laptop-on-lap) |
+|---|---|---|
+| C7 (thorax → lower cervical) | **+1.0103** | 43.95° |
+| C2/C3 | **+0.1384** | 6.02° |
+| atlanto-occipital | **−0.1487** | −6.47° (extension) |
+
+The **negative** share is the forward-head shape: the column below flexes by more than
+the head does and the occiput extends on the atlas. Its *direction* is sourced —
+Bogduk & Mercer 2000, from van Mameren's cineradiography of 10 normal subjects, p.643:
+flexion is initiated in the lower cervical spine and in the final phase *"C0–C2
+typically exhibits a reversal of motion (i.e. extension)"*. Its *size* is
+representative: the reversal is given the atlanto-occipital joint's own share of the
+cervical sagittal range (14.5° of 97.5°, about 15%) and the remainder is split between
+the two flexing joints in proportion to the ranges the same paper tabulates
+(C3/C4–C6/C7 = 73°, C2/C3 = 10°; Table 5, Dvorak et al., N=28). Full text read
+2026-09-07 from <https://squareonephysio.com.au/wp-content/uploads/2021/08/Bogduk-2000-Biomechanics-Cervical-Spine.pdf>.
+
+⚠ **A fixed proportion is a linear approximation to a motion that is not linear.** The
+same paper says *"the total range of motion of the neck is not the arithmetic sum of
+its intersegmental ranges of motion"*, and van Mameren's subjects move the lower
+cervical spine first, then the upper, then the lower again — some of them *reversing*
+C6/C7 mid-excursion. This model has one number per posture and cannot represent a
+sequence. What it can now represent, and could not before, is the shape at the end of
+it. At the largest head-flexion input the model takes, 60°, the derived
+atlanto-occipital extension is **8.9°, inside the 14.5° the joint has** —
+`the-derived-atlanto-occipital-angle-stays-inside-its-published-range` asserts it.
+
+### The suboccipitals
+
+Three of four, PCSA measured from the same Kamibayashi & Richmond table as the capitis
+muscles (per side, mean, range; doubled below because a midline group here carries the
+bilateral sum):
+
+| muscle | PCSA/side | bilateral | modelled length | measured length |
+|---|---|---|---|---|
+| rectus capitis posterior major | 0.93 cm² (0.44–1.45) | 1.86 | 41.5 mm | 30–48 mm ✓ |
+| rectus capitis posterior minor | 0.50 cm² (0.48–0.83) | 1.00 | 23.0 mm | 26–31 mm — **3.0 mm short** |
+| obliquus capitis superior | 1.03 cm² (0.29–1.59) | 2.06 | 39.5 mm | 43–57 mm — **3.5 mm short** |
+| *obliquus capitis inferior* | *1.29 cm² (0.69–1.73)* | *2.58* | — | **not modelled** |
+
+**They are calibrated against a measured LENGTH, not against an invented moment arm.**
+Everywhere else in `attachment` the offsets are chosen so the neutral arm reproduces a
+constant this actor already used; there is no such constant here, and inventing a
+moment-arm target to calibrate to would be a number pretending to be an anchor. The
+sites are placed from bony landmarks and the resulting line length is compared against
+the cadaver measurement, which is **reported and not tuned**: both shortfalls have the
+same cause and it is not these muscles — this model's `upper_cervical` is 37 mm where
+an atlas plus axis is nearer 50, because `segment` cuts the neck at the model's own
+uniform 18.6 mm level spacing and C2 with its dens is taller than a typical vertebra.
+
+**The moment arms vary with posture**, which is the thing a muscle with both ends on
+one bone can never do (−15° to 60° of head flexion):
+
+| muscle | arm at −15° | at 0° | at 60° |
+|---|---|---|---|
+| rectus capitis posterior major | 27.39 mm | 27.65 mm | 28.46 mm |
+| rectus capitis posterior minor | 22.55 mm | 22.76 mm | 23.51 mm |
+| obliquus capitis superior | 12.66 mm | 12.88 mm | 13.63 mm |
+
+Monotonic, positive throughout, and **moved by head flexion only** — leaning the trunk
+carries the whole chain rigidly and does not move an atlanto-occipital arm. It is a 4%
+swing and not more, because the joint rotates only 8.9° over the model's whole input
+range. Break the split and the arm goes flat at 26.72 mm at every angle, which is what
+`the-suboccipital-moment-arms-vary-with-posture` was verified against.
+
+### And then they carry nothing at a desk, which is a result
+
+The atlanto-occipital equilibrium is given the **residual**, not the demand:
+
+```
+laptop-on-lap, 70 kg / 1.70 m
+  skull about the condyles                     2.648 N·m   demanded
+  semispinalis + splenius capitis, already     6.223 N·m   supplied   (×2.35)
+  → residual for the suboccipitals             0.000 N·m
+  → surplus nobody in this model balances      3.575 N·m
+```
+
+Semispinalis capitis and splenius capitis run thorax → **occiput**, so they pull on
+this joint too; they are solved at C7 because that is where they are the principal
+actors, and `recruit`'s closed form takes one constraint, so a muscle belongs to one
+task. Handing the suboccipitals the whole 2.648 N·m charges them for work those two are
+already doing — and it did: it made **rectus capitis posterior major the worst-loaded
+muscle in the entire report at 51% MVC**, a headline manufactured by a decomposition.
+
+**The surplus being positive is the finding.** The big superficial extensors, sized by
+the load at C7, over-extend the joint above them; what a real neck balances that with is
+its upper cervical **flexors** — longus capitis, rectus capitis anterior and lateralis —
+and this model has none of them. That is also why the sign is robust rather than an
+artefact of solving the two constraints in sequence: the suboccipitals act *only* at the
+atlanto-occipital joint, and that joint can be satisfied by muscles that also serve C7,
+so a minimum-cubed-stress optimum over both constraints together would still prefer the
+large capitis muscles. `:over-supplied-nm` is reported at every posture.
+
+Swept over head −60…60° × trunk 0…75° in 5° steps, **17 of 400 postures have a positive
+residual**, all of them head −40…−60° on a trunk flexed 60…75° — the head held back to
+look forward from a deep bend, which is the posture a suboccipital is for. At head −55°
+/ trunk 75° the three carry 1.30 N, 1.10 N and 0.68 N (1.21%, 1.98% and 0.55% MVC). At a
+laptop posture they carry **0 N and are not refused** — a zero load is a placed load, and
+the difference between *"nothing is asked of it here"* and *"this model could not answer"*
+is the whole point of the distinction.
+
+### C2/C3 exists now, and nothing holds it
+
+The split added one intervertebral level — **C2/C3, the most cranial disc there is**.
+There is no disc between C1 and C2 or between C1 and the occiput, which is why those two
+appear in `pose` as joints and not in `spine/levels`.
+
+**No muscle in this model is solved at the C2/C3 joint.** Three cross it, and none of
+them is *at* it: `awaiting-muscles` in `attachment-test` names it, which is the mechanism
+this repo uses instead of a paragraph. Filling it needs the muscles that act on the upper
+cervical spine specifically — rectus capitis anterior and lateralis, longus capitis, the
+semispinalis and multifidus cervicis fascicles that end on C2 — none of which exists here.
+Its compression is therefore a **lower bound**, and it is the one place in the cervical
+profile where the model is knowingly short of a muscle rather than short of a measurement.
+
+### What the split did to the numbers
+
+The per-level cervical profile at `laptop-on-lap`, 70 kg / 1.70 m:
+
+| level | force before | force after | crossed by, after |
+|---|---|---|---|
+| C7/T1 | 470.741 N | **470.299 N** | cervical extensors, semispinalis capitis, splenius capitis, levator scapulae ×2, upper trapezius ×2 |
+| C6/C7 | 337.985 N | **339.472 N** | semispinalis capitis, splenius capitis, levator scapulae ×2, upper trapezius ×2 |
+| C5/C6 | 263.790 N | **264.398 N** | semispinalis capitis, splenius capitis, levator scapulae ×2 |
+| C4/C5 | 262.301 N | **263.700 N** | semispinalis capitis, splenius capitis, levator scapulae ×2 |
+| C3/C4 | 226.300 N | **228.463 N** | semispinalis capitis, splenius capitis |
+| C2/C3 | — | **216.962 N** | semispinalis capitis, splenius capitis |
+
+The lumbar rows moved by 1.9 N each (L5/S1 1542.139 → 1544.053 N) for one reason: the
+cervical column now flexes **more** than the head does, which carries the mass above C7 a
+little further anterior of L5/S1. The suboccipitals appear in **no** row, and that is
+correct — both their ends are above every level this model has, so there is nothing for
+them to cross. Splitting the neck gave them a joint, not a level.
+
+**Both cross-checks, before and after:**
+
+| | before | after | what it means |
+|---|---|---|---|
+| `cervical-cross-check` ratio | 1.7204 | **1.7188** | −0.09%. It moved *toward* 1 by a hair and **that is not a validation** — it is arithmetic. The lumped side (273.619 N) did not move at all, because the split preserved the head's tilt exactly; the level side moved because the weight term did (24.810 → 24.420 N). `:validated :lumped` still says which side carries one. |
+| `lumbar-cross-check` | 350.887 N, ratio 0.6357 | **350.887 N, ratio 0.6357** | **byte-identical.** Nothing in the neck reaches L4/L5, and at Wilke's zero-flexion posture the crossing set there was already empty. Still below Wilke's spread; `:within-reference-spread? false` as before. |
+
+**The Hansraj multipliers are unchanged to the bit** — 1.0 / 2.260021051801672 /
+3.366025403784438 / 4.242640687119285 / 4.830127018922192. They depend only on the ratio
+`head-com-lever-m / cervical-ext-arm-m`, which the split does not touch. Neither did the
+two inputs `load/cervical-load` is actually handed at a posture, and that took work:
+
+- **the head's tilt from vertical.** The partition sums to 1.0, and `cervical-chain`
+  *sets* the skull's tilt to `trunk + head-flexion` rather than accumulating it —
+  accumulating puts a head asked for 63.5° at 63.49999999999999.
+- **the head weight.** It is still the **whole complex above C7** (5.670 kg = Winter's
+  0.081), not the skull. Hansraj's model is fitted with a ~12 lb head and Winter's
+  head-and-neck row is 5.43 kg at 67 kg; this actor has always identified the two.
+  Handing it the skull alone would have cut the validated quantity by a fifth and looked
+  like nothing.
+
+Verified against `origin/main` itself, out of `git archive`, at all three reference
+workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, identical.
+
+### What the neck still cannot express
+
+- **Obliquus capitis inferior**, 2.58 cm² bilateral — C2 spinous → C1 transverse, both
+  ends on `upper_cervical`. It needs the atlas and the axis to be separate bodies.
+- **The atlanto-axial joint**, whose cardinal motion is 40.5° of axial rotation. A
+  sagittal model has nowhere to spend it.
+- **Any upper cervical flexor** — longus capitis, rectus capitis anterior and lateralis.
+  This is why the atlanto-occipital surplus above has nothing to balance it.
+- **Any muscle solved AT C2/C3.** See above.
+- **A motion sequence.** The partition is a fixed proportion; real cervical flexion moves
+  the lower column, then the upper, then the lower again.
+- **Lateral bend within the neck.** `pose` gives all three cervical segments the same
+  lateral-bend angle, so there is no side-bending rhythm and no coupled axial rotation —
+  which is most of what the atlanto-axial joint does.
+- **The three suboccipitals are modelled midline**, so their lateral flexion and their
+  role in steadying the head in rotation are absent. That costs most for obliquus capitis
+  superior, which really runs from a transverse process 25 mm off the midline.
+- **`upper_cervical` is 37 mm where an atlas plus axis is nearer 50**, because the model
+  cuts the neck at its own uniform level spacing. Everything spanning that joint comes out
+  short, and a short muscle changes length by a larger fraction for the same rotation — so
+  the force–length term falls off faster than it should, biasing these three toward *less*
+  available force and a *higher* %MVC than a correctly scaled model would report.
+- **The five lower cervical levels still share one orientation.** `lower_cervical` is C3
+  to C7 and is still one rigid body; C7/T1 … C3/C4 are five samples of it. What is no
+  longer true is that the *skull* shares that frame.
 
 **The frontal plane is CARRIED (2026-09-06).** Six muscle groups were added for
 it — middle deltoid and latissimus dorsi at each shoulder, quadratus lumborum and
