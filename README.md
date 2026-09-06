@@ -1392,12 +1392,16 @@ muscle in the entire report at 51% MVC**, a headline manufactured by a decomposi
 
 **The surplus being positive is the finding.** The big superficial extensors, sized by
 the load at C7, over-extend the joint above them; what a real neck balances that with is
-its upper cervical **flexors** — longus capitis, rectus capitis anterior and lateralis —
-and this model has none of them. That is also why the sign is robust rather than an
-artefact of solving the two constraints in sequence: the suboccipitals act *only* at the
-atlanto-occipital joint, and that joint can be satisfied by muscles that also serve C7,
-so a minimum-cubed-stress optimum over both constraints together would still prefer the
-large capitis muscles. `:over-supplied-nm` is reported at every posture.
+its upper cervical **flexors** — longus capitis, rectus capitis anterior and lateralis.
+That is also why the sign is robust rather than an artefact of solving the two
+constraints in sequence: the suboccipitals act *only* at the atlanto-occipital joint, and
+that joint can be satisfied by muscles that also serve C7, so a minimum-cubed-stress
+optimum over both constraints together would still prefer the large capitis muscles.
+`:over-supplied-nm` is reported at every posture.
+
+> **This paragraph ended *"and this model has none of them"* until 2026-09-08.** It has
+> two now — and the surplus is still not balanced, for a reason the flexors made
+> measurable rather than removed. See *The upper cervical spine had no flexors* below.
 
 Swept over head −60…60° × trunk 0…75° in 5° steps, **17 of 400 postures have a positive
 residual**, all of them head −40…−60° on a trunk flexed 60…75° — the head held back to
@@ -1413,13 +1417,17 @@ The split added one intervertebral level — **C2/C3, the most cranial disc ther
 There is no disc between C1 and C2 or between C1 and the occiput, which is why those two
 appear in `pose` as joints and not in `spine/levels`.
 
-**No muscle in this model is solved at the C2/C3 joint.** Three cross it, and none of
+**No muscle in this model is solved at the C2/C3 joint.** Four cross it, and none of
 them is *at* it: `awaiting-muscles` in `attachment-test` names it, which is the mechanism
-this repo uses instead of a paragraph. Filling it needs the muscles that act on the upper
-cervical spine specifically — rectus capitis anterior and lateralis, longus capitis, the
-semispinalis and multifidus cervicis fascicles that end on C2 — none of which exists here.
-Its compression is therefore a **lower bound**, and it is the one place in the cervical
-profile where the model is knowingly short of a muscle rather than short of a measurement.
+this repo uses instead of a paragraph. Its compression is therefore a **lower bound**.
+
+> ⚠ **The reason stated here was wrong until 2026-09-08.** It said filling C2/C3 needs
+> *"rectus capitis anterior and lateralis, longus capitis, the semispinalis and multifidus
+> cervicis fascicles that end on C2 — none of which exists here"*, i.e. that the blocker
+> was a shortage of anatomy. Two of those muscles were added on 2026-09-08 and the joint
+> is still unsolved, because they act about the **atlanto-occipital** joint. A name on
+> that list was not a muscle at this one. The corrected verdict is in
+> *C2/C3: expressible, and blocked by provenance* below.
 
 ### What the split did to the numbers
 
@@ -1433,6 +1441,11 @@ The per-level cervical profile at `laptop-on-lap`, 70 kg / 1.70 m:
 | C4/C5 | 262.301 N | **263.700 N** | semispinalis capitis, splenius capitis, levator scapulae ×2 |
 | C3/C4 | 226.300 N | **228.463 N** | semispinalis capitis, splenius capitis |
 | C2/C3 | — | **216.962 N** | semispinalis capitis, splenius capitis |
+
+> This table records what *the split* did and its "after" column is that day's. Since
+> 2026-09-08 the bottom three rows also carry `longus_capitis` — C4/C5 263.713 N, C3/C4
+> 228.476 N, C2/C3 216.975 N, each **+0.013 N**, which is that muscle's passive term at a
+> posture where its active force is zero. The three rows above them are byte-identical.
 
 The lumbar rows moved by 1.9 N each (L5/S1 1542.139 → 1544.053 N) for one reason: the
 cervical column now flexes **more** than the head does, which carries the mass above C7 a
@@ -1470,9 +1483,21 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
   ends on `upper_cervical`. It needs the atlas and the axis to be separate bodies.
 - **The atlanto-axial joint**, whose cardinal motion is 40.5° of axial rotation. A
   sagittal model has nowhere to spend it.
-- **Any upper cervical flexor** — longus capitis, rectus capitis anterior and lateralis.
-  This is why the atlanto-occipital surplus above has nothing to balance it.
-- **Any muscle solved AT C2/C3.** See above.
+- ~~**Any upper cervical flexor**~~ **Closed 2026-09-08** — `longus_capitis` (PCSA
+  measured) and `rectus_capitis_anterior` (PCSA representative) act about the
+  atlanto-occipital joint in `:atlanto-occipital-flexion`. What is *not* closed is the
+  surplus: carrying it would take 185% and 116% of what those two can produce, so the
+  joint still does not balance and the reason is a coupled solve, not a missing muscle.
+- **Any muscle solved AT C2/C3.** Still true — but *not* because the segmentation cannot
+  express one. See *C2/C3: expressible, and blocked by provenance*.
+- **Rectus capitis lateralis**, the third upper cervical flexor named in the source, is
+  not here. It runs from the transverse process of the atlas to the jugular process of
+  the occiput and its function is **lateral bending**, not sagittal flexion; a midline
+  sagittal model has nowhere to put it, and Kamibayashi & Richmond do not measure it
+  either.
+- **A coupled solve over the C7 and atlanto-occipital constraints.**
+  `recruit`'s closed form takes one equality constraint. This is the one gap the flexors
+  turned from a suspicion into a measurement.
 - **A motion sequence.** The partition is a fixed proportion; real cervical flexion moves
   the lower column, then the upper, then the lower again.
 - **Lateral bend within the neck.** `pose` gives all three cervical segments the same
@@ -1489,6 +1514,255 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
 - **The five lower cervical levels still share one orientation.** `lower_cervical` is C3
   to C7 and is still one rigid body; C7/T1 … C3/C4 are five samples of it. What is no
   longer true is that the *skull* shares that frame.
+
+## The upper cervical spine had no flexors (2026-09-08)
+
+The section above created the gap and named it: the atlanto-occipital joint had three
+suboccipital **extensors** and nothing on the other side, so it could not express
+co-contraction, could not balance an over-supply, and could not represent a head held
+back against a headrest. `load/atlanto-occipital-moment` said so in its own docstring —
+*"what a real neck balances that with is its upper cervical **flexors** — longus capitis,
+rectus capitis anterior and lateralis — and this model has none of them"*.
+
+Reproduced before anything changed, on a 70 kg / 1.70 m body:
+
+```
+muscles with :acts-about :atlanto-occipital     3, all :atlanto-occipital-extension
+tasks in the whole model carrying a flexion
+  moment about any cervical joint               0
+at laptop-on-lap:  demand 2.648 N·m · capitis 6.223 N·m · residual 0.000 · surplus 3.575
+                   all three suboccipitals: 0.000 N
+```
+
+### Two muscles, one measured and one not
+
+| group | PCSA (bilateral) | provenance | acts about | task |
+|---|---|---|---|---|
+| `longus_capitis` | **1.84 cm²** | **measured** — Kamibayashi & Richmond 1998 Table 3-3, 0.92 (0.35) cm² per side, range 0.54–1.63, N=7, ×2 sides | `:atlanto-occipital` | `:atlanto-occipital-flexion` |
+| `rectus_capitis_anterior` | 1.00 cm² | **representative, not measured** — 0.50 cm² per side taken to equal the *measured* value of its direct posterior counterpart, rectus capitis posterior minor, in the same table | `:atlanto-occipital` | `:atlanto-occipital-flexion` |
+
+The source is Kamibayashi LK, Richmond FJR, *Morphometry of human neck muscles*, Spine
+23(12):1314–1323, 1998, read as Table 3-3 of Vasavada AN, *Architectural Design and
+Function of Human Back Muscles*, Rothman-Simeone The Spine ch.3 p.65 —
+<https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf>, **fetched 2026-09-08 and
+read in full text** with `pdftotext -layout`, not as an abstract. Its longus capitis row
+also gives mass 3.7 (1.2) g, muscle length 7.8–11.1 cm mean 9.2 (1.4), NF length 3.8 (1)
+cm. **Rectus capitis anterior is not one of its fourteen rows** — checked in the fetched
+text rather than assumed — and Vasavada names it only qualitatively: *"On the ventral
+side, the rectus capitis anterior and rectus capitis lateralis are very small muscles
+that connect the skull to C1, presumably with (small) moment arms for flexion and lateral
+bending"* (p.66).
+
+**What the representative number costs**, stated where it is spent: `longus_capitis`'s
+PCSA is measured, and once the two share the flexion task by Crowninshield–Brand, the
+measured muscle's force depends on the unmeasured one. The one-line change that removes
+that dependence is to delete the `rectus_capitis_anterior` entry; the joint then has one
+flexor, and that flexor also crosses C2/C3, so the model would have no way to express
+purely atlanto-occipital flexion at all. That is why it is in rather than out.
+
+**The moment arms are not calibrated to anything**, for the same reason the suboccipitals'
+are not: there is no constant this actor already used about this joint and no published
+moment arm was obtained, so a target would be a number pretending to be an anchor. The
+sites are placed from bony landmarks and the resulting **length** is checked against the
+measurement:
+
+| | modelled at neutral | measured | |
+|---|---|---|---|
+| `longus_capitis` | **91.75 mm** | 78–111 mm, mean 92 (14) | inside, on the mean |
+| `rectus_capitis_anterior` | 16.06 mm | — | the table does not contain the muscle |
+
+### The arms move, and they move the other way from the extensors
+
+Moment arm about `:atlanto-occipital`, 70 kg / 1.70 m, negative = flexion:
+
+| head flexion | −15° | 0° | 15° | 30° | 45° | 60° |
+|---|---|---|---|---|---|---|
+| `longus_capitis` | −14.687 | −14.538 | −14.384 | −14.226 | −14.064 | −13.898 |
+| `rectus_capitis_anterior` | −10.937 | −10.783 | −10.625 | −10.464 | −10.298 | −10.128 |
+| `rectus_capitis_posterior_major` (extensor) | +27.39 | +27.65 | +27.89 | +28.11 | +28.30 | +28.46 |
+
+Same rotation, opposite directions — the atlanto-occipital joint *extends* as the head
+flexes on the trunk, which carries a posterior insertion further behind the joint centre
+and an anterior one closer to it. Leaning the **trunk** moves neither (identical to
+1e-12), because the joint is between the skull and the atlas and trunk flexion carries
+the whole chain rigidly. That is the test that would fail for a muscle with both ends on
+one bone, and it is the reason this could not be written before the neck was split.
+
+### Sternocleidomastoid was the obvious candidate and the geometry says no
+
+It is this model's existing neck flexor. Re-tasking it was considered and rejected on the
+measurement, not on the name: it inserts on the **mastoid process**, which is *behind* the
+occipital condyles, so about the atlanto-occipital joint it is an **extensor** —
+
+| head flexion | −15° | 0° | 15° | 30° | 45° | 60° |
+|---|---|---|---|---|---|---|
+| SCM arm about `:atlanto-occipital` | +4.90 | +4.54 | +4.24 | +4.06 | +4.05 | +4.27 mm |
+
+— positive at every posture, and **below `recruit/min-coeff` (5 mm) at all of them**. So
+tasked as a flexor it is refused `:acts-the-wrong-way`, and tasked as an extensor there it
+is refused `:coefficient-below-floor`. Both refusal literals are pinned by
+`the-sternocleidomastoid-is-an-upper-cervical-extensor-not-a-flexor`, because a test that
+asserted only *refused* would pass on a degenerate line of action, which is a different
+defect with a different fix. This is also the mechanism of the forward-head posture the
+muscle is famous for: lower cervical flexion with upper cervical **extension**, which is
+exactly the shape `pose/cervical-partition` produces.
+
+### The load is gravity. The surplus is reported, not assigned.
+
+`:over-supplied-nm` turned out to be **two different things added together**, and
+`load/atlanto-occipital-moment` now splits them:
+
+```
+:gravitational-flexion-nm    max(0, −M)            what gravity asks of the flexors
+:decomposition-surplus-nm    the rest              what the uncoupled solve leaves
+                             (they sum to :over-supplied-nm, asserted not assumed)
+```
+
+Gravity asks the flexors for something exactly when the skull's centre of mass sits
+**behind** the occipital condyles — a head tipped back, or held against a headrest. The
+surplus is what the two capitis muscles exert here in excess of that, because they were
+sized by the equilibrium at C7 and `recruit`'s closed form takes one constraint.
+
+**Assigning the surplus was the first draft and it was rejected on the measurement.**
+
+| | at `laptop-on-lap` | at `laptop-on-desk` | at `external-monitor` |
+|---|---|---|---|
+| `longus_capitis` if the surplus is assigned | **184.82% MVC** | 97.23% | 13.47% |
+| `rectus_capitis_anterior` if assigned | **115.93% MVC** | 61.55% | 8.59% |
+| worst muscle in the whole report, then | `longus_capitis` | `longus_capitis` | `longus_capitis` |
+| `longus_capitis` as landed | **0.012%** | 0.009% | 0.002% |
+| worst muscle in the whole report, as landed | `erector_spinae` 57.49% | `erector_spinae` 14.88% | `erector_spinae` 11.29% |
+
+A muscle cannot be shown carrying 1.85 times what it can produce as though that were a
+finding about a posture — it is the same headline-manufactured-by-a-decomposition that
+`atlanto-occipital-moment` refused when it declined to charge the suboccipitals this
+joint's whole demand. So the surplus is **reported**, and for the first time in units that
+make its size legible: `:surplus-force-n` and `:surplus-mvc-pct` on every flexor row, and
+`:atlanto-occipital-surplus-mvc-pct` in `tension-summary` — what *this* muscle would have
+to produce if the surplus were assigned, through the same criterion, deliberately not
+folded into `:mvc-pct` so nothing downstream ranks or doses a body by a number the model
+does not claim.
+
+**The result is stronger than the moment was.** The surplus is not a small residual that a
+missing muscle was hiding: it is **1.85× the entire capacity of the anatomy that would
+have to absorb it**. Adding the flexors did not close the joint. It measured how far from
+closing it is, and named what would close it — a solve over both constraints together,
+which `recruit` does not have and which no further muscle supplies.
+
+### The sweep: they carry where gravity flexes the head, and nowhere else
+
+Over 365 postures (head −15…60° × trunk 0…45° × shoulder 0…90° × arms supported/not,
+plus the three reference workstations and two standing references), 70 kg / 1.70 m:
+
+| | |
+|---|---|
+| postures where a flexor takes **active** force | **40 of 365** |
+| …and in every one of them the head's tilt from vertical is | **negative** |
+| postures where gravity demands upper cervical flexion | 40 — *the same 40* |
+| postures where a flexor is **refused** | **0** — a placed load of zero is not a refusal |
+| peak `longus_capitis` | **37.59% MVC** at head −15° / trunk 0° (41.50 N) |
+| peak `rectus_capitis_anterior` | 23.88% MVC at the same posture (14.29 N) |
+| postures where the surplus alone would exceed 100% MVC | 89 of 365, peaking at **214.3%** |
+| **suboccipital** active force, anywhere in the sweep | **0 N — unchanged** |
+
+The equivalence is the claim, not the count: the flexors carry in exactly the postures
+where the skull's centre of mass is behind the condyles. `laptop-on-lap`,
+`laptop-on-desk` and `external-monitor+keyboard` are all head-forward, so at all three
+they carry nothing and are not refused.
+
+**The suboccipitals did not move.** They carried 0 N in all 365 postures before this wave
+and 0 N in all 365 after it, because `:residual-nm` is `max(0, M − capitis)` and the
+capitis surplus is positive everywhere the head is forward. `:task-over-supplied-nm` is
+unchanged too — 3.575 N·m at `laptop-on-lap`, 4.2045 N·m peak across the sweep, before
+and after. The flexors did not take anything off the extension side; they gave the
+flexion side a number.
+
+### C2/C3: expressible, and blocked by provenance
+
+`awaiting-muscles` said the blocker was a shortage of muscles. Two of the muscles it
+named were added and the joint is still unsolved, so the reason was re-derived from the
+model rather than from the list — and it is **not the segmentation**.
+
+`spine/levels-crossed` and `attachment/moment-arm` both take a *muscle map* rather than a
+name, so a candidate that is not in `attachment/instances` can be handed to them and the
+model answers about it. All three muscles that act at C2/C3 in anatomy were written in
+this model's attachment language and asked:
+
+| candidate (anatomy from Vasavada ch.3, p.66) | ends ride on | crosses | arm about `:c2c3`, head −15° → 60° |
+|---|---|---|---|
+| semispinalis cervicis — thoracic transverse processes → C2 spinous, *"with the bulk of its mass inserting on C2"* | `thorax_abdomen` → `upper_cervical` | all six levels | +19.02 → +11.82 mm (−38%) |
+| cervical multifidus — *"span one or two vertebral segments"*, C3 articular process → C2 spinous | `lower_cervical` → `upper_cervical` | **C2/C3 only** | +16.74 → +15.81 mm |
+| longus colli, superior oblique part — *"fibers run superomedially from transverse processes to the anterior vertebral bodies"*, to the anterior tubercle of the atlas | `lower_cervical` → `upper_cervical` | C4/C5, C3/C4, C2/C3 | −7.68 → −11.21 mm |
+
+**None of them has both ends on one segment**, so none is the shape
+`a-muscle-with-both-ends-on-one-bone-cannot-have-an-angle-dependent-arm` names as the
+known error, and each has an arm about `:c2c3` that moves when the joint moves. The
+one-level multifidus crosses **C2/C3 and nothing else** — a muscle can be placed that acts
+at this joint and at no other level in the model.
+
+> The test asserts a **spread**, not `(count (distinct arms))`. Verified 2026-09-08 by
+> moving the multifidus candidate's origin onto `upper_cervical`: the arm is then constant
+> in exact arithmetic and differs in the last bits in a double, so the distinct count
+> still returned 6 — for exactly the shape the test exists to reject. The spread was
+> 8.3e-17 against a 1.88e-4 threshold.
+
+**What actually blocks it is provenance, in two parts.**
+
+1. Kamibayashi & Richmond 1998 Table 3-3 — the source every measured PCSA in this model
+   comes from — has fourteen rows and **not one of the three is among them**. Checked in
+   the fetched full text. Their cross-sections would be invented.
+2. The lumped `cervical_extensors` **already declares that it stands for two of them**.
+   Its `:source` says it places *"semispinalis cervicis, multifidus, longissimus and
+   spinalis cervicis"*, and its 12.0 cm² is unprovenanced — so carving them out would
+   need a number to divide that does not exist, and adding them alongside would
+   double-count against a lump nobody can check. That sentence moved out of a comment
+   and into the `:source` on 2026-09-08 so a test can hold it.
+
+So **`:c2c3` stays in `awaiting-muscles`**, and what would close it is a source with a
+cross-section for the deep cervical extensors — not a segmentation change, not a wrapping
+surface, and not another muscle from the list.
+
+What *did* change at C2/C3: `longus_capitis` runs up the front of the column to the
+basiocciput, so the level now carries an **anterior** line for the first time. Its
+`:secondary-moment-nm` about `:c2c3` is reported (`tension-summary`'s
+`:two-joint-unfed-nm` gained a `:c2c3` key), which is the same confession
+`attachment/secondary-arm` makes for the two-joint muscles of the leg.
+
+### What did not move
+
+| | before | after |
+|---|---|---|
+| Hansraj multipliers | 1.0 / 2.260021051801672 / 3.366025403784438 / 4.242640687119285 / 4.830127018922192 | **identical to the bit** |
+| `cervical-cross-check` ratio, `laptop-on-lap` | 1.718812573109 | **1.718812573109** |
+| …`laptop-on-desk` / `external-monitor` | 1.412019204359 / 1.222043863200 | **identical to 12 dp** |
+| `lumbar-cross-check` | 350.88684032499987 N, ratio 0.6356645658061592 | **byte-identical** |
+| C7/T1, C6/C7, C5/C6 compression | 470.2991 / 339.4723 / 264.3976 N | **byte-identical** |
+| `:task-over-supplied-nm` at `laptop-on-lap` | 3.5746 N·m | **3.5746 N·m** |
+| suboccipital forces, all 365 swept postures | 0 N | **0 N** |
+| worst muscle in the generated report | `erector_spinae` | **`erector_spinae`** |
+
+The cervical cross-check ratio not moving is the point: neither flexor crosses C7/T1
+(`longus_capitis` originates halfway up `lower_cervical`, above the level;
+`rectus_capitis_anterior` runs C1 → skull and crosses no disc at all). The only rows that
+moved are C4/C5, C3/C4 and C2/C3, by **+0.013 N each** at `laptop-on-lap` — the longus
+capitis passive term at a posture where its active force is zero.
+
+### What the upper cervical spine still cannot express
+
+- **The surplus.** 1.85× the flexors' capacity. It needs a coupled solve, not a muscle.
+- **Rectus capitis lateralis** — a lateral bender, and a midline sagittal model has
+  nowhere to put it. Also unmeasured by the source.
+- **Longus colli**, all three parts. Its superior oblique part is expressible (above); its
+  vertical part runs within `lower_cervical` at both ends and is the known error shape;
+  none of the three has a published PCSA here.
+- **`rectus_capitis_anterior`'s length** is checked against nothing, because the source
+  does not contain the muscle.
+- **Both flexors are modelled midline**, so longus capitis's ipsilateral rotation — which
+  Vasavada attributes to its superomedial fascicle orientation — is absent, as is rectus
+  capitis anterior's lateral bending.
+- **`upper_cervical` is still 37 mm where an atlas plus axis is nearer 50**, so
+  `rectus_capitis_anterior`, which spans it, is short for the same reason
+  `rectus_capitis_posterior_minor` is.
 
 **The frontal plane is CARRIED (2026-09-06).** Six muscle groups were added for
 it — middle deltoid and latissimus dorsi at each shoulder, quadratus lumborum and

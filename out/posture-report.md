@@ -41,6 +41,8 @@
 | rectus_capitis_posterior_major | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_capitis_posterior_minor | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | obliquus_capitis_superior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| longus_capitis | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| rectus_capitis_anterior | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | middle_deltoid/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | latissimus_dorsi/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | quadratus_lumborum/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
@@ -103,6 +105,8 @@
 | rectus_capitis_posterior_major | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_capitis_posterior_minor | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | obliquus_capitis_superior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| longus_capitis | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| rectus_capitis_anterior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | biceps_brachii/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | brachialis/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | triceps_brachii/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
@@ -171,6 +175,8 @@
 | rectus_capitis_posterior_major | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | rectus_capitis_posterior_minor | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | obliquus_capitis_superior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| longus_capitis | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
+| rectus_capitis_anterior | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | biceps_brachii/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | brachialis/left | 0% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
 | triceps_brachii/left | 1% | ∞（モデルの床未満） | 0.00 | 0.00 | low |
