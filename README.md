@@ -562,6 +562,41 @@ of vanishing. The anterior deltoid (humeral head, R = 20 mm) and the cervical
 extensors (the cervical column, R = 12 mm) declare one. Measured across 3,240
 postures, this removed **every** `:coefficient-below-floor` refusal.
 
+**A floor is only a floor if the chord can beat it (2026-09-07).** The middle
+deltoid declared R = 22 mm, which is not a radius of anything: it was the top of
+the `~20-25 mm` moment-arm range its own `:source` quoted, used as a floor. A floor
+taken from the arm's own target sits above the arm and binds everywhere — measured
+over 3,072 postures the wrap was in force **3,072 times**, against 2,432 for the
+anterior deltoid and 1,560 for the biceps, and the reported arm was ±22 mm at every
+one of them. A moment arm that never moves is a table, and a table is what this
+whole layer replaced.
+
+Two things were wrong. The radius is the humeral head's, and the anterior deltoid
+wraps the same bone at 20 mm — one bone, one radius. And the acromion sat at
+exactly the height `pose` gives the shoulder joint (both at y = 0.4896 m at
+neutral), which makes the chord's abduction leverage LARGEST at 0° and carries it
+through zero near 78° into adduction: the principal abductor running backwards
+through the top half of its own range, invisible because the floor was above all of
+it. The acromion arches *over* the head — the gap is the subacromial space — so its
+superior offset is at least one head radius, and one head radius is what it now has:
+the same 0.020 m, not a second number. The arm is 21.7 mm at 0°, peaks near 28.5 mm
+at 45°, and reaches the floor near 86°; the wrap now binds 2,000 of those 3,072
+postures instead of all of them.
+
+**One muscle here has both ends on one segment, and it is allowed to.**
+`middle_trapezius` runs from the thoracic spinous processes to the acromion, and
+this model places both on `thorax_abdomen` because it has no scapula. For a MOMENT
+that shape is the bug — a line whose ends both ride on a segment rotates rigidly
+with the joint that segment carries, so the arm cannot move. For a SUSPENSION it is
+not: the coefficient is a direction cosine against the world vertical, which the
+thorax does not carry, and measured over 4,608 postures it spans −0.18 to +0.49.
+What it does cost is the LENGTH, which is 1.0000 × optimal at every one of those
+postures — the only muscle in the set for which that is true. So its force–length
+factor is always 1 and its passive tension always 0, and its reported %MVC is a
+lower bound. Adding a scapulothoracic degree of freedom is what would change that;
+until then the test forbids the shape for every task except suspension, so a
+*moment* muscle that acquires it fails rather than showing up as a flat column.
+
 The condition is `sign × straight < R`, not `|straight| < R`. The second looks right
 and is not: once the chord swings far enough to the wrong side its magnitude exceeds
 R again, wrapping switches off, and the model hands back a straight-line arm with the
@@ -664,11 +699,16 @@ thoracolumbar fascia — and those are separate structures this model does not h
 the passive term large enough to explain the phenomenon fails a test and has to be
 argued for.
 
-A measured side effect: the per-level spinal profile's attachment steps are GONE.
-A stretched muscle now contributes across levels where it previously contributed
-exactly zero. `attachment-steps` is still there and still correct — what changed is
-that this model no longer produces the artefact, and its test now checks the
-detector on constructed input rather than asserting the model still has one.
+⚠ **That paragraph used to say the per-level profile's attachment steps were GONE,
+and it was wrong (corrected 2026-09-07).** What passive tension removed was the
+exact ZERO, not the step. `attachment-steps` required `:muscle-n` to be exactly
+0.0, so once no level was ever empty the predicate could not fire — and its unit
+test went on exercising it against constructed rows that do reach zero, which the
+model no longer produces. The profile stepped the whole time: measured at
+laptop-on-lap, the muscle term falls **1074.7 N → 4.2 N between L2/L3 and L1/L2**,
+99.6% of it in one level, where the erector spinae's point insertion at 0.25 of the
+trunk lies. The detector reported `[]`, and this document published the silence.
+See **The spine is resolved level by level** below for what replaced the zero.
 
 **%MVC's denominator is no longer a constant (2026-09-06).** It divided by
 PCSA × specific tension, which assumes a muscle can produce its maximum at every
@@ -768,10 +808,41 @@ and a number in a standing document gets quoted with its date dropped. Ask for i
 It names which of the two is validated, so the profile cannot be read as though it
 inherited the validation. It did not.
 
-`attachment-steps` reports the levels where the muscle term drops to zero between
-neighbours. A real muscle attaches over a range of vertebrae; this one attaches at
-a point, so the force steps rather than tapering. Naming the steps is the
-difference between a reader seeing an artefact and a reader believing a spine.
+`attachment-steps` reports the levels where a muscle's WHOLE contribution
+disappears between neighbours. A real muscle attaches over a range of vertebrae;
+this one attaches at a point, so the force steps rather than tapering. Naming the
+steps is the difference between a reader seeing an artefact and a reader believing
+a spine.
+
+**There is no threshold in it, and that is the fix (2026-09-07).** It used to ask
+whether the muscle term was exactly 0.0, which passive tension made unreachable.
+Replacing an unreachable constant with an invented percentage would have been the
+same mistake twice, and it is not necessary: `crosses?` is all-or-nothing, because
+a point attachment is either above a level or below it. So the model already knows
+*which* muscles stop crossing. Each row now carries `:muscle-crossing` — the
+instances contributing and the newtons each contributes — and a step is the loss of
+a whole muscle, reported with its size rather than judged against one:
+
+```clojure
+{:after "L2/L3" :at "L1/L2" :lost ["erector_spinae"]
+ :lost-n 1070.5 :muscle-n-before 1074.7 :muscle-n-after 4.2}
+```
+
+Steps are reported only WITHIN a region. L1/L2 and C7/T1 are adjacent in the vector
+and are not neighbours in a spine — this model has no thoracic levels — and pairing
+them would report the missing region as an attachment artefact. And rows with no
+`:muscle-crossing` are REFUSED rather than reported as having no steps: a detector
+that cannot see its input must not return the value of one that looked and found
+nothing.
+
+⚠ **`:muscle-crossing` also makes a second defect visible, which is named and not
+fixed.** `crosses?` is a half-space test on HEIGHT along the spine, so a muscle
+nowhere near the spine counts whenever its two ends straddle a level's height:
+at laptop-on-lap the whole C3/C4 row is carried by the two wrist extensors, and at
+60° of trunk flexion `vasti` and `tibialis_anterior` appear at L1/L2. A wrist
+extensor transmits its force to the forearm, not through somebody's neck. Fixing it
+moves every number in this namespace and both published cross-checks, so it is
+written down in `crosses?` as a known gap rather than silently changed.
 
 **The frontal plane is CARRIED (2026-09-06).** Six muscle groups were added for
 it — middle deltoid and latissimus dorsi at each shoulder, quadratus lumborum and

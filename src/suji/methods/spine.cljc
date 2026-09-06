@@ -126,7 +126,21 @@
 
 (defn- crosses?
   "Does this muscle's line cross the level? True when its two attachment points
-  sit on opposite sides of the level along the spine axis."
+  sit on opposite sides of the level along the spine axis.
+
+  ⚠ A HALF-SPACE TEST, NOT A PATH TEST, and `:muscle-crossing` now makes that
+  visible instead of leaving it inside a sum. It asks only about HEIGHT along the
+  spine, so a muscle nowhere near the spine counts whenever its two ends happen to
+  straddle a level's height. Measured 2026-09-07 at `laptop-on-lap`, the C3/C4 row
+  is carried entirely by `wrist_extensors/left` and `wrist_extensors/right`; at 60°
+  of trunk flexion `vasti` and `tibialis_anterior` appear at L1/L2. A wrist
+  extensor transmits its force to the forearm, not through somebody's neck.
+
+  NOT FIXED HERE, deliberately. It is a different defect from the one this wave is
+  removing, it moves every number in this namespace, and both cross-checks
+  (`cervical-cross-check` against Hansraj, `lumbar-cross-check` against Wilke) pin
+  today's disagreement — changing the muscle set would move those without anybody
+  having decided to. Named here so it is a known gap rather than a discovery."
   [pose-data stature-m level muscle]
   (let [{:keys [point axis]} (level-point pose-data level)
         {:keys [origin insertion]} (attachment/line-of-action pose-data stature-m muscle)
@@ -156,9 +170,21 @@
                 (when dir
                   ;; only the component ALONG the spine compresses it; the
                   ;; transverse component is shear, which this model does not carry
-                  (* f (math/abs* (math/vdot dir axis))))))))]
-    {:muscle-n (reduce + 0.0 (keep #(when-not (:ligament? %) (contribution %))
-                                   attachment/instances))
+                  (* f (math/abs* (math/vdot dir axis))))))))
+        muscles (vec (sort-by first
+                              (keep (fn [m]
+                                      (when-not (:ligament? m)
+                                        (when-let [n (contribution m)]
+                                          [(:name m) n])))
+                                    attachment/instances)))]
+    ;; `:muscle-crossing` is what makes `attachment-steps` a detector rather than
+    ;; a guess. `crosses?` is all-or-nothing — a muscle attaches at a POINT, so it
+    ;; either spans the level in full or not at all, and there is no taper for a
+    ;; magnitude threshold to sit inside. Carrying the names and the newtons means
+    ;; the step detector can say WHICH muscle stopped crossing and HOW MUCH force
+    ;; went with it, instead of judging a percentage.
+    {:muscle-crossing muscles
+     :muscle-n (reduce + 0.0 (map second muscles))
      :ligament-n (reduce + 0.0 (keep #(when (:ligament? %) (contribution %))
                                      attachment/instances))}))
 
@@ -167,13 +193,15 @@
   [body pose-data tensions level]
   (let [stature-m (:stature-m body)
         weight (weight-above-n body pose-data level)
-        {:keys [muscle-n ligament-n]} (tissue-compression-n pose-data stature-m level tensions)
+        {:keys [muscle-n ligament-n muscle-crossing]}
+        (tissue-compression-n pose-data stature-m level tensions)
         force (+ weight muscle-n ligament-n)
         area (disc-area-m2 level stature-m)]
     {:name (:name level)
      :region (:region level)
      :weight-n weight
      :muscle-n muscle-n
+     :muscle-crossing muscle-crossing
      :ligament-n ligament-n
      :force-n force
      :disc-area-cm2 (* 1e4 area)
@@ -496,17 +524,62 @@
      :source niosh-1981-compression-criteria}))
 
 (defn attachment-steps
-  "Levels whose muscle term is zero while a neighbour's is not — the artefact of
-  point attachments.
+  "Levels where a muscle's WHOLE contribution disappears between neighbours — the
+  artefact of point attachments.
 
   A real muscle attaches over a RANGE of vertebrae, so its contribution tapers
   along the spine. This model attaches it at a point, so a level just past that
   point loses the whole force at once. Reporting which levels those are is the
-  difference between a reader seeing a step and a reader believing a spine."
+  difference between a reader seeing a step and a reader believing a spine.
+
+  THERE IS NO THRESHOLD HERE, AND THAT IS THE FIX. Until 2026-09-07 this asked
+  whether `:muscle-n` was EXACTLY 0.0 at one level and positive at the one before.
+  Passive tension made that unreachable — a stretched muscle contributes wherever
+  it crosses — so the predicate stopped being able to fire on real data while its
+  unit test went on exercising it against constructed rows that do reach zero.
+  Measured 2026-09-07 at `laptop-on-lap`: the muscle term falls 482.86 N → 4.19 N
+  between L2/L3 and L1/L2, a 99.1% step, and the old predicate returned `[]`. The
+  README repeated the silence as a finding.
+
+  Replacing `= 0.0` with `< some fraction` would have swapped an unreachable
+  constant for an invented one. It is not needed: `crosses?` is all-or-nothing,
+  because a point attachment is either above the level or below it. So the model
+  already knows exactly which muscles stop crossing, and `:muscle-crossing`
+  carries them. A step is the loss of a whole muscle — a fact, not a magnitude —
+  and the newtons are reported alongside it so a reader can weigh it.
+
+  ONLY WITHIN A REGION. This model has lumbar and cervical levels and nothing
+  between them: L1/L2 and C7/T1 are adjacent in the vector and are not neighbours
+  in a spine, and every muscle changes between them. Pairing them would report the
+  model's missing thoracic levels as an attachment artefact, which is a different
+  defect wearing this one's name.
+
+  Each entry is `{:after :at :lost :lost-n :muscle-n-before :muscle-n-after}`;
+  `:lost` names the instances and `:lost-n` is the force they were carrying at the
+  lower level.
+
+  REFUSES rows that do not carry `:muscle-crossing` rather than reporting no steps
+  — a detector that cannot see its input must not return the same value as one
+  that looked and found nothing."
   [profile-rows]
+  (doseq [r profile-rows]
+    (when-not (and (contains? r :muscle-crossing) (contains? r :region))
+      (throw (ex-info (str "attachment-steps needs :muscle-crossing and :region on "
+                           "every row; it cannot report the absence of steps in "
+                           "rows it cannot read")
+                      {:type :value-error :row r}))))
   (vec (for [[a b] (partition 2 1 profile-rows)
-             :when (and (pos? (:muscle-n a)) (zero? (:muscle-n b)))]
-         {:after (:name a) :at (:name b)})))
+             :when (= (:region a) (:region b))
+             :let [before (into {} (:muscle-crossing a))
+                   after (set (map first (:muscle-crossing b)))
+                   lost (vec (remove after (map first (:muscle-crossing a))))]
+             :when (seq lost)]
+         {:after (:name a)
+          :at (:name b)
+          :lost lost
+          :lost-n (reduce + 0.0 (map before lost))
+          :muscle-n-before (:muscle-n a)
+          :muscle-n-after (:muscle-n b)})))
 
 (defn peak
   "The level carrying the highest stress."

@@ -24,8 +24,13 @@
   geometry supplies only the variation away from neutral. `attachment-test` pins
   that agreement, so a change to the anatomy that silently moves the neutral
   leverage fails. This is a schematic line-of-action model (G7 `:representative`):
-  it has no wrapping surfaces, no via points, no muscle volume, and it is NOT a
-  measurement of anybody.
+  it has no via points and no muscle volume, and it is NOT a measurement of
+  anybody. It DOES have wrapping surfaces — the first landed on 2026-09-06 and
+  this sentence went on saying otherwise until 2026-09-07. A wrapping
+  surface is a floor the chord can beat (`moment-arm-detail`), so a radius taken
+  from a moment-arm target rather than from the bone binds at every posture and
+  quietly restores the constant this file exists to remove; `middle_deltoid` did
+  exactly that.
 
   NON-DIAGNOSTIC (G1): a moment arm is a length."
   (:require [suji.methods.math :as math]
@@ -102,12 +107,42 @@
    ;; The middle fibres originate on the thoracic spine, which does not follow the
    ;; head, and they carry the girdle in exactly the postures the upper fibres
    ;; cannot. Adding them is why those postures stop being unanswerable.
+   ;;
+   ;; BOTH ENDS ON ONE SEGMENT, and it is the only muscle here of which that is
+   ;; true. `attachment-test` names that shape as the error that produced a
+   ;; constant-looking arm, so it has to be answered rather than left to be
+   ;; rediscovered. It is correct here, and the reason is that the shape is wrong
+   ;; for a MOMENT and right for a SUSPENSION:
+   ;;
+   ;;   a moment arm is taken about a joint the segment itself carries, so a line
+   ;;   whose endpoints both ride on that segment rotates rigidly with the joint
+   ;;   and the arm cannot move — that is the bug;
+   ;;
+   ;;   a suspension coefficient is a direction cosine against the WORLD vertical
+   ;;   (`suspension-effectiveness`), which the segment does not carry. Measured
+   ;;   2026-09-07 over 4,608 postures, this muscle's coefficient spans −0.18 to
+   ;;   +0.49: it varies, and it changes sign, because leaning the trunk changes
+   ;;   how much of its pull is upward.
+   ;;
+   ;; ⚠ WHAT IT COSTS. Its LENGTH is constant — exactly 1.000 × optimal at all
+   ;; 4,608 of those postures, the only muscle in the set for which that is so.
+   ;; That is not an attachment error either: the middle trapezius runs from the
+   ;; thoracic spinous processes to the acromion, and what changes its length in a
+   ;; body is the SCAPULA sliding on the thorax. This model has no scapula and no
+   ;; scapulothoracic degree of freedom, so both of its sites are points on the
+   ;; thorax and no posture this model can express moves them apart. The
+   ;; consequence is arithmetic and one-directional: `force-length-factor` is 1.0
+   ;; at ratio 1.0, so this muscle is always credited with its full available
+   ;; force, and `passive-slack-frac` is 1.0, so its passive tension is always
+   ;; exactly zero. Its reported %MVC is therefore a LOWER bound. The size of the
+   ;; understatement is not measured here and cannot be, because measuring it
+   ;; needs the degree of freedom that is missing.
    "middle_trapezius"
    {:name "middle_trapezius" :paired? true :pcsa-cm2 8.0
     :acts-about :shoulder :task :scapular-suspension
     :origin {:segment "thorax_abdomen" :along 1.0 :ant -0.0180 :lat 0.0}
     :insertion {:segment "thorax_abdomen" :along 0.93 :ant -0.0090 :lat 0.1225}
-    :source "representative; thoracic-spine origin, acromial insertion"}
+    :source "representative; thoracic-spine origin, acromial insertion. Both sites are on the thorax because this model has no scapula, so its length ratio is 1.0 at every posture and its force-length factor and passive tension are constants by construction — see the note above."}
 
    ;; --- the posterior ligamentous system ---------------------------------------
    ;; NOT MUSCLES. They cannot contract, they have no %MVC, and they engage only
@@ -222,11 +257,38 @@
     ;; not coincident with it: an origin at the joint centre gives a line of action
     ;; through the joint and therefore an abduction moment arm of identically zero,
     ;; at every angle. Measured 2026-09-06 — the deltoid could not abduct.
-    :origin {:segment "thorax_abdomen" :along 1.0 :ant 0.0 :lat 0.1345}
+    ;;
+    ;; It is SUPERIOR to the head as well, and until 2026-09-07 it was not.
+    ;; `:along 1.0` is the distal end of the trunk, which is exactly where `pose`
+    ;; puts the shoulder joint — so the acromion sat at the joint's own height
+    ;; (measured on this body at neutral: joint y = 0.4896 m, origin y = 0.4896 m).
+    ;; An origin level with the joint gives a chord whose abduction leverage is
+    ;; LARGEST at 0° of abduction (−20.3 mm), falls through zero at about 78°, and
+    ;; is an ADDUCTION arm above that: the principal abductor running backwards
+    ;; through the top half of its own range. Nobody saw it, because the wrap
+    ;; below was in force at every posture and reported ±22 mm regardless.
+    ;;
+    ;; The acromion arches OVER the humeral head — the gap between them is the
+    ;; subacromial space — so its superior offset is at least one head radius.
+    ;; One head radius is what is used: the same 0.020 m the wrap declares rather
+    ;; than a second number, and the SMALLEST offset consistent with the acromion
+    ;; being above the head rather than one fitted to a target curve. `:along` is
+    ;; a fraction of the trunk's length, which is 0.4896 m at reference stature,
+    ;; so 0.020 m of it is 0.0408.
+    :origin {:segment "thorax_abdomen" :along 1.0408 :ant 0.0 :lat 0.1345}
     :insertion {:segment "upper_arm" :along 0.42 :ant 0.0 :lat 0.0180}
-    ;; the humeral head again — the same chord problem, in the other plane
-    :wrap {:radius-m 0.022 :sign -1.0}
-    :source "representative; abduction moment arm ~20-25 mm through mid-range. The sign is stated for the LEFT: a left abductor generates a NEGATIVE moment about +X, because reflecting z reverses the frontal component."}
+    ;; THE HUMERAL HEAD — the same bone the anterior deltoid wraps, so the same
+    ;; radius. It was not: this entry said 0.022 m and the anterior deltoid says
+    ;; 0.020 m, for one bone. 0.022 m was never a radius; it is the top of the
+    ;; `~20-25 mm` moment-arm range the old `:source` quoted, used as a floor. A
+    ;; moment arm and a bone radius are different quantities, and taking the floor
+    ;; from the arm's own target guarantees the floor binds everywhere: measured
+    ;; 2026-09-07 over 3,072 postures the wrap was in force 3,072 times — against
+    ;; 2,432 for the anterior deltoid and 1,560 for the biceps — and the reported
+    ;; arm was ±0.022 m at all 3,072. A tabulated moment arm is the one thing this
+    ;; namespace exists to remove, and it had grown one back.
+    :wrap {:radius-m 0.020 :sign -1.0}
+    :source "representative; the wrap radius is the humeral head's, shared with anterior_deltoid — one bone, one radius, so an edit to either is visibly an edit to both. NO ARM IS QUOTED HERE: it is computed. On a 1.70 m body it is 21.7 mm at 0° of abduction, peaks near 28.5 mm around 45°, and reaches the head radius near 86°, where the floor takes over. The sign is stated for the LEFT: a left abductor generates a NEGATIVE moment about +X, because reflecting z reverses the frontal component."}
 
    "latissimus_dorsi"
    {:name "latissimus_dorsi" :paired? true :pcsa-cm2 14.0 :axis :frontal
