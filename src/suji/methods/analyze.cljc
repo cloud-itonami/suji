@@ -150,8 +150,8 @@
                     (fmt-f 0 (or (:knee-flexion-deg p) 0.0)) "° · ankle "
                     (fmt-f 0 (or (:ankle-dorsiflexion-deg p) 0.0)) "°")))
        (add! "")
-       (add! "| muscle | tension %MVC | endurance | stiffness (強張り) | band |")
-       (add! "|---|---|---|---|---|")
+       (add! "| muscle | tension %MVC | endurance | stiffness (強張り) | dose | band |")
+       (add! "|---|---|---|---|---|---|")
        (doseq [s (stable-sort-by-neg-stiffness (:strains r))]
          (let [;; The endurance figure carries WHERE it sits relative to the range
                ;; the published curve was fitted over, and the report used to drop
@@ -173,9 +173,24 @@
                ;; would make a muscle the model could not solve read as a muscle
                ;; that was fine — the same reason `stable-sort-by-neg-stiffness`
                ;; keeps it in the list rather than filtering it out.
-               mvc (if (number? (:mvc-pct s)) (str (fmt-f 0 (:mvc-pct s)) "%") "—")]
+               mvc (if (number? (:mvc-pct s)) (str (fmt-f 0 (:mvc-pct s)) "%") "—")
+               ;; THE INDEX TIES AND THE DOSE DOES NOT. `strain/band-resolution`
+               ;; computes where the index can and cannot distinguish; measured on
+               ;; these very scenarios at a 120-minute session, the seventeen rows
+               ;; it calls `very-high` span a dose of 1.93 to 165.95 — a factor of
+               ;; 86 — and take seven distinct values at the two decimals this
+               ;; table prints. So the dose is printed beside the index rather
+               ;; than left inside the map: it is the column that orders the rows
+               ;; the index cannot separate.
+               idx (cond
+                     (not (number? (:stiffness-index s))) "—"
+                     ;; `≥`, because the index is at its ceiling and the number
+                     ;; under it is not recoverable from the printed value
+                     (= :saturated (:index-resolution s)) (str "≥" (fmt-f 2 (:stiffness-index s)))
+                     :else (fmt-f 2 (:stiffness-index s)))
+               dose (if (number? (:dose s)) (fmt-f 2 (:dose s)) "—")]
            (add! (str "| " (:name s) " | " mvc " | " end " | "
-                      (fmt-or-dash 2 (:stiffness-index s)) " | "
+                      idx " | " dose " | "
                       (strain/stiffness-band (:stiffness-index s)) " |"))))
        ;; Why each dashed row has no %MVC. The table renders every one of them as
        ;; `—`, which correctly says "no number" and cannot say WHICH KIND of no
@@ -230,9 +245,28 @@
        (add! (str "- `" (:workstation base) "` neck load " (fmt-f 1 bc) " kgf → `"
                   (:workstation best) "` " (fmt-f 1 fc) " kgf (**−"
                   (fmt-f 0 (* (- 1 (/ fc bc)) 100)) "%** cervical compressive load)."))
-       (add! (str "- worst-muscle stiffness " (fmt-or-dash 2 (:stiffness-index bw)) " ("
-                  (nm bw) ") → " (fmt-or-dash 2 (:stiffness-index bestw)) " ("
-                  (nm bestw) ")."))
+       ;; ⚠ THE INDICES ARE NOT COMPARABLE HERE and the report used to compare
+       ;; them anyway. At a 120-minute session the laptop end is SATURATED — its
+       ;; worst muscle sits at the index's ceiling — so the printed pair reads
+       ;; 1.00 → 0.98 and says the change barely helped, while the dose behind it
+       ;; goes 158.35 → 3.87, a factor of 41. The index understates the
+       ;; improvement by more than an order of magnitude at exactly the comparison
+       ;; the report exists to make.
+       ;;
+       ;; The dose is stated alongside, and a saturated end says so. A ratio of
+       ;; two indices is not printed at all: across the endurance floor it also
+       ;; runs the other way — 0.04 against 0.85 looks like a factor of twenty and
+       ;; is produced by 0.02 %MVC of difference — and either direction would be a
+       ;; comparative claim the model cannot support (G3).
+       (let [sat? (fn [x] (= :saturated (:index-resolution x)))
+             ix (fn [x] (str (when (sat? x) "≥") (fmt-or-dash 2 (:stiffness-index x))))]
+         (add! (str "- worst-muscle stiffness " (ix bw) " (" (nm bw) ") → "
+                    (ix bestw) " (" (nm bestw) ")."))
+         (add! (str "  dose " (fmt-or-dash 2 (:dose bw)) " → " (fmt-or-dash 2 (:dose bestw))
+                    (when (or (sat? bw) (sat? bestw))
+                      (str " —— 指数は" (if (sat? bw) "前者" "後者")
+                           "で天井に達しているので、指数の差は改善を過小に示す。"
+                           "順序を決めているのはドーズの側である。")))))
        (add! (str "- mechanism, not advice: raising the screen toward eye level reduces head "
                   "flexion (the dominant cervical-load term); supporting the forearms unloads "
                   "the upper trapezius (the 肩こり muscle). A clinician (mitate/iyashi) owns any "

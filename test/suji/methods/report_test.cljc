@@ -15,6 +15,7 @@
                :cljs [cljs.test :refer [deftest is]])
             [clojure.string :as str]
             [suji.methods.analyze :as analyze]
+            [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]
             [suji.methods.strain :as strain]))
 
@@ -23,16 +24,28 @@
   rather than on `includes?`, because the prose above the table uses the same
   words and a text search would stay green after the column disappeared."
   [text]
-  (for [line (str/split-lines text)
-        :when (and (str/starts-with? line "| ") (not (str/starts-with? line "|---")))
-        :let [cells (mapv str/trim (str/split line #"\|"))]
-        ;; `str/split` drops the trailing empty field, so a five-column row comes
-        ;; back as six cells with an empty one in front
-        :when (= 6 (count cells))
-        ;; the header row has the same shape as a data row and is not one
-        :when (not= "muscle" (nth cells 1))]
-    {:name (nth cells 1) :mvc (nth cells 2) :endurance (nth cells 3)
-     :stiffness (nth cells 4) :band (nth cells 5)}))
+  ;; The column count is read from the HEADER, not written here. It was hard-coded
+  ;; at six cells, and adding a `dose` column made every row seven — so this
+  ;; returned an empty sequence and three tests failed reporting "the table must
+  ;; have rows at all". A parser that says "no rows" when the table grew a column
+  ;; is a parser that reports its own staleness as the subject's absence.
+  (let [lines (str/split-lines text)
+        header (first (filter #(str/starts-with? % "| muscle |") lines))
+        cols (when header (mapv str/trim (str/split header #"\|")))
+        n (count cols)
+        idx (fn [label] (first (keep-indexed #(when (= label %2) %1) cols)))]
+    (when header
+      (for [line lines
+            :when (and (str/starts-with? line "| ") (not (str/starts-with? line "|---")))
+            :let [cells (mapv str/trim (str/split line #"\|"))]
+            :when (= n (count cells))
+            ;; the header row has the same shape as a data row and is not one
+            :when (not= "muscle" (nth cells 1))]
+        {:name (nth cells 1)
+         :mvc (nth cells (idx "tension %MVC"))
+         :endurance (nth cells (idx "endurance"))
+         :stiffness (nth cells (idx "stiffness (強張り)"))
+         :band (nth cells (idx "band"))}))))
 
 (deftest the-report-renders-at-all
   (let [text (analyze/render-report (analyze/analyze-all))]
@@ -136,3 +149,76 @@
       (is (str/includes? (:endurance r) "床未満")
           (str (:name r) ": an unbounded endurance is shown unqualified: "
                (:endurance r))))))
+
+(deftest the-report-prints-the-dose-because-the-index-ties
+  ;; `strain/band-resolution` computes where the index can distinguish and where
+  ;; it cannot. Measured on these very scenarios at a 120-minute session: the
+  ;; seventeen rows the index calls `very-high` span a dose from 1.93 to 165.95 —
+  ;; a factor of 86 — and take seven distinct values at the two decimals the table
+  ;; prints. A column that cannot order its own rows needs the column that can
+  ;; beside it.
+  (let [results (analyze/analyze-all)
+        text (analyze/render-report results 120.0)
+        strains (:strains (first results))
+        with-dose (filter #(number? (:dose %)) strains)]
+    (is (seq with-dose) "no row carries a dose, so this asserts nothing")
+    ;; the tie is real, or printing the dose would be decoration
+    (let [top (filter #(= "very-high" (strain/stiffness-band (:stiffness-index %))) strains)
+          doses (map :dose top)]
+      (is (< 1 (count top)) "fewer than two rows in the top band")
+      (is (< 10.0 (/ (apply max doses) (apply min doses)))
+          (str "the top band does not actually tie: doses " (pr-str (sort doses)))))
+    (is (str/includes? text "| dose |")
+        "the muscle table has no dose column")
+    (doseq [s (take 4 with-dose)]
+      (let [row (first (filter #(str/starts-with? % (str "| " (:name s) " |"))
+                               (str/split-lines text)))]
+        ;; `math/fmt-fixed`, not `format`: `format` is JVM-only and this file runs
+        ;; on both hosts. The nbb runner caught it, which is what it is for.
+        (is (str/includes? (or row "") (math/fmt-fixed (:dose s) 2))
+            (str (:name s) ": its dose is not in its row: " row))))))
+
+(deftest a-saturated-index-says-so-rather-than-printing-a-number
+  ;; At the ceiling the printed value is not recoverable — 1.00 could be a dose of
+  ;; 30 or of 166. `≥` says the number under it is larger than the one shown.
+  (let [results (analyze/analyze-all)
+        text (analyze/render-report results 120.0)
+        strains (:strains (first results))
+        sat (filter #(= :saturated (:index-resolution %)) strains)
+        unsat (filter #(and (number? (:stiffness-index %))
+                            (not= :saturated (:index-resolution %))) strains)]
+    (is (seq sat) "no row is saturated at this posture, so this asserts nothing")
+    (is (seq unsat) "every row is saturated, so the marker distinguishes nothing")
+    (doseq [s sat]
+      (let [row (first (filter #(str/starts-with? % (str "| " (:name s) " |"))
+                               (str/split-lines text)))]
+        (is (str/includes? (or row "") "≥")
+            (str (:name s) ": saturated but printed as a bare number: " row))))
+    (doseq [s (take 4 unsat)]
+      (let [row (first (filter #(str/starts-with? % (str "| " (:name s) " |"))
+                               (str/split-lines text)))]
+        (is (not (str/includes? (or row "") "≥"))
+            (str (:name s) ": not saturated but marked as if it were: " row))))))
+
+(deftest the-comparison-does-not-let-a-saturated-index-understate-the-change
+  ;; The report's headline comparison used to print two indices and nothing else.
+  ;; With the laptop end at the ceiling that reads `1.00 → 0.98` — barely any
+  ;; improvement — while the dose behind it goes 158.35 → 3.87, a factor of 41.
+  ;; The index understates the change by more than an order of magnitude at
+  ;; exactly the comparison the report exists to make.
+  (let [results (analyze/analyze-all)
+        text (analyze/render-report results 120.0)
+        worst (fn [name] (analyze/worst-stiffness
+                          (:strains (first (filter #(= name (:workstation %)) results)))))
+        a (worst "laptop-on-lap") b (worst "external-monitor+keyboard")]
+    (is (= :saturated (:index-resolution a))
+        (str "the laptop end is not saturated, so this asserts nothing: "
+             (pr-str (:index-resolution a))))
+    (is (< 10.0 (/ (:dose a) (:dose b)))
+        (str "the dose does not separate them either: " (:dose a) " vs " (:dose b)))
+    (is (< (Math/abs (- (:stiffness-index a) (:stiffness-index b))) 0.1)
+        "the indices are not close, so the understatement this guards is not present")
+    (is (str/includes? text "dose 158.35 → 3.87")
+        "the comparison does not state the dose beside the indices")
+    (is (str/includes? text "≥1.00")
+        "the comparison does not mark the saturated end")))
