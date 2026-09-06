@@ -87,11 +87,21 @@
     ;; 1998 is the source the capitis muscles below are measured from, and I read
     ;; its Table 3–3 directly (`pdftotext -layout` of
     ;; https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf, which reprints
-    ;; it with attribution). Its fourteen rows are: sternocleidomastoideus,
+    ;; it with attribution). Its FIFTEEN muscle rows are: sternocleidomastoideus,
     ;; clavotrapezius, acromiotrapezius, rhomboideus, rectus capitis posterior
     ;; major and minor, obliquus capitis superior and inferior, longus capitis,
     ;; splenius (capitis + cervicis as one), semispinalis capitis, scalenus
     ;; anterior / medius / posterior, and levator scapulae.
+    ;;
+    ;; ⚠ THE COUNT WAS WRONG UNTIL 2026-09-08 AND THE LIST WAS NOT. This said
+    ;; "fourteen rows" in three places (here and twice in the README) while the
+    ;; enumeration below it names FIFTEEN muscles, and re-extracting the table
+    ;; finds fifteen rows carrying a PCSA mean. The likeliest loss is
+    ;; acromiotrapezius, whose name and numbers land on different lines in the
+    ;; `pdftotext -layout` output. NOTHING THAT RESTS ON THIS MOVES: the four
+    ;; muscles this entry lumps are absent from the table either way, and so is
+    ;; rectus capitis anterior — both were re-checked against the extracted text,
+    ;; not inferred from the count.
     ;;
     ;; Semispinalis CERVICIS, multifidus, longissimus and spinalis cervicis — the
     ;; four this entry places — are NOT in it. So the obvious source cannot
