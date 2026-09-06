@@ -183,15 +183,19 @@
         (str "bent, forearms rested: " sup " %MVC"))
     (is (< sup unsup) "resting the forearms must lower the lateral-flexion demand")))
 
-(deftest the-atlanto-occipital-surplus-travels-with-the-muscles-it-explains
+(deftest a-suboccipital-reporting-zero-carries-the-reason-with-it
   ;; A suboccipital reporting 0 N at a desk posture is indistinguishable, in the
   ;; output alone, from a muscle nobody thought about. The reason has to be
-  ;; reachable from the same data: `:task-load-nm` says what the equilibrium handed
-  ;; it and `:task-over-supplied-nm` says how much the muscles solved at C7 are
-  ;; already exerting at that joint beyond what it needs.
+  ;; reachable from the same data.
   ;;
-  ;; `tension-summary` surfaces the same number once, so a consumer does not have to
-  ;; know which three rows to look at.
+  ;; WHAT THE REASON USED TO BE, AND WHAT IT IS NOW. Until 2026-09-08 it was
+  ;; `:task-over-supplied-nm`: the muscles solved at C7 were already exerting more
+  ;; at this joint than it needed, so its own extensors were handed a load of zero
+  ;; and the surplus was reported beside them. `recruit/solve` chooses the C7
+  ;; forces with this joint in the problem, so there is no surplus — and the
+  ;; zero has a different and better reason, which the row now states: the joint
+  ;; HAS a load, it is satisfied, and the coupled optimum satisfies it with the
+  ;; muscles that were going to cross it anyway rather than with these three.
   (let [b (segment/build-body 70.0 1.70)
         pst (posture/posture-from-workstation posture/laptop-on-lap)
         loads (load/solve-posture-loads b pst)
@@ -200,22 +204,26 @@
         summary (muscle/tension-summary tens loads)]
     (is (= 3 (count sub)) (str "three suboccipitals: " (mapv :group sub)))
     (doseq [t sub]
-      (is (zero? (:force-n t)) (str (:group t) " carries nothing here"))
-      (is (zero? (:task-load-nm t))
-          (str (:group t) " was handed a zero load, and says so: " t))
-      (is (> (:task-over-supplied-nm t) 3.0)
-          (str (:group t) " must carry the reason with it: " t)))
-    (is (> (:atlanto-occipital-over-supplied-nm summary) 3.0)
-        (str "and the summary states it once: " (select-keys summary
-                                                              [:atlanto-occipital-over-supplied-nm])))
-    ;; the discriminating half: where the residual IS positive the load is non-zero
-    ;; and the surplus is gone, so these keys are not constants
+      (is (zero? (:active-n t)) (str (:group t) " produces nothing here: " t))
+      (is (nil? (:refused t))
+          (str (:group t) " is not refused — the force was computed and it is "
+               "zero: " t))
+      (is (pos? (:task-load-nm t))
+          (str (:group t) " states the joint's load, which is NOT zero — that is "
+               "the difference from the uncoupled model: " t))
+      (is (math/nearly= 0.0 (get-in t [:coupled-residual-nm :atlanto-occipital]) 1e-9)
+          (str (:group t) " states that the load is nevertheless met: " t)))
+    (is (math/nearly= 0.0 (get-in summary [:coupled-residual-nm :atlanto-occipital]) 1e-9)
+        (str "and the summary states it once: "
+             (select-keys summary [:coupled-residual-nm])))
+    ;; the discriminating half: these three DO carry where the coupled optimum
+    ;; wants them, so `:active-n 0.0` is not a constant of the model
     (let [p2 {:head-flexion-deg -55.0 :trunk-flexion-deg 75.0
               :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0 :arms-supported false}
           l2 (load/solve-posture-loads b p2)
           t2 (filterv #(= :atlanto-occipital-extension (:task %))
                       (muscle/solve-muscle-tensions b p2 l2))]
       (doseq [t t2]
-        (is (pos? (:task-load-nm t)) (str (:group t) " has a load there: " t))
-        (is (zero? (:task-over-supplied-nm t))
-            (str (:group t) " has no surplus there: " t))))))
+        (is (pos? (:active-n t))
+            (str (:group t) " must take active force where the optimum wants it: " t))))))
+

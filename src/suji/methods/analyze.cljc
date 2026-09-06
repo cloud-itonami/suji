@@ -58,17 +58,40 @@
   (if (number? x) (fmt-f n x) "—"))
 
 (defn worst-stiffness
-  "max(strains, key=stiffness_index) — Python max returns the FIRST max on ties.
+  "The most-loaded muscle: maximum stiffness index, ties broken by DOSE.
 
   A REFUSED muscle has no stiffness index, because it has no force to accumulate
   a dose from. Those are skipped rather than compared as nil: `>` on a nil throws,
   and treating them as zero would let a muscle the model could not solve win the
-  argument about which one is least loaded."
+  argument about which one is least loaded.
+
+  THE TIE-BREAK IS NOT COSMETIC, and it is the thing that changed here on
+  2026-09-08. This used to be `max(strains, key=stiffness_index)` with Python's
+  first-wins-on-ties rule, i.e. the winner among tied muscles was decided by EMIT
+  ORDER. The index is bounded above by 1 and rounds to exactly 1.0 in double
+  precision once the dose passes about 37, so ties at the top are not rare — they
+  are what a heavily loaded posture looks like, and
+  `report-test/the-comparison-does-not-let-a-saturated-index-understate-the-change`
+  has said so in a comment since 2026-09-07.
+
+  Measured 2026-09-08: the coupled solve raised cervical_extensors at
+  `laptop-on-lap` from 22.08% to 39.18% MVC, which put its index back at exactly
+  1.0 alongside erector_spinae's. Emit order then handed the report's headline to
+  cervical_extensors at dose 68.58, over an erector spinae at dose 166.63 — a
+  worst-muscle claim decided by the order of a table.
+
+  The dose is the quantity that still discriminates where the index has
+  saturated, so it is what breaks the tie. This is the same argument the report's
+  own comparison line makes about the index understating a change, applied to
+  choosing the row instead of describing it."
   [strains]
-  (let [xs (filter :stiffness-index strains)]
+  (let [xs (filter :stiffness-index strains)
+        better? (fn [b a]
+                  (or (> (:stiffness-index b) (:stiffness-index a))
+                      (and (= (:stiffness-index b) (:stiffness-index a))
+                           (> (or (:dose b) 0.0) (or (:dose a) 0.0)))))]
     (when (seq xs)
-      (reduce (fn [a b] (if (> (:stiffness-index b) (:stiffness-index a)) b a))
-              (first xs) (rest xs)))))
+      (reduce (fn [a b] (if (better? b a) b a)) (first xs) (rest xs)))))
 
 (defn analyze-workstation
   ([body ws] (analyze-workstation body ws 120.0))
