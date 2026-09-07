@@ -34,7 +34,7 @@
   `there is no curvature: the model's spine is four straight segments and no arc,
   so it has no lordosis and no shear component`, and the two clauses were
   consistent — a spine stacked vertically under a vertical gravity has nothing to
-  shear it. `:pelvic-tilt-deg` tilts the lumbar levels now, so the weight above one
+  shear it. `:lumbar-lordosis-deg` tilts the lumbar levels now, so the weight above one
   of them no longer acts along its axis: `weight-above-n` takes the component that
   does, `w x (axis . up)`, and the transverse component is SHEAR that nothing here
   carries. Measured on Wilke's body at 46.5 deg of lordosis, the weight term at
@@ -123,13 +123,21 @@
   ;; Their disc areas are unchanged.
   ;;
   ;; WHAT MOVED IS THEIR ORIENTATION, and that is the whole reason for the split.
-  ;; All five still share ONE segment's frame — `lumbar` is L5/S1 to T12/L1 and is
-  ;; one rigid body — so a reader should not take five lumbar rows as five
-  ;; independently oriented joints. What is no longer true is that the frame is the
-  ;; THORAX's: the pelvis can rotate now, the lumbar spine's lower end turns with
-  ;; it, and these five levels tilt with the lordosis that produces. Sitting and
-  ;; standing can differ above L5/S1, which is what `lumbar-cross-check` needed and
-  ;; could not have.
+  ;; The frame stopped being the THORAX's: the pelvis can rotate, the lumbar
+  ;; spine's lower end turns with it, and these five levels tilt with the lordosis
+  ;; that produces. Sitting and standing can differ above L5/S1, which is what
+  ;; `lumbar-cross-check` needed and could not have.
+  ;;
+  ;; AND SINCE 2026-09-11 THEY DO NOT SHARE ONE ORIENTATION EITHER. This comment
+  ;; used to end `all five still share ONE segment's frame … a reader should not
+  ;; take five lumbar rows as five independently oriented joints`, and that was
+  ;; true until a segmental distribution could be sourced. Mills et al. 2026
+  ;; measure how the lordosis divides between the five motion segments, so
+  ;; `level-axis-offset-deg` gives each level its own tangent: at Cho's standing
+  ;; lordosis they stand 27.25 / 15.29 / 2.61 / -7.38 / -14.25 deg from vertical.
+  ;; They are still five levels on ONE placed rigid body — their POSITIONS are
+  ;; still on its chord — so what a reader should not take them for is five
+  ;; independently POSITIONED joints. See `level-point`.
   [{:name "L5/S1" :region :lumbar :segment "lumbar" :along 0.0 :disc-area-cm2 18.0}
    {:name "L4/L5" :region :lumbar :segment "lumbar" :along 0.2 :disc-area-cm2 17.0}
    {:name "L3/L4" :region :lumbar :segment "lumbar" :along 0.4 :disc-area-cm2 16.0}
@@ -174,13 +182,72 @@
   (let [k (/ stature-m reference-stature-m)]
     (* (:disc-area-cm2 level) 1e-4 k k)))
 
+(def lumbar-segment-name
+  "The one segment in this model that has a SHAPE and not only an orientation.
+
+  Named rather than tested for inline so that `level-point`'s special case reads
+  as what it is: the lumbar spine is the only region whose curvature is measured
+  (`posture/lumbar-segmental-shares`), so it is the only one whose levels can be
+  oriented separately. Every other segment here is straight and its levels take
+  its axis, which is right for a straight bone and is a GAP for the cervical
+  spine — `lower_cervical` carries five levels that share one frame for exactly
+  the reason the lumbar spine did until 2026-09-11: nobody has put a measured
+  segmental distribution into this file for it."
+  "lumbar")
+
+(defn level-axis-offset-deg
+  "How far a level's own axis is rotated from its segment's chord, in degrees,
+  anterior positive.
+
+  Zero everywhere except on the lumbar spine, and zero there too when the posture
+  has no lordosis. On the lumbar spine it is
+  `(chord-turn-fraction − turn-fraction(along)) × lordosis`: the chord sits at the
+  arc-length-weighted mean of the turn and the level sits at its own point in it,
+  so the difference between them is what separates the two.
+
+  THE FIVE LUMBAR LEVELS SHARED ONE ORIENTATION UNTIL 2026-09-11, and this is the
+  gap that closes. `levels` said so in its own comment — `all five still share ONE
+  segment frame … a reader should not take five lumbar rows as five independently
+  oriented joints` — and the consequence was that L5/S1 and L1/L2 took the same
+  cosine of the weight above them and projected every crossing muscle's line the
+  same way, in a posture whose whole point is that the spine is curved.
+
+  At Cho's standing lordosis the five now differ by 27.19 / 15.24 / 2.56 / −7.44 /
+  −14.31 degrees from the chord, from L5/S1 up. The sacral end leans anteriorly
+  and the top of the lumbar spine leans back, which is what a lordosis is."
+  [pose-data level]
+  (if (= lumbar-segment-name (:segment level))
+    (* (- posture/lumbar-chord-turn-fraction
+          (posture/lumbar-turn-fraction (:along level)))
+       (or (:lumbar-lordosis-deg pose-data) 0.0))
+    0.0))
+
 (defn level-point
   "World position of a level, and the spine's local axis there (pointing up the
-  chain, i.e. the direction compression acts along)."
+  chain, i.e. the direction compression acts along).
+
+  THE AXIS IS PER-LEVEL SINCE 2026-09-11 — see `level-axis-offset-deg`. It is the
+  segment's long axis rotated about the segment's OWN lateral axis, so a posture
+  with lateral bend or axial rotation keeps both and gains only the sagittal turn
+  the lordosis puts there. The rotation is by MINUS the offset because a segment
+  that rises from its proximal joint tilts anteriorly under a negative rotation
+  about `+Z` — the same sign `pose/segment-frame` passes down, read off
+  `math/rot-about` rather than written again here.
+
+  ⚠ THE POINT IS STILL ON THE CHORD. Only the ORIENTATION follows the arc; the
+  position is still `proximal + long × along × length`, which places the five
+  lumbar levels on the straight line between the lumbar spine's two ends rather
+  than on the curve between them. At Cho's standing lordosis the arc's sagitta is
+  about 1 cm, so a level's true position is up to that far anterior of where this
+  puts it, and every moment arm measured to a level point carries the difference.
+  Moving the points would change the lumbar segment's own length — the chord of a
+  curve is about 3% shorter than its arc, and this model treats that length as
+  fixed — so it is named here rather than half-done."
   [pose-data level]
-  (let [{:keys [proximal frame length-m]} (pose/seg-at pose-data (:segment level))]
+  (let [{:keys [proximal frame length-m]} (pose/seg-at pose-data (:segment level))
+        offset (level-axis-offset-deg pose-data level)]
     {:point (math/v+ proximal (math/v* (:long frame) (* (:along level) length-m)))
-     :axis (:long frame)}))
+     :axis (math/rot-about (:long frame) (:lat frame) (- offset))}))
 
 ;; --- the shape of the skeleton, which two questions below both need ---------
 ;;
@@ -613,7 +680,7 @@
               ;; The number is zero and it is a MEASUREMENT, and writing it as a
               ;; literal made it look like the same zero the unset postures were
               ;; carrying.
-              :pelvic-tilt-deg (posture/pelvic-tilt-for :stool)}
+              :lumbar-lordosis-deg (posture/lordosis-for :stool)}
     :posture-basis (str "p.758 `Relaxed sitting on a stool with a normally straight "
                         "back` — a straight back is zero trunk flexion. The paper does "
                         "not state where the arms were; they hang, which is what a "
@@ -626,7 +693,7 @@
     ;; 0.6 deg (SD 3.6) — so the model's own neutral is the posture, and nothing
     ;; here was chosen to make the comparison come out anywhere.
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 0.0
      :measured-lordosis-deg 0.6
      :from :cho-2015-stool
@@ -679,13 +746,13 @@
               ;; day Cho's table is corrected, or a second cohort replaces it,
               ;; this entry follows instead of quietly disagreeing with the table
               ;; it says it came from.
-              :pelvic-tilt-deg (posture/pelvic-tilt-for :standing)}
+              :lumbar-lordosis-deg (posture/lordosis-for :standing)}
     :posture-basis (str "Table 1 p.757 / p.758 `relaxed standing`. The upper body is "
                         "held at exactly the angles the sitting entry holds it at, so "
                         "that the only thing that differs between the two comparisons "
                         "is the lordosis. The lower limb is `posture/quiet-standing`.")
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 46.5
      :measured-lordosis-deg 47.1
      :from :cho-2015-standing
@@ -814,8 +881,13 @@
   it more` just as confidently had the two measurements been the other way round.
   A mechanism that cannot produce the opposite answer has not predicted this one.
 
-  WHAT IS EVIDENCE IS THE SIZE, and the size is wrong by most of an order of
-  magnitude. See `lordosis-matching-reference-difference-deg`.
+  WHAT IS EVIDENCE IS THE SIZE, and the size is still wrong — in the other
+  direction since 2026-09-11. It was 333.6 N against Wilke's 48, about seven times
+  too much; with the pelvis's share and the segmental shape both taken from a
+  measurement it is 1.57 N, about a thirtieth. The model has not become right
+  about the size; it has crossed. See
+  `lordosis-matching-reference-difference-deg`, which now refuses to answer
+  because no lordosis inside the measured one reaches Wilke's difference.
 
   BOTH SIDES CARRY AN IMPORTED LORDOSIS (`:parameter-not-in-source` on each), so
   `:model-validated?` is false here exactly as it is everywhere else in this
@@ -855,17 +927,35 @@
 
     :lumbar-chord-cosine
       The weight above L4/L5 no longer acts along the level's axis, so only
-      `W x cos(chord tilt)` of it compresses the disc. NEGATIVE: the lordosis
-      UNLOADS this term. Isolated by the identity `weight-standing =
-      weight-sitting x cos(chord)`, which also proves the trunk mass split
-      contributes nothing here — the same `W` appears on both sides.
+      `W x cos(tilt)` of it compresses the disc. NEGATIVE: the lordosis UNLOADS
+      this term. Isolated by the identity `weight-standing = weight-sitting x
+      cos(tilt)`, which also proves the trunk mass split contributes nothing here
+      — the same `W` appears on both sides.
+
+      ⚠ THE NAME SAYS `CHORD` AND THE ANGLE IS THE LEVEL'S OWN SINCE 2026-09-11.
+      The two were the same number while all five lumbar levels shared the
+      segment's frame; they are not now (`level-axis-offset-deg`). L4/L5 stands
+      15.29 deg from vertical at Cho's standing lordosis while the chord stands at
+      0.05, so this term is -12.34 N rather than -0.000146 N — and it is LARGER
+      than the moment term below, which is why this model now reports an anterior
+      lordosis UNLOADING L4/L5 where Wilke measures it loading it. The 91.98 N of
+      shear the same tilt creates is carried by nothing here.
 
     :lumbosacral-moment-on-the-neutral-geometry
       Tilting the lumbar chord carries everything above L5/S1 anteriorly, so the
-      erector spinae has a flexion moment to hold — 0 N.m sitting, 21.4 N.m
+      erector spinae has a flexion moment to hold — 0 N.m sitting, 0.0496 N.m
       standing. Priced at the NEUTRAL posture's moment arm and the NEUTRAL
       posture's line projection, so this term is the moment alone. It is the
-      dominant one, at 115% of the whole difference.
+      largest single term, at 57% of the whole difference.
+
+      ⚠ IT WAS 21.4 N.m AND 115% UNTIL 2026-09-11, when the chord stopped being
+      derived from an unsourced identity. `pose/lumbar-chord-tilt-deg` put the
+      chord at `trunk + lordosis/2` because the pelvis was assumed to rotate by
+      the whole lordosis; Mills et al. 2026 measure that it rotates by 0.586 of
+      it, and the measured segmental shape puts the chord's own turn fraction at
+      0.5848 rather than 0.5. The two nearly cancel, the chord tilts 0.052 deg
+      instead of 23.25, and this term fell by a factor of 431. The MECHANISM is
+      unchanged — it is still the chord's tilt and still the largest term.
 
       ⚠ THIS ENTRY BLAMED THE ROOT UNTIL 2026-09-10 AND THAT WAS WRONG. It said
       the moment exists `because L5/S1 is the ROOT of this chain and does not
@@ -880,18 +970,29 @@
       so re-rooting is a rigid translation, and a moment is a sum of
       `weight x (x_com - x_joint)` in which both x's move together.
 
-      WHAT IT ACTUALLY IS. `pose/lumbar-chord-tilt-deg` puts the lumbar chord at
+      WHAT IT ACTUALLY IS, AND THE ASSUMPTION UNDER IT WAS TESTED ON 2026-09-11.
+      `pose/lumbar-chord-tilt-deg` used to put the lumbar chord at
       `trunk + lordosis/2` — the mean of its two end tangents, which is where a
-      circular arc's chord lies. At Wilke's standing posture that is 23.25 deg on
-      a vertical thorax, so T12/L1 sits `L_lumbar x sin 23.25 = 6.685 cm` anterior
-      to L5/S1 and the whole 367.9 N above the level rides out there on a 5.818 cm
-      lever. That is a consequence of giving the lumbar spine 46.5 deg of lordosis
-      under a thorax held vertical, and it is what a repair has to argue with: a
-      lordotic lumbar spine really does put its top end anterior to its bottom
-      one. The 46.5 deg itself comes from this model equating lumbar lordosis with
-      a RIGID rotation of the whole pelvis (`pose/lumbar-lordosis-deg`), so Cho's
-      46.5 deg of lordosis change is spent as 46.5 deg of pelvic rotation — which
-      is the assumption to test next, and is not tested here.
+      circular arc's chord lies IF the pelvis turns by the whole lordosis and the
+      thorax holds the other end. At Wilke's standing posture that was 23.25 deg
+      on a vertical thorax, T12/L1 sat 6.685 cm anterior to L5/S1, and 367.9 N
+      rode out there on a 5.818 cm lever.
+
+      Both halves of that were assumptions and both were measured. Mills et al.
+      2026 radiographed 50 asymptomatic adults standing and seated: the sacral
+      slope moves 16.7 deg while the lordosis moves 28.5, so the pelvis supplies
+      0.586 of a lordosis change, and the five lumbar motion segments carry
+      25.7 / 27.3 / 21.5 / 14.8 / 10.7 per cent of the turn from the sacrum up, so
+      the chord's own turn fraction is 0.5848 rather than 0.5. The two nearly
+      cancel: the chord tilts 0.052 deg at Cho's standing lordosis, T12/L1 sits
+      0.0155 cm anterior to L5/S1, and this term is 0.891 N.
+
+      A LORDOTIC LUMBAR SPINE REALLY DOES PUT ITS TOP END ANTERIOR TO ITS BOTTOM
+      ONE — by about 1.5 cm, and it does so in BOTH of Mills' postures, so the
+      travel is nearly the same in each and the DIFFERENCE between two upright
+      postures is not it. This model states lordosis as a change from a straight
+      neutral and can only carry that difference, which is why it now reports a
+      chord that barely tilts rather than one that sits 5 deg anterior in both.
 
     :pelvis-origin-moment-arms
       Then swap the moment arm for the tilted posture's. Eight muscle groups
@@ -1041,11 +1142,20 @@
   standing-minus-sitting difference — a DIAGNOSTIC, and deliberately not a
   constant anything uses.
 
-  Bisected on `:pelvic-tilt-deg` against the standing reference's own posture,
+  Bisected on `:lumbar-lordosis-deg` against the standing reference's own posture,
   everything else held. Put beside the 46.5 deg Cho measured, it says how far off
   this model's sensitivity to lordosis is; that quotient is the finding, and
   installing the answer as the model's lordosis would be the fudge factor this
   repo has refused four times.
+
+  ⚠ IT RETURNS NIL SINCE 2026-09-11, and the nil is the finding now. It answered
+  5.736 deg while the chord was derived from the unsourced identity `lordosis ==
+  a rigid rotation of the whole pelvis` — the model needed an eighth of Cho's
+  lordosis to reproduce Wilke's 48 N. With the measured share and the measured
+  segmental shape the model produces 1.57 N at Cho's own 46.5 deg, so the target
+  is not bracketed anywhere inside the interval searched and this refuses to
+  answer rather than returning the endpoint. The sensitivity did not become
+  right; it crossed.
 
   Returns nil if the difference is not bracketed within the interval searched,
   rather than returning an endpoint — an answer that could not be obtained must
@@ -1056,7 +1166,7 @@
         {:keys [subject]} wilke-1999
         body (segment/build-body (:mass-kg subject) (:stature-m subject))
         at (fn [tilt]
-             (let [pst (assoc (:posture ref) :pelvic-tilt-deg tilt)
+             (let [pst (assoc (:posture ref) :lumbar-lordosis-deg tilt)
                    loads (load/solve-posture-loads body pst)
                    tensions (muscle/solve-muscle-tensions body pst loads)]
                (:force-n (first (filter #(= "L4/L5" (:name %))

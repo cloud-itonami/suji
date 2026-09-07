@@ -76,11 +76,11 @@
   now a seq of `[key share]` pairs summed, so the export follows
   `pose/lumbar-chord-tilt-deg` instead of approximating it."
   [["lumbosacral" "pelvis" "lumbar" [[:trunk-flexion-deg 1.0]
-                                     [:pelvic-tilt-deg 1.5]]]
+                                     [:lumbar-lordosis-deg 1.5]]]
    ;; the thorax relative to the lumbar spine: MINUS half the pelvic tilt, because
    ;; the lumbar chord takes half of it and the thorax takes none. This is the
    ;; lordosis, seen from the joint that carries it.
-   ["thoracolumbar" "lumbar" "thorax" [[:pelvic-tilt-deg -0.5]]]
+   ["thoracolumbar" "lumbar" "thorax" [[:lumbar-lordosis-deg -0.5]]]
    ["cervicothoracic" "thorax" "lower_cervical"
     [[:head-flexion-deg (:lower pose/cervical-partition)]]]
    ["c2c3" "lower_cervical" "upper_cervical"
@@ -106,7 +106,7 @@
                 ;; optional, and defaulted HERE rather than at the row, so that a
                 ;; posture written before the pelvis could rotate exports exactly
                 ;; the articulation it exported before.
-                :pelvic-tilt-deg (or (:pelvic-tilt-deg posture) 0.0)}
+                :lumbar-lordosis-deg (or (:lumbar-lordosis-deg posture) 0.0)}
         joints (mapv (fn [[name parent child terms]]
                        (kami-joint name parent child
                                    (reduce (fn [a [k share]]

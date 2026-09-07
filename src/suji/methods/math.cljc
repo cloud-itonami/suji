@@ -119,6 +119,25 @@
   (let [t (radians deg) c (Math/cos t) s (Math/sin t)]
     [x (- (* y c) (* z s)) (+ (* y s) (* z c))]))
 
+(defn rot-about
+  "Rotate `v` about the unit axis `k` by `deg`, right-hand rule — Rodrigues.
+
+  The three functions above are this one with `k` fixed to a basis vector, and
+  `rot-z` is the sense the rest of this library reads: about `+Z`, a positive
+  angle carries `+Y` toward `−X`. So an ANTERIOR tilt of a segment that rises
+  from its proximal joint is a rotation about its own lateral axis by MINUS the
+  tilt, which is the sign `pose/segment-frame` passes down.
+
+  It exists because two places needed it — `pose/rotate-frame`'s axial rotation
+  and `spine/level-point`'s per-level lumbar tangent — and a rotation written
+  twice is a sign convention that can disagree with itself."
+  [v k deg]
+  (if (zero? deg)
+    v
+    (let [t (radians deg) c (Math/cos t) s (Math/sin t)]
+      (v+ (v+ (v* v c) (v* (vcross k v) s))
+          (v* k (* (vdot k v) (- 1.0 c)))))))
+
 (defn rot-y [[x y z] deg]
   (let [t (radians deg) c (Math/cos t) s (Math/sin t)]
     [(+ (* x c) (* z s)) y (- (* z c) (* x s))]))

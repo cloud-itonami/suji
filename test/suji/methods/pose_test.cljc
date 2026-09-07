@@ -354,7 +354,7 @@
              :elbow-flexion-deg 0.0 :support :standing
              :hip-flexion-deg 0.0 :knee-flexion-deg 0.0 :ankle-dorsiflexion-deg 0.0}
         flat (pose/solve-pose body pst)
-        tilted (pose/solve-pose body (assoc pst :pelvic-tilt-deg 46.5))]
+        tilted (pose/solve-pose body (assoc pst :lumbar-lordosis-deg 46.5))]
     (is (= :mid-ankle (:landmark (:root flat))) "standing roots at the feet")
     ;; the root landmark is AT the origin, which is what `rooted-at` means
     (doseq [[nm p] [["flat" flat] ["tilted" tilted]]]
@@ -365,15 +365,33 @@
     ;; the floor and the base of support are the same in both, to the bit
     (is (= (pose/ground-y flat) (pose/ground-y tilted))
         "the ground does not move when the pelvis rotates")
-    (is (= (pose/base-of-support flat) (pose/base-of-support tilted))
-        "and neither does the base of support")
+    ;; ⚠ the base of support is compared to a tolerance rather than with `=`
+    ;; since 2026-09-11. It used to be bit-identical, and that was luck: the two
+    ;; chains are translated by different amounts before subtraction, so the
+    ;; equality is `(a+s) - (b+s)` against `(a+t) - (b+t)`, which is an identity in
+    ;; the reals and not in a double. When the pelvis stopped rotating by the whole
+    ;; lordosis the two rootings landed on different bits and the back of the foot
+    ;; came out -0.06459999999999999 against -0.0646. A test that reads a 1-ulp
+    ;; difference as a foot that moved is asserting the arithmetic, not the model.
+    (doseq [k [:back :front]]
+      (is (math/nearly= (k (pose/base-of-support flat))
+                        (k (pose/base-of-support tilted))
+                        1e-12)
+          (str "and neither does the base of support, at " k)))
     ;; the control: something DID move, or this test is asserting a no-op
     (is (> (- (first (get-in tilted [:joints :l5s1]))
               (first (get-in flat [:joints :l5s1])))
-           0.10)
+           0.05)
         (str "the sacrum travelled anteriorly instead: "
              (- (first (get-in tilted [:joints :l5s1]))
-                (first (get-in flat [:joints :l5s1]))) " m")))
+                (first (get-in flat [:joints :l5s1]))) " m"))
+    ;; and it travelled LESS than it used to, which is the 2026-09-11 change: the
+    ;; pelvis turns 27.25 deg for Cho's 46.5 rather than 46.5
+    (is (math/nearly= 0.07394004279599829
+                      (- (first (get-in tilted [:joints :l5s1]))
+                         (first (get-in flat [:joints :l5s1])))
+                      1e-12)
+        "7.39 cm, where the whole-lordosis pelvis carried it 11.7 cm"))
   ;; seated, the seat takes the trunk through the ischial tuberosities, and this
   ;; model's stand-in for them is the base of the pelvis
   (let [p (pose/solve-pose body (posture/seated-posture))]
@@ -439,7 +457,13 @@
     ;; the size of the thing rooting cannot touch, pinned so a reader does not
     ;; have to take `it is not the root` on trust. 22.51 N·m on a 70 kg / 1.70 m
     ;; body; `spine`'s 21.41 N·m is the same quantity on Wilke's smaller subject
-    (is (math/nearly= 22.512908211478976 reference 1e-9)
+    ;; ⚠ 22.512908211478976 until 2026-09-11. The moment is what the lumbar chord's
+    ;; tilt puts on L5/S1, and the chord stopped following the pelvis when the
+    ;; pelvis stopped taking the whole lordosis: 0.90 N·m on a 70 kg / 1.70 m body,
+    ;; against 22.51. The invariance being asserted here is unaffected by the size
+    ;; — re-rooting is a rigid translation whatever the moment is — but pinning it
+    ;; means the day it moves, this says so.
+    (is (math/nearly= 0.901314694482678 reference 1e-9)
         (str "the standing lumbosacral moment is " reference
              " N·m under every rooting"))
     ;; and it is the SHIPPED quantity, not a hand-assembled lookalike: the bases
@@ -470,8 +494,10 @@
         d (fn [k] (- (k cho) (k neutral)))]
     (is (math/nearly= 0.03703697189273054 (:ahead-of-ankle-m neutral) 1e-9)
         "lumbar-neutral quiet standing: 3.70 cm, inside the measured 2-6 cm")
-    (is (math/nearly= 0.13970138699304943 (:ahead-of-ankle-m cho) 1e-9)
-        "Cho's standing lordosis: 13.97 cm, far outside it")
+    (is (math/nearly= 0.08199176312474336 (:ahead-of-ankle-m cho) 1e-9)
+        (str "Cho's standing lordosis: 8.20 cm, still outside it. It was 13.97 cm "
+             "until 2026-09-11, when the pelvis stopped spending the whole "
+             "lordosis"))
     ;; EACH TERM PINNED ABSOLUTELY, IN BOTH POSTURES, AND NOT ONLY AS A DIFFERENCE.
     ;; Measured while writing this: moving a constant 1 cm from the trunk term into
     ;; the sacrum term produced NO FAILURE at all. The residual could not see it —
@@ -483,27 +509,65 @@
             [["lumbar-neutral" neutral {:sacrum-over-the-feet-m 0.019536412946749866
                                         :trunk-over-the-sacrum-m 0.0012397936122427468
                                         :everything-below-l5s1-m 0.016260765333737916}]
-             ["Cho's lordosis" cho {:sacrum-over-the-feet-m 0.08232771999905754
-                                    :trunk-over-the-sacrum-m 0.0327953964350415
-                                    :everything-below-l5s1-m 0.024578270558950316}]]]
+             ["Cho's lordosis" cho {:sacrum-over-the-feet-m 0.05916827588540495
+                                    :trunk-over-the-sacrum-m 0.0013129788670846216
+                                    :everything-below-l5s1-m 0.02151050837225379}]]]
       (doseq [[k v] expected]
         (is (math/nearly= v (k g) 1e-9)
             (str nm ": " k " is " (k g) " m, pinned at " v))))
-    ;; the 10.27 cm, split three ways and each one pinned
-    (is (math/nearly= 0.1026644151003189 (d :ahead-of-ankle-m) 1e-9))
-    (is (math/nearly= 0.06279130705230768 (d :sacrum-over-the-feet-m) 1e-9)
-        "6.28 cm of it is the sacrum travelling forward over the feet")
-    (is (math/nearly= 0.031555602822798755 (d :trunk-over-the-sacrum-m) 1e-9)
-        "3.16 cm is the trunk leaning forward over the sacrum")
-    (is (math/nearly= 0.0083175052252124 (d :everything-below-l5s1-m) 1e-9)
-        "and 0.83 cm is the pelvis and legs moving about their own ankles")
+    ;; THE 4.50 cm, SPLIT THREE WAYS AND EACH ONE PINNED. It was 10.27 cm until
+    ;; 2026-09-11, and the three terms did not shrink in the same proportion — the
+    ;; trunk term collapsed by a factor of 431 and the other two by about 1.6.
+    ;; That asymmetry is the whole shape of the change: the pelvis still rotates
+    ;; and still carries the sacrum forward, and the lumbar chord has stopped
+    ;; carrying the trunk out in front of it.
+    (is (math/nearly= 0.044954791232012827 (d :ahead-of-ankle-m) 1e-9))
+    (is (math/nearly= 0.03963186293865509 (d :sacrum-over-the-feet-m) 1e-9)
+        "3.96 cm of it is the sacrum travelling forward over the feet, was 6.28")
+    (is (math/nearly= 7.318525484187473e-5 (d :trunk-over-the-sacrum-m) 1e-12)
+        (str "0.007 cm is the trunk leaning forward over the sacrum, was 3.16 cm "
+             "— the chord tilts 0.052 deg now where it tilted 23.25"))
+    (is (math/nearly= 0.005249743038515876 (d :everything-below-l5s1-m) 1e-9)
+        "and 0.52 cm is the pelvis and legs moving about their own ankles, was 0.83")
+    ;; the term that collapsed, stated as the ratio so the claim above is checked
+    (is (> (/ 0.031555602822798755 (d :trunk-over-the-sacrum-m)) 400.0)
+        (str "the trunk-over-the-sacrum travel fell by a factor of "
+             (/ 0.031555602822798755 (d :trunk-over-the-sacrum-m))
+             ", which is the chord no longer following the pelvis"))
     ;; the mechanism, derived rather than pinned: the sacrum's own travel is
     ;; L_pelvis x sin(tilt), and the term is that discounted by the fraction of
     ;; body weight above L5/S1
+    ;; ⚠ IT IS `sin(pelvic rotation)`, NOT `sin(lordosis)`. This read the lordosis
+    ;; until 2026-09-11, which was right only while the two were the same number.
     (let [travel (* (:length-m (segment/seg body "pelvis"))
-                    (Math/sin (math/radians (:pelvic-tilt-deg posture/quiet-standing))))]
+                    (Math/sin (math/radians
+                               (pose/pelvic-rotation-deg
+                                (:lumbar-lordosis-deg posture/quiet-standing)))))]
       (is (< (d :sacrum-over-the-feet-m) travel)
           (str "the sacrum travels " travel " m and the term is less, because the "
                "legs are below L5/S1 and do not follow it"))
       (is (> (d :sacrum-over-the-feet-m) (* 0.5 travel))
           "but most of the body is above L5/S1, so most of the travel counts"))))
+
+(deftest a-posture-carrying-the-retired-pelvic-tilt-key-is-refused
+  ;; THE RENAME'S SAFETY NET. `:pelvic-tilt-deg` became `:lumbar-lordosis-deg` on
+  ;; 2026-09-11, because the key holds a Cobb angle and the pelvis stopped turning
+  ;; by all of it. `solve-pose` reads the new key through an `(or … 0.0)`, so a
+  ;; posture written before the rename would otherwise arrive with NO lordosis and
+  ;; be solved as a straight lumbar spine — a measured 46.5 deg turning into a
+  ;; silent zero, which is the exact failure `posture/lordosis-provenance` exists
+  ;; to prevent and which this repo has now recorded three times.
+  (let [pst {:head-flexion-deg 0.0 :trunk-flexion-deg 0.0 :shoulder-flexion-deg 0.0
+             :elbow-flexion-deg 0.0 :support :standing
+             :hip-flexion-deg 0.0 :knee-flexion-deg 0.0 :ankle-dorsiflexion-deg 0.0}]
+    (is (some? (pose/solve-pose body (assoc pst :lumbar-lordosis-deg 46.5)))
+        "the new key solves")
+    (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+                 (pose/solve-pose body (assoc pst :pelvic-tilt-deg 46.5)))
+        "and the retired one is refused rather than ignored")
+    ;; the control that the refusal is about the KEY and not about the value: a
+    ;; posture carrying the old key set to zero is refused too, because a reader
+    ;; using the old name has the wrong model of what the number does
+    (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+                 (pose/solve-pose body (assoc pst :pelvic-tilt-deg 0.0)))
+        "including when its value would have made no difference")))

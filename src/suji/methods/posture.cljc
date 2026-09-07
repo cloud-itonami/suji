@@ -19,7 +19,7 @@
   endplate of L1 and the cranial endplate of S1.
 
   WHY THIS TABLE IS HERE AT ALL. `pose/lumbar-chord-tilt-deg` gives the lumbar
-  spine an orientation of its own, driven by `:pelvic-tilt-deg`, and the lordosis
+  spine an orientation of its own, driven by `:lumbar-lordosis-deg`, and the lordosis
   that results is numerically equal to that input. So a posture that wants to be
   a SITTING or a STANDING posture rather than an arbitrary one needs a lordosis
   taken from a measurement, and this is where the measurements are.
@@ -63,8 +63,8 @@
    :method "Cobb, cranial endplate of L1 to cranial endplate of S1"
    :cohort {:n 30 :sex :male :age-y 31.1 :mass-kg 73.6 :stature-cm 175.0}})
 
-(defn pelvic-tilt-for
-  "The `:pelvic-tilt-deg` that gives a posture the lordosis Cho measured for it,
+(defn lordosis-for
+  "The `:lumbar-lordosis-deg` that gives a posture the lordosis Cho measured for it,
   measured from this model's straight-lumbar neutral.
 
   IT IS A DIFFERENCE, and it has to be. This model has no pelvic incidence and no
@@ -73,26 +73,413 @@
   which Cho measures at 0.6 deg, so every other posture's tilt is its lordosis
   minus that — standing comes out at 46.5.
 
-  ⚠ AND THAT NUMBER IS TOO BIG FOR A PELVIS, which is the honest cost of having
-  one input. A real lumbar spine gains lordosis partly by rotating its sacrum and
-  partly by wedging its own discs and vertebrae; this model has no wedging, so the
-  pelvis has to supply all of it. Cho reports a strong correlation between the
-  loss of lordosis and the loss of sacral slope (r = 0.731) and between it and the
-  gain in pelvic tilt (r = -0.842), but does not report the PARTITION, so the
-  share cannot be sourced and is not invented here. The direction of the error is
-  stated instead: in a lordotic posture this model swings the hip joints, and both
-  legs with them, further posterior than a real pelvis would."
+  ⚠ THIS USED TO SAY THE NUMBER WAS TOO BIG FOR A PELVIS, AND IT WAS — until
+  2026-09-11 `pose` spent all of it as a rigid rotation of the whole pelvis, which
+  swung the hip joints and both legs further than a real pelvis goes. Cho reports
+  correlations between the loss of lordosis and the loss of sacral slope
+  (r = 0.731) and the gain in pelvic tilt (r = -0.842) and NOT the partition, so
+  the share could not be sourced from her.
+
+  IT IS SOURCED NOW, from a different cohort: `sacral-slope-share-of-lordosis`,
+  0.586, from Mills et al. 2026's ΔSS and ΔLL over the same posture change in the
+  same 50 subjects. This function still returns the LORDOSIS — the quantity Cho
+  measures and the quantity a posture states — and `pose` decides how much of it
+  turns the pelvis."
   [posture-key]
   (- (:deg (get lumbar-lordosis posture-key))
      (:deg (:stool lumbar-lordosis))))
 
+;; --- how a lordosis is SPENT: the pelvis, and the five motion segments -------
+;;
+;; Until 2026-09-11 this file had one number per posture and `pose` spent all of
+;; it as a rigid rotation of the whole pelvis. Two things were wrong with that and
+;; both are now sourced from the same cohort.
+
+(def spinopelvic-motion
+  "Standing, relaxed-seated and flexed-forward-seated sagittal alignment in 50
+  asymptomatic young adults, level by level.
+
+  THE SOURCE. Mills ES, Richardson MK, Wang JC, Chung BC, Romoff M, Heckmann ND.
+  `Defining the relationship between the hip, pelvis, and lumbar spine`, North
+  American Spine Society Journal 2026;26:100883. Full text (CC BY) read
+  2026-09-11 through the Europe PMC REST API,
+  https://www.ebi.ac.uk/europepmc/webservices/rest/PMC13213316/fullTextXML —
+  PubMed's HTML serves a cookie page and Europe PMC's article pages are
+  JS-rendered, so the REST endpoint is the one that answers.
+
+  50 healthy volunteers aged 18-35 (25 male, 25 female), mean age 25.70 (SD 2.34),
+  BMI 24.10 (SD 3.02), no back or hip pain and no prior hip or spine surgery.
+  Three lateral radiographs each: standing, relaxed-seated with the hips flexed to
+  90 degrees, and flexed-forward seated. Everything below is Table 1 and the
+  `Standing to sitting motion` paragraph, transcribed and not rounded.
+
+  WHY THIS COHORT AND NOT ANOTHER. It is the only source found that reports, for
+  the same subjects, BOTH the sacral slope and the five lumbar segmental angles in
+  two postures. The two questions this model has to answer — how much of a
+  lordosis change is the pelvis, and how the rest divides between the levels — are
+  answered by one table, so neither answer imports a second population.
+
+  ⚠ IT IS NOT WILKE'S SUBJECT AND IT IS NOT CHO'S COHORT. Wilke's man was 45 and
+  70 kg; Cho's 30 volunteers were 31 y and 73.6 kg; these are 25.7 y and their
+  masses are not stated, only their BMI. And the seated posture here is a chair
+  with the hips at 90 degrees (LL 24.6 deg), which is NOT Cho's stool (0.6 deg) —
+  it sits between Cho's `90-degree chair` at 17.7 and her `chair with lumbar
+  support` at 36.2. Anything derived from the two postures' DIFFERENCE is
+  therefore a ratio measured over a 28.5 degree change and applied to this model's
+  46.5 degree one."
+  {:citation (str "Mills ES, Richardson MK, Wang JC, Chung BC, Romoff M, "
+                  "Heckmann ND. Defining the relationship between the hip, "
+                  "pelvis, and lumbar spine. N Am Spine Soc J 2026;26:100883.")
+   :doi "10.1016/j.xnsj.2026.100883"
+   :pmid "42212188"
+   :pmcid "PMC13213316"
+   :url "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC13213316/fullTextXML"
+   :obtained :full-text
+   :licence "CC BY"
+   :cohort {:n 50 :male 25 :female 25 :age-y 25.70 :age-sd 2.34
+            :bmi 24.10 :bmi-sd 3.02 :age-range [18 35]}
+   :method "lateral radiographs; Cobb segmental angles L1-L2 to L5-S1, SS, PT, PI"
+   ;; Table 1. `:standing` and `:relaxed-seated` are the two postures this model
+   ;; can put beside its own neutral and its own standing.
+   :standing {:pelvic-incidence {:deg 49.3 :sd 11.4}
+              :sacral-slope {:deg 36.2 :sd 8.4}
+              :pelvic-tilt {:deg 13.1 :sd 7.7}
+              :lumbar-lordosis {:deg 53.3 :sd 10.7}
+              :segments [{:span "L5-S1" :deg 13.4 :sd 4.8}
+                         {:span "L4-L5" :deg 14.2 :sd 3.6}
+                         {:span "L3-L4" :deg 11.2 :sd 3.4}
+                         {:span "L2-L3" :deg 7.7 :sd 3.3}
+                         {:span "L1-L2" :deg 5.6 :sd 2.5}]}
+   :relaxed-seated {:sacral-slope {:deg 19.5 :sd 9.1}
+                    :pelvic-tilt {:deg 29.7 :sd 10.0}
+                    :lumbar-lordosis {:deg 24.6 :sd 11.9}
+                    :segments [{:span "L5-S1" :deg 6.0 :sd 3.7}
+                               {:span "L4-L5" :deg 3.3 :sd 3.1}
+                               {:span "L3-L4" :deg 4.4 :sd 3.7}
+                               {:span "L2-L3" :deg 5.2 :sd 4.1}
+                               {:span "L1-L2" :deg 5.4 :sd 3.0}]}
+   ;; The `Standing to sitting motion` paragraph. These are the paper's own
+   ;; reported means of the per-subject differences, NOT this file subtracting the
+   ;; two columns above — the paper reports LL as 24.6 in Table 1 and 24.8 in the
+   ;; text, so the two routes do not agree to the last figure and only one of them
+   ;; is what the authors measured.
+   :standing-to-relaxed-seated {:sacral-slope {:deg 16.7 :sd 8.5}
+                                :pelvic-tilt {:deg -16.7 :sd 8.5}
+                                :lumbar-lordosis {:deg 28.5 :sd 11.6}
+                                :segments [{:span "L5-S1" :deg 7.3 :sd 5.5}
+                                           {:span "L4-L5" :deg 10.9 :sd 3.9}
+                                           {:span "L3-L4" :deg 6.9 :sd 3.5}
+                                           {:span "L2-L3" :deg 2.5 :sd 4.0}
+                                           {:span "L1-L2" :deg 0.24 :sd 4.0}]
+                                :maximal-motion-at {"L4-L5" 26 "L5-S1" 13 "L3-L4" 11
+                                                    "L2-L3" 0 "L1-L2" 0}
+                                :majority-of-motion {"L4-S1" 39 "L1-L4" 11}}
+   ;; The regression, reported for the standing-to-flexed-forward transition.
+   :sacral-slope-per-lordosis-regression {:slope 0.63 :r 0.85 :p "<.001"
+                                          :between [:standing :flexed-seated]
+                                          :mean-lordosis-change-deg 61.12}})
+
+(def sacral-slope-share-of-lordosis
+  "How much of a change in lumbar lordosis is a rigid rotation of the PELVIS.
+
+  `ΔSS / ΔLL` for Mills' standing-to-relaxed-seated transition: 16.7 / 28.5.
+  DERIVED from `spinopelvic-motion` rather than written, so that correcting a
+  transcribed figure corrects this too.
+
+  WHY THIS IS THE PARTITION AND NOT A PROXY. Pelvic incidence is a morphological
+  constant of one pelvis, and `PI = PT + SS`, so `ΔSS = -ΔPT` for a given person:
+  a change in sacral slope IS the pelvis turning about the femoral heads, which is
+  exactly what `:lumbar-lordosis-deg` used to spend in full. Mills reports both
+  halves of that identity and they match to the last figure (ΔSS +16.7, ΔPT
+  -16.7), so the reading is the authors' and not this file's.
+
+  ⚠ THE REMAINDER IS NOT `WEDGING`. `1 - this` is the share that appears as the
+  TOP of the lumbar spine rotating in space — the L1 endplate, whose tilt from
+  horizontal is `SS - LL` and which moves 12.0 degrees between Mills' two
+  postures. Some of that is intervertebral wedging and some of it is the trunk
+  above changing its orientation, and nothing here separates the two. What is
+  measured is that the pelvis does not supply all of it.
+
+  ⚠ AND IT IS AN EXTRAPOLATION. 0.586 is measured over a 28.5 degree lordosis
+  change between standing and a 90-degree chair; this model applies it to a 46.5
+  degree change between standing and a stool. The one check available is that the
+  same paper's regression over a much larger change — 61.1 degrees, standing to
+  flexed-forward — gives 0.63 (R = 0.85), so the ratio is stable to about 7% of
+  itself across a change more than twice as large. It is not measured at 46.5
+  degrees by anybody, and the model would be spending 4% less lordosis on the
+  pelvis if the regression slope were used instead."
+  (/ (get-in spinopelvic-motion [:standing-to-relaxed-seated :sacral-slope :deg])
+     (get-in spinopelvic-motion [:standing-to-relaxed-seated :lumbar-lordosis :deg])))
+
+(def lumbar-segmental-shares
+  "What fraction of the lumbar lordosis each of the five motion segments carries,
+  ordered FROM THE SACRUM UPWARD.
+
+  Mills' standing column, normalised. `L5-S1` is the angle between the S1 superior
+  endplate and the L5 superior endplate, `L4-L5` between the L5 and L4 superior
+  endplates, and so on — so the five spans tile the lumbar spine end to end and
+  their sum is the L1-S1 lordosis by construction (52.1 against the 53.3 the same
+  table reports as LL, a 1.2 degree difference between a Cobb measured once and
+  five measured separately).
+
+  IT IS STRONGLY NON-UNIFORM AND THAT IS THE POINT. The two lowest spans carry
+  53.0% of the standing lordosis over 40% of the length. Under the constant
+  curvature this model assumed until 2026-09-11 they would carry 40%.
+
+  ⚠ THIS IS THE STANDING SHAPE, applied to whatever lordosis a posture has. It is
+  exact for standing and an approximation everywhere else: Mills' own seated
+  column is flatter and more even (6.0 / 3.3 / 4.4 / 5.2 / 5.4, so the lowest two
+  spans carry 38% rather than 53%), so a SEATED lordotic posture in this library
+  has its lower levels over-turned and its upper ones under-turned. Direction
+  stated rather than a second shape chosen, because the model has one lordosis
+  input per posture and no way to say which shape goes with it.
+
+  ⚠ AND IT DISAGREES WITH THE POOLED REVIEW — see `lordosis-distribution-review`.
+  Ge et al. pool twelve studies and put 65.1% of the lordosis below L4; this
+  cohort puts 53.0% there. Both are asymptomatic adults. The review has the larger
+  population and no per-level rows; this one has the rows, and rows are what a
+  five-level model needs, so this is the one installed and the disagreement is
+  recorded rather than averaged away."
+  (let [segs (get-in spinopelvic-motion [:standing :segments])
+        total (reduce + 0.0 (map :deg segs))]
+    (mapv (fn [s] (assoc (select-keys s [:span :deg :sd]) :share (/ (:deg s) total)))
+          segs)))
+
+(defn turn-nodes
+  "`[length-fraction turn-fraction]` pairs for a sequence of `:share`s, ordered
+  from the sacrum upward and spaced evenly along the length.
+
+  A FUNCTION rather than an expression inside `lumbar-turn-nodes`, so that a test
+  can hand it the UNIFORM shape and check what this machinery says about the
+  constant-curvature spine it replaced. A derivation that cannot be run on a
+  second input cannot be checked against a known answer."
+  [shares]
+  (let [n (count shares)]
+    (vec (map-indexed (fn [i [_ c]] [(/ (double i) n) c])
+                      (reductions (fn [[t c] s] [t (+ c (:share s))])
+                                  [0.0 0.0]
+                                  shares)))))
+
+(def lumbar-turn-nodes
+  "Cumulative turn from the sacral endplate up the lumbar spine, as
+  `[length-fraction turn-fraction]` pairs.
+
+  `length-fraction` is where a node sits along the lumbar segment measured from
+  L5/S1, and it comes from the model rather than from Mills: `spine/levels` places
+  the five lumbar discs at even fifths, so each motion segment is one fifth of the
+  lumbar spine's length. `the-turn-table-tiles-the-model-s-own-lumbar-levels`
+  checks that against `spine/levels` rather than letting the two drift.
+
+  `turn-fraction` is the cumulative share from `lumbar-segmental-shares`. The pair
+  at 0.0 is the S1 endplate and the pair at 1.0 is the L1 endplate, so the table
+  runs end to end and the last turn fraction is exactly 1.0.
+
+  WHY A DISC'S ORIENTATION IS ITS LOWER ENDPLATE'S, exactly and not approximately.
+  The L4/L5 disc's inferior boundary IS the L5 superior endplate, which is the
+  upper end of Mills' `L5-S1` span; the L5/S1 disc's inferior boundary is the S1
+  superior endplate, which is that span's lower end. So the five discs this model
+  carries land on the six endplates Mills' five spans run between, with nothing
+  left over and nothing interpolated."
+  (turn-nodes lumbar-segmental-shares))
+
+(defn lumbar-turn-fraction
+  "The cumulative turn fraction at `length-fraction` along the lumbar spine,
+  linear inside each motion segment.
+
+  LINEAR INSIDE A SPAN IS AN ASSUMPTION and it is the only one left in the shape:
+  Mills measures the turn ACROSS each motion segment and says nothing about where
+  inside it the turn happens. It matters only for a query between the model's own
+  level positions, because every level sits exactly on a node."
+  [length-fraction]
+  (let [nodes lumbar-turn-nodes
+        n (count nodes)]
+    (loop [i 1]
+      (if (>= i n)
+        1.0
+        (let [[t0 c0] (nth nodes (dec i))
+              [t1 c1] (nth nodes i)]
+          (if (<= length-fraction t1)
+            (+ c0 (* (- c1 c0) (/ (- length-fraction t0) (- t1 t0))))
+            (recur (inc i))))))))
+
+(defn chord-turn-fraction
+  "The arc-length-weighted mean turn fraction over a `turn-nodes` table — `∫₀¹
+  c(t) dt` with `c` linear between nodes, which is the trapezoid rule and is exact
+  for a piecewise-linear `c`.
+
+  A FUNCTION for the same reason `turn-nodes` is one: fed the uniform shape it
+  must return exactly 0.5, and that is the control on everything the measured
+  shape is then allowed to say."
+  [nodes]
+  (reduce + 0.0
+          (map (fn [[[t0 c0] [t1 c1]]] (* (- t1 t0) 0.5 (+ c0 c1)))
+               (partition 2 1 nodes))))
+
+(def lumbar-chord-turn-fraction
+  "Where the lumbar segment's single direction sits in that turn — the
+  arc-length-weighted mean of the turn fraction, `∫₀¹ c(t) dt`.
+
+  A RIGID SEGMENT NEEDS ONE DIRECTION and this is the one. For a circular arc —
+  constant curvature, which is what this model assumed until 2026-09-11 — every
+  span carries the same share, `c(t) = t`, the integral is exactly 0.5, and the
+  chord bisects the two end tangents, which is the rule the old
+  `lumbar-chord-tilt-deg` stated. `a-uniform-turn-table-puts-the-chord-at-one-half`
+  is the control: feed this the uniform shape and it returns 0.5 to the bit.
+
+  With Mills' measured shape it is 0.5848 — the arc turns faster at the bottom, so
+  its mean tangent lies nearer the top end than the middle.
+
+  ⚠ IT IS THE MEAN ANGLE, NOT THE CHORD DIRECTION. The true chord of a curve is
+  the direction of `∫ (sin θ, cos θ) dt`, which is the mean ANGLE only for a
+  circular arc. Computed for this shape at 46.5 degrees of lordosis the two differ
+  by 0.05 degrees, and the vector integral's length is 0.9706 — so the straight
+  distance between the lumbar spine's two ends is about 3% shorter than its arc
+  length, and this model does not represent that shortening at all: it treats the
+  lumbar segment's length as fixed. `the-mean-angle-chord-and-the-vector-chord-
+  agree-to-a-twentieth-of-a-degree` measures both."
+  (chord-turn-fraction lumbar-turn-nodes))
+
+(def lordosis-distribution-review
+  "The pooled two-arc distribution, from a systematic review — a second source
+  that DISAGREES with the cohort installed above, recorded because it does.
+
+  Ge T, Xie L, Li J, Ao J, Wu J, Sun Y. `Lumbar Lordosis Distribution in
+  Asymptomatic Adult Volunteers: A Systematic Review`, HSS Journal
+  2023;19(2):223-233. Twelve studies of asymptomatic adult volunteers.
+
+  `:obtained :abstract` — Europe PMC's `fullTextXML` endpoint returns 404 for
+  PMC10090846 (it is not in the open-access subset), so the pooled estimates below
+  are the ones the abstract states and the twelve studies behind them were not
+  read. LDI is the distribution index `DLL / LL`, DLL is L4-S1 and PLL is L1-L4,
+  which is the same two-arc cut as `lumbar-segmental-shares`' lowest two spans
+  against its top three.
+
+  THE DISAGREEMENT, stated rather than reconciled: this review puts 65.10% of the
+  lordosis below L4 and Mills' 50 volunteers put 53.0% there. The review's own PLL
+  confidence interval is 5.54-27.49 degrees — wider than the mean — so `wide
+  variation in LDI and PLL` is its own conclusion, and Mills' figure is inside
+  that spread while the pooled point estimate is not what Mills measured."
+  {:citation (str "Ge T, Xie L, Li J, Ao J, Wu J, Sun Y. Lumbar Lordosis "
+                  "Distribution in Asymptomatic Adult Volunteers: A Systematic "
+                  "Review. HSS J 2023;19(2):223-233.")
+   :doi "10.1177/15563316221145156"
+   :pmid "37065105"
+   :pmcid "PMC10090846"
+   :obtained :abstract
+   :could-not-obtain-full-text (str "Europe PMC fullTextXML returns HTTP 404 for "
+                                    "PMC10090846 — not in the open-access subset")
+   :studies-pooled 12
+   :lordosis-distribution-index {:pct 65.10 :ci-95 [62.61 67.58] :variance 13.70}
+   :proximal-lumbar-lordosis-l1-l4 {:deg 16.51 :ci-95 [5.54 27.49] :variance 11.46}
+   :distal-lumbar-lordosis-l4-s1 {:deg 35.47 :ci-95 [32.79 38.18] :variance 9.10}})
+
+(def lordosis-sources-not-installed
+  "The other sources checked for a segmental distribution, and exactly what each
+  one could and could not supply. Present so that `no per-level source was found`
+  is a claim with a list behind it rather than a summary of a search nobody can
+  repeat.
+
+  None of these supplies a number this model uses."
+  [{:citation (str "Been E, Kalichman L. Lumbar lordosis. Spine J "
+                   "2014;14(1):87-97.")
+    :doi "10.1016/j.spinee.2013.07.464"
+    :pmid "24095099"
+    :obtained :abstract
+    :why-not-installed (str "a review of more than 120 articles on the lordosis "
+                            "ANGLE and what moves it — position, age, sex, BMI, "
+                            "ethnicity, sport — which concludes that no uniform "
+                            "normal value can be given. The abstract states no "
+                            "segmental distribution, and the full text is behind "
+                            "Elsevier: Europe PMC has no PMCID for it.")}
+   {:citation (str "Bernhardt M, Bridwell KH. Segmental analysis of the sagittal "
+                   "plane alignment of the normal thoracic and lumbar spines and "
+                   "thoracolumbar junction. Spine 1989;14(7):717-721.")
+    :doi "10.1097/00007632-198907000-00012"
+    :pmid "2772721"
+    :obtained :abstract
+    :why-not-installed (str "the classic per-level source — 102 normal subjects, "
+                            "segmental angulation digitised at every level from "
+                            "T1-2 to L5-S1 — and its numbers are in tables that "
+                            "could not be obtained (no PMCID, not in the "
+                            "open-access subset). Its abstract states the SHAPE "
+                            "of the result and this model's installed table has "
+                            "it: `lumbar lordosis usually starts at L1-2 and "
+                            "gradually increases at each level caudally to the "
+                            "sacrum`. Mills' standing column rises 5.6, 7.7, "
+                            "11.2, 14.2 from L1-2 down to L4-5 and then falls "
+                            "slightly at L5-S1 to 13.4, so the two agree on the "
+                            "gradient and not on its last step.")}
+   {:citation (str "Roussouly P, Gollogly S, Berthonnaud E, Dimnet J. "
+                   "Classification of the normal variation in the sagittal "
+                   "alignment of the human lumbar spine and pelvis in the "
+                   "standing position. Spine 2005;30(3):346-353.")
+    :doi "10.1097/01.brs.0000152379.54463.65"
+    :pmid "15682018"
+    :obtained :abstract
+    :why-not-installed (str "the four-type classification. Its abstract states "
+                            "the relationship this model most needs — the global "
+                            "lordotic curvature, the lordosis tilt angle, the "
+                            "position of the apex and the NUMBER of lordotic "
+                            "vertebrae are all determined by the angle of the S1 "
+                            "superior endplate to the horizontal, i.e. by the "
+                            "sacral slope — but states it qualitatively. The "
+                            "per-type numbers are in the paper; Europe PMC's "
+                            "fullTextXML returns 404. Nothing here selects a "
+                            "Roussouly type, so installing one would be choosing "
+                            "a spine shape rather than measuring it.")}
+   {:citation (str "Berthonnaud E, Dimnet J, Roussouly P, Labelle H. Analysis of "
+                   "the sagittal balance of the spine and pelvis using shape and "
+                   "orientation parameters. J Spinal Disord Tech 2005;18(1):40-47.")
+    :doi "10.1097/01.bsd.0000117542.88865.77"
+    :pmid "15687851"
+    :obtained :abstract
+    :why-not-installed (str "the paper that separates a region's SHAPE from its "
+                            "ORIENTATION, which is the distinction this model was "
+                            "missing — it had one lumbar orientation and no shape "
+                            "at all. Same 160-volunteer cohort as Roussouly 2005. "
+                            "The abstract reports that the correlations hold at "
+                            "every level and gives no coefficients; fullTextXML "
+                            "returns 404.")}
+   {:citation (str "Zhou S, Zhao Y, Zhao Y, Luo Z, He H, Ma J, Qiu W, Han G, Sun "
+                   "Z, Li W. Pelvic position significantly influences the "
+                   "segmental lumbar lordosis: a cross-sectional study in "
+                   "asymptomatic population. Eur Spine J 2026;35(6):3333-3341.")
+    :doi "10.1007/s00586-025-09535-z"
+    :pmid "41204022"
+    :obtained :abstract
+    :why-not-installed (str "405 asymptomatic subjects with segmental lordosis "
+                            "measured at every lumbar level, split by whether the "
+                            "pelvis is anteverted. Its finding is a warning about "
+                            "the table this model installed: segmental lordosis "
+                            "differs significantly between the two pelvic "
+                            "populations at L5-S1, L4-5, L3-4 and L2-3 and NOT at "
+                            "L1-2, and the differences are largest in the lower "
+                            "lumbar spine — so one distribution is a population "
+                            "mean over at least two shapes. The per-level numbers "
+                            "are behind Springer; no PMCID.")}
+   {:citation (str "Kim et al. Lordosis Distribution Index in an Asymptomatic "
+                   "Elderly Population: The Role of Lower and Upper Lumbar "
+                   "Lordosis. J Korean Neurosurg Soc 2026.")
+    :pmcid "PMC12790913"
+    :obtained :full-text
+    :why-not-installed (str "150 asymptomatic elderly men (64.1 y), LL 57.5 (SD "
+                            "9.0), lower LL 39.7 (SD 6.8), LDI 69.7% (SD 11.7). "
+                            "Read in full, and it corroborates the two-arc split "
+                            "the review reports rather than the one this model "
+                            "installed — but it reports the two ARCS only, not "
+                            "the five spans, so it cannot orient five levels. It "
+                            "also measures LDI varying from 62.6% to 81.0% across "
+                            "Roussouly types and from 74.1% to 61.1% as pelvic "
+                            "incidence rises, which is the size of the spread "
+                            "behind any single distribution.")}])
+
 (def lordosis-provenance
-  "Where every named posture in this library gets its `:pelvic-tilt-deg` from —
+  "Where every named posture in this library gets its `:lumbar-lordosis-deg` from —
   one entry per posture, and no posture may be absent.
 
   WHY THIS TABLE EXISTS, AND IT IS NOT DOCUMENTATION. Until 2026-09-09 every
   posture in this file carried a lordosis of zero, and every one of them carried
-  it the same way: by not mentioning `:pelvic-tilt-deg` at all and letting
+  it the same way: by not mentioning `:lumbar-lordosis-deg` at all and letting
   `pose/lumbar-chord-tilt-deg`'s `(or … 0.0)` supply it. Zero is the RIGHT answer
   for exactly one posture — Cho measures a stool at 0.6 deg (SD 3.6), straight to
   well inside its own scatter — and it was the answer given to standing, to a deep
@@ -104,8 +491,8 @@
 
     :measured                  read off a published radiograph of the same named
                                posture. Carries `:from`, `:measured-lordosis-deg`
-                               and `:sd-deg`, and its `:pelvic-tilt-deg` must equal
-                               `(pelvic-tilt-for :from)`.
+                               and `:sd-deg`, and its `:lumbar-lordosis-deg` must equal
+                               `(lordosis-for :from)`.
     :by-construction           zero because the posture IS a zero — an anatomical
                                reference with every joint at neutral, not a posture
                                anybody holds.
@@ -119,7 +506,7 @@
   silent zero cannot come back."
   {"standing-neutral"
    {:posture "standing-neutral"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :by-construction
     :note (str "the anatomical reference, standing up: every joint at neutral by "
                "definition, and the lumbar spine with them. It is not a claim "
@@ -129,7 +516,7 @@
 
    "quiet-standing"
    {:posture "quiet-standing"
-    :pelvic-tilt-deg 46.5
+    :lumbar-lordosis-deg 46.5
     :basis :measured
     :from :standing
     :measured-lordosis-deg 47.1
@@ -142,7 +529,7 @@
 
    "quiet-standing-lumbar-neutral"
    {:posture "quiet-standing-lumbar-neutral"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :by-construction
     :note (str "the CONTROL for `quiet-standing`, and its lordosis is zero for the "
                "same reason `standing-neutral`'s is: it is the definition of the "
@@ -153,10 +540,10 @@
 
    "deep-squat"
    {:posture "deep-squat"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :parameter-not-in-source
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 0.0
      :searched :cho-2015
      :note (str "Cho measures standing and five SITTING postures. A deep squat is "
@@ -170,10 +557,10 @@
 
    "laptop-on-lap"
    {:posture "laptop-on-lap"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :parameter-not-in-source
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 0.0
      :searched :cho-2015
      :note (str "a slumped, unsupported sit with a laptop on the thighs. Cho's "
@@ -190,10 +577,10 @@
 
    "laptop-on-desk"
    {:posture "laptop-on-desk"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :parameter-not-in-source
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 0.0
      :searched :cho-2015
      :note (str "a desk chair with the back supported. Cho's `chair with lumbar "
@@ -208,10 +595,10 @@
 
    "external-monitor+keyboard"
    {:posture "external-monitor+keyboard"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :parameter-not-in-source
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 0.0
      :searched :cho-2015
      :note "as `laptop-on-desk`: a backrested desk chair, which Cho does not have."
@@ -220,7 +607,7 @@
 
    "seated-posture"
    {:posture "seated-posture"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :measured
     :from :stool
     :measured-lordosis-deg 0.6
@@ -229,9 +616,9 @@
                "a measurement. `seated-posture` with nothing passed is an upright, "
                "unsupported, hands-in-lap sit — which is what Cho radiographed on "
                "a stool at 0.6 deg (SD 3.6), straight to well inside its own "
-               "scatter. It is derived as `(pelvic-tilt-for :stool)` rather than "
+               "scatter. It is derived as `(lordosis-for :stool)` rather than "
                "written as 0.0 so that the zero carries its source; a caller who "
-               "passes `:pelvic-tilt-deg` is stating a different posture and this "
+               "passes `:lumbar-lordosis-deg` is stating a different posture and this "
                "entry no longer describes it.")}})
 
 (defn lordosis-provenance-for
@@ -353,9 +740,9 @@
      ;; not say which. So the model holds its neutral and `lordosis-provenance`
      ;; records that this posture's lordosis is `:parameter-not-in-source` with
      ;; the direction of the error, rather than the value arriving here silently
-     ;; through `(or (:pelvic-tilt-deg posture) 0.0)` and reading like one that
+     ;; through `(or (:lumbar-lordosis-deg posture) 0.0)` and reading like one that
      ;; was measured.
-     :pelvic-tilt-deg 0.0}))
+     :lumbar-lordosis-deg 0.0}))
 
 (defn seated-posture
   "A seated posture stated directly, for the cases the workstation model cannot
@@ -373,7 +760,7 @@
   [& {:keys [trunk-flexion-deg head-flexion-deg shoulder-flexion-deg
              elbow-flexion-deg wrist-extension-deg arms-supported
              hip-flexion-deg knee-flexion-deg ankle-dorsiflexion-deg thigh-supported
-             pelvic-tilt-deg]
+             lumbar-lordosis-deg]
       :or {trunk-flexion-deg 0.0 head-flexion-deg 0.0 shoulder-flexion-deg 0.0
            elbow-flexion-deg 0.0 wrist-extension-deg 0.0 arms-supported false
            hip-flexion-deg 90.0 knee-flexion-deg 90.0 ankle-dorsiflexion-deg 0.0
@@ -383,9 +770,9 @@
            ;; written as 0.0 since 2026-09-09: the number is the same to the bit,
            ;; and it now carries its source instead of looking like an unset
            ;; default. `lordosis-provenance` has the entry.
-           pelvic-tilt-deg (pelvic-tilt-for :stool)}}]
+           lumbar-lordosis-deg (lordosis-for :stool)}}]
   {:support :seated
-   :pelvic-tilt-deg pelvic-tilt-deg
+   :lumbar-lordosis-deg lumbar-lordosis-deg
    :trunk-flexion-deg trunk-flexion-deg
    :head-flexion-deg head-flexion-deg
    :shoulder-flexion-deg shoulder-flexion-deg
@@ -445,7 +832,7 @@
   `:measured` so that a reader cannot mistake either for the other."
   {:name "standing-neutral"
    :support :standing
-   :pelvic-tilt-deg 0.0
+   :lumbar-lordosis-deg 0.0
    :head-flexion-deg 0.0 :trunk-flexion-deg 0.0
    :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0 :wrist-extension-deg 0.0
    :hip-flexion-deg 0.0 :knee-flexion-deg 0.0 :ankle-dorsiflexion-deg 0.0
@@ -469,7 +856,7 @@
 
   IT HAS A LORDOSIS SINCE 2026-09-09, AND IT IS MEASURED. Cho et al. 2015
   radiograph standing at 47.1 deg (SD 10.5) against a stool at 0.6, so the tilt
-  from this model's straight-lumbar neutral is 46.5 — `(pelvic-tilt-for
+  from this model's straight-lumbar neutral is 46.5 — `(lordosis-for
   :standing)`, not a literal. Until then this posture carried zero, which is a
   STOOL's lordosis, and it carried it by not mentioning the key.
 
@@ -486,7 +873,7 @@
   {:name "quiet-standing"
    :support :standing
    :head-flexion-deg 5.0 :trunk-flexion-deg 0.0
-   :pelvic-tilt-deg (pelvic-tilt-for :standing)
+   :lumbar-lordosis-deg (lordosis-for :standing)
    :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0 :wrist-extension-deg 0.0
    :hip-flexion-deg 0.0 :knee-flexion-deg 5.0 :ankle-dorsiflexion-deg 5.0
    :arms-supported false})
@@ -502,7 +889,7 @@
   and this model cannot hold those and Cho's lordosis at the same time (see
   `quiet-standing`). Separating them says which of the two a given test is about
   instead of quietly weakening one to fit the other."
-  (assoc quiet-standing :name "quiet-standing-lumbar-neutral" :pelvic-tilt-deg 0.0))
+  (assoc quiet-standing :name "quiet-standing-lumbar-neutral" :lumbar-lordosis-deg 0.0))
 
 (def deep-squat
   "A deep squat, held: thighs near horizontal, heels down, trunk leaning forward to
@@ -531,7 +918,7 @@
   not known."
   {:name "deep-squat"
    :support :standing
-   :pelvic-tilt-deg 0.0
+   :lumbar-lordosis-deg 0.0
    :head-flexion-deg 0.0 :trunk-flexion-deg 55.0
    :shoulder-flexion-deg 60.0 :elbow-flexion-deg 20.0 :wrist-extension-deg 0.0
    :hip-flexion-deg 85.0 :knee-flexion-deg 110.0 :ankle-dorsiflexion-deg 25.0
@@ -553,7 +940,7 @@
   ergonomic descriptions they are — a workstation has no lordosis, the sit it
   implies does. `seated-posture` is here as its default, which is the only
   configuration of it this namespace can speak for; a caller who passes
-  `:pelvic-tilt-deg` has stated a posture of their own and owns its provenance."
+  `:lumbar-lordosis-deg` has stated a posture of their own and owns its provenance."
   (into (into {} (for [ws reference-workstations]
                    [(:name ws) (posture-from-workstation ws)]))
         (into {"seated-posture" (seated-posture)
