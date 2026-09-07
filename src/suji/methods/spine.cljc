@@ -123,13 +123,21 @@
   ;; Their disc areas are unchanged.
   ;;
   ;; WHAT MOVED IS THEIR ORIENTATION, and that is the whole reason for the split.
-  ;; All five still share ONE segment's frame — `lumbar` is L5/S1 to T12/L1 and is
-  ;; one rigid body — so a reader should not take five lumbar rows as five
-  ;; independently oriented joints. What is no longer true is that the frame is the
-  ;; THORAX's: the pelvis can rotate now, the lumbar spine's lower end turns with
-  ;; it, and these five levels tilt with the lordosis that produces. Sitting and
-  ;; standing can differ above L5/S1, which is what `lumbar-cross-check` needed and
-  ;; could not have.
+  ;; The frame stopped being the THORAX's: the pelvis can rotate, the lumbar
+  ;; spine's lower end turns with it, and these five levels tilt with the lordosis
+  ;; that produces. Sitting and standing can differ above L5/S1, which is what
+  ;; `lumbar-cross-check` needed and could not have.
+  ;;
+  ;; AND SINCE 2026-09-11 THEY DO NOT SHARE ONE ORIENTATION EITHER. This comment
+  ;; used to end `all five still share ONE segment's frame … a reader should not
+  ;; take five lumbar rows as five independently oriented joints`, and that was
+  ;; true until a segmental distribution could be sourced. Mills et al. 2026
+  ;; measure how the lordosis divides between the five motion segments, so
+  ;; `level-axis-offset-deg` gives each level its own tangent: at Cho's standing
+  ;; lordosis they stand 27.25 / 15.29 / 2.61 / -7.38 / -14.25 deg from vertical.
+  ;; They are still five levels on ONE placed rigid body — their POSITIONS are
+  ;; still on its chord — so what a reader should not take them for is five
+  ;; independently POSITIONED joints. See `level-point`.
   [{:name "L5/S1" :region :lumbar :segment "lumbar" :along 0.0 :disc-area-cm2 18.0}
    {:name "L4/L5" :region :lumbar :segment "lumbar" :along 0.2 :disc-area-cm2 17.0}
    {:name "L3/L4" :region :lumbar :segment "lumbar" :along 0.4 :disc-area-cm2 16.0}
@@ -174,13 +182,72 @@
   (let [k (/ stature-m reference-stature-m)]
     (* (:disc-area-cm2 level) 1e-4 k k)))
 
+(def lumbar-segment-name
+  "The one segment in this model that has a SHAPE and not only an orientation.
+
+  Named rather than tested for inline so that `level-point`'s special case reads
+  as what it is: the lumbar spine is the only region whose curvature is measured
+  (`posture/lumbar-segmental-shares`), so it is the only one whose levels can be
+  oriented separately. Every other segment here is straight and its levels take
+  its axis, which is right for a straight bone and is a GAP for the cervical
+  spine — `lower_cervical` carries five levels that share one frame for exactly
+  the reason the lumbar spine did until 2026-09-11: nobody has put a measured
+  segmental distribution into this file for it."
+  "lumbar")
+
+(defn level-axis-offset-deg
+  "How far a level's own axis is rotated from its segment's chord, in degrees,
+  anterior positive.
+
+  Zero everywhere except on the lumbar spine, and zero there too when the posture
+  has no lordosis. On the lumbar spine it is
+  `(chord-turn-fraction − turn-fraction(along)) × lordosis`: the chord sits at the
+  arc-length-weighted mean of the turn and the level sits at its own point in it,
+  so the difference between them is what separates the two.
+
+  THE FIVE LUMBAR LEVELS SHARED ONE ORIENTATION UNTIL 2026-09-11, and this is the
+  gap that closes. `levels` said so in its own comment — `all five still share ONE
+  segment frame … a reader should not take five lumbar rows as five independently
+  oriented joints` — and the consequence was that L5/S1 and L1/L2 took the same
+  cosine of the weight above them and projected every crossing muscle's line the
+  same way, in a posture whose whole point is that the spine is curved.
+
+  At Cho's standing lordosis the five now differ by 27.19 / 15.24 / 2.56 / −7.44 /
+  −14.31 degrees from the chord, from L5/S1 up. The sacral end leans anteriorly
+  and the top of the lumbar spine leans back, which is what a lordosis is."
+  [pose-data level]
+  (if (= lumbar-segment-name (:segment level))
+    (* (- posture/lumbar-chord-turn-fraction
+          (posture/lumbar-turn-fraction (:along level)))
+       (or (:lumbar-lordosis-deg pose-data) 0.0))
+    0.0))
+
 (defn level-point
   "World position of a level, and the spine's local axis there (pointing up the
-  chain, i.e. the direction compression acts along)."
+  chain, i.e. the direction compression acts along).
+
+  THE AXIS IS PER-LEVEL SINCE 2026-09-11 — see `level-axis-offset-deg`. It is the
+  segment's long axis rotated about the segment's OWN lateral axis, so a posture
+  with lateral bend or axial rotation keeps both and gains only the sagittal turn
+  the lordosis puts there. The rotation is by MINUS the offset because a segment
+  that rises from its proximal joint tilts anteriorly under a negative rotation
+  about `+Z` — the same sign `pose/segment-frame` passes down, read off
+  `math/rot-about` rather than written again here.
+
+  ⚠ THE POINT IS STILL ON THE CHORD. Only the ORIENTATION follows the arc; the
+  position is still `proximal + long × along × length`, which places the five
+  lumbar levels on the straight line between the lumbar spine's two ends rather
+  than on the curve between them. At Cho's standing lordosis the arc's sagitta is
+  about 1 cm, so a level's true position is up to that far anterior of where this
+  puts it, and every moment arm measured to a level point carries the difference.
+  Moving the points would change the lumbar segment's own length — the chord of a
+  curve is about 3% shorter than its arc, and this model treats that length as
+  fixed — so it is named here rather than half-done."
   [pose-data level]
-  (let [{:keys [proximal frame length-m]} (pose/seg-at pose-data (:segment level))]
+  (let [{:keys [proximal frame length-m]} (pose/seg-at pose-data (:segment level))
+        offset (level-axis-offset-deg pose-data level)]
     {:point (math/v+ proximal (math/v* (:long frame) (* (:along level) length-m)))
-     :axis (:long frame)}))
+     :axis (math/rot-about (:long frame) (:lat frame) (- offset))}))
 
 ;; --- the shape of the skeleton, which two questions below both need ---------
 ;;
@@ -860,10 +927,19 @@
 
     :lumbar-chord-cosine
       The weight above L4/L5 no longer acts along the level's axis, so only
-      `W x cos(chord tilt)` of it compresses the disc. NEGATIVE: the lordosis
-      UNLOADS this term. Isolated by the identity `weight-standing =
-      weight-sitting x cos(chord)`, which also proves the trunk mass split
-      contributes nothing here — the same `W` appears on both sides.
+      `W x cos(tilt)` of it compresses the disc. NEGATIVE: the lordosis UNLOADS
+      this term. Isolated by the identity `weight-standing = weight-sitting x
+      cos(tilt)`, which also proves the trunk mass split contributes nothing here
+      — the same `W` appears on both sides.
+
+      ⚠ THE NAME SAYS `CHORD` AND THE ANGLE IS THE LEVEL'S OWN SINCE 2026-09-11.
+      The two were the same number while all five lumbar levels shared the
+      segment's frame; they are not now (`level-axis-offset-deg`). L4/L5 stands
+      15.29 deg from vertical at Cho's standing lordosis while the chord stands at
+      0.05, so this term is -12.34 N rather than -0.000146 N — and it is LARGER
+      than the moment term below, which is why this model now reports an anterior
+      lordosis UNLOADING L4/L5 where Wilke measures it loading it. The 91.98 N of
+      shear the same tilt creates is carried by nothing here.
 
     :lumbosacral-moment-on-the-neutral-geometry
       Tilting the lumbar chord carries everything above L5/S1 anteriorly, so the

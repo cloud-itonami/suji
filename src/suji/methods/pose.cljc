@@ -78,15 +78,7 @@
         [long' ant' lat'] (map (comp rx rz) [long ant lat])
         ;; axial rotation is about the segment's OWN long axis, which only exists
         ;; after the first two rotations have placed it
-        axial (fn [v] (if (zero? axial-deg)
-                        v
-                        (let [t (math/radians axial-deg)
-                              c (Math/cos t) s (Math/sin t)
-                              k long']
-                          ;; Rodrigues about k
-                          (math/v+ (math/v+ (math/v* v c)
-                                            (math/v* (math/vcross k v) s))
-                                   (math/v* k (* (math/vdot k v) (- 1.0 c)))))))]
+        axial (fn [v] (math/rot-about v long' axial-deg))]
     {:long long' :ant (axial ant') :lat (axial lat')}))
 
 (defn segment-frame
