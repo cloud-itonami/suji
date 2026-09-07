@@ -260,13 +260,39 @@
   angle between the two ends — which is what a radiologist calls lumbar lordosis,
   measured Cobb between the L1 and S1 endplates — becomes exactly `p`.
 
-  WHY THE CHORD IS THE MEAN. A rigid segment between two ends that differ by `p`
-  has to be given ONE direction, and the model has one lumbar segment. For a
-  circular arc — constant curvature, the simplest curve with those two tangents —
-  the chord bisects the two end tangents, so its tilt is their mean:
-  `((trunk + p) + trunk) / 2 = trunk + p/2`. Nothing is chosen here; a different
-  curve would give a different chord, and constant curvature is the assumption,
-  stated.
+  ⚠ THE PARAGRAPH ABOVE WAS WRONG IN BOTH HALVES UNTIL 2026-09-11, and it is kept
+  here because what replaced it is only legible against it. It said the pelvis
+  rotates by `p` and the thorax holds the upper end, so that the lordosis IS the
+  pelvic rotation. Mills et al. 2026 radiographed 50 asymptomatic adults standing
+  and seated and measured both: the sacral slope moves 16.7 deg while the lordosis
+  moves 28.5, so the pelvis supplies 0.586 of a lordosis change and not all of it
+  (`posture/sacral-slope-share-of-lordosis`). What supplies the rest is the L1
+  endplate turning in space — 12.0 deg between those two postures — so the thorax
+  does NOT hold the upper end fixed relative to the lumbar spine.
+
+  WHERE THE CHORD IS NOW. A rigid segment between two ends that differ by `p` has
+  to be given ONE direction, and the model has one lumbar segment. That direction
+  is the arc-length-weighted mean of the tangent along the curve,
+  `posture/lumbar-chord-turn-fraction`, which for a circular arc is exactly one
+  half — the chord bisecting its two end tangents, which is what this function
+  used to compute — and for Mills' measured shape is 0.5848, because the arc turns
+  faster at the bottom. So the chord tilt is
+  `trunk + (share - chord-turn-fraction) x p`, and the two measured numbers very
+  nearly cancel: at Cho's 46.5 deg of standing lordosis the chord tilts 0.052 deg,
+  against the 23.25 deg this function returned until 2026-09-11.
+
+  THAT CANCELLATION IS NOT A COINCIDENCE AND IT IS NOT FITTED. Both numbers come
+  from the same table and neither was chosen: 0.586 is `ΔSS / ΔLL` and 0.5848 is
+  `∫ c(t) dt` over the standing segmental angles. It says that between two upright
+  postures the lumbar spine's two ends stay one above the other — the sacrum
+  rotates and the spine absorbs it in CURVATURE rather than carrying its top end
+  forward. Checked independently against the same table's absolute values: the
+  chord is `SS - ∫c x LL`, which is 36.2 - 31.17 = 5.03 deg standing and
+  19.5 - 14.39 = 5.11 deg seated. Those differ by 0.08 deg.
+
+  ⚠ AND THE MODEL CANNOT SAY THAT 5 DEG. It states a lordosis as a CHANGE from a
+  straight-lumbar neutral, so it can produce the 0.08 deg difference and not the
+  5 deg either posture sits at — which needs a pelvic incidence.
 
   ZERO PELVIC TILT IS A STRAIGHT LUMBAR SPINE, AND THAT NEUTRAL IS MEASURED
   RATHER THAN CONVENIENT. The model's neutral has the lumbar collinear with the
@@ -282,18 +308,20 @@
   WHAT IT CANNOT DO. This model has no PELVIC INCIDENCE — the morphological
   constant that fixes how much sacral slope a particular pelvis has — because it
   has no sacral endplate and no femoral-head geometry, only a rod from L5/S1 to
-  the hip axis. So `:pelvic-tilt-deg` is a CHANGE in pelvic orientation away from
+  the hip axis. So `:lumbar-lordosis-deg` is a CHANGE in pelvic orientation away from
   the straight-lumbar neutral, not an absolute pelvic tilt in the
   Duval-Beaupere sense, and the model can compare two postures without being able
   to state either one's SS or PT. Wilke's comparison is a difference too, so this
   is the quantity the cross-check needs and not a lesser substitute for it.
 
-  AND THE ONE THING IT GETS OBVIOUSLY WRONG. Tilting the lumbar chord carries the
-  whole body above L5/S1 forward or back OVER THE FEET. A real body compensates
-  elsewhere and keeps its line of gravity over them; this one does not, and
-  `load/lower-limb-loads` will report `:cop-inside-base? false` for a standing
-  posture given enough lordosis. That is the model failing to state a posture, and
-  it says so.
+  WHAT IT STILL GETS WRONG, SMALLER THAN IT WAS. Rotating the pelvis carries the
+  whole body above the hips forward OVER THE FEET, and a real body compensates
+  elsewhere. The compensation is still absent; what changed is the size, because
+  the pelvis turns 27.25 deg at Cho's standing lordosis rather than 46.5. The line
+  of gravity that follows is 0.0820 m anterior to the ankle against a measured
+  0.02-0.06, where it was 0.1397 m —
+  `cho-s-standing-lordosis-and-the-measured-line-of-gravity-cannot-both-hold`
+  still holds, with smaller numbers on both sides.
 
   IT IS NOT A ROOTING ARTEFACT, corrected 2026-09-10. This paragraph used to blame
   it on L5/S1 being the root of the chain, and that reading survived into
@@ -307,23 +335,81 @@
   separates T12/L1 from L5/S1 by `L_lumbar x sin(p/2)`. Both follow from this
   model identifying lumbar lordosis with a RIGID rotation of the whole pelvis
   (`lumbar-lordosis-deg`), which is where the size of the displacement comes from
-  and where a repair would have to go."
-  [trunk-flexion-deg pelvic-tilt-deg]
-  (+ trunk-flexion-deg (* 0.5 pelvic-tilt-deg)))
+  and where a repair would have to go.
+
+  THE REPAIR WENT THERE, 2026-09-11. `pelvic-rotation-deg` spends 0.586 of the
+  lordosis on the pelvis and the chord is now derived from the measured segmental
+  shape, so `L_lumbar x sin(chord)` falls from 6.685 cm to 0.016 cm and
+  `L_pelvis x sin(rotation)` from 11.7 cm to 7.0 cm."
+  [trunk-flexion-deg lordosis-deg]
+  (+ trunk-flexion-deg
+     (* (- posture/sacral-slope-share-of-lordosis
+           posture/lumbar-chord-turn-fraction)
+        lordosis-deg)))
+
+(defn lumbar-tangent-tilt-deg
+  "Tilt from vertical of the lumbar spine's own axis at `length-fraction` along
+  it, measured from L5/S1 upward.
+
+  THE FIVE LUMBAR LEVELS DO NOT SHARE ONE ORIENTATION ANY MORE, and this is the
+  function that ends that. `spine/level-point` used to hand every level the lumbar
+  SEGMENT's long axis, so L5/S1 and L1/L2 took the same cosine of the weight above
+  them and projected every muscle line the same way. A lordosis is a curve; its
+  bottom and its top point in different directions by definition, and the model
+  said they did not.
+
+  `sacral-slope-share x lordosis` is where the bottom end starts — the S1 endplate
+  turns with the pelvis and no further — and `posture/lumbar-turn-fraction` says
+  how much of the lordosis has been spent by the time the curve reaches
+  `length-fraction`. At 0.0 this is the sacral endplate and at 1.0 it is the L1
+  endplate, `(share - 1) x lordosis`, which is BEHIND the thorax's own axis rather
+  than collinear with it. That difference is the thoracolumbar transition this
+  model does not carry — see `lumbar-chord-tilt-deg`.
+
+  It reduces to `lumbar-chord-tilt-deg` at `posture/lumbar-chord-turn-fraction`, by
+  construction of both, and to the same value at every fraction when the lordosis
+  is zero."
+  [trunk-flexion-deg lordosis-deg length-fraction]
+  (+ trunk-flexion-deg
+     (* (- posture/sacral-slope-share-of-lordosis
+           (posture/lumbar-turn-fraction length-fraction))
+        lordosis-deg)))
+
+(defn pelvic-rotation-deg
+  "How far the pelvis actually turns for a given lumbar lordosis — anterior
+  positive, the same sign convention `:lumbar-lordosis-deg` uses.
+
+  IT IS NO LONGER THE WHOLE LORDOSIS. Until 2026-09-11 this model turned the
+  pelvis by the full Cobb angle, which is what `pose/lumbar-lordosis-deg`'s
+  docstring meant by `it IS :pelvic-tilt-deg`. Mills et al. 2026 measure both
+  halves in the same 50 subjects over the same posture change and the pelvis
+  supplies 0.586 of it; the rest appears as the TOP of the lumbar spine rotating
+  in space. See `posture/sacral-slope-share-of-lordosis` for what that remainder
+  is and is not."
+  [lordosis-deg]
+  (* posture/sacral-slope-share-of-lordosis lordosis-deg))
 
 (defn lumbar-lordosis-deg
   "The angle between the lumbar spine's two ends, in degrees — the quantity a
   radiograph reports as lumbar lordosis (Cobb, L1 superior endplate to S1
   superior endplate).
 
-  It IS `:pelvic-tilt-deg`, because the thorax holds the upper end and the pelvis
-  turns the lower one. Reported as its own function rather than left implicit so
-  that a consumer can compare it against a published lordosis without having to
-  know that the two are the same number in this model — and so that the day the
-  thorax stops holding the upper end, this stops being the identity and the
-  callers do not have to be found."
+  ⚠ IT USED TO BE THE PELVIC TILT AS WELL, and this docstring said so: `it IS
+  :pelvic-tilt-deg, because the thorax holds the upper end and the pelvis turns
+  the lower one`. It then said that `the day the thorax stops holding the upper
+  end, this stops being the identity and the callers do not have to be found`.
+  That day was 2026-09-11 and this is the function that absorbed it: the posture
+  states its LORDOSIS, which is what Cho measured, and `pelvic-rotation-deg` says
+  how much of it the pelvis takes.
+
+  The posture key was renamed `:pelvic-tilt-deg` -> `:lumbar-lordosis-deg` in the
+  same change, because it holds a Cobb angle and no longer holds a pelvic tilt.
+  `solve-pose` REFUSES a posture carrying the old key rather than reading 0.0 out
+  of the `or` below — a posture written before the rename would otherwise become a
+  straight lumbar spine silently, which is the exact failure
+  `posture/lordosis-provenance` exists to prevent."
   [posture]
-  (or (:pelvic-tilt-deg posture) 0.0))
+  (or (:lumbar-lordosis-deg posture) 0.0))
 
 (defn- cervical-chain
   "Place the three cervical segments, from C7 upward.
@@ -462,7 +548,7 @@
                               measured from the WORLD vertical, not from the
                               pelvis. It used to be the same number as the
                               anatomical hip angle, because the pelvis never
-                              rotated; since `:pelvic-tilt-deg` exists (2026-09-08)
+                              rotated; since `:lumbar-lordosis-deg` exists (2026-09-08)
                               it is not. A posture that names 46.5 deg of anterior
                               pelvic tilt and 0 deg of hip flexion is a femur held
                               vertical under a pelvis rotated 46.5 deg on it, i.e.
@@ -666,7 +752,7 @@
   THE PELVIS ROTATES, added 2026-09-08, and it too defaults to zero so that every
   number this actor produced before it existed is unchanged:
 
-    :pelvic-tilt-deg          ANTERIOR pelvic tilt. It rotates the pelvis (and so
+    :lumbar-lordosis-deg          ANTERIOR pelvic tilt. It rotates the pelvis (and so
                               the hips, and so both legs) and it rotates the
                               lumbar spine's lower end, which gives the lumbar
                               spine a lordosis equal to it and an orientation that
@@ -693,7 +779,17 @@
         pelvis (segment/seg body "pelvis")
         lumbar (segment/seg body "lumbar")
         thorax (segment/seg body "thorax")
-        pelvic-tilt (or (:pelvic-tilt-deg posture) 0.0)
+        _ (when (contains? posture :pelvic-tilt-deg)
+            (throw (ex-info (str "posture carries the retired key :pelvic-tilt-deg. "
+                                 "It was renamed :lumbar-lordosis-deg on 2026-09-11, "
+                                 "when the pelvis stopped rotating by the whole "
+                                 "lordosis. Reading it as an absent lordosis would "
+                                 "make this posture silently straight-lumbar.")
+                            {:posture posture
+                             :retired-key :pelvic-tilt-deg
+                             :use :lumbar-lordosis-deg})))
+        lordosis (lumbar-lordosis-deg posture)
+        pelvic-rot (pelvic-rotation-deg lordosis)
         l5s1 [0.0 0.0 0.0]
         ;; The LUMBAR segment is the root of the ATTACHMENT TREE and the pelvis
         ;; hangs off its proximal end. Both start at L5/S1, so either could have
@@ -716,11 +812,11 @@
         ;; L5/S1 DOWN to the hip axis, so it is the line Duval-Beaupere's pelvic
         ;; tilt is measured along, with the opposite sign convention.
         p-seg (hangs-from (place "pelvis" :midline l5s1
-                                 (segment-frame (- pelvic-tilt) 0.0 0.0 false)
+                                 (segment-frame (- pelvic-rot) 0.0 0.0 false)
                                  (:length-m pelvis) (:com-frac pelvis)
-                                 (- pelvic-tilt) false)
+                                 (- pelvic-rot) false)
                           "lumbar" 0.0)
-        lumbar-tilt (lumbar-chord-tilt-deg trunk-flexion-deg pelvic-tilt)
+        lumbar-tilt (lumbar-chord-tilt-deg trunk-flexion-deg lordosis)
         l-frame (segment-frame lumbar-tilt lateral 0.0 true)
         l-seg (hangs-from (place "lumbar" :midline l5s1 l-frame
                                  (:length-m lumbar) (:com-frac lumbar)
@@ -755,6 +851,12 @@
         leg-right (leg-chain body posture p-seg (:lat (:frame p-seg)) :right -1.0 stature-m)]
     (rooted-at
      {:frame {:units :metres :origin "L5/S1" :axes {:x :anterior :y :superior :z :left}}
+     ;; carried on the pose because `spine/level-point` orients each lumbar level
+     ;; from it and is handed a solved pose, not a posture. A solved chain that did
+     ;; not know its own lordosis could not say which way any of its five lumbar
+     ;; discs faces.
+     :lumbar-lordosis-deg lordosis
+     :pelvic-rotation-deg pelvic-rot
      :sides #{:left :right}
      :joints {:l5s1 l5s1
               ;; the midline landmark at the base of the pelvis segment. It is NOT

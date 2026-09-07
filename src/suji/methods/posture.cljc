@@ -19,7 +19,7 @@
   endplate of L1 and the cranial endplate of S1.
 
   WHY THIS TABLE IS HERE AT ALL. `pose/lumbar-chord-tilt-deg` gives the lumbar
-  spine an orientation of its own, driven by `:pelvic-tilt-deg`, and the lordosis
+  spine an orientation of its own, driven by `:lumbar-lordosis-deg`, and the lordosis
   that results is numerically equal to that input. So a posture that wants to be
   a SITTING or a STANDING posture rather than an arbitrary one needs a lordosis
   taken from a measurement, and this is where the measurements are.
@@ -63,8 +63,8 @@
    :method "Cobb, cranial endplate of L1 to cranial endplate of S1"
    :cohort {:n 30 :sex :male :age-y 31.1 :mass-kg 73.6 :stature-cm 175.0}})
 
-(defn pelvic-tilt-for
-  "The `:pelvic-tilt-deg` that gives a posture the lordosis Cho measured for it,
+(defn lordosis-for
+  "The `:lumbar-lordosis-deg` that gives a posture the lordosis Cho measured for it,
   measured from this model's straight-lumbar neutral.
 
   IT IS A DIFFERENCE, and it has to be. This model has no pelvic incidence and no
@@ -474,12 +474,12 @@
                             "behind any single distribution.")}])
 
 (def lordosis-provenance
-  "Where every named posture in this library gets its `:pelvic-tilt-deg` from —
+  "Where every named posture in this library gets its `:lumbar-lordosis-deg` from —
   one entry per posture, and no posture may be absent.
 
   WHY THIS TABLE EXISTS, AND IT IS NOT DOCUMENTATION. Until 2026-09-09 every
   posture in this file carried a lordosis of zero, and every one of them carried
-  it the same way: by not mentioning `:pelvic-tilt-deg` at all and letting
+  it the same way: by not mentioning `:lumbar-lordosis-deg` at all and letting
   `pose/lumbar-chord-tilt-deg`'s `(or … 0.0)` supply it. Zero is the RIGHT answer
   for exactly one posture — Cho measures a stool at 0.6 deg (SD 3.6), straight to
   well inside its own scatter — and it was the answer given to standing, to a deep
@@ -491,8 +491,8 @@
 
     :measured                  read off a published radiograph of the same named
                                posture. Carries `:from`, `:measured-lordosis-deg`
-                               and `:sd-deg`, and its `:pelvic-tilt-deg` must equal
-                               `(pelvic-tilt-for :from)`.
+                               and `:sd-deg`, and its `:lumbar-lordosis-deg` must equal
+                               `(lordosis-for :from)`.
     :by-construction           zero because the posture IS a zero — an anatomical
                                reference with every joint at neutral, not a posture
                                anybody holds.
@@ -506,7 +506,7 @@
   silent zero cannot come back."
   {"standing-neutral"
    {:posture "standing-neutral"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :by-construction
     :note (str "the anatomical reference, standing up: every joint at neutral by "
                "definition, and the lumbar spine with them. It is not a claim "
@@ -516,7 +516,7 @@
 
    "quiet-standing"
    {:posture "quiet-standing"
-    :pelvic-tilt-deg 46.5
+    :lumbar-lordosis-deg 46.5
     :basis :measured
     :from :standing
     :measured-lordosis-deg 47.1
@@ -529,7 +529,7 @@
 
    "quiet-standing-lumbar-neutral"
    {:posture "quiet-standing-lumbar-neutral"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :by-construction
     :note (str "the CONTROL for `quiet-standing`, and its lordosis is zero for the "
                "same reason `standing-neutral`'s is: it is the definition of the "
@@ -540,10 +540,10 @@
 
    "deep-squat"
    {:posture "deep-squat"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :parameter-not-in-source
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 0.0
      :searched :cho-2015
      :note (str "Cho measures standing and five SITTING postures. A deep squat is "
@@ -557,10 +557,10 @@
 
    "laptop-on-lap"
    {:posture "laptop-on-lap"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :parameter-not-in-source
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 0.0
      :searched :cho-2015
      :note (str "a slumped, unsupported sit with a laptop on the thighs. Cho's "
@@ -577,10 +577,10 @@
 
    "laptop-on-desk"
    {:posture "laptop-on-desk"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :parameter-not-in-source
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 0.0
      :searched :cho-2015
      :note (str "a desk chair with the back supported. Cho's `chair with lumbar "
@@ -595,10 +595,10 @@
 
    "external-monitor+keyboard"
    {:posture "external-monitor+keyboard"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :parameter-not-in-source
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 0.0
      :searched :cho-2015
      :note "as `laptop-on-desk`: a backrested desk chair, which Cho does not have."
@@ -607,7 +607,7 @@
 
    "seated-posture"
    {:posture "seated-posture"
-    :pelvic-tilt-deg 0.0
+    :lumbar-lordosis-deg 0.0
     :basis :measured
     :from :stool
     :measured-lordosis-deg 0.6
@@ -616,9 +616,9 @@
                "a measurement. `seated-posture` with nothing passed is an upright, "
                "unsupported, hands-in-lap sit — which is what Cho radiographed on "
                "a stool at 0.6 deg (SD 3.6), straight to well inside its own "
-               "scatter. It is derived as `(pelvic-tilt-for :stool)` rather than "
+               "scatter. It is derived as `(lordosis-for :stool)` rather than "
                "written as 0.0 so that the zero carries its source; a caller who "
-               "passes `:pelvic-tilt-deg` is stating a different posture and this "
+               "passes `:lumbar-lordosis-deg` is stating a different posture and this "
                "entry no longer describes it.")}})
 
 (defn lordosis-provenance-for
@@ -740,9 +740,9 @@
      ;; not say which. So the model holds its neutral and `lordosis-provenance`
      ;; records that this posture's lordosis is `:parameter-not-in-source` with
      ;; the direction of the error, rather than the value arriving here silently
-     ;; through `(or (:pelvic-tilt-deg posture) 0.0)` and reading like one that
+     ;; through `(or (:lumbar-lordosis-deg posture) 0.0)` and reading like one that
      ;; was measured.
-     :pelvic-tilt-deg 0.0}))
+     :lumbar-lordosis-deg 0.0}))
 
 (defn seated-posture
   "A seated posture stated directly, for the cases the workstation model cannot
@@ -760,7 +760,7 @@
   [& {:keys [trunk-flexion-deg head-flexion-deg shoulder-flexion-deg
              elbow-flexion-deg wrist-extension-deg arms-supported
              hip-flexion-deg knee-flexion-deg ankle-dorsiflexion-deg thigh-supported
-             pelvic-tilt-deg]
+             lumbar-lordosis-deg]
       :or {trunk-flexion-deg 0.0 head-flexion-deg 0.0 shoulder-flexion-deg 0.0
            elbow-flexion-deg 0.0 wrist-extension-deg 0.0 arms-supported false
            hip-flexion-deg 90.0 knee-flexion-deg 90.0 ankle-dorsiflexion-deg 0.0
@@ -770,9 +770,9 @@
            ;; written as 0.0 since 2026-09-09: the number is the same to the bit,
            ;; and it now carries its source instead of looking like an unset
            ;; default. `lordosis-provenance` has the entry.
-           pelvic-tilt-deg (pelvic-tilt-for :stool)}}]
+           lumbar-lordosis-deg (lordosis-for :stool)}}]
   {:support :seated
-   :pelvic-tilt-deg pelvic-tilt-deg
+   :lumbar-lordosis-deg lumbar-lordosis-deg
    :trunk-flexion-deg trunk-flexion-deg
    :head-flexion-deg head-flexion-deg
    :shoulder-flexion-deg shoulder-flexion-deg
@@ -832,7 +832,7 @@
   `:measured` so that a reader cannot mistake either for the other."
   {:name "standing-neutral"
    :support :standing
-   :pelvic-tilt-deg 0.0
+   :lumbar-lordosis-deg 0.0
    :head-flexion-deg 0.0 :trunk-flexion-deg 0.0
    :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0 :wrist-extension-deg 0.0
    :hip-flexion-deg 0.0 :knee-flexion-deg 0.0 :ankle-dorsiflexion-deg 0.0
@@ -856,7 +856,7 @@
 
   IT HAS A LORDOSIS SINCE 2026-09-09, AND IT IS MEASURED. Cho et al. 2015
   radiograph standing at 47.1 deg (SD 10.5) against a stool at 0.6, so the tilt
-  from this model's straight-lumbar neutral is 46.5 — `(pelvic-tilt-for
+  from this model's straight-lumbar neutral is 46.5 — `(lordosis-for
   :standing)`, not a literal. Until then this posture carried zero, which is a
   STOOL's lordosis, and it carried it by not mentioning the key.
 
@@ -873,7 +873,7 @@
   {:name "quiet-standing"
    :support :standing
    :head-flexion-deg 5.0 :trunk-flexion-deg 0.0
-   :pelvic-tilt-deg (pelvic-tilt-for :standing)
+   :lumbar-lordosis-deg (lordosis-for :standing)
    :shoulder-flexion-deg 0.0 :elbow-flexion-deg 0.0 :wrist-extension-deg 0.0
    :hip-flexion-deg 0.0 :knee-flexion-deg 5.0 :ankle-dorsiflexion-deg 5.0
    :arms-supported false})
@@ -889,7 +889,7 @@
   and this model cannot hold those and Cho's lordosis at the same time (see
   `quiet-standing`). Separating them says which of the two a given test is about
   instead of quietly weakening one to fit the other."
-  (assoc quiet-standing :name "quiet-standing-lumbar-neutral" :pelvic-tilt-deg 0.0))
+  (assoc quiet-standing :name "quiet-standing-lumbar-neutral" :lumbar-lordosis-deg 0.0))
 
 (def deep-squat
   "A deep squat, held: thighs near horizontal, heels down, trunk leaning forward to
@@ -918,7 +918,7 @@
   not known."
   {:name "deep-squat"
    :support :standing
-   :pelvic-tilt-deg 0.0
+   :lumbar-lordosis-deg 0.0
    :head-flexion-deg 0.0 :trunk-flexion-deg 55.0
    :shoulder-flexion-deg 60.0 :elbow-flexion-deg 20.0 :wrist-extension-deg 0.0
    :hip-flexion-deg 85.0 :knee-flexion-deg 110.0 :ankle-dorsiflexion-deg 25.0
@@ -940,7 +940,7 @@
   ergonomic descriptions they are — a workstation has no lordosis, the sit it
   implies does. `seated-posture` is here as its default, which is the only
   configuration of it this namespace can speak for; a caller who passes
-  `:pelvic-tilt-deg` has stated a posture of their own and owns its provenance."
+  `:lumbar-lordosis-deg` has stated a posture of their own and owns its provenance."
   (into (into {} (for [ws reference-workstations]
                    [(:name ws) (posture-from-workstation ws)]))
         (into {"seated-posture" (seated-posture)

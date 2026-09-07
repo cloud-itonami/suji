@@ -34,7 +34,7 @@
   `there is no curvature: the model's spine is four straight segments and no arc,
   so it has no lordosis and no shear component`, and the two clauses were
   consistent — a spine stacked vertically under a vertical gravity has nothing to
-  shear it. `:pelvic-tilt-deg` tilts the lumbar levels now, so the weight above one
+  shear it. `:lumbar-lordosis-deg` tilts the lumbar levels now, so the weight above one
   of them no longer acts along its axis: `weight-above-n` takes the component that
   does, `w x (axis . up)`, and the transverse component is SHEAR that nothing here
   carries. Measured on Wilke's body at 46.5 deg of lordosis, the weight term at
@@ -613,7 +613,7 @@
               ;; The number is zero and it is a MEASUREMENT, and writing it as a
               ;; literal made it look like the same zero the unset postures were
               ;; carrying.
-              :pelvic-tilt-deg (posture/pelvic-tilt-for :stool)}
+              :lumbar-lordosis-deg (posture/lordosis-for :stool)}
     :posture-basis (str "p.758 `Relaxed sitting on a stool with a normally straight "
                         "back` — a straight back is zero trunk flexion. The paper does "
                         "not state where the arms were; they hang, which is what a "
@@ -626,7 +626,7 @@
     ;; 0.6 deg (SD 3.6) — so the model's own neutral is the posture, and nothing
     ;; here was chosen to make the comparison come out anywhere.
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 0.0
      :measured-lordosis-deg 0.6
      :from :cho-2015-stool
@@ -679,13 +679,13 @@
               ;; day Cho's table is corrected, or a second cohort replaces it,
               ;; this entry follows instead of quietly disagreeing with the table
               ;; it says it came from.
-              :pelvic-tilt-deg (posture/pelvic-tilt-for :standing)}
+              :lumbar-lordosis-deg (posture/lordosis-for :standing)}
     :posture-basis (str "Table 1 p.757 / p.758 `relaxed standing`. The upper body is "
                         "held at exactly the angles the sitting entry holds it at, so "
                         "that the only thing that differs between the two comparisons "
                         "is the lordosis. The lower limb is `posture/quiet-standing`.")
     :parameter-not-in-source
-    {:parameter :pelvic-tilt-deg
+    {:parameter :lumbar-lordosis-deg
      :value 46.5
      :measured-lordosis-deg 47.1
      :from :cho-2015-standing
@@ -814,8 +814,13 @@
   it more` just as confidently had the two measurements been the other way round.
   A mechanism that cannot produce the opposite answer has not predicted this one.
 
-  WHAT IS EVIDENCE IS THE SIZE, and the size is wrong by most of an order of
-  magnitude. See `lordosis-matching-reference-difference-deg`.
+  WHAT IS EVIDENCE IS THE SIZE, and the size is still wrong — in the other
+  direction since 2026-09-11. It was 333.6 N against Wilke's 48, about seven times
+  too much; with the pelvis's share and the segmental shape both taken from a
+  measurement it is 1.57 N, about a thirtieth. The model has not become right
+  about the size; it has crossed. See
+  `lordosis-matching-reference-difference-deg`, which now refuses to answer
+  because no lordosis inside the measured one reaches Wilke's difference.
 
   BOTH SIDES CARRY AN IMPORTED LORDOSIS (`:parameter-not-in-source` on each), so
   `:model-validated?` is false here exactly as it is everywhere else in this
@@ -862,10 +867,19 @@
 
     :lumbosacral-moment-on-the-neutral-geometry
       Tilting the lumbar chord carries everything above L5/S1 anteriorly, so the
-      erector spinae has a flexion moment to hold — 0 N.m sitting, 21.4 N.m
+      erector spinae has a flexion moment to hold — 0 N.m sitting, 0.0496 N.m
       standing. Priced at the NEUTRAL posture's moment arm and the NEUTRAL
       posture's line projection, so this term is the moment alone. It is the
-      dominant one, at 115% of the whole difference.
+      largest single term, at 57% of the whole difference.
+
+      ⚠ IT WAS 21.4 N.m AND 115% UNTIL 2026-09-11, when the chord stopped being
+      derived from an unsourced identity. `pose/lumbar-chord-tilt-deg` put the
+      chord at `trunk + lordosis/2` because the pelvis was assumed to rotate by
+      the whole lordosis; Mills et al. 2026 measure that it rotates by 0.586 of
+      it, and the measured segmental shape puts the chord's own turn fraction at
+      0.5848 rather than 0.5. The two nearly cancel, the chord tilts 0.052 deg
+      instead of 23.25, and this term fell by a factor of 431. The MECHANISM is
+      unchanged — it is still the chord's tilt and still the largest term.
 
       ⚠ THIS ENTRY BLAMED THE ROOT UNTIL 2026-09-10 AND THAT WAS WRONG. It said
       the moment exists `because L5/S1 is the ROOT of this chain and does not
@@ -880,18 +894,29 @@
       so re-rooting is a rigid translation, and a moment is a sum of
       `weight x (x_com - x_joint)` in which both x's move together.
 
-      WHAT IT ACTUALLY IS. `pose/lumbar-chord-tilt-deg` puts the lumbar chord at
+      WHAT IT ACTUALLY IS, AND THE ASSUMPTION UNDER IT WAS TESTED ON 2026-09-11.
+      `pose/lumbar-chord-tilt-deg` used to put the lumbar chord at
       `trunk + lordosis/2` — the mean of its two end tangents, which is where a
-      circular arc's chord lies. At Wilke's standing posture that is 23.25 deg on
-      a vertical thorax, so T12/L1 sits `L_lumbar x sin 23.25 = 6.685 cm` anterior
-      to L5/S1 and the whole 367.9 N above the level rides out there on a 5.818 cm
-      lever. That is a consequence of giving the lumbar spine 46.5 deg of lordosis
-      under a thorax held vertical, and it is what a repair has to argue with: a
-      lordotic lumbar spine really does put its top end anterior to its bottom
-      one. The 46.5 deg itself comes from this model equating lumbar lordosis with
-      a RIGID rotation of the whole pelvis (`pose/lumbar-lordosis-deg`), so Cho's
-      46.5 deg of lordosis change is spent as 46.5 deg of pelvic rotation — which
-      is the assumption to test next, and is not tested here.
+      circular arc's chord lies IF the pelvis turns by the whole lordosis and the
+      thorax holds the other end. At Wilke's standing posture that was 23.25 deg
+      on a vertical thorax, T12/L1 sat 6.685 cm anterior to L5/S1, and 367.9 N
+      rode out there on a 5.818 cm lever.
+
+      Both halves of that were assumptions and both were measured. Mills et al.
+      2026 radiographed 50 asymptomatic adults standing and seated: the sacral
+      slope moves 16.7 deg while the lordosis moves 28.5, so the pelvis supplies
+      0.586 of a lordosis change, and the five lumbar motion segments carry
+      25.7 / 27.3 / 21.5 / 14.8 / 10.7 per cent of the turn from the sacrum up, so
+      the chord's own turn fraction is 0.5848 rather than 0.5. The two nearly
+      cancel: the chord tilts 0.052 deg at Cho's standing lordosis, T12/L1 sits
+      0.0155 cm anterior to L5/S1, and this term is 0.891 N.
+
+      A LORDOTIC LUMBAR SPINE REALLY DOES PUT ITS TOP END ANTERIOR TO ITS BOTTOM
+      ONE — by about 1.5 cm, and it does so in BOTH of Mills' postures, so the
+      travel is nearly the same in each and the DIFFERENCE between two upright
+      postures is not it. This model states lordosis as a change from a straight
+      neutral and can only carry that difference, which is why it now reports a
+      chord that barely tilts rather than one that sits 5 deg anterior in both.
 
     :pelvis-origin-moment-arms
       Then swap the moment arm for the tilted posture's. Eight muscle groups
@@ -1041,11 +1066,20 @@
   standing-minus-sitting difference — a DIAGNOSTIC, and deliberately not a
   constant anything uses.
 
-  Bisected on `:pelvic-tilt-deg` against the standing reference's own posture,
+  Bisected on `:lumbar-lordosis-deg` against the standing reference's own posture,
   everything else held. Put beside the 46.5 deg Cho measured, it says how far off
   this model's sensitivity to lordosis is; that quotient is the finding, and
   installing the answer as the model's lordosis would be the fudge factor this
   repo has refused four times.
+
+  ⚠ IT RETURNS NIL SINCE 2026-09-11, and the nil is the finding now. It answered
+  5.736 deg while the chord was derived from the unsourced identity `lordosis ==
+  a rigid rotation of the whole pelvis` — the model needed an eighth of Cho's
+  lordosis to reproduce Wilke's 48 N. With the measured share and the measured
+  segmental shape the model produces 1.57 N at Cho's own 46.5 deg, so the target
+  is not bracketed anywhere inside the interval searched and this refuses to
+  answer rather than returning the endpoint. The sensitivity did not become
+  right; it crossed.
 
   Returns nil if the difference is not bracketed within the interval searched,
   rather than returning an endpoint — an answer that could not be obtained must
@@ -1056,7 +1090,7 @@
         {:keys [subject]} wilke-1999
         body (segment/build-body (:mass-kg subject) (:stature-m subject))
         at (fn [tilt]
-             (let [pst (assoc (:posture ref) :pelvic-tilt-deg tilt)
+             (let [pst (assoc (:posture ref) :lumbar-lordosis-deg tilt)
                    loads (load/solve-posture-loads body pst)
                    tensions (muscle/solve-muscle-tensions body pst loads)]
                (:force-n (first (filter #(= "L4/L5" (:name %))

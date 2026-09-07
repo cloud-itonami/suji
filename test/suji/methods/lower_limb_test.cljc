@@ -607,26 +607,33 @@
 ;; --- what installing the measured standing lordosis costs the leg -------------
 
 (deftest cho-s-standing-lordosis-and-the-measured-line-of-gravity-cannot-both-hold
-  ;; THE MOST USEFUL RESULT ON THIS BRANCH, and it arrives from a completely
-  ;; independent measurement from the one that produced the sevenfold overshoot at
-  ;; L4/L5.
-  ;;
   ;; A real person standing still has BOTH of these things at once: about 47 deg of
   ;; lumbar lordosis (Cho et al. 2015, 30 volunteers) and a line of gravity 2-6 cm
   ;; anterior to the ankle, which is why the plantarflexors never switch off. This
-  ;; model can produce either one and not the two together, because L5/S1 is the
-  ;; ROOT of its chain: tilting the lumbar spine translates the whole body forward
-  ;; instead of rotating the pelvis under a trunk that stays where it is.
+  ;; model could produce either one and not the two together, and four separately
+  ;; measured quantities left their published ranges when the lordosis went in.
   ;;
-  ;; FOUR SEPARATELY MEASURED QUANTITIES MOVE, all in the same direction, and all
-  ;; out of the range the literature puts them in. They are asserted here rather
-  ;; than accommodated in the four tests that used to hold them, because a range
-  ;; widened to admit 13.97 cm would have deleted the evidence and left a green
-  ;; suite saying the model reproduced quiet standing.
+  ;; ⚠ THREE OF THE FOUR SHRANK AND ONE OF THEM WAS REPAIRED ON 2026-09-11, when
+  ;; the pelvis stopped spending the whole lordosis. This test used to blame the
+  ;; ROOT of the chain, which was disproved on 2026-09-10; the actual cause was the
+  ;; identity `lordosis == a rigid rotation of the whole pelvis`, and Mills et al.
+  ;; 2026 measure that the pelvis supplies 0.586 of a lordosis change.
   ;;
-  ;; IT IS ALSO THE CONTROL ON THE FIX. If somebody removes the lordosis from
-  ;; `quiet-standing` to make the leg tests pass again, this goes red: it asserts
-  ;; that the lordosis IS installed and that it DOES break these four things.
+  ;;   quantity                        before         after        measured
+  ;;   line of gravity ahead of ankle  0.13970 m      0.08199 m    0.02-0.06 m
+  ;;   ankle moment per side           -47.307 N·m    -27.499 N·m  10-20 N·m
+  ;;   knee moment per side            -35.663 N·m    -15.855 N·m  standing is unloaded
+  ;;   soleus vs gastrocnemius         444.3 < 459.7  308.4 > 217.0  soleus carries more
+  ;;
+  ;; THE CONTRADICTION SURVIVES IN THREE OF THEM and this test still says so. It is
+  ;; also still the control on the fix: remove the lordosis from `quiet-standing`
+  ;; to make the leg tests pass again and this goes red, because it asserts that
+  ;; the lordosis IS installed.
+  ;;
+  ;; EVERY QUANTITY IS PINNED ABSOLUTELY IN BOTH CONFIGURATIONS, not as a
+  ;; difference. 2026-09-10 recorded a break here that produced no failure because
+  ;; a constant offset cancels in a difference of two pinned quantities; the same
+  ;; hazard applies to these four, and this is the shape that closes it.
   (let [lord posture/quiet-standing
         flat posture/quiet-standing-lumbar-neutral
         com (fn [p] (- (first (:point (pose/whole-body-com body (pose/solve-pose body p))))
@@ -635,43 +642,75 @@
         knee (fn [p] (:left (:per-side (joint (at p) "knee"))))
         f (fn [p nm] (:force-n ((:by (tensions-at p)) nm)))]
     ;; the lordosis is really there, and it is really Cho's
-    (is (math/nearly= (posture/pelvic-tilt-for :standing)
-                      (:pelvic-tilt-deg lord) 1e-12)
+    (is (math/nearly= (posture/lordosis-for :standing)
+                      (:lumbar-lordosis-deg lord) 1e-12)
         "quiet standing carries the standing lordosis Cho measured")
-    (is (zero? (:pelvic-tilt-deg flat)) "and the control carries none")
-    (is (= (dissoc lord :name :pelvic-tilt-deg) (dissoc flat :name :pelvic-tilt-deg))
+    (is (zero? (:lumbar-lordosis-deg flat)) "and the control carries none")
+    (is (= (dissoc lord :name :lumbar-lordosis-deg) (dissoc flat :name :lumbar-lordosis-deg))
         (str "and the two differ in NOTHING else, so every difference below is "
              "the lordosis and not a second edit"))
+    ;; and the pelvis no longer takes all of it
+    (is (math/nearly= 27.247368421052627
+                      (pose/pelvic-rotation-deg (:lumbar-lordosis-deg lord)) 1e-9)
+        (str "the pelvis turns 27.25 deg for Cho's 46.5 deg of lordosis, not 46.5 "
+             "— Mills' 0.586, which is what shrank the three rows below"))
 
-    ;; 1. the line of gravity leaves the measured band
-    (is (< 0.02 (com flat) 0.06)
-        (str "without the lordosis the model is inside the measured 2-6 cm: "
-             (com flat) " m"))
-    (is (> (com lord) 0.10)
-        (str "with it the whole body has translated forward to " (com lord)
-             " m, which no standing person's does"))
-    (is (> (- (com lord) (com flat)) 0.09)
-        (str "the spurious translation is " (- (com lord) (com flat))
-             " m — the trunk swinging out about a root that should have moved"))
+    ;; 1. the line of gravity is still outside the measured band, by less
+    (is (math/nearly= 0.03703697189273054 (com flat) 1e-12)
+        (str "without the lordosis: " (com flat) " m"))
+    (is (< 0.02 (com flat) 0.06) "which is inside the measured 2-6 cm")
+    (is (math/nearly= 0.08199176312474336 (com lord) 1e-12)
+        (str "with it: " (com lord) " m — pinned absolutely in this posture, "
+             "because a difference cannot see a constant offset"))
+    (is (> (com lord) 0.06)
+        (str "still outside the measured band at " (com lord) " m"))
+    (is (< (com lord) 0.10)
+        "but no longer past 10 cm, which is where it was until 2026-09-11")
 
-    ;; 2. the ankle moment leaves the measured band
-    (is (< 5.0 (math/abs* (ankle flat)) 25.0)
-        (str "without it the ankle carries a plausible " (ankle flat) " N·m"))
-    (is (> (math/abs* (ankle lord)) 40.0)
-        (str "with it the ankle carries " (ankle lord) " N·m, about triple what "
-             "quiet standing is measured to cost"))
+    ;; 2. the ankle moment is still outside the measured band, by less
+    (is (math/nearly= -12.069289480564604 (ankle flat) 1e-9)
+        (str "without it the ankle carries " (ankle flat) " N·m"))
+    (is (< 5.0 (math/abs* (ankle flat)) 25.0) "a plausible quiet-standing load")
+    (is (math/nearly= -27.49924610080425 (ankle lord) 1e-9)
+        (str "with it the ankle carries " (ankle lord) " N·m — pinned absolutely"))
+    (is (> (math/abs* (ankle lord)) 25.0)
+        "still above the 10-20 N·m quiet standing is measured to cost")
+    (is (< (math/abs* (ankle lord)) 40.0)
+        "and no longer about triple it, which is where it was")
 
-    ;; 3. the knee stops being unloaded, which is the thing that separates
-    ;;    standing from a squat
-    (is (< (math/abs* (knee flat)) 5.0)
+    ;; 3. the knee is still loaded where standing is unloaded, by less
+    (is (math/nearly= -0.4255377709625161 (knee flat) 1e-9)
         (str "without it standing barely loads the knee: " (knee flat) " N·m"))
-    (is (> (math/abs* (knee lord)) 30.0)
-        (str "with it the standing knee carries " (knee lord) " N·m, which is a "
-             "squat's load at a squat's sign"))
+    (is (math/nearly= -15.855494391202164 (knee lord) 1e-9)
+        (str "with it the standing knee carries " (knee lord) " N·m — pinned "
+             "absolutely"))
+    (is (> (math/abs* (knee lord)) 5.0) "which is still not an unloaded knee")
+    (is (< (math/abs* (knee lord)) 30.0)
+        "and is no longer a squat's load, which is what it was")
 
-    ;; 4. the calf pair reverses order
+    ;; 4. THE CALF PAIR NO LONGER REVERSES, and this row is a repair rather than a
+    ;;    smaller disagreement. Soleus is the one-joint plantarflexor and carries
+    ;;    more of quiet standing than the two-joint gastrocnemius; under the old
+    ;;    pelvic rotation the knee flexion moment the translation created recruited
+    ;;    gastrocnemius past it.
+    (is (math/nearly= 159.32039873948565 (f flat "soleus/left") 1e-9))
+    (is (math/nearly= 71.24916196814036 (f flat "gastrocnemius/left") 1e-9))
     (is (> (f flat "soleus/left") (f flat "gastrocnemius/left"))
-        "without it soleus carries more of quiet standing than gastrocnemius")
-    (is (< (f lord "soleus/left") (f lord "gastrocnemius/left"))
-        (str "with it the order reverses — soleus " (f lord "soleus/left")
-             " N against gastrocnemius " (f lord "gastrocnemius/left") " N"))))
+        "without the lordosis soleus carries more, as it is measured to")
+    (is (math/nearly= 308.4497532423175 (f lord "soleus/left") 1e-9)
+        (str "with it, soleus " (f lord "soleus/left") " N — pinned absolutely"))
+    (is (math/nearly= 216.96402623756813 (f lord "gastrocnemius/left") 1e-9)
+        (str "and gastrocnemius " (f lord "gastrocnemius/left") " N"))
+    (is (> (f lord "soleus/left") (f lord "gastrocnemius/left"))
+        (str "AND THE ORDER NOW HOLDS WITH THE LORDOSIS TOO — soleus "
+             (f lord "soleus/left") " N against gastrocnemius "
+             (f lord "gastrocnemius/left") " N. It was 444.3 against 459.7, "
+             "reversed, until the pelvis stopped taking the whole lordosis. This "
+             "is the one of the four that a sourced partition repaired rather "
+             "than shrank."))
+    ;; both are still driven far harder than the neutral posture drives them,
+    ;; which is the part the repair did not reach
+    (is (> (f lord "soleus/left") (* 1.5 (f flat "soleus/left")))
+        (str "the translation is smaller and it has not gone: soleus is still "
+             (/ (f lord "soleus/left") (f flat "soleus/left")) " times its "
+             "lumbar-neutral value"))))
