@@ -16,7 +16,7 @@
 
   House style: a Segment / BodyModel is a kebab-keyword map; pure fns. The :weight-n and
   :com-m are derived on demand by `weight-n` / `com-m` (mirroring the Python @property)."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def gravity 9.80665)                       ;; m/s^2
 

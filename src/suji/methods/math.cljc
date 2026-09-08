@@ -26,7 +26,7 @@
   reachable when the double is exactly k.5×10⁻ⁿ; none of this repo's quantities are.
   `math-test` pins the disagreement set to empty over a representative vector."
   (:refer-clojure :exclude [infinite?])
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def pi #?(:clj Math/PI :cljs js/Math.PI))
 

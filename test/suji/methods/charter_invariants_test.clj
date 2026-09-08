@@ -11,7 +11,7 @@
   (:require [clojure.test :refer [deftest is]]
             [clojure.edn :as edn]
             [clojure.set]
-            [clojure.string :as str]))
+            [kotoba.lang.text :as str]))
 
 (def ^:private here (clojure.java.io/file "."))
 (def ^:private lex-dir (clojure.java.io/file here "data" "lex"))
@@ -39,7 +39,7 @@
     "hadou" "波動" "vibration" "vibrational" "biofield" "life-force"})
 
 (defn- tokens [s]
-  (set (str/split (str/lower-case (str/replace (str s) #"^:+" "")) #"[-_/]")))
+  (set (str/split (str/lower (str/replace (str s) #"^:+" "")) #"[-_/]")))
 
 (defn- walk* [node]
   (cond
@@ -81,11 +81,11 @@
       (doseq [[_ val] (walk* doc)]
         (cond
           (string? val)
-          (let [nm (str/lower-case (str/replace val #"^:+" ""))]
+          (let [nm (str/lower (str/replace val #"^:+" ""))]
             (is (not (contains? forbidden nm))
                 (str "G1 violation: clinical key '" val "' in " (.getName f))))
           (keyword? val)
-          (let [nm (str/lower-case (name val))]
+          (let [nm (str/lower (name val))]
             (is (not (contains? forbidden nm))
                 (str "G1 violation: clinical key '" val "' in " (.getName f)))))))))
 
@@ -99,7 +99,7 @@
   (let [schema (edn/read-string (slurp schema-path))]
     (doseq [entry (filter map? schema)]
       (let [ident (get entry :db/ident "")
-            leaf (str/lower-case (last (str/split (str ident) #"/")))]
+            leaf (str/lower (last (str/split (str ident) #"/")))]
         (is (not (contains? forbidden leaf)) (str "G1 violation: schema ident " ident))))))
 
 (deftest test-muscle-groups-are-mechanical-only

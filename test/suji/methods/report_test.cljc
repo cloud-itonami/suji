@@ -13,7 +13,7 @@
   These tests exist so that the report has to render."
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [suji.methods.analyze :as analyze]
             [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]

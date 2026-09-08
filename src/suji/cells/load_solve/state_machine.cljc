@@ -15,7 +15,7 @@
   Python `__dict__` carries (`:loads` mirrors the `_loads` attr). Phase enum values stay
   strings; record/Datom payload keys keep the Python string keys; ValueError → ex-info.
   Numerics: Python round(v, n) is round-half-EVEN → `py-round`."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [suji.methods.load :as load]
             [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]
@@ -125,7 +125,7 @@
     (throw (ex-info (str "assert_nondiagnostic requires DISTRIBUTED, got " (get s "phase"))
                     {:type :value-error})))
   (doseq [rec (concat (get s "joint_loads") (get s "muscle_tensions"))]
-    (let [bad (filter #(contains? forbidden-clinical-keys (str/lower-case %)) (keys rec))]
+    (let [bad (filter #(contains? forbidden-clinical-keys (str/lower %)) (keys rec))]
       (when (seq bad)
         (throw (ex-info (str "G1 non-diagnostic violation: clinical key(s) " (vec bad) " present")
                         {:type :value-error})))))

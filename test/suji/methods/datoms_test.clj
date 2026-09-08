@@ -7,7 +7,7 @@
   :db/ident is stringified back to its \":ns/name\" form to compare against the datom keys."
   (:require [clojure.test :refer [deftest is]]
             [clojure.edn :as edn]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [suji.methods.analyze :as analyze]
             [suji.methods.datoms :as datoms]
             [suji.methods.load :as load]
@@ -39,7 +39,7 @@
 
 (deftest test-no-clinical-attribute-can-be-emitted
   (doseq [d (the-datoms), attr (keys d)]
-    (let [leaf (str/lower-case (last (str/split attr #"/")))]
+    (let [leaf (str/lower (last (str/split attr #"/")))]
       (is (not (contains? forbidden leaf)) (str "G1 violation: " attr)))))
 
 (deftest test-refs-resolve

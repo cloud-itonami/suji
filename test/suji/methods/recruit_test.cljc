@@ -4,7 +4,7 @@
   than dividing by a coefficient near zero."
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [suji.methods.math :as math]
             [suji.methods.recruit :as recruit]))
 

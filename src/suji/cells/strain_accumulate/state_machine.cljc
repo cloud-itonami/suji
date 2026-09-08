@@ -14,7 +14,7 @@
 
   Conventions mirror load_solve: dataclass StrainState → a plain map with string field
   keys; phase enum values stay strings; ValueError → ex-info; round-half-EVEN via py-round."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [suji.cells.load-solve.state-machine :as load-sm]
             [suji.methods.math :as math]
             [suji.methods.strain :as strain]))
@@ -96,7 +96,7 @@
                     {:type :value-error})))
   (doseq [rec (get s "strains")]
     (doseq [k (keys rec)]
-      (let [kl (str/lower-case k)]
+      (let [kl (str/lower k)]
         (when (contains? forbidden-clinical-keys kl)
           (throw (ex-info (str "G1 non-diagnostic violation: clinical key '" k "'")
                           {:type :value-error})))

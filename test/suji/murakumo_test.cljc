@@ -4,7 +4,7 @@
   records-for / cell-plan / all-cell-plans. Introspects `cell-specs` rather
   than hardcoding cell names, so it holds regardless of which cells this
   actor's manifest declares."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             #?(:clj  [clojure.test :refer [deftest is testing]]
                :cljs [cljs.test :refer [deftest is testing]])
             [suji.murakumo :as m]))

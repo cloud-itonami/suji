@@ -24,7 +24,7 @@
   scripts/nbb_test.cljs."
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.edn :as edn]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [clojure.java.io :as io]
             [suji.methods.analyze :as analyze]
             [suji.methods.datoms :as datoms]

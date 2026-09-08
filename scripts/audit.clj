@@ -1,4 +1,4 @@
-(require '[clojure.edn :as edn] '[clojure.java.io :as io] '[clojure.string :as str])
+(require '[clojure.edn :as edn] '[clojure.java.io :as io] '[kotoba.lang.text :as str])
 (def files (->> (file-seq (io/file ".")) (filter #(.isFile %)) (map #(.getPath %))
                 (remove #(str/starts-with? % "./.git/"))))
 (doseq [path (filter #(str/ends-with? % ".edn") files)] (edn/read-string (slurp path)))
