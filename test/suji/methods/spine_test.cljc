@@ -4,7 +4,7 @@
   where it disagrees with the leg this actor actually validated."
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [suji.methods.attachment :as attachment]
             [suji.methods.load :as load]
             [suji.methods.math :as math]

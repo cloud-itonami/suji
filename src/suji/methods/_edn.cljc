@@ -9,7 +9,7 @@
   shape the Python `load_edn` does.
 
   Stdlib only (regex tokenizer); file I/O at the #?(:clj) edge."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 ;; ── tokenizer (mirror of the Python _TOK regex) ───────────────────────────
 ;; Matches: whitespace/commas | ; comment | one of [ ] { } | "string" | bare atom.

@@ -14,7 +14,7 @@
   ↔ disk, manifest lexicons ↔ disk, and seed reference resolution. Read with clojure.edn."
   (:require [clojure.test :refer [deftest is]]
             [clojure.edn :as edn]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [suji.methods.kami-biomech-bridge]
             [suji.methods.math]
             [suji.methods.pose]

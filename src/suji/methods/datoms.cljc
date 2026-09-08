@@ -16,7 +16,7 @@
   KEY ORDER: each datom is an ordered (array-map) map so the rendered `k v` pairs come out
   in the exact Python dict-literal order. as-of / session-minutes carry their original
   numeric type (idx is a Long, session-minutes stays the float passed in)."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [suji.methods.analyze :as analyze]
             [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]

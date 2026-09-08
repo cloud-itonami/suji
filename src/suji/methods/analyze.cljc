@@ -16,7 +16,7 @@
 
   House style: pure fns; file I/O only at the #?(:clj) -main edge. A ScenarioResult is a
   kebab-keyword map. Strain sort is STABLE (ties keep Python list order)."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [suji.methods.load :as load]
             [suji.methods.math :as math]
             [suji.methods.muscle :as muscle]
