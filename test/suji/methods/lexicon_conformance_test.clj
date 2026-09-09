@@ -26,6 +26,7 @@
             [clojure.edn :as edn]
             [kotoba.lang.text :as str]
             [clojure.java.io :as io]
+            [suji.cells.strain-accumulate.state-machine :as strain-sm]
             [suji.methods.analyze :as analyze]
             [suji.methods.datoms :as datoms]
             [suji.methods.strain :as strain]))
@@ -164,3 +165,69 @@
         (is (contains? (kinds (assoc st ":strain/stiffness" 1.5)) :above-maximum))))
     (testing "a datom with no identity attribute is reported, not skipped"
       (is (contains? (kinds {":muscle/group" ":vasti"}) :no-identity-attribute)))))
+
+;; --- the second strainReport producer -----------------------------------------
+;;
+;; `suji.cells.strain-accumulate.state-machine` builds the same published
+;; `strainReport` record as `datoms.scenario-datoms`, with bare keys
+;; ("strain/id"), no `:side`, no `:enduranceLimit`, and a bare-string
+;; `:group`/`:band` where the lexicon enums are keyword literals. Its `solve`
+;; throws today (R0 scaffold), so it is not a live producer — but the README's
+;; "Still open" section says `validate-datoms` rejects it, and it does, with
+;; EXACTLY ONE violation per row: `:no-identity-attribute`.
+;;
+;; Measured 2026-09-09, that is not "rejects all of it". The no-identity branch
+;; is the FIRST arm of `validate-datoms`'s cond and terminal: a row with bare keys
+;; reports one violation and stops. Prefix the leading colon onto every key — the
+;; identity is restored and the same row goes on to report FOUR more violations
+;; (group and band values outside the keyword-literal enums, and the two missing
+;; required properties). A test that only asserts the one no-identity violation
+;; cannot tell a well-shaped record apart from this one: both land on the same
+;; single rejection. The assertions below pin both halves, the way the
+;; discrimination section above pins the first one.
+
+(def ^:private second-producer-tensions
+  [{"group" "cervical-extensors" "mvcPct" 27.0}
+   {"group" "upper-trapezius" "mvcPct" 5.0}])
+
+(defn- second-producer-rows
+  "Run the cell through to its emit and return the emitted datoms."
+  []
+  (let [s (-> (strain-sm/strain-state {"posture_id" "p-lap" "session_minutes" 120.0
+                                       "tensions" second-producer-tensions})
+              strain-sm/transition-rohmert-dose
+              strain-sm/transition-band
+              strain-sm/transition-assert-self-referenced
+              strain-sm/transition-emit)]
+    (get s "emitted")))
+
+(defn- colon-prefix [d]
+  "Restore the identity the cell's emit drops: a leading colon on every key."
+  (into {} (map (fn [[k v]] [(str ":" k) v]) (seq d))))
+
+(deftest test-the-second-strain-report-producer-is-rejected-and-why
+  (let [recs (records)
+        rows (second-producer-rows)
+        kinds (fn [d] (set (map :violation (datoms/validate-datoms [d] recs))))]
+    (is (seq rows) "the cell must emit something for this to discriminate")
+    (testing "as the cell emits it — bare keys — every row is rejected"
+      (doseq [d rows]
+        (is (= #{:no-identity-attribute} (kinds d))
+            (str "the cell's row reports more than the identity refusal: " (pr-str (kinds d))))))
+    (testing "with the identity restored the refusal is not the whole story"
+      (let [k (first (map (fn [vs] (set (map :violation vs)))
+                          (map (fn [d] (datoms/validate-datoms [d] recs))
+                               (map colon-prefix rows))))]
+        (is (= #{:value-not-in-enum :missing-required} k)
+            (str "restoring the identity exposes a different violation set: " (pr-str k))))
+      (testing "and the two exposed kinds are the two the README names"
+        (let [first-row (first (map (fn [d] (datoms/validate-datoms [d] recs))
+                                    (map colon-prefix rows)))]
+          (is (= 2 (count (filter #(= (:violation %) :missing-required) first-row)))
+              "missing-required must be exactly the two required properties the cell never writes")
+          (is (= #{:side :enduranceLimit}
+                 (set (map :property (filter #(= (:violation %) :missing-required) first-row))))
+              "the two missing properties are side and enduranceLimit, not others")
+          (is (= #{:group :band}
+                 (set (map :property (filter #(= (:violation %) :value-not-in-enum) first-row))))
+              "the two enum violations are group and band, the two controlled vocabularies"))))))
