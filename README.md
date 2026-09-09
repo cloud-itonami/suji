@@ -2985,9 +2985,12 @@ pinned absolutely now, and the same break then fails four assertions naming the 
   pelvis` (`pose/lumbar-lordosis-deg`), which is what spends 46.5° of Cho's lordosis change as
   46.5° of pelvic rotation and produces both travels above. Nothing here measures whether a real
   stool-to-standing pelvis rotates that far.
-- **Say whether 21.407 N·m is the right standing lumbosacral moment.** Nothing in this repo
-  answers it. What is now established is only that it is a consequence of the chord's tilt and not
-  of the chain's rooting.
+- ~~**Say whether 21.407 N·m is the right standing lumbosacral moment.**~~ **Superseded by the
+  2026-09-11 wave below: the chord stopped being derived from the rigid-pelvis identity, so the
+  standing lumbosacral moment is now a number the model computes (0.0496 N·m at Cho's 46.5°) rather
+  than an unexplainable 21.407. That moment contributes 0.891 N to the standing–sitting force
+  difference, and whether the 0.0496 N·m is *right* is a different, still-open question
+  — see *The segmental lordosis crossed the standing–sitting difference* below.**
 - **Give the seated chain a real ischial tuberosity.** The model has no ischium. The hip axis
   stands in for it, and because the offset is rigid this costs nothing measurable *today* — it
   will stop being free the moment a seat reaction is applied at a point rather than assumed to
@@ -3019,8 +3022,81 @@ brackets the measurement rather than matching either end, and separates the two 
 **seven times** too much. See "The pelvis had no rotation" above. **On 2026-09-09 that sevenfold
 gap was decomposed into five terms that sum to it, and one of them is larger than the whole
 difference: a lumbosacral moment that exists only because L5/S1 is the root of the chain and does
-not move. Remove that artefact and the model contradicts Wilke's direction.** Every posture now
+not move — **that description is the pre-2026-09-11 state and is superseded: the segmental-lordosis
+wave below re-derived the chord from a measured shape, the lumbosacral moment fell from 21.407 to
+0.0496 N·m (a 0.891 N contribution), and the standing–sitting difference crossed from a sevenfold overshoot to a thirtieth
+undershoot with the sign flipped — see *The segmental lordosis crossed the standing–sitting
+difference* below.** Every posture now
 declares where its lordosis came from, and installing the standing one Cho measured breaks four
 separately measured facts about quiet standing — see "Every posture's lordosis came from
 somewhere" above. No hardware, no live member scan, no live kami-genesis backend. Cells `.solve()` raise
 at R0; `load_solve` transitions are unit-tested.
+
+## The segmental lordosis crossed the standing–sitting difference (2026-09-11)
+
+The five lumbar levels stopped sharing one orientation, and the pelvis stopped spending the whole
+lordosis. Both were measured rather than assumed, and the answer was that **this model crossed from
+overshooting Wilke to undershooting him, and the direction of the disagreement flipped** — the model
+now says standing loads L4/L5 *less* than sitting, which is the opposite of the measurement. This is a
+movement, not a validation, and the numbers below are the measurement.
+
+### What was measured, and where
+
+Two numbers that were previously **assumptions** of `pose/lumbar-chord-tilt-deg` were replaced by
+measurements of the *same* posture change, so neither imports a second population. Both are from
+Mills ES, Richardson MK, Wang JC, Chung BC, Romoff M, Heckmann ND, *Defining the relationship between
+the hip, pelvis, and lumbar spine*, **N Am Spine Soc J 2026;26:100883** (DOI `10.1016/j.xnsj.2026.100883`,
+PMID `42212188`, PMC `PMC13213316`; full text read 2026-09-11 through the Europe PMC REST API, because
+PubMed's HTML serves a cookie page and Europe PMC's article pages are JS-rendered — the REST endpoint is
+the one that answers). 50 asymptomatic volunteers aged 18–35, three lateral radiographs each. Transcribed
+into `posture/lumbar-segmental-shares` and `posture/sacral-slope-share-of-lordosis`, not rounded:
+
+| number | value | what it replaces |
+|---|---|---|
+| sacral-slope share of a lordosis change | **0.586** (ΔSS 16.7 / ΔLL 28.5) | the identity *lumbar lordosis == a rigid rotation of the whole pelvis* — the pelvis spends **0.586** of the change, not all of it |
+| chord's turn fraction | **0.5848** (segmental 25.7 / 27.3 / 21.5 / 14.8 / 10.7%) | the circular-arc assumption that puts the chord at exactly 0.5 |
+
+The two nearly cancel: the chord tilts **(0.586 − 0.5848) × 46.5° = 0.052°** at Cho's standing lordosis,
+against the **23.25°** it returned until 2026-09-11. `pose/lumbar-chord-tilt-deg` computes it; the chord
+no longer sits 6.685 cm anterior to L5/S1, it sits 0.0155 cm anterior.
+
+### What crossed — measured on origin/main (`d29095b`), 70 kg / 1.68 m
+
+Run against `origin/main` itself, not a branch:
+
+| quantity | before (rigid pelvis + circular arc) | after (measured shape) | direction |
+|---|---|---|---|
+| standing − sitting, L4/L5 | +333.560 N (ratio 6.95) | **−10.859 N (ratio −0.226)** | the model **crossed**: it now undershoots by about a thirtieth of Wilke's 48 N |
+| `:same-direction?` | **true** | **false** | the model now says standing loads L4/L5 **less** than sitting — the opposite of Wilke's 0.50 : 0.46 |
+| lumbosacral-moment term | +21.407 N·m | **0.0496 N·m** (→ +0.891 N on the difference) | fell by a factor of about 431 (21.407 / 0.0496); the mechanism is unchanged, the size is — and it is no longer 115% of the difference |
+| Wilke `relaxed standing` | 682.422 N, ratio 1.137 | **338.002 N, ratio 0.563** | no longer "overshoots" — it sits below the spread, as the sitting entry does |
+| Wilke `sitting relaxed` | 348.86176709999995 N | **byte-identical** | the sitting posture's lordosis is Cho's stool minus itself (0.0), so the wave cannot reach it |
+| `lordosis-matching-reference-difference-deg` | 5.736° | **nil** | no lordosis inside Cho's measured 46.5° reproduces Wilke's 48 N, so it refuses rather than returning an endpoint |
+
+The five lumbar levels also took their own orientations from the measured shape; at 46.5° they stand
+**27.19 / 15.24 / 2.56 / −7.43 / −14.31°** from the chord (L5/S1 → L1/L2), so the sacral end leans
+anteriorly and the top of the lumbar spine leans back. That is what a lordosis is, and it is why the
+`:lumbar-chord-cosine` term is now −12.34 N (the level's own axis is 15.24° from vertical) rather than the
+≈0 it was when all five shared the chord's frame. The 91.98 N of shear the same tilt creates is still
+carried by nothing — the wave did not add facets or anulus.
+
+### The caveat the numbers carry
+
+The ratio is measured over a **28.5°** lordosis change (Mills standing → relaxed-seated at 90° hips) and
+applied to this model's **46.5°** one. It is a ratio, stable to about 7% of itself in the source
+(flexed-forward gives 0.63, R = 0.85), but it is **not Wilke's subject and not Cho's cohort** — Wilke's
+man was 45 and 70 kg, Cho's 30 volunteers were 31 y and 73.6 kg, and Mills' 50 are 25.7 y with only their
+BMI stated. The model *crossed*; it did not become *right* about the size. Nothing here says the sign
+flipped because the model is now correct — the chord's turn fraction and the pelvis's share are both
+sourced ratios, and the direction of the error is stated, not removed.
+
+### What this means for the sections above
+
+Every *"current"* claim in *The pelvis had no rotation*, *Every posture's lordosis came from somewhere*
+and *The root was not the defect* about the standing entry, the lumbosacral moment and the standing–
+sitting difference is the **pre-2026-09-11** state. The two that read as conclusions now point at this
+section: *"say whether 21.407 N·m is right"* (now a computed 0.891) and the Honest-R0 *"contradicts
+Wilke's direction … seven times too much"* (now *the opposite direction, a thirtieth too little*). The
+Hansraj cervical anchor and the Wilke **sitting** pin are byte-identical, because neither is on the
+lordosis/chord path — `load/cervical-load` is a function of head tilt and the mass above C7, and the
+sitting posture's lordosis is the one zero that is a measurement.
