@@ -390,7 +390,7 @@
     :origin {:segment "upper_cervical" :along 0.72 :ant -0.0129 :lat 0.0}
     :insertion {:segment "head" :along 0.070 :ant -0.0141 :lat 0.0}
     :wrap {:radius-m 0.012 :sign 1.0}
-    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 0.50 cm2 per side x 2 = 1.00 cm2 bilateral (measured; N=9, range 0.48-0.83). Offsets representative (C1 posterior tubercle 22 mm posterior; occipital insertion 24 mm posterior, 13 mm above the condyles). Its modelled length falls SHORT of the 2.6-3.1 cm the same table measures, for the reason stated above the block: this model's upper cervical segment is 37 mm where an atlas plus axis is nearer 50."}
+    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 0.50 cm2 per side x 2 = 1.00 cm2 bilateral (measured; N=9, range 0.48-0.83). Offsets representative (C1 posterior tubercle 22 mm posterior; occipital insertion 24 mm posterior, 13 mm above the condyles). Its modelled length falls SHORT of the 2.6-3.1 cm the same table measures, for the reason stated above the block: this model's upper cervical segment is 37 mm where an atlas plus axis is nearer 50 mm. That ~50 mm anchor is :representative (C2 with its dens is taller than a typical vertebra) and is NOT in Table 3-3; it is used only to state the DIRECTION of the shortfall (modelled short), never as a correction."}
 
    "obliquus_capitis_superior"
    {:name "obliquus_capitis_superior" :pcsa-cm2 2.06
