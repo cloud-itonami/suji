@@ -302,12 +302,25 @@ the pages read here do not use those words for them, so this repo does not eithe
 ### What could not be obtained
 
 **Schultz, Andersson, Örtengren, Haderspeck & Nachemson (1982), "Loads on the
-lumbar spine", *J Bone Joint Surg Am* 64(5):713–720** — the EMG-and-model lumbar
-compression estimates. PubMed, Europe PMC, Semantic Scholar and the publisher all
-returned a consent page, a navigation shell or a paywall rather than the abstract.
-A search engine returned a *paraphrase* of the abstract; **that is not a source
-that was read, so none of its numbers appear anywhere in this repo.** The entry is
-missing, not filled in.
+lumbar spine. Validation of a biomechanical analysis by measurements of
+intradiscal pressures and myoelectric signals", *J Bone Joint Surg Am*
+64(5):713–720, DOI `10.2106/00004623-198264050-00008` (PMID 7085696)** —
+the EMG-and-model lumbar compression estimates. The first attempt (2026-09-07)
+returned a consent page, a navigation shell or a paywall from PubMed, Europe PMC
+(the **HTML article page**), Semantic Scholar and the publisher; a search engine
+returned a *paraphrase* of the abstract, which is not a source that was read, so
+at that point none of its numbers appeared anywhere in this repo.
+
+**Updated 2026-09-09: the abstract was obtained** from the Europe PMC **REST API**,
+resolved through Crossref to the DOI and PMID above. It states, of a model validated
+against its own measurements: mean compressive loads on the spine of as much as
+**2400 N**, posterior back-muscle contraction forces of as much as **1800 N**, and
+intradiscal pressures of as much as **1600 kPa**, from 25 isometric tasks performed
+by 4 healthy volunteers with myoelectric activity measured at 12 trunk sites and disc
+pressure in the third lumbar disc. **The full text is still `:could-not-obtain`**
+(no PMC record, JBJS paywalled, no PDF), so no full-text table has been read and no
+per-task value is used here — only the abstract’s own maxima, which is the level
+this entry is allowed to claim.
 
 ## The dose layer against the endurance literature — and it disagrees
 
