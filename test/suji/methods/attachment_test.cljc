@@ -1034,6 +1034,46 @@
           (str m " is short of its measured range, and the model says why: "
                (len m) " mm against " lo " mm")))))
 
+(deftest the-upper-cervical-span-is-derived-from-the-cut-points-not-invented
+  ;; The length check above reports `upper_cervical` as "37 mm where an atlas plus
+  ;; axis is nearer 50", and the whole length-bound (the 4 mm it allows) rests on
+  ;; that 37. This pins the 37 the way the file pins its other numbers - by
+  ;; DERIVING it from the two cut points `segment` actually uses, rather than
+  ;; trusting a number pasted into prose. A re-cut that moved `upper-cervical-span`
+  ;; or the head-neck length would move `build-body`'s length and the derivation
+  ;; together; a prose "37" that had quietly drifted from the model would fail the
+  ;; first assertion instead of riding along.
+  ;;
+  ;; The 50 half of the comparison is the other way round: it is not in the model
+  ;; and not in K&R Table 3-3. A constant that cannot be derived is an invented
+  ;; one, and this repo's rule is that every such number carries its tag and the
+  ;; direction of the error it implies. So the second half pins that the ~50 mm
+  ;; anchor still states its use - the DIRECTION of the shortfall, modelled short -
+  ;; and still carries its `:representative` tag, rather than reading as a
+  ;; measurement that the 37 has been "corrected" toward.
+  (let [H           1.70
+        body        (segment/build-body 70.0 H)
+        modelled-mm (* 1000.0 (:length-m (segment/seg body "upper_cervical")))
+        derived-mm  (* 1000.0 H segment/head-neck-len-frac segment/upper-cervical-span)]
+    ;; the "37" is the model's own computation, to the bit
+    (is (math/nearly= modelled-mm derived-mm 1e-9)
+        (str "upper_cervical is " modelled-mm " mm, derived " derived-mm
+             " mm from head-neck-len-frac x upper-cervical-span x stature"))
+    ;; ...and it is the SAME 37 the prose and the length-bound state
+    (is (< 36.0 modelled-mm 38.0)
+        (str "the prose and the length-bound say 37 mm; the model says "
+             modelled-mm " mm"))
+    ;; the comparison half: a :representative anchor used for the DIRECTION only
+    (let [src (:source (att/instance "rectus_capitis_posterior_minor"))]
+      (is (re-find #":representative" src)
+          "the ~50 mm atlas-plus-axis anchor is tagged representative, not presented as a measurement")
+      (is (re-find #"(?i)direction of the shortfall" src)
+          "its use is stated as the direction of the shortfall")
+      (is (re-find #"(?i)never as a correction" src)
+          "and it is stated to be never used as a correction")
+      (is (re-find #"(?i)modelled short" src)
+          "the direction is stated (modelled short), not just its size"))))
+
 (deftest the-suboccipital-wrap-floor-never-binds
   ;; Each of these declares the same 0.012 m column wrap the other posterior
   ;; cervical muscles do — one bone, one radius. A wrapping surface whose radius was
