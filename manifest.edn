@@ -58,13 +58,13 @@
   "com.etzhayyim.suji.ergonomicComparison"]
 
  :actor/methods
- {:segment   "src/suji/methods/segment.cljc  — anthropometric sagittal segment chain (de Leva/Winter)"
-  :posture   "src/suji/methods/posture.cljc  — laptop workstation → sagittal joint angles"
-  :load      "src/suji/methods/load.cljc     — static inverse dynamics; cervical load validated vs Hansraj 2014"
-  :muscle    "src/suji/methods/muscle.cljc   — Hill-type moment-arm muscle %MVC (緊張)"
-  :strain    "src/suji/methods/strain.cljc   — Rohmert sustained-isometric dose → stiffness index (強張り)"
-  :analyze   "src/suji/methods/analyze.cljc  — end-to-end laptop posture comparison report"
-  :bridge    "src/suji/methods/kami_biomech_bridge.cljc — kami-genesis/Isaac articulation contract (wire/wit/kami-biomech.wit)"}
+ {:segment   "src/suji/methods/segment.kotoba  — anthropometric sagittal segment chain (de Leva/Winter)"
+  :posture   "src/suji/methods/posture.kotoba  — laptop workstation → sagittal joint angles"
+  :load      "src/suji/methods/load.kotoba     — static inverse dynamics; cervical load validated vs Hansraj 2014"
+  :muscle    "src/suji/methods/muscle.kotoba   — Hill-type moment-arm muscle %MVC (緊張)"
+  :strain    "src/suji/methods/strain.kotoba   — Rohmert sustained-isometric dose → stiffness index (強張り)"
+  :analyze   "src/suji/methods/analyze.kotoba  — end-to-end laptop posture comparison report"
+  :bridge    "src/suji/methods/kami_biomech_bridge.kotoba — kami-genesis/Isaac articulation contract (wire/wit/kami-biomech.wit)"}
 
  :actor/honest-r0
  "Design + runnable physics + validated cervical model only. Anthropometry/muscle/endurance parameters are :representative population values (G7); the cervical leg reproduces Hansraj 2014 within ~10%, the muscle %MVC and Rohmert strain legs are mechanistically grounded but illustrative. No hardware, no live member scan, no live kami-genesis backend (the 40-engine/kami-engine submodule is unpopulated → the Isaac/kami wiring is a WIT contract + Python reference, the noroshi pattern). Cells .solve() raise at R0; the load_solve transitions are unit-tested. Live kizashi feed / clinical handoff Council Lv6+ + operator gated."}

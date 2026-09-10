@@ -1,6 +1,6 @@
 ;; suji (筋) :representative seed (G7) — R0, no member scan, no live kizashi feed (G8).
 ;; A 50th-percentile adult across the three reference laptop workstations, mirroring the
-;; src/suji/methods/analyze.cljc output. NON-DIAGNOSTIC (G1): mechanical loads only. SELF-REFERENCED
+;; src/suji/methods/analyze.kotoba output. NON-DIAGNOSTIC (G1): mechanical loads only. SELF-REFERENCED
 ;; (G3): one body across postures — a Wellbecoming choice, never a ranking of people.
 [;; ── body model (population avg; NOT a member, so no encrypted-cid; representative true) ──
  {:body/id "ref-adult-70-170" :body/total-mass-kg 70.0 :body/stature-m 1.70 :body/representative true}

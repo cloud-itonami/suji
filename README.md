@@ -156,7 +156,7 @@ the trunk was never as cheap as this table said.
 
 The cervical leg reproduces the published forward-head-posture loads of Hansraj, *Surgical
 Technology International* 25 (the "60-lb tech-neck" study): neutral ≈ head weight, rising to ~5× at
-60° flexion. `test/suji/methods/load_test.cljc`'s `test-reproduces-hansraj-table` asserts the
+60° flexion. `test/suji/methods/load_test.kotoba`'s `test-reproduces-hansraj-table` asserts the
 multipliers track the published table (0°→1× … 60°→5×) within 10%, and
 `test-the-hansraj-multipliers-are-unchanged-to-the-bit` pins them at full precision, because a
 10% band would not notice the anchor moving.
@@ -601,7 +601,7 @@ one bucket this actor's headline muscles have always been in.
 ## Isaac Sim / kami-genesis
 
 `wire/wit/kami-biomech.wit` is the articulation contract a kami-genesis `PlanarChain` / nv-compat
-`isaacsim.core.api` `Articulation` would implement; `src/suji/methods/kami_biomech_bridge.cljc` builds the
+`isaacsim.core.api` `Articulation` would implement; `src/suji/methods/kami_biomech_bridge.kotoba` builds the
 link/joint/gravity spec and returns the same static joint moments the full RNEA backend would.
 **Honest R0**: the `40-engine/kami-engine` submodule is unpopulated here, so this is the WIT
 contract + Python reference, not a compiled backend (the `noroshi` pattern). No live actuation — the
@@ -638,7 +638,7 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 
 ```bash
 clojure -M:test                                   # JVM   — 242 tests / 9322 assertions
-nbb --classpath src:test scripts/nbb_test.cljs    # cljs  — 215 tests / 1639 assertions
+nbb --classpath src:test scripts/nbb_test.kotoba    # cljs  — 215 tests / 1639 assertions
 clojure -M:lint                                   # 0 errors (13 pre-existing warnings)
 clojure -M -m suji.methods.analyze                # the laptop-posture report (works again)
 ```
