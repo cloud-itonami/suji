@@ -3094,6 +3094,19 @@ The two nearly cancel: the chord tilts **(0.586 − 0.5848) × 46.5° = 0.052°*
 against the **23.25°** it returned until 2026-09-11. `pose/lumbar-chord-tilt-deg` computes it; the chord
 no longer sits 6.685 cm anterior to L5/S1, it sits 0.0155 cm anterior.
 
+⚠ **0.052° IS A DIFFERENCE OF TWO NEARLY EQUAL RATIOS, AND ITS SIGN DOES NOT SURVIVE THE
+TABLE'S OWN LAST DIGIT** (probed 2026-09-10, bot/suji-anatomy — a diagnostic, installed nowhere).
+0.586 is `16.7/28.5` and 0.5848 is `∫c(t)dt` over the standing segments `13.4/14.2/11.2/7.7/5.6`
+(normalised by their 52.1 sum). Every input is published to 0.1°, so re-running both ratios with
+each input at either end of its last digit — 2 × 2 × 2⁵ = 128 combinations — moves the chord tilt
+over **−0.134° to +0.239°, and 42 of the 128 combinations make it NEGATIVE**: the small anterior
+tilt this wave installed can be an equally small posterior one without any transcription being
+wrong. The 0.0496 N·m standing lumbosacral moment and the 0.891 N it contributes sit inside that
+band and inherit it. The *size* of the reduction (23.25° → ~0.05°) is robust — it is the sign and
+the last digit that are not — so nothing here changes a value; the wave's own caveat ("whether
+the 0.0496 N·m is *right*") now carries a bound: it is right to within a factor the source's
+printing precision does not resolve.
+
 ### What crossed — measured on origin/main (`d29095b`), 70 kg / 1.68 m
 
 Run against `origin/main` itself, not a branch:
