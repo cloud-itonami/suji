@@ -1848,6 +1848,40 @@ So **`:c2c3` stays in `awaiting-muscles`**, and what would close it is a source 
 cross-section for the deep cervical extensors — not a segmentation change, not a wrapping
 surface, and not another muscle from the list.
 
+### Searched for that source, did not find it (2026-09-10)
+
+The one thing that would close the provenance block — a measured cross-section for
+cervical semispinalis cervicis or one-level cervical multifidus — was searched for on
+2026-09-10 and **not found in a form this model can use**:
+
+- **Elliott J, Jull G, Noteboom JT, Darnell R, Galloway G, Gibbon WW, *Magnetic resonance
+  imaging study of cross-sectional area of the cervical extensor musculature in an
+  asymptomatic cohort*, Clin Anat 20:35–40, 2007** (doi:10.1002/ca.20252) — measures
+  rectus capitis posterior minor/major, multifidus, semispinalis cervicis/capitis and
+  splenius capitis by MRI in 42 asymptomatic women. Abstract obtained. What the abstract
+  reports is *reliability and side/level differences* (P-values), not per-muscle mean CSA
+  values, so no number for `cervical_extensors`' constituents is in it as far as the
+  abstract goes. `:could-not-obtain` — full text not fetched.
+- **Fortin M, Dobrescu O, Jarzem P, Ouellet J, Weber MH, *Quantitative Magnetic Resonance
+  Imaging Analysis of the Cervical Spine Extensor Muscles: Intrarater and Interrater
+  Reliability of a Novice and an Experienced Rater*, Asian Spine J 12(1):94–102, 2018**
+  (doi:10.4184/asj.2018.12.1.94; author string and DOI from the Europe PMC REST record for
+  PMCID PMC5821939) — measures cervical multifidus and semispinalis cervicis **as one ROI**
+  at C2–C3, "due to the large amount of periarticular fat and lack of identifiable muscle
+  boundaries at this level" (mean bilateral MF & SCER CSA 231.77 ± 83.37 mm² at C2–C3 in
+  a 10-patient pathological sample). The joint this model cannot solve is the one level
+  where the in-vivo literature itself declines to separate the two muscles. `:could-not-obtain`
+  for any separated per-muscle value; the combined value is also from a pathological
+  sample, so using it would load a patient population's atrophy into an asymptomatic model
+  with the error direction **under**-stating the healthy cross-section.
+- The lumped group also mixes in longissimus and spinalis cervicis, which none of the MRI
+  studies above measures at all (they are absent from every ROI list found).
+
+So the block is confirmed to be **a source that does not exist in vivo either**, not a
+source nobody has looked for. The candidate moment arms in the table above (+16.74 mm at
+neutral for the one-level multifidus) remain usable the day a measured PCSA appears; the
+PCSA does not.
+
 What *did* change at C2/C3: `longus_capitis` runs up the front of the column to the
 basiocciput, so the level now carries an **anterior** line for the first time. Its
 `:secondary-moment-nm` about `:c2c3` is reported (`tension-summary`'s
