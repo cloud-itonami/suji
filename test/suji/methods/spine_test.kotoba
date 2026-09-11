@@ -1794,3 +1794,40 @@
     ;; which of the two it moved
     (is (math/nearly= 327.11760130082604 (w "L5/S1") 1e-9))
     (is (math/nearly= 336.51699901433295 (w "L4/L5") 1e-9))))
+
+(deftest a-level-row-names-the-antagonist-priced-and-switched-off-on-its-line
+  ;; 2026-09-11. `tissue-compression-n` used to DROP any muscle whose solve gave
+  ;; it no positive force, so a level row could not be told apart from one nothing
+  ;; crosses. The coupled neck solve now answers the sternocleidomastoid with a
+  ;; COMPUTED zero — `:inactive?`, priced by its KKT price, not `:refused` — so
+  ;; the row carries the name (`:muscle-zero-crossing`) and invents no number:
+  ;; `:force-n` at every level must be unchanged, which is the point. The
+  ;; discriminating half is the first assertion: the name is present BECAUSE the
+  ;; solve was asked and answered zero, and it is the sternocleidomastoid by
+  ;; geometry, not by a name list.
+  (let [{:keys [tensions rows]} (run lap)
+        by-level (into {} (map (juxt :name identity)) rows)
+        scm (first (filter #(= "sternocleidomastoid" (:name %)) tensions))]
+    (is (:inactive? scm)
+        (str "the sternocleidomastoid is inactive, not refused, at laptop-on-lap: "
+             (pr-str scm)))
+    (is (= ["sternocleidomastoid"] (:muscle-zero-crossing (by-level "C2/C3")))
+        (str "C2/C3 names the priced-off antagonist: "
+             (pr-str (:muscle-zero-crossing (by-level "C2/C3")))))
+    (is (= ["scalenes/left" "scalenes/right" "sternocleidomastoid"]
+           (:muscle-zero-crossing (by-level "C7/T1")))
+        (str "and C7/T1 carries every crossed muscle with no computed force: "
+             (pr-str (:muscle-zero-crossing (by-level "C7/T1")))))
+    ;; the numbers did not move: every row's force equals weight + muscle + ligament
+    ;; as before, and `:muscle-crossing` is untouched by the new field
+    (doseq [r rows]
+      (is (math/nearly= (+ (:weight-n r) (:muscle-n r) (:ligament-n r))
+                        (:force-n r) 1e-9)
+          (str (:name r) ": exposing the zero-crossing names added no newtons")))
+    ;; the zero-crossing set is a MEASUREMENT at this posture, not an assertion
+    ;; about who ought to be inactive: the obliques cross L4/L5 with a priced zero
+    ;; here, and the row below pins what actually came back on 2026-09-11.
+    (is (= ["obliques/left" "obliques/right"]
+           (:muscle-zero-crossing (by-level "L4/L5")))
+        (str "L4/L5's zero-force crossers, as measured: "
+             (pr-str (:muscle-zero-crossing (by-level "L4/L5")))))))
