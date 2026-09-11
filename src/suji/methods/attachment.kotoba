@@ -364,6 +364,25 @@
    ;; the force-length term falls off faster than it should — biasing these three
    ;; toward reporting less available force, i.e. a higher %MVC, than a correctly
    ;; scaled model would.
+   ;;
+   ;; WHERE THE ~50 MM ANCHOR STANDS (2026-09-11, bot/suji-anatomy — provenance
+   ;; written down, number installed nowhere). The ~50 mm this file has always
+   ;; qualified as "nearer" had no source; here is the nearest measured one, read
+   ;; through the Europe PMC REST API on 2026-09-11. Xu R, Nadaud MC, Ebraheim NA,
+   ;; Yeasting RA, "Morphology of the second cervical vertebra and the posterior
+   ;; projection of the C2 pedicle axis", Spine 1995;20(2):259-263 (DOI
+   ;; 10.1097/00007632-199502000-00001, PMID 7732462) measured 50 dry C2
+   ;; vertebrae (30 male, 20 female): the C2 body's mean ANTERIOR height was
+   ;; 21.1 +/- 1.7 mm (male) and 19.5 +/- 1.7 mm (female), POSTERIOR height
+   ;; 16.5 +/- 1.6 and 15.3 +/- 1.1 mm — a ~19-21 mm C2 body against the ~15 mm
+   ;; a typical subaxial vertebra-plus-disc unit carries in this model's 18.6 mm
+   ;; spacing. Adding the C1 ring and the occipital condyle column still leaves
+   ;; the measured sum SHORT of 50 mm as a two-bone stack; the "~50" therefore
+   ;; overstates what these two sources sum to and is NOT promoted to a number
+   ;; here. What IS measured is the direction and the size of the C2 excess
+   ;; (+4 to +6 mm over a subaxial unit), which is the part that made the
+   ;; uniform-spacing cut short. Errors run modelled-length SHORT; see
+   ;; `the-suboccipital-lengths-are-checked-against-the-measurement`.
 
    "rectus_capitis_posterior_major"
    {:name "rectus_capitis_posterior_major" :pcsa-cm2 1.86
@@ -390,7 +409,7 @@
     :origin {:segment "upper_cervical" :along 0.72 :ant -0.0129 :lat 0.0}
     :insertion {:segment "head" :along 0.070 :ant -0.0141 :lat 0.0}
     :wrap {:radius-m 0.012 :sign 1.0}
-    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 0.50 cm2 per side x 2 = 1.00 cm2 bilateral (measured; N=9, range 0.48-0.83). Offsets representative (C1 posterior tubercle 22 mm posterior; occipital insertion 24 mm posterior, 13 mm above the condyles). Its modelled length falls SHORT of the 2.6-3.1 cm the same table measures, for the reason stated above the block: this model's upper cervical segment is 37 mm where an atlas plus axis is nearer 50 mm. That ~50 mm anchor is :representative (C2 with its dens is taller than a typical vertebra) and is NOT in Table 3-3; it is used only to state the DIRECTION of the shortfall (modelled short), never as a correction."}
+    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 0.50 cm2 per side x 2 = 1.00 cm2 bilateral (measured; N=9, range 0.48-0.83). Offsets representative (C1 posterior tubercle 22 mm posterior; occipital insertion 24 mm posterior, 13 mm above the condyles). Its modelled length falls SHORT of the 2.6-3.1 cm the same table measures, for the reason stated above the block: this model's upper cervical segment is 37 mm where an atlas plus axis is nearer 50 mm. The C2 excess that makes it so IS measured: Xu R, Nadaud MC, Ebraheim NA, Yeasting RA, Spine 1995;20(2):259-263 (DOI 10.1097/00007632-199502000-00001, PMID 7732462), 50 dry C2 (30 male, 20 female) — body anterior height 21.1 +/- 1.7 mm (male) / 19.5 +/- 1.7 mm (female), posterior 16.5 +/- 1.6 / 15.3 +/- 1.1 mm, i.e. +4 to +6 mm over this model's 18.6 mm subaxial unit. The ~50 mm STACK TOTAL remains :representative and is NOT in Table 3-3; it is used only to state the DIRECTION of the shortfall (modelled short), never as a correction."}
 
    "obliquus_capitis_superior"
    {:name "obliquus_capitis_superior" :pcsa-cm2 2.06
