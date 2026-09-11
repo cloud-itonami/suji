@@ -10,7 +10,7 @@
 
   So this runner exists to fail. Run it with:
 
-      nbb --classpath src:test scripts/nbb_test.cljs
+      kbb --backend sci --classpath src:test scripts/nbb_test.cljs
 
   SCOPE — three test namespaces are deliberately NOT here. `datoms-test`,
   `bridge-consistency-test` and `charter-invariants-test` read repo files off disk

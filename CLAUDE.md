@@ -79,8 +79,8 @@ raises at R0 until Council activation.
 ## Run
 
 ```bash
-bb test                 # all auto-discovered cljc test suites (currently 43 tests)
-bb -m suji.methods.analyze     # writes generated posture report
+kbb -M:test                 # all auto-discovered cljc test suites (currently 43 tests)
+kbb -m suji.methods.analyze     # writes generated posture report
 ```
 
 ## Honest R0

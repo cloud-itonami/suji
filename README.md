@@ -98,7 +98,7 @@ sustained-isometric dose accumulated over a work session, from a power-law endur
 curve of the family Rohmert's belongs to — *not* Rohmert's own equation, and since
 2026-09-07 it answers to a published meta-analysis of measured endurance times.
 
-### The answer (`clojure -M -m suji.methods.analyze`)
+### The answer (`kbb -M -m suji.methods.analyze`)
 
 | workstation | head tilt from vertical | neck load | ×head-weight | worst-muscle stiffness |
 |---|---|---|---|---|
@@ -112,7 +112,7 @@ Mechanism only; a clinician owns any health interpretation.)
 
 ⚠ **This table is a transcript of one run, and it has gone stale twice** — first the last
 column said `anterior-deltoid 0.05` where the report said `erector_spinae 0.04`, which went
-unnoticed because until 2026-09-07 `clojure -M -m suji.methods.analyze` **threw** and nobody
+unnoticed because until 2026-09-07 `kbb -M -m suji.methods.analyze` **threw** and nobody
 was reading its output; then, later the same day, every figure in it moved when
 `lumbosacral-moment` and `cervical-load` were corrected. Regenerate rather than trusting it.
 
@@ -637,10 +637,10 @@ kotoba/    schema.edn · seed.edn      wit/  kami-biomech.wit      out/  posture
 `bb` is retired in this workspace (ADR-2607173000); the suite runs on two hosts.
 
 ```bash
-clojure -M:test                                   # JVM   — 242 tests / 9322 assertions
-nbb --classpath src:test scripts/nbb_test.kotoba    # cljs  — 215 tests / 1639 assertions
-clojure -M:lint                                   # 0 errors (13 pre-existing warnings)
-clojure -M -m suji.methods.analyze                # the laptop-posture report (works again)
+kbb -M:test                                   # JVM   — 242 tests / 9322 assertions
+kbb --backend sci --classpath src:test scripts/nbb_test.kotoba    # cljs  — 215 tests / 1639 assertions
+kbb -M:lint                                   # 0 errors (13 pre-existing warnings)
+kbb -M -m suji.methods.analyze                # the laptop-posture report (works again)
 ```
 
 **Why two hosts.** Until 2026-09-06 every namespace here was named `.cljc` and four
@@ -694,7 +694,7 @@ at one point leaves.*
 
 **Why nothing noticed.** All three reference workstations are purely sagittal — no abduction, no
 lateral bend — so every frontal term is 0.0 in both support states and the defect is invisible at
-exactly the three postures this README publishes. `clojure -M -m suji.methods.analyze` produces
+exactly the three postures this README publishes. `kbb -M -m suji.methods.analyze` produces
 **byte-identical output** before and after this change (diffed against `origin/main`'s `src`).
 The tests were the same shape: every test of the flag was a sagittal test. There are seven new
 ones, and `test-every-quantity-the-support-flag-reaches-responds-to-it` is a coverage test rather
@@ -2233,7 +2233,7 @@ line with no anterior-posterior offsets, so the small characteristic knee and hi
 moments of quiet standing come out near zero where a real body has them. A seated
 person's feet are unloaded.
 
-**The report did not run (fixed 2026-09-07).** `clojure -M -m suji.methods.analyze`,
+**The report did not run (fixed 2026-09-07).** `kbb -M -m suji.methods.analyze`,
 the command this README advertises, threw a `NullPointerException` out of `fmt-f`.
 `render-report` reached straight for `(:mvc-pct s)` and `(:stiffness-index s)` and
 handed them to a formatter that calls `.doubleValue`; a REFUSED muscle has neither,
