@@ -1050,6 +1050,29 @@
   and 137.7 N on Wilke's body - and this namespace's own header called the first
   of them the load that `arrives nowhere`, which understates the second by a
   factor of five. Nothing carries either."
+
+  WHAT A MEASURED CARRIER WOULD LOOK LIKE, AND WHY IT IS NOT INSTALLED YET
+  (2026-09-11, bot/suji-anatomy — a proposal, installed nowhere). The transverse
+  component is not a free variable that facet stiffness alone sets: an in-vitro
+  sectioning study measured where anterior shear goes at physiological loads.
+  Lu WW, Luk KD, Holmes AD, Cheung KM, Leong JC, Pure shear properties of lumbar
+  spinal joints and the effect of tissue sectioning on load sharing, Spine
+  2005;30(8):E204-209 (DOI 10.1097/01.brs.0000158871.14960.30): sectioning the
+  anterior column (disc + longitudinal ligaments) dropped intact anterior-shear
+  stiffness by only 22.8%, while removing the posterior elements dropped it by
+  77.7% — the disc resists 23-34% of an applied anterior shear at small
+  displacements and the apophyseal joints the rest. Skrzypiec et al. 2013 under
+  500 N compression reach the same partition at low load (disc 34% anterior).
+  So the model's missing 91.98 N is a posterior-element problem FIRST and a disc
+  problem SECOND: pricing it needs (a) a facet contact law that closes under
+  this lordosis's extension rotation — Adams & Hutton 1980 measured ~16% of
+  compressive load in the facets at 2 deg of extension with 1 mm disc-height
+  loss, and zero in slight flexion (sitting), which is the same standing-vs-
+  sitting contrast this model already carries — and (b) the direction of the
+  transverse component, which the axis sign already reports. Neither is here
+  yet, and the measured range is wide (FE studies put 61-87% of shear through
+  facets depending on preload), so a number is not proposed — only the shape of
+  the term and the two sources that bound it.
   []
   (let [sit-ref (reference-by-id :wilke-1999-sitting-relaxed-no-backrest)
         stand-ref (reference-by-id :wilke-1999-relaxed-standing)
