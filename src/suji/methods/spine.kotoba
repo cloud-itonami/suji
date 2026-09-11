@@ -485,7 +485,25 @@
                                       (when-not (:ligament? m)
                                         (when-let [n (contribution m)]
                                           [(:name m) n])))
-                                    attachment/instances)))]
+                                    attachment/instances)))
+        ;; 2026-09-11: a muscle whose line crosses this level but whose solve gave
+        ;; it no positive force was previously DROPPED here, which made a level row
+        ;; indistinguishable from one nothing crosses. The coupled neck solve now
+        ;; answers `:inactive?` with a computed zero (the sternocleidomastoid at
+        ;; every posture this actor reports), so the zero is an answer the model
+        ;; has and a name this row can carry. Carrying the name invents no number
+        ;; and moves none: it stops the row from CLAIMING its muscle term is
+        ;; complete when an antagonist was priced and switched off on its line —
+        ;; the same honesty the `:muscle-crossing` names already buy for levels
+        ;; that DO carry force.
+        zero-crossing (vec (sort (keep (fn [m]
+                                         (when (and (not (:ligament? m))
+                                                    (not (some #{(:name m)}
+                                                               (map first muscles)))
+                                                    (crosses? tree level m))
+                                           (:name m)))
+                                       attachment/instances)))]
+
     ;; `:muscle-crossing` is what makes `attachment-steps` a detector rather than
     ;; a guess. `crosses?` is all-or-nothing — a muscle attaches at a POINT, so it
     ;; either spans the level in full or not at all, and there is no taper for a
@@ -493,6 +511,7 @@
     ;; the step detector can say WHICH muscle stopped crossing and HOW MUCH force
     ;; went with it, instead of judging a percentage.
     {:muscle-crossing muscles
+     :muscle-zero-crossing zero-crossing
      :muscle-n (reduce + 0.0 (map second muscles))
      :ligament-n (reduce + 0.0 (keep #(when (:ligament? %) (contribution %))
                                      attachment/instances))}))
@@ -507,7 +526,7 @@
   [body posture pose-data tensions level]
   (let [stature-m (:stature-m body)
         weight (weight-above-n body posture pose-data level)
-        {:keys [muscle-n ligament-n muscle-crossing]}
+        {:keys [muscle-n ligament-n muscle-crossing muscle-zero-crossing]}
         (tissue-compression-n pose-data stature-m level tensions)
         force (+ weight muscle-n ligament-n)
         area (disc-area-m2 level stature-m)]
@@ -516,6 +535,7 @@
      :weight-n weight
      :muscle-n muscle-n
      :muscle-crossing muscle-crossing
+     :muscle-zero-crossing muscle-zero-crossing
      :ligament-n ligament-n
      :force-n force
      :disc-area-cm2 (* 1e4 area)
