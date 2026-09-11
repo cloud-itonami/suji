@@ -46,7 +46,7 @@
   and a LIGAMENT has no %MVC at all, because it cannot contract. So the report
   threw a NullPointerException the moment either could reach it, and it had been
   throwing since before 2026-09-06: the command the README advertises,
-  `clojure -M -m suji.methods.analyze`, did not run. The test suite could not see
+  `kbb -M -m suji.methods.analyze`, did not run. The test suite could not see
   it because nothing called `render-report`.
 
   This is the same lesson `muscle/numeric-mvc?` was written for and the fourth

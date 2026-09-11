@@ -1,7 +1,7 @@
 (ns suji.methods.report-test
   "suji (筋) — the report the README tells you to run.
 
-  IT DID NOT RUN. `clojure -M -m suji.methods.analyze` threw a
+  IT DID NOT RUN. `kbb -M -m suji.methods.analyze` threw a
   NullPointerException out of `fmt-f`, and had been throwing since before
   2026-09-06: `render-report` reached straight for `(:mvc-pct s)` and
   `(:stiffness-index s)` and handed them to a formatter that calls `.doubleValue`,
