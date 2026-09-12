@@ -3163,3 +3163,33 @@ Wilke's direction … seven times too much"* (now *the opposite direction, a thi
 Hansraj cervical anchor and the Wilke **sitting** pin are byte-identical, because neither is on the
 lordosis/chord path — `load/cervical-load` is a function of head tilt and the mass above C7, and the
 sitting posture's lordosis is the one zero that is a measurement.
+
+## The chord tilt's caveat became a test, and one break it cannot see (2026-09-12)
+
+The 2026-09-10 probe — that the 0.052° chord tilt is a difference of two nearly equal ratios
+whose sign does not survive the source's last printed digit — lived as prose only. It is now
+`posture-test/the-chord-tilt-s-sign-does-not-survive-the-source-s-last-digit`, which re-runs the
+128-combination sweep **in the tree** and pins the README's own numbers: the band is
+**[−0.1341°, +0.2393°]** with **42 of 128 combinations negative**, and the installed point
+0.052454793413479195° sits inside it. A transcription correction of ±0.5° in any of the seven
+inputs is exactly the case the test watches for; nothing here changed a value.
+
+**Breaks (restored byte-identically, sha256 checked):**
+
+- Inverting the share (`ΔSS/ΔLL` → `ΔLL/ΔSS`, a 1.71 instead of 0.586): **the full suite goes
+  70 red, but the NEW TEST STAYS GREEN.** Its four assertions are all statements about the band
+  *around* the installed point — point-in-band, sign-fragile, band small — and all four remain
+  true when the point moves to 79°, because the sweep moves with it. A test that pins the
+  relationship between a value and the uncertainty of its inputs cannot also pin the value.
+  That is what the value's own pins are for (36 of the 70 catches name `lumbar-chord-tilt-deg`
+  or the Wilke/decomposition numbers downstream of it).
+- Shifting the transcribed `:sacral-slope` 16.7 → 18.7: **3 failures — none is the new test.**
+  The value's own pin (`= 16.7 ss`) catches it; the sweep test cannot, because 18.7 is a
+  *transcription correction*, and a corrected table legitimately changes the band. **This is the
+  2026-09-10 lesson arriving from the other side: a test that asserts a value's relation to its
+  uncertainty is blind to the value itself, exactly as a difference of two pins was blind to a
+  constant offset.**
+
+Nothing in this section changes a constant. The band, the 42, and the sign fragility are
+properties the source's printing precision imposes, not properties a fit removed.
+
