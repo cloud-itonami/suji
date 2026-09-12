@@ -598,6 +598,42 @@ added on 2026-09-07 moved two of those counts (3 → 5 and 10 → 11) and none o
 ratios: **there is still no published endurance curve for the neck**, which is the
 one bucket this actor's headline muscles have always been in.
 
+**Updated 2026-09-12: four MEASURED neck-extensor endurance results were found, and
+none of them is a curve.** They are recorded here and nowhere else — no constant
+moved, `task->reference-region` still returns `:absent-from-source` for the neck,
+and `:no-published-curve-for-this-region` keeps its name:
+
+1. **O'Leary, Fagermoen, Hasegawa, Thorsen & Van Wyk, "Differential Strength and
+   Endurance Parameters of the Craniocervical and Cervicothoracic Extensors and
+   Flexors in Healthy Individuals", *J Appl Biomech* 2017;33(2):166-170,
+   DOI `10.1123/jab.2016-0168`, PMID 27834549.** Abstract obtained from PubMed
+   (`:obtained :abstract`); the paper IS a direct measurement of cervical extensor
+   endurance time to task failure **at 50 %MVC**, at two axes (craniocervical,
+   cervicothoracic), 20 males + 20 females. It states the extensors endure
+   **2-2.4×** longer than the flexors. Its per-direction SECONDS are in its table,
+   which is behind the Human Kinetics paywall — `:could-not-obtain` — so no
+   per-direction value is carried from it.
+2. **Edmondston, Björnsdóttir, Pálsson, Solgård, Ussing & Allison, *Man Ther*
+   2011;16(4):414-420, PMID 21256071** (abstract): neck-extensor endurance test,
+   prone with a 2 kg pendulum, median holding time **228 s in 12 asymptomatic
+   female controls** (165 s in 13 postural-neck-pain patients). The load is the
+   head against gravity plus 2 kg — **the test states no %MVC
+   (`:parameter-not-in-source`)**, so it cannot enter the power law's x-axis.
+3. **Florêncio et al., *J Orthop Sports Phys Ther* 2019;49(5):330-336,
+   DOI `10.2519/jospt.2019.8816`, PMID 30913971** (abstract): same protocol,
+   control women median **290.5 s**. Intensity likewise `:parameter-not-in-source`.
+4. **Deep Neck Extensor Endurance Test normative values, 440 healthy young adults
+   (18-28 y)**, *Musculoskelet Sci Pract* 2024 (S1360859224004030, abstract):
+   mean holding time **43.1 s** (men 47.1, women 40.7). Intensity again unstated.
+
+Direction of the mismatch, stated and NOT closed: at just above the 8 %MVC floor
+the model prices a held load at **>70 min**, while these tests put healthy
+neck-extensor task-failure at **0.7-4.8 min** at an intensity nobody stated. The
+x-axes do not meet — a measured point needs its %MVC to join a curve — so this
+entry is a pointer, not a calibration. The headline muscle remains in the
+`:no-published-curve-for-this-region` bucket; what changed is that the bucket now
+names the four measurements it is waiting for.
+
 ## Isaac Sim / kami-genesis
 
 `wire/wit/kami-biomech.wit` is the articulation contract a kami-genesis `PlanarChain` / nv-compat
