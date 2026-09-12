@@ -553,7 +553,38 @@
                      "reported to REVERSE in, as the pelvis rotates posteriorly at "
                      "the bottom of the descent. If that is so, this model "
                      "OVER-STATES the squat's lordosis by holding it at zero — but "
-                     "the size is not sourced, and by how much is not stated here.")}}
+                     "the size is not sourced, and by how much is not stated here.")
+     ;; THE DIRECTION IS A LITERATURE CLAIM TOO, so it carries its own sourcing,
+     ;; searched 2026-09-12 (Europe PMC REST + web): two searches were made and
+     ;; NEITHER returned a static deep-squat lordosis — which is why the value
+     ;; above stays 0.0 with :parameter-not-in-source — but both constrain the
+     ;; direction instead of leaving it hearsay:
+     ;;  - Kahrizi, Parnianpour, Firoozabadi, Kasemnejad & Karimi 2007, Pakistan
+     ;;    J Biol Sci 10(7):1036-1043, doi:10.3923/pjbs.2007.1036.1043 (full
+     ;;    text): two-inclinometer lumbar curvature, static HELD tasks, 10 males.
+     ;;    Trunk flexion 0→30 deg at standing drove the curvature from lordosis
+     ;;    to KYPHOSIS (p<0.05). The reported squat was 45 deg of knee flexion —
+     ;;    a half squat, not this posture's 110 — so it is a direction witness,
+     ;;    not a value for this posture.
+     ;;  - Fukushima et al. 2026, Sci Rep 16:5831, doi:10.1038/s41598-026-36815-5
+     ;;    (full text): skin-marker lumbar curvature through a DEEP bodyweight
+     ;;    squat, healthy males; the curvature crossed from lordosis to kyphosis
+     ;;    mid-descent in every subject (low-PI 40.8% of the cycle, high-PI
+     ;;    55.3%), i.e. at the held bottom the lumbar spine sat in flexion.
+     ;;    Dynamic kinematics, not a radiographic Cobb angle — direction only,
+     ;;    and in the direction the model already claimed. No constant moves.
+     :direction-source {:searched :europe-pmc-and-web-2026-09-12
+                        :witnesses
+                        [{:citation "Kahrizi et al. 2007, Pak J Biol Sci 10(7):1036-1043"
+                          :doi "10.3923/pjbs.2007.1036.1043"
+                          :obtained :full-text
+                          :what-it-supplies :direction-only
+                          :gap "45 deg knee flexion (half squat), not this posture's 110"}
+                         {:citation "Fukushima et al. 2026, Sci Rep 16:5831"
+                          :doi "10.1038/s41598-026-36815-5"
+                          :obtained :full-text
+                          :what-it-supplies :direction-only
+                          :gap "dynamic skin-marker kinematics, not a radiographic lordosis"}]}}}
 
    "laptop-on-lap"
    {:posture "laptop-on-lap"

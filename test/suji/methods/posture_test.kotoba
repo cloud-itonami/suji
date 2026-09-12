@@ -340,3 +340,20 @@
           (str "Mills' upper-arc lordosis, " installed-pll " deg, is inside the "
                "review's own 95% interval " [lo hi] " — which is wider than its "
                "own mean")))))
+
+(deftest the-deep-squat-s-direction-must-name-where-it-came-from
+  ;; THE CLAIM'S OWN GATE, TURNED ON ITSELF. `:parameter-not-in-source` says
+  ;; which way the held neutral errs — for the deep squat, that the lordosis is
+  ;; "most often reported to REVERSE". A direction is a claim about the
+  ;; literature, and this repo's rule is that a literature claim carries a
+  ;; source or is marked as unsourced opinion. This test demands the squat's
+  ;; direction entry name WHERE the reversal is reported — same duty the
+  ;; `:searched` field already carries for the parameter itself.
+  (let [pns (:parameter-not-in-source
+             (posture/lordosis-provenance-for "deep-squat"))]
+    (is (string? (:direction pns))
+        "the deep squat states a direction, as it must")
+    (is (contains? pns :direction-source)
+        (str "the direction's reversal claim carries no source: it says "
+             (pr-str (:direction pns))))))
+
