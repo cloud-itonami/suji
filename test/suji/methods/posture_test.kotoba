@@ -340,3 +340,36 @@
           (str "Mills' upper-arc lordosis, " installed-pll " deg, is inside the "
                "review's own 95% interval " [lo hi] " — which is wider than its "
                "own mean")))))
+
+(deftest every-cervical-segmental-source-says-what-was-obtained-of-it
+  ;; 2026-09-13. `spine/level-axis-offset-deg` answers zero for every cervical
+  ;; level because nobody has put a measured segmental distribution into this
+  ;; library for the NECK - five `lower_cervical` levels sharing one frame is the
+  ;; same gap the five lumbar levels had until 2026-09-11, named in `spine`'s
+  ;; docstring since 2026-09-07. The search that turns that absence into a claim
+  ;; is `posture/cervical-lordosis-sources-not-installed`, and this is its gate:
+  ;; every record states what was obtained and what it could not supply, a source
+  ;; recorded `:could-not-obtain` says so explicitly, the closest source IS in the
+  ;; list (so the list cannot quietly empty and pass), and no number is proposed
+  ;; anywhere - the levels stay on one frame.
+  (let [srcs posture/cervical-lordosis-sources-not-installed]
+    (is (pos? (count srcs)) "the search is not empty")
+    (doseq [rec srcs]
+      (is (string? (:citation rec)) "each record carries its citation")
+      (is (contains? #{:full-text :abstract :could-not-obtain} (:obtained rec))
+          (str (:citation rec) ": :obtained must name what was actually read"))
+      (is (string? (:why-not-installed rec))
+          (str (:citation rec) ": must say what it could not supply")))
+    ;; the closest source was read in FULL, and it cannot fill the gap because its
+    ;; spans are TWO where this model places FIVE discs (C7/T1..C3/C4 = C3-C7)
+    (let [bag (first (filter #(= "10.4103/jcvjs.jcvjs_11_26" (:doi %)) srcs))]
+      (is (some? bag) "the two-span source that was read must be in the list")
+      (is (= :full-text (:obtained bag)) "it was read in full, not summarised")
+      (is (= :two-span-not-five (:what-it-supplies bag))
+          (str "and it says what it supplies: " (pr-str (:what-it-supplies bag))))
+      (is (string? (:headline-figures bag))
+          "its figures are carried as quoted text, not rounded into a model number"))
+    ;; and the classic per-level source is honestly NOT obtained
+    (let [hd (first (filter #(= :could-not-obtain (:obtained %)) srcs))]
+      (is (some? hd) "the unobtainable classic is recorded as unobtainable")
+      (is (string? (:why-not-installed hd)) "and says where the search stopped"))))

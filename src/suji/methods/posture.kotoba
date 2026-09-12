@@ -373,6 +373,76 @@
    :proximal-lumbar-lordosis-l1-l4 {:deg 16.51 :ci-95 [5.54 27.49] :variance 11.46}
    :distal-lumbar-lordosis-l4-s1 {:deg 35.47 :ci-95 [32.79 38.18] :variance 9.10}})
 
+(def cervical-lordosis-sources-not-installed
+  "The sources checked for a SEGMENTAL CERVICAL lordosis distribution, and exactly
+  what each could and could not supply — recorded 2026-09-13, so that the
+  cervical half of `spine/level-axis-offset-deg`'s gap (five `lower_cervical`
+  levels sharing one frame, named in `spine`'s docstring and `levels`' comment
+  since 2026-09-07) is a list with a search behind it rather than a sentence.
+
+  NONE of them supplies a five-span number this model's five cervical levels
+  could consume, which is why the cervical levels still share `lower_cervical`'s
+  orientation and the gap is a provenance gap exactly the way C2/C3's is.
+
+  The closest source, read in full through the Europe PMC REST API
+  (https://www.ebi.ac.uk/europepmc/webservices/rest/PMC13042538/fullTextXML,
+  fetched 2026-09-13), is Bagherzadeh S, Kopparapu S, Roohollahi F, Kumar J,
+  Bauer S, Neal E, Noureldine MHA, Pressman E, Alikhani P, Rostami M.
+  `Normative segmental cervical lordosis distribution and sagittal vertical axis
+  variations with T1 slope: Defining the role of the C2-C5 segment`, J
+  Craniovertebr Junction Spine 2026;17(2):165-173 (DOI 10.4103/jcvjs.jcvjs_11_26,
+  PMID 41929743, PMCID PMC13042538). It divides the total lordosis OC7 into UCL
+  (occiput-C2) and SCL (C2-C7) and reports SCL further split into USCL (C2-C5)
+  and LSCL (C6-C7): its Results state \"UCL was 18.79° (±8.68), accounting for 67%
+  (±30.89) of TCL. The SCL was 10.67° (±9.48), representing 33% (±30.89) of
+  TCL\". Its SDs are as wide as or wider than its means, so the ±30.89 is a
+  two-column SD pair printed against a percentage whose own spread is most of
+  itself — recorded as read rather than repaired.
+
+  WHY IT STILL CANNOT FILL THE GAP: its two spans are C2-C5 and C6-C7, and this
+  model places five cervical DISCS at C7/T1 through C3/C4 — five spans of
+  `lower_cervical` between C2/C3 and C7/T1, i.e. C3-C7 exactly. The one span
+  that matches (C6-C7) and the one that does not (C2-C5 straddles the C2/C3
+  boundary this model's own segmentation treats as a joint, not a point inside a
+  span) cannot be rescaled into five spans without inventing the distribution
+  between them. Nothing was invented; the table is recorded and the levels stay
+  on one frame."
+  [{:citation (str "Bagherzadeh S, Kopparapu S, Roohollahi F, Kumar J, Bauer S, "
+                   "Neal E, Noureldine MHA, Pressman E, Alikhani P, Rostami M. "
+                   "Normative segmental cervical lordosis distribution and "
+                   "sagittal vertical axis variations with T1 slope: Defining "
+                   "the role of the C2-C5 segment. J Craniovertebr Junction "
+                   "Spine 2026;17(2):165-173.")
+    :doi "10.4103/jcvjs.jcvjs_11_26"
+    :pmid "41929743"
+    :pmcid "PMC13042538"
+    :url "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC13042538/fullTextXML"
+    :obtained :full-text
+    :fetched "2026-09-13"
+    :cohort "asymptomatic adults; TS-stratified groups (the article's own Tables)"
+    :what-it-supplies :two-span-not-five
+    :spans-reported ["occiput-C2 (UCL)" "C2-C7 (SCL)" "C2-C5 (USCL)" "C6-C7 (LSCL)"]
+    :headline-figures (str "UCL 18.79 (SD 8.68) = 67% (SD 30.89) of TCL; SCL 10.67 "
+                           "(SD 9.48) = 33% (SD 30.89) of TCL")
+    :why-not-installed (str "its spans are C2-C5 and C6-C7 against this model's "
+                            "five discs C7/T1..C3/C4 (C3-C7); a five-span "
+                            "distribution cannot be derived from a two-span one "
+                            "without inventing the intermediate shares")}
+   ;; the classic per-level source, recorded as NOT obtainable rather than as
+   ;; read — its abstract is checked against nothing and its numbers stay
+   ;; behind a paywall, so it is a name in a list and not evidence here.
+   {:citation (str "Hardacker JW, Shuford RF, Capicotto PN, Pryor PW. "
+                   "Radiographic standing cervical segmental alignment in adult "
+                   "volunteers without neck symptoms. Spine 1997;22(13):1472-1480.")
+    :doi "10.1097/00007632-199707010-00005"
+    :pmid "9247683"
+    :obtained :could-not-obtain
+    :why-not-installed (str "no PMCID; Europe PMC's fullTextXML cannot serve it "
+                            "and only its abstract was reachable — the "
+                            "per-level table it is cited for was not obtained, "
+                            "so it is :could-not-obtain and NOT a citation")}])
+
+
 (def lordosis-sources-not-installed
   "The other sources checked for a segmental distribution, and exactly what each
   one could and could not supply. Present so that `no per-level source was found`

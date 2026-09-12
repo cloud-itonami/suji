@@ -3199,3 +3199,50 @@ Wilke's direction … seven times too much"* (now *the opposite direction, a thi
 Hansraj cervical anchor and the Wilke **sitting** pin are byte-identical, because neither is on the
 lordosis/chord path — `load/cervical-load` is a function of head tilt and the mass above C7, and the
 sitting posture's lordosis is the one zero that is a measurement.
+
+## The five cervical levels stopped being the same gap as a sentence (2026-09-13)
+
+`spine/level-axis-offset-deg` has answered zero for every cervical level since it
+existed, and `spine`'s own docstring has named the reason since 2026-09-07: nobody
+has put a measured segmental distribution into this library for the NECK, so the
+five levels on `lower_cervical` share one frame exactly the way the five lumbar
+levels did until 2026-09-11. What was missing was not the statement — it was the
+list of sources behind it, the thing that makes "none was found" a claim a reader
+can check instead of a summary of a search nobody can repeat.
+
+**The search, recorded in `posture/cervical-lordosis-sources-not-installed`:**
+
+- **The closest source, read in full** (Europe PMC REST `fullTextXML`,
+  fetched 2026-09-13): Bagherzadeh S, Kopparapu S, Roohollahi F, Kumar J, Bauer S,
+  Neal E, Noureldine MHA, Pressman E, Alikhani P, Rostami M. *Normative segmental
+  cervical lordosis distribution and sagittal vertical axis variations with T1
+  slope: Defining the role of the C2–C5 segment*, J Craniovertebr Junction Spine
+  2026;17(2):165-173 (DOI 10.4103/jcvjs.jcvjs_11_26, PMID 41929743). It reports
+  `UCL was 18.79° (±8.68), accounting for 67% (±30.89) of TCL. The SCL was 10.67°
+  (±9.48), representing 33% (±30.89) of TCL` — quoted, not rounded into a model
+  number. **It still cannot fill the gap**: its spans are C2–C5 and C6–C7 against
+  this model's five discs C7/T1…C3/C4 (C3–C7 exactly), and a five-span
+  distribution cannot be derived from a two-span one without inventing the
+  intermediate shares. Nothing was invented. Its own SDs are as wide as or wider
+  than its means, which is recorded as read.
+- **The classic per-level source, recorded as NOT obtained**: Hardacker et al.
+  1997, Spine 22(13):1472-1480. No PMCID; only its abstract was reachable, so it
+  is `:could-not-obtain` and NOT a citation — per this repo's rule that a
+  document read as an abstract is not a document whose numbers were read.
+
+No number moved. The cervical levels keep the segment's frame and the gap keeps
+its name; what changed is that the absence now has a search behind it, with a gate
+(`every-cervical-segmental-source-says-what-was-obtained-of-it`) so a future
+five-span source has to arrive with its spans rather than on its own.
+
+**And the suite had to be made readable first — the same failure, again, in the
+same file, found the same way.** `suji.methods.spine` did not load on either host
+on `ea0054e`: the `standing-sitting-decomposition` docstring closed at *"factor of
+five. Nothing carries either."* and left the measured-carrier block that follows
+it (Lu/Lu 2005, Skrzypiec 2013, Adams & Hutton 1980) outside the string, so the
+next line was parsed as code — `JVM spine.cljc:1055:14: Invalid number:
+2026-09-11`, nbb the same. Nothing could go red because nothing could load; the
+2026-09-12 wave repaired one of this class and this one was already behind it.
+Fix is one quote character moved, prose byte-identical; the suite is green again
+after (JVM 363 tests / 12 237 assertions, nbb 332 tests / 3 013 assertions, 0
+failures; no constant moved).
