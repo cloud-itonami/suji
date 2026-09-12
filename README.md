@@ -1897,6 +1897,59 @@ So the block is confirmed to be **a source that does not exist in vivo either**,
 source nobody has looked for. The candidate moment arms in the table above (+16.74 mm at
 neutral for the one-level multifidus) remain usable the day a measured PCSA appears; the
 PCSA does not.
+### A source the 2026-09-10 search missed (found 2026-09-12, bot/suji-anatomy)
+
+**Anderson JS, Hsu AW, Vasavada AN, *Morphology, architecture, and biomechanics of
+human cervical multifidus*, Spine 30(4):E86-E91, 2005**
+(doi:10.1097/01.brs.0000153700.97830.02, PMID 15706328). The 2026-09-10 search asked
+for *in vivo* measurements and so missed this one: it is **cadaveric, 9 specimens** —
+the same class of source as Kamibayashi & Richmond, which this model already accepts.
+Its abstract (obtained through the Europe PMC REST API; full text paywalled,
+`:could-not-obtain`) measures exactly one of the four muscles the lump declares:
+**cervical multifidus, PCSA 0.1-1.0 cm2 per fascicular subgroup, fascicle lengths
+1.2-3.7 cm**, and predicts a total moment-generating capacity of **about 0.7 N.m for
+extension at neutral** (0.3 N.m axial rotation).
+
+It does not close the block, for three stated reasons:
+
+1. abstract-only — the subgroup-to-vertebral-level mapping is `:could-not-obtain`, so
+   no single subgroup can be named "the C2/C3 multifidus";
+2. the candidate the C2/C3 table needs is a **one-level** multifidus (Vasavada ch.3:
+   *"span one or two vertebral segments"*), while Anderson's dissected fascicles
+   **span 2 to 5 segments** — the dissection's own grouping may not contain the
+   candidate at all;
+3. semispinalis cervicis, longissimus cervicis and spinalis cervicis are still
+   unmeasured by it.
+
+**What it does add: the first measured bracket on the lump, from two measured
+numbers.** Zheng L, Siegmund G, Ozyigit G, Vasavada A, *Sex-specific prediction of
+neck muscle volumes*, J Biomech 46(5):899-904, 2013 (doi:10.1016/j.jbiomech.2012.12.018,
+PMCID PMC3648672, PMID 23351366; full text read via PMC) Table 3 measures
+**semispinalis cervicis + multifidus = 7.5% +/- 1.5% of total neck muscle volume**
+(n=10, 3F/7M, in-vivo MRI, asymptomatic) — the exact group the lump's `:source`
+names. The same paper gives total neck muscle volume 814 +/- 64 cm3 male,
+510 +/- 43 cm3 female. PCSA is volume over optimal fascicle length; taking Anderson's
+fascicle lengths as the divisor (and cos(pennation) = 1, which **overstates** PCSA,
+so the floor is soft downward):
+
+- male, bilateral MF+SC: (0.075 x 814 cm3) / 3.7 cm = **16.5 cm2** to / 1.2 cm =
+  **50.9 cm2**;
+- female, bilateral MF+SC: **10.3 to 31.9 cm2**.
+
+The lump's 12.0 cm2 sits **below even the most conservative end of the male bracket
+(16.5 cm2)** — and that bracket covers only two of the four muscles the lump claims.
+If the lump was meant as the whole group its `:source` names, it under-states the
+measured cross-section, and every cervical %MVC built on it is correspondingly high
+(error direction: capacity under-stated, %MVC over-stated). Two populations are
+chained (cadaveric fascicle lengths over in-vivo volumes), so this is a bracket with
+`:representative` status, not a measured value. **No constant moves** — 12.0 stays
+exactly where it is; what changes is that the block is no longer "no source exists":
+a measured proportion, a measured volume and a measured fascicle-length range exist,
+and the one-line resolution stays the owner's judgement. The 0.7 N.m extension
+capacity is also the first measured scale for what a solver at `:c2c3` could call on
+from the extension side — comparable against that joint's demand the day the PCSA
+question closes.
+
 
 What *did* change at C2/C3: `longus_capitis` runs up the front of the column to the
 basiocciput, so the level now carries an **anterior** line for the first time. Its
