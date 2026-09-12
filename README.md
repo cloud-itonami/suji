@@ -1876,6 +1876,22 @@ cervical semispinalis cervicis or one-level cervical multifidus — was searched
   with the error direction **under**-stating the healthy cross-section.
 - The lumped group also mixes in longissimus and spinalis cervicis, which none of the MRI
   studies above measures at all (they are absent from every ROI list found).
+- **Stemper BD, Baisden JL, Yoganandan N, Pintar FA, Paskoff GR, Shender BS, *Determination
+  of normative neck muscle morphometry using upright MRI with comparison to supine data*,
+  Aviat Space Environ Med 81(9):878-882, 2010** (doi:10.3357/asem.2758.2010, PMID 20824996)
+  - found 2026-09-12 and it **does** measure longus colli in vivo, but it measures the
+  wrong muscle for this block: longus colli is an anterior flexor, and the provenance gap
+  here is the deep cervical **extensors** (semispinalis cervicis / multifidus / longissimus
+  / spinalis cervicis). Its four muscles are sternocleidomastoid, longus colli, levator
+  scapulae and trapezius - longus colli neutral upright mean **113 mm2 per side** (n=6
+  young male volunteers, four spinal levels C2-C3 through C6-C7, averaged; abstract-only
+  access, so the per-level breakdown and the SD are `:could-not-obtain` - the 113 mm2 is
+  the paper's own summary mean, not a level-resolved value). Recorded here because the
+  same search that missed it in 2026-09-10 would miss it again, and because it is the
+  nearest in-vivo longus colli number this model has: the longus colli **superior oblique
+  part** listed in the candidate table above is the one C2/C3 candidate on the anterior
+  side, and its cross-section is currently as unsourced as the extensors'. It does not
+  close the extensor block, and the 113 mm2 is not an extensor number.
 
 So the block is confirmed to be **a source that does not exist in vivo either**, not a
 source nobody has looked for. The candidate moment arms in the table above (+16.74 mm at
