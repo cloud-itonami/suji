@@ -1938,8 +1938,20 @@ capitis passive term at a posture where its active force is zero.
 - **Rectus capitis lateralis** — a lateral bender, and a midline sagittal model has
   nowhere to put it. Also unmeasured by the source.
 - **Longus colli**, all three parts. Its superior oblique part is expressible (above); its
-  vertical part runs within `lower_cervical` at both ends and is the known error shape;
-  none of the three has a published PCSA here.
+  vertical part runs within `lower_cervical` at both ends and is the known error shape.
+  ⚠ *Stale sentence below - corrected 2026-09-12:* this section said none of the three
+  has a published PCSA, but the Stemper 2010 search recorded in *C2/C3: expressible,
+  and blocked by provenance* above **does** give longus colli an in-vivo number:
+  neutral upright mean **113 mm2 per side**, n=6 young male volunteers, four levels
+  C2-C3 through C6-C7 **averaged** (doi:10.3357/asem.2758.2010, PMID 20824996,
+  abstract-only; per-level breakdown and SD `:could-not-obtain` - a summary mean, not a
+  level-resolved value). Two honest caveats keep it out of `attachment/instances` for
+  now: it is a **whole-muscle** cross-section and the superior oblique part is only one
+  of three parts (so installing it would overstate the part by the share of the other
+  two, error direction **over**-stating available force), and it is the wrong side of
+  the C2/C3 block, which is about the deep **extensors**. What it does close is the
+  claim that no in-vivo longus colli number was ever found - one has, dated and cited,
+  above.
 - **`rectus_capitis_anterior`'s length** is checked against nothing, because the source
   does not contain the muscle.
 - **Both flexors are modelled midline**, so longus capitis's ipsilateral rotation — which
