@@ -3199,3 +3199,59 @@ Wilke's direction … seven times too much"* (now *the opposite direction, a thi
 Hansraj cervical anchor and the Wilke **sitting** pin are byte-identical, because neither is on the
 lordosis/chord path — `load/cervical-load` is a function of head tilt and the mass above C7, and the
 sitting posture's lordosis is the one zero that is a measurement.
+
+## The suite could not be read (2026-09-12)
+
+**`nbb --classpath src:test scripts/nbb_test.cljs` fails at parse on `ea0054e`, and so does
+the JVM reader on the same file.** `suji.methods.spine`'s `standing-sitting-decomposition`
+docstring closes at "Nothing carries either.\"" on line 1052, and the 22 lines that follow —
+the entire "WHAT A MEASURED CARRIER WOULD LOOK LIKE" block with the Lu/Lu 2005, Skrzypiec 2013
+and Adams & Hutton 1980 citations — sit OUTSIDE any string, bare, between the docstring and
+the `[]` argvector. Both readers choke on `(2026-09-11` — `Invalid number: 2026-09-11`,
+JVM at `spine.cljc:1055:14`, nbb at the same place. Confirmed on both hosts against a clean
+`origin/main` checkout. Whatever CI ran since the block was appended ran without loading
+`spine.kotoba` on either host, or without reading it at all.
+
+**The fix installed here moves one quote character.** The block was intended as docstring
+prose all along; the closing `"` after "Nothing carries either." is premature. It is removed
+and a closing `"` is added after "the two sources that bound it." — the prose is
+byte-identical, no number moved, no test text changed. With the quote moved, both hosts
+load the namespace again and the full ClojureScript suite runs: 332 tests / 3002 assertions,
+0 failures.
+
+**Why this is the finding and not a chore.** A namespace that is a parse error on the
+branch it was written on is the strongest possible version of "a break that produced no
+failure": nothing could go red because nothing could load. The `two-hosts` rule exists for
+exactly this and caught it in one tick once it was actually exercised.
+
+## The deep squat's direction carries its witnesses now (2026-09-12)
+
+`deep-squat`'s `:parameter-not-in-source` has said since 2026-09-08 that a squat "is the
+posture lumbar lordosis is most often reported to REVERSE in" — a literature claim with no
+citation behind it, which is the same defect the `:searched` field was built to stop, one
+level up. Two searches (Europe PMC REST, web) were run this tick and the direction now
+names what it stands on — the value stays 0.0, `:parameter-not-in-source`, unchanged:
+
+- **Kahrizi, Parnianpour, Firoozabadi, Kasemnejad & Karimi 2007**, Pakistan J Biol Sci
+  10(7):1036-1043, doi:10.3923/pjbs.2007.1036.1043 (**full text**): two-inclinometer lumbar
+  curvature in static HELD tasks, 10 healthy males. Trunk flexion 0→30° at standing drove
+  the curvature from lordosis to kyphosis (p<0.05). Its squat is 45° of knee flexion — a
+  half squat, not this posture's 110° — so it witnesses the DIRECTION only.
+- **Fukushima et al. 2026**, Sci Rep 16:5831, doi:10.1038/s41598-026-36815-5 (**full text**):
+  skin-marker lumbar curvature through a deep bodyweight squat, healthy males, with MRI-measured
+  pelvic incidence. The curvature crosses from lordosis to kyphosis mid-descent in every
+  subject (low-PI at 40.8% ± 18.7% of the squat cycle, high-PI at 55.3% ± 10.0%), i.e. at the
+  held bottom the lumbar spine sits in flexion. Dynamic kinematics, not a radiographic Cobb
+  angle — direction only, and in the direction the model already claimed.
+
+Neither study supplies a static radiographic lordosis for a held deep squat, so the
+`:parameter-not-in-source` value itself is unchanged and still honestly 0.0. What changed is
+that the direction sentence is no longer hearsay: `:direction-source` records both witnesses
+with `:obtained :full-text` and what each one does not supply. A new test
+(`the-deep-squat-s-direction-must-name-where-it-came-from`) refuses a direction that carries
+no `:direction-source` key — it went red on the old entry before the key was added.
+
+Error direction, stated: both witnesses bound the held-neutral error from the flexion side,
+as the entry already claimed, so the OVER-STATES reading stands; the SIZE remains
+unsourced and no constant moves.
+

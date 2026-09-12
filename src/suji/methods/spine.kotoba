@@ -1049,7 +1049,7 @@
   appears transverse to the level, `W x sin`. They are DIFFERENT NUMBERS - 28.3 N
   and 137.7 N on Wilke's body - and this namespace's own header called the first
   of them the load that `arrives nowhere`, which understates the second by a
-  factor of five. Nothing carries either."
+  factor of five. Nothing carries either.
 
   WHAT A MEASURED CARRIER WOULD LOOK LIKE, AND WHY IT IS NOT INSTALLED YET
   (2026-09-11, bot/suji-anatomy — a proposal, installed nowhere). The transverse
@@ -1072,7 +1072,7 @@
   transverse component, which the axis sign already reports. Neither is here
   yet, and the measured range is wide (FE studies put 61-87% of shear through
   facets depending on preload), so a number is not proposed — only the shape of
-  the term and the two sources that bound it.
+  the term and the two sources that bound it."
   []
   (let [sit-ref (reference-by-id :wilke-1999-sitting-relaxed-no-backrest)
         stand-ref (reference-by-id :wilke-1999-relaxed-standing)
