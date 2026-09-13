@@ -16,6 +16,7 @@
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
             [suji.methods.math :as math]
+            [suji.methods.pose :as pose]
             [suji.methods.posture :as posture]))
 
 (deftest every-named-posture-declares-where-its-lordosis-came-from
