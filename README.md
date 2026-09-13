@@ -1382,8 +1382,9 @@ invented numbers dressed as anatomy.
 axis makes the atlanto-axial joint real and lets **obliquus capitis inferior** be
 written down — the one suboccipital that still cannot be, and 2.58 cm² of the 7.50.
 It needs a per-vertebra mass, and the joint it opens is principally a *rotation* joint
-(40.5° axial against ~10° sagittal), so a sagittal model pays the cost and collects
-almost none of the benefit.
+(~8.7° axial per side against ~1.4° sagittal, Kang 2019), so a sagittal model pays the
+cost and collects almost none of the benefit. The in-vivo source is read, not the
+in-vitro one; see the atlanto-axial bullet below.
 
 ### Where the mass split came from: nowhere. It is representative.
 
@@ -1609,8 +1610,25 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
 
 - **Obliquus capitis inferior**, 2.58 cm² bilateral — C2 spinous → C1 transverse, both
   ends on `upper_cervical`. It needs the atlas and the axis to be separate bodies.
-- **The atlanto-axial joint**, whose cardinal motion is 40.5° of axial rotation. A
-  sagittal model has nowhere to spend it.
+- **The atlanto-axial joint.** ⚠ Its "cardinal motion is 40.5° of axial rotation"
+  is a citation, not a number the source carries — a note dated 2026-09-13 could not
+  find it in the source it was attributed to (Bogduk & Mercer's Table 5 is Dvorak
+  et al.'s *sagittal* ranges, N=28; its 8.7° per side at C1/C2 is the sagittal value,
+  printed at the reference to 0.1° as 8.7). The measured in-vivo split is Kang J,
+  Chen G, Zhai X, He X, *In vivo three-dimensional kinematics of the cervical spine
+  during maximal active head rotation*, PLoS ONE 14(4):e0215357, 2019
+  (doi:10.1371/journal.pone.0215357, PMID 30990826; full text read via the Europe PMC
+  REST endpoint, PMC6467451): 20 asymptomatic volunteers, CT in neutral and at
+  maximum left/right rotation, Cardan angles from three virtual markers per vertebra
+  (Oc-C7). Maximal active head rotation is **69.7 ± 5.5° total** (to one side;
+  Oc-C2 takes 63.13% of it) and the **C1-C2 segment carries 37.9 ± 5.1°, 86.14% of
+  the upper cervical rotation and 54.40% of the total**. In the cervical-spine
+  patients it is 62.0 ± 3.4 / 34.6 ± 3.3. Both the asymptomatic 37.9 ± 5.1 and the
+  patient 34.6 ± 3.3 sit inside the 40.5° the bullet carries, so the number survives
+  the correction directionally — but it now has a source, and 40.5 does not. A
+  sagittal model still has nowhere to spend any of it, and Oc-C1's share is small:
+  the paper quotes prior in-vivo Oc-C1 rotation at about 1.7° and the joint's own
+  in-vitro range at about 5°.
 - ~~**Any upper cervical flexor**~~ **Closed 2026-09-08** — `longus_capitis` (PCSA
   measured) and `rectus_capitis_anterior` (PCSA representative) act about the
   atlanto-occipital joint. ~~What is *not* closed is the surplus: carrying it would take
