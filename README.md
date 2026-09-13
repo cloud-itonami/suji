@@ -599,7 +599,8 @@ ratios: **there is still no published endurance curve for the neck**, which is t
 one bucket this actor's headline muscles have always been in.
 
 **Updated 2026-09-12: four MEASURED neck-extensor endurance results were found, and
-none of them is a curve.** They are recorded here and nowhere else — no constant
+none of them is a curve. Updated 2026-09-14: a fifth was found, and it brought a
+measured neck-extension MVC with it.** They are recorded here and nowhere else — no constant
 moved, `task->reference-region` still returns `:absent-from-source` for the neck,
 and `:no-published-curve-for-this-region` keeps its name:
 
@@ -625,6 +626,24 @@ and `:no-published-curve-for-this-region` keeps its name:
 4. **Deep Neck Extensor Endurance Test normative values, 440 healthy young adults
    (18-28 y)**, *Musculoskelet Sci Pract* 2024 (S1360859224004030, abstract):
    mean holding time **43.1 s** (men 47.1, women 40.7). Intensity again unstated.
+5. **Vintimilla, Hooper, James, Lu, Natesan, Kapila & Sizer, "The Effect of
+   Exercise-Induced Central Fatigue on Cervical Spine Joint Position Error,
+   Strength, and Endurance", *Int J Sports Phys Ther* 2024;19(3):290-300,
+   DOI `10.26603/001c.92703`, PMID 38439782, PMC10909308 — full text read
+   (open access, CC BY-NC), 2026-09-14.** Supine neck-flexor endurance test, 19
+   healthy adults (9M/10F, 32 +/- 8 y): pre-fatigue **35.5 +/- 10.4 s**, falling
+   **24.5%** after exercise-induced central fatigue (p < 0.001, Cohen's d = 0.95).
+   The load is the head's own weight held 2.5 cm off the plinth — **the test
+   states no %MVC (`:parameter-not-in-source`)**, so it cannot enter the power
+   law's x-axis either. What it adds that items 1-4 do not have is a **measured
+   neck-extension MVC from the same subjects: 209 +/- 76 N** (hand-held
+   dynamometer at the occiput, 5 s maximal isometric hold, mean of 3 trials,
+   unchanged by fatigue, p = 0.9) — and flexion 141 +/- 34 N, so the same paper
+   measured the extension:flexion strength ratio from its own two means:
+   **1.48** (209/141) — `:representative`, the paper itself reports no ratio,
+   and a ratio of means understates the spread of the ratio; a quantity this
+   repo's `recruit` layer otherwise has no measured neck number to compare
+   against. No constant moved: the ratio is recorded here only.
 
 Direction of the mismatch, stated and NOT closed: at just above the 8 %MVC floor
 the model prices a held load at **>70 min**, while these tests put healthy
@@ -632,7 +651,9 @@ neck-extensor task-failure at **0.7-4.8 min** at an intensity nobody stated. The
 x-axes do not meet — a measured point needs its %MVC to join a curve — so this
 entry is a pointer, not a calibration. The headline muscle remains in the
 `:no-published-curve-for-this-region` bucket; what changed is that the bucket now
-names the four measurements it is waiting for.
+names the five measurements it is waiting for — and the fifth carries the one
+neck-extension MVC (209 +/- 76 N, Vintimilla 2024) that any future %MVC for the
+cervical extensors has to be built from.
 
 ## Isaac Sim / kami-genesis
 
