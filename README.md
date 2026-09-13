@@ -1701,7 +1701,7 @@ measurement:
 | | modelled at neutral | measured | |
 |---|---|---|---|
 | `longus_capitis` | **91.75 mm** | 78–111 mm, mean 92 (14) | inside, on the mean |
-| `rectus_capitis_anterior` | 16.06 mm | — | the table does not contain the muscle |
+| `rectus_capitis_anterior` | 16.06 mm | **30.7 (2.7) mm, n=6** | **outside, the model line is about half the measured chord** — see the bullet below |
 
 ### The arms move, and they move the other way from the extensors
 
@@ -2041,8 +2041,30 @@ capitis passive term at a posture where its active force is zero.
   the C2/C3 block, which is about the deep **extensors**. What it does close is the
   claim that no in-vivo longus colli number was ever found - one has, dated and cited,
   above.
-- **`rectus_capitis_anterior`'s length** is checked against nothing, because the source
-  does not contain the muscle.
+- ⚠ *Stale sentence below - corrected 2026-09-14:* this section said
+  `rectus_capitis_anterior`'s length "is checked against nothing, because the source does
+  not contain the muscle". A source that contains the muscle **has** since been found, and
+  the check now runs and **fails**: Lin G, Wang W, Wilkinson T, *Changes in deep neck
+  muscle length from the neutral to forward head posture. A cadaveric study using Thiel
+  cadavers*, Clinical Anatomy 2022;35(3):332-339 (doi:10.1002/ca.23834, PMID 35038194,
+  PMC9304288; full text read 2026-09-14 through the Europe PMC REST API — PubMed HTML
+  serves a cookie page). Six Thiel-embalmed cadavers (4 M / 2 F, mean age 86.2 ± 8.7),
+  16 deep neck muscles per cadaver digitised attachment-to-attachment with a MicroScribe
+  3D Digitizer, attachment sites per Khayatzadeh et al. 2017 (Phys Ther 97(7):756-766,
+  doi:10.1093/ptj/pzx040), straight line between attachments — the same straight-line
+  convention this model uses. Its Table 2 gives **rectus capitis anterior 30.7 ± 2.7 mm**
+  at the 55° neutral posture, with no significant length change at slight or severe FHP
+  (2.6 ± 4.2% and 3.2 ± 6.5%, p non-significant). The model's own line is **16.06 mm**
+  at neutral (table above). Caveats kept: n=6, the oldest and smallest cohort in this
+  model's citations, and a chord between attachment points is not a fibre length —
+  Kamibayashi & Richmond would call their longus capitis 92 mm a *muscle length* over
+  the same span convention. So this is a check that fails in a **stated direction**
+  (the model line is short by about a factor of two, which understates the muscle's
+  length and mis-states its force-length operating point), not a replacement constant:
+  no value moves on this branch. Direction of the error this fixes toward: if the
+  measured 30.7 mm is the truth, the model's RCA origin/insertion offsets place the two
+  ends too close together — most plausibly the insertion, 5 mm up the skull axis, where
+  a basiocciput attachment sits higher.
 - **Both flexors are modelled midline**, so longus capitis's ipsilateral rotation — which
   Vasavada attributes to its superomedial fascicle orientation — is absent, as is rectus
   capitis anterior's lateral bending.
