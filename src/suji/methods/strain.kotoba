@@ -275,7 +275,16 @@
                    "Int J Industrial Ergonomics 2006;36(2):99-108.")
     :wanted "its table of 24 published MET models — the widest survey of the fits"
     :outcome :could-not-obtain
-    :reason :paywalled-abstract-shell-only}
+    :reason :paywalled-abstract-shell-only
+    :note (str "re-searched 2026-09-13: the ScienceDirect shell and the publisher "
+               "page still return only the abstract; the ResearchGate record of "
+               "the same paper states `No full-text available`, and citing papers "
+               "quote its grouping (24 ET models, 12 investigators, general / "
+               "upper-limb / trunk-hip classes, upper limb significantly shorter "
+               "at a given intensity — Frey Law & Avin 2010 and Frey Law et al. "
+               "2012, both read in full) but carry no coefficient table of their "
+               "own. A citation-chain summary is not the table, and the table is "
+               "what was wanted. :could-not-obtain stands.")}
    {:citation (str "Rohmert W. Die Grundlage der Beurteilung statischer Arbeit. "
                    "Westdeutscher Verlag, 1960.")
     :wanted "the original curves, and the original statement of the 15 %MVC limit"
