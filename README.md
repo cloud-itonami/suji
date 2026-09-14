@@ -1968,10 +1968,67 @@ cervical semispinalis cervicis or one-level cervical multifidus — was searched
   side, and its cross-section is currently as unsourced as the extensors'. It does not
   close the extensor block, and the 113 mm2 is not an extensor number.
 
-So the block is confirmed to be **a source that does not exist in vivo either**, not a
+So the block was confirmed to be **a source that does not exist in vivo either**, not a
 source nobody has looked for. The candidate moment arms in the table above (+16.74 mm at
 neutral for the one-level multifidus) remain usable the day a measured PCSA appears; the
 PCSA does not.
+
+> ⚠ **That "in vivo" half was refuted on 2026-09-14 (bot/suji-anatomy) — the next section
+> reads it.** What survives of the sentence is the narrower claim: no in-vivo source gives
+> the **PCSA** of these muscles, and none resolves the **C2/C3** level. The per-level
+> in-vivo *anatomical* CSA has existed since 2011.
+
+### An in-vivo per-level anatomical CSA does exist (found 2026-09-14, bot/suji-anatomy)
+
+**Izumida H, Daimon K, Umezawa H, et al., "Longitudinal MRI study over 20 years of
+cervical posterior extensor muscle area in asymptomatic subjects", *Sci Rep* 15:21826,
+2025** (doi:10.1038/s41598-025-08055-6; full text read 2026-09-14 at nature.com —
+open access, CC BY; its baseline arm is the Okada 2011 cohort, Eur Spine J 20:1567-1573,
+doi:10.1007/s00586-011-1774-x, PMID 21431426, PMC3175907, whose own full text is
+paywalled and whose abstract carries only the whole-group sums). 55 of 497 asymptomatic
+volunteers (35 M / 20 F, mean 31.9 ± 13.8 y at baseline), 1.5-T T2-weighted axial MRI,
+ROI traced on visible fascia, two raters (intra- 0.92 / inter- 0.89 ICC). Table 2
+measures, **in vivo and per level, exactly the two muscles the lump's `:source` names
+first** — bilateral means, mm2:
+
+| level | multifidus | semispinalis cervicis | MF+SSC bilateral |
+|---|---|---|---|
+| C3/4 | 146.4 ± 48.0 | 180.3 ± 51.8 | **326.7** |
+| C4/5 | 245.6 ± 75.6 | 318.6 ± 102.8 | **564.2** |
+| C5/6 | 239.0 ± 83.1 | 410.8 ± 148.0 | **649.8** |
+
+(Side check done rather than assumed: the paper's own left/right rows at C4/5,
+840.8 + 868.6 = 1709.4 mm2, reproduce its table's group total, so these figures are
+**bilateral**, the same convention the 12.0 cm2 lump carries.)
+
+**What this measures against.** MF+SSC summed over just the three measured levels is
+**1540.7 mm2 = 15.4 cm2**, which already exceeds the whole **12.0 cm2** lump that claims
+four muscles (semispinalis cervicis, multifidus, longissimus and spinalis cervicis) over
+the full C3-C7 span — the same direction as the 2026-09-12 Zheng-chain bracket (16.5 to
+50.9 cm2 bilateral MF+SC), now confirmed at its low end by a single-cohort direct
+measurement instead of a two-population chain. It remains a statement about the lump, not
+a replacement for it: the measured span is three of the model's five lower-cervical
+levels, so neither number covers the same territory.
+
+**What it does not close, named rather than blurred.**
+
+1. The quantity is **anatomical CSA**, and the paper says so in its own Methods:
+   *"All measurements represent anatomical CSA ... does not necessarily reflect force
+   production. This is distinct from physiological CSA, which estimates muscle
+   force-generating capacity."* The conversion anatomical → PCSA needs volume and
+   fascicle length (`:conversion-not-in-source`); Anderson's 1.2-3.7 cm fascicle
+   range is the only divisor this repo holds, and it was dissected, not imaged.
+   So the 15.4 cm2 is a bracket on the lump's **cross-section**, not on its capacity.
+2. The table **starts at C3/4** — the C2/C3 level the `:c2c3` block needs is one
+   level above the first measured row. The C3/4 multifidus row (146.4 ± 48.0) is a
+   measured *adjacent* level, not a value for the one-level C2/C3 candidate.
+3. Fatty degeneration rose to 169.5-200.4% of the pure-muscle signal at follow-up,
+   so the 20-year rows are aged tissue; only the baseline arm is quoted here.
+
+**No constant moves.** The 12.0 cm2 stays byte-exactly where it is; the block's
+blocker is now "no PCSA in vivo and no C2/C3 row", which is narrower and truer than
+"no in-vivo source exists". The `:c2c3` candidate stays in `awaiting-muscles`.
+
 ### A source the 2026-09-10 search missed (found 2026-09-12, bot/suji-anatomy)
 
 **Anderson JS, Hsu AW, Vasavada AN, *Morphology, architecture, and biomechanics of
