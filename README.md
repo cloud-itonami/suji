@@ -3007,9 +3007,36 @@ fudge factor, no fitted constant was added on this branch.
 
 ### What could not be sourced, this time
 
-- **A lordosis for a deep squat.** Cho radiographs standing and five sitting postures. Nothing
-  measured was found for a squat, so the model holds its neutral and says which way that is
-  likely wrong.
+- ~~**A lordosis for a deep squat.** Cho radiographs standing and five sitting postures.
+  Nothing measured was found for a squat, so the model holds its neutral and says which way
+  that is likely wrong.~~ ⚠ **Annotated 2026-09-14 (bot/suji-anatomy): a measured squat
+  lumbar value now exists, and its direction is the opposite of the model's guess.**
+  Fukushima K, Tsutsumi M, Nakata A, Kakimoto A, Yamaguchi I, Hoshino T, Matsuzaki S, Kudo S,
+  *Relationship between pelvic incidence and hip, pelvic, and lumbar motion during squatting
+  in healthy individuals with high and low pelvic incidence*, **Sci Rep 16:5831, 2026**,
+  doi:10.1038/s41598-026-36815-5, PMID 41559209, PMC12894836 (full text read 2026-09-14 via
+  the Europe PMC REST fullTextXML endpoint; CC BY-NC-ND). 26 healthy males (13 high-PI /
+  13 low-PI, PI 60.0 ± 6.2° vs 38.8 ± 2.7°), Vicon 100 Hz, five bodyweight squats, heels
+  down, deepest possible depth (36.2 ± 6.2% / 37.4 ± 7.4% of leg length at maximum), lumbar
+  curvature from L1–L5 spinous-process markers (circle fit, the List 2013 convention this
+  repo's own reference 30 uses). The finding the model did not predict: **the lumbar
+  curvature crosses from lordosis to kyphosis during the descent** — the lordosis→kyphosis
+  switch happens at **40.8 ± 18.7% of the descent** in the low-PI group and **55.3 ± 10.0%**
+  in the high-PI group — so the bottom of a deep squat is a **kyphotic**, not lordotic,
+  lumbar spine, with a **measured per-squat excursion of 33.5 ± 9.9° (high PI) / 38.0 ± 9.3°
+  (low PI)** (Table 2). The model holds a deep squat at its **neutral** and says that is
+  likely wrong in the *lordotic* direction; the measurement says the error runs the *other*
+  way — the model is right to be wrong, but wrong about which way. What this does not close:
+  (i) the value is a **dynamic** time-series with the curvature defined by skin markers
+  (Zemp 2014 is the same group's own soft-tissue-artefact warning, ref 32 of the paper:
+  `:marker-not-bone`), not a static radiographic L1/S1 Cobb like Cho's — the two conventions
+  are not equated; (ii) it is a **descent** curve normalised 0–100%, so it pins a *transition
+  timing* and an *excursion*, not a single bottom-position angle — the static number this
+  gap asked for is still `:could-not-obtain`; (iii) young males only (22.1 ± 4.1 y),
+  `:representative` for this actor's bodies. **No constant moves** — the deep-squat posture
+  keeps `:lumbar-lordosis-deg 0.0` and the direction note now points here instead of saying
+  "likely wrong" with no sign. Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical.
 - **Which of Cho's two chairs a `:back-supported` workstation is.** *Chair with lumbar support*
   (36.2° ± 8.4°) and *90°-angled chair* (17.7° ± 4.4°) are both plausible readings of the
   library's one boolean, and reading either one onto it would be choosing. The bracket is
