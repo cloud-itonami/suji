@@ -596,11 +596,14 @@ the entry is a ligament (2), the model's own floor (20 — a seated posture asks
 nothing of the leg), and a muscle `recruit` refused (11). The three neck muscles
 added on 2026-09-07 moved two of those counts (3 → 5 and 10 → 11) and none of the
 ratios: **there is still no published endurance curve for the neck**, which is the
-one bucket this actor's headline muscles have always been in.
+one bucket this actor's headline muscles have always been in — and whose sixth
+entry (Chowdhury 2022) is the first to state its intensity, 50% of each subject's
+own maximum, which is the axis the power law's x-coordinate needs.
 
 **Updated 2026-09-12: four MEASURED neck-extensor endurance results were found, and
 none of them is a curve. Updated 2026-09-14: a fifth was found, and it brought a
-measured neck-extension MVC with it.** They are recorded here and nowhere else — no constant
+measured neck-extension MVC with it; later the same day a sixth was found, and
+it is the first whose intensity is stated.** They are recorded here and nowhere else — no constant
 moved, `task->reference-region` still returns `:absent-from-source` for the neck,
 and `:no-published-curve-for-this-region` keeps its name:
 
@@ -644,16 +647,41 @@ and `:no-published-curve-for-this-region` keeps its name:
    and a ratio of means understates the spread of the ratio; a quantity this
    repo's `recruit` layer otherwise has no measured neck number to compare
    against. No constant moved: the ratio is recorded here only.
+6. **Chowdhury SK, Zhou Y, Wan B, Reddy C & Zhang X, "Neck Strength and Endurance
+   and Associated Personal and Work-Related Factors", *Human Factors*
+   2022;64(6):1013-1026, DOI `10.1177/0018720820983635`, PMID 33504206 —
+   abstract read 2026-09-14 (SAGE; the tables are paywalled,
+   `:could-not-obtain`).** 40 healthy participants (20 M / 20 F, 38 analysed,
+   21-45 y), seated, helmet against a load cell: **sustained-till-exhaustion
+   head-neck exertions at 50% of each subject's own maximum** in neutral,
+   40° extended and 40° flexed postures — the first entry in this bucket whose
+   intensity is a stated %MVC, the axis the power law's x-coordinate needs. The
+   per-condition times are in its paywalled tables, so no number from it is
+   carried; what its abstract adds is that **head-neck posture is the most
+   significant determinant of both neck strength and endurance** — the same axis
+   this model's %MVC sweep runs over — and that time of day matters. The
+   companion PNAS paper from the same laboratory measures the same protocol and
+   states the holding times in its full text (read 2026-09-14): Zhou Y, Reddy C,
+   Zhang X, *The deflection of fatigued neck*, **PNAS** 2024;121(34):e2401874121
+   (doi:10.1073/pnas.2401874121, PMID 39133855, PMC11348306) — 24 subjects
+   (11 M / 13 F), 50% of individual strength: **82 ± 43 s neutral, 56 ± 23 s at
+   40° extended, 117 ± 68 s at 40° flexed**, EMG median-frequency slopes
+   significantly negative in all four measured muscles in all three positions.
+   No constant moves: the numbers are recorded here only. The dose layer's
+   comparison stays `:no-published-curve-for-this-region` — a curve is a family
+   over intensity, and one intensity per posture direction is not a curve.
 
 Direction of the mismatch, stated and NOT closed: at just above the 8 %MVC floor
 the model prices a held load at **>70 min**, while these tests put healthy
-neck-extensor task-failure at **0.7-4.8 min** at an intensity nobody stated. The
+neck-extensor task-failure at **0.7-4.8 min** at an intensity nobody stated (items 2-5), while item 6 holds
+at a stated 50% of maximum for under two minutes. The
 x-axes do not meet — a measured point needs its %MVC to join a curve — so this
 entry is a pointer, not a calibration. The headline muscle remains in the
 `:no-published-curve-for-this-region` bucket; what changed is that the bucket now
-names the five measurements it is waiting for — and the fifth carries the one
+names the six measurements it is waiting for — the fifth carries the one
 neck-extension MVC (209 +/- 76 N, Vintimilla 2024) that any future %MVC for the
-cervical extensors has to be built from.
+cervical extensors has to be built from, and the sixth is the one entry whose
+own intensity is stated (50% of maximum, Chowdhury 2022).
 
 ## Isaac Sim / kami-genesis
 
