@@ -2137,7 +2137,23 @@ capitis passive term at a posture where its active force is zero.
   capitis anterior's lateral bending.
 - **`upper_cervical` is still 37 mm where an atlas plus axis is nearer 50**, so
   `rectus_capitis_anterior`, which spans it, is short for the same reason
-  `rectus_capitis_posterior_minor` is.
+  `rectus_capitis_posterior_minor` is. The "nearer 50" now has a measured
+  in-vivo anchor, not just the dry-bone body heights of 2026-09-11: Polat S,
+  Oksüzler M, *Determination of reference values of the craniovertebral junction
+  in healthy individuals using computed tomography*, Cukurova Medical Journal
+  2025;50(3):732-743 (doi:10.17826/cumj.1708045; no PMID found; abstract read via
+  the publisher page — full text :could-not-obtain, the numbers are the paper's
+  own stated means) measured **axis height 34.78 ± 2.82 mm** in 180 healthy
+  adults (males 36.40 ± 2.61, females 33.33 ± 2.15) on CT — the whole C2,
+  dens tip to inferior endplate. Against the model's 18.6 mm uniform subaxial
+  unit that is a +16.2 mm C2 excess at the mean, roughly three times the +4 to
+  +6 mm the Xu 1995 *body-only* heights give (attachment.kotoba's note below);
+  the direction agrees and the size is larger. Adding the C1 ring (~10 mm
+  anterior arch, dry-bone ranges) and the occipital condyle column still does
+  not reach 50 from these sources, so the ~50 stack total stays
+  `:representative` and is installed nowhere; what is measured is that C2 alone
+  is taller than a subaxial unit, which is why the uniform-spacing cut runs the
+  spanning muscles short.
 
 **The frontal plane is CARRIED (2026-09-06).** Six muscle groups were added for
 it — middle deltoid and latissimus dorsi at each shoulder, quadratus lumborum and
