@@ -3068,7 +3068,24 @@ fudge factor, no fitted constant was added on this branch.
 - **Which of Cho's two chairs a `:back-supported` workstation is.** *Chair with lumbar support*
   (36.2° ± 8.4°) and *90°-angled chair* (17.7° ± 4.4°) are both plausible readings of the
   library's one boolean, and reading either one onto it would be choosing. The bracket is
-  recorded instead.
+  recorded instead. ⚠ *Bracket's axis annotated 2026-09-14 (bot/suji-anatomy):* the two rows do
+  not differ only in chair identity — the measured literature says the variable that moves a
+  backrested sit's lordosis is **lumbar-support presence and size**, and the backrest–seat angle
+  has only a minor effect (Andersson GBJ, Murphy RW, Örtengren R, Nachemson AL, *The influence of
+  backrest inclination and lumbar support on lumbar lordosis*, **Spine 1979;4(1):52-58**,
+  doi:10.1097/00007632-197901000-00009, PMID 432716; abstract only — the paper is subscription
+  and **no number from it is installed**). Chair-side kinematics does the same work in a second
+  cohort: Lengsfeld M, Frank A, van Deursen DL, Griss P, *Lumbar spine curvature during office
+  chair sitting*, **Med Eng Phys 2000;22(9):665-669** (doi:10.1016/S1350-4533(00)00086-2,
+  PMID 11259935; abstract only, `:could-not-obtain` for its tables): in a backrested office
+  chair the **L4/L5 segmental angle ranges 11.7° → 2.8°** depending on the seat-tilt mechanism.
+  Cho's upper row is the one where the significant variable (a lumbar support) is *present* and
+  her lower row the one where it is *absent*, so the 17.7–36.2° bracket is really a
+  support-present ↔ support-absent bracket that the one boolean cannot express. The 0.0° error
+  direction is unchanged (**under**-states lordosis under either reading); what is stated
+  instead is that chair *identity* is not the variable the measurements resolve. Still not
+  closed: no L1/S1 lordosis for this model's own `:back-supported` postures was found, and no
+  number moves.
 - ~~**How much of the 10.27 cm of translation a real standing pelvis would remove.**~~ **Sized
   on 2026-09-10: none of it.** The hip-rooted chain now exists and the answer is that re-rooting
   is a rigid translation, so it removes nothing. The split is also exact now —
