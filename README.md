@@ -1996,10 +1996,12 @@ cervical semispinalis cervicis or one-level cervical multifidus — was searched
   side, and its cross-section is currently as unsourced as the extensors'. It does not
   close the extensor block, and the 113 mm2 is not an extensor number.
 
-So the block is confirmed to be **a source that does not exist in vivo either**, not a
-source nobody has looked for. The candidate moment arms in the table above (+16.74 mm at
-neutral for the one-level multifidus) remain usable the day a measured PCSA appears; the
-PCSA does not.
+So the block was read as **a source that does not exist in vivo either**, not a source nobody has looked
+for — ⚠ *narrowed 2026-09-14 (bot/suji-anatomy), see the section below*: an in-vivo asymptomatic cohort
+(Okada 2011, the same Keio series) does measure multifidus and semispinalis cervicis separately and per
+level — but only down to **C3-C4**, one level below `:c2c3`, and as anatomical CSA rather than PCSA. The
+candidate moment arms in the table above (+16.74 mm at neutral for the one-level multifidus) remain usable
+the day a measured per-side PCSA appears; the per-side PCSA does not.
 ### A source the 2026-09-10 search missed (found 2026-09-12, bot/suji-anatomy)
 
 **Anderson JS, Hsu AW, Vasavada AN, *Morphology, architecture, and biomechanics of
@@ -2051,7 +2053,82 @@ a measured proportion, a measured volume and a measured fascicle-length range ex
 and the one-line resolution stays the owner's judgement. The 0.7 N.m extension
 capacity is also the first measured scale for what a solver at `:c2c3` could call on
 from the extension side — comparable against that joint's demand the day the PCSA
-question closes.
+### The first per-level in-vivo partition of the deep-extensor group itself (found 2026-09-14, bot/suji-anatomy)
+
+The block above closed with *a source with a cross-section for the deep cervical
+extensors does not exist in vivo either*. That is now wrong as stated, and it was wrong
+in this README's own citation list: **Okada E, Matsumoto M, Ichihara D, Chiba K, et al.,
+"Cross-sectional area of posterior extensor muscles of the cervical spine in asymptomatic
+subjects: a 10-year longitudinal magnetic resonance imaging study", Eur Spine J
+20(8):1274-1280, 2011 (doi:10.1007/s00586-011-1774-x, PMID 21431426, PMC3175907; full
+text read 2026-09-14 via PMC)** — the same Keio cohort this repo already reads at
+*The lumbar 5 levels ...* — traces **multifidus, semispinalis cervicis, semispinalis
+capitis and splenius capitis separately, bilaterally, per level, in 62 asymptomatic
+volunteers** (24 M / 38 F, 37.3 ± 12.6 y). Its Table 3, initial investigation:
+
+| level | multifidus | semispinalis cervicis | semispinalis capitis | splenius capitis |
+|---|---|---|---|---|
+| C3-C4 | 208.5 ± 45.1 | 234.4 ± 50.5 | 479.7 ± 171.2 | 474.0 ± 144.8 |
+| C4-C5 | 257.9 ± 78.0 | 306.4 ± 61.6 | 480.4 ± 154.7 | 470.0 ± 158.1 |
+| C5-C6 | 259.3 ± 74.8 | 354.1 ± 89.1 | 431.7 ± 126.7 | 497.8 ± 148.8 |
+
+(all mm², **bilateral**; per side, halve — the paper traces "bilaterally" and its tables
+do not split sides, so the split is `:parameter-not-in-source`, and a per-side number
+carried as if per-side would **understate** it by 2×)
+
+What this measures that nothing else here does:
+
+1. **The lump's own partition, in vivo.** The deep pair the lump names — multifidus +
+   semispinalis cervicis — is **442.9 mm² = 4.43 cm² bilateral at C3-C4** (its most
+   rostral level), 564.3 = 5.64 cm² at C4-C5, 613.4 = 6.13 cm² at C5-C6. The lump's
+   12.0 cm² sits **above** this pair's measured whole-column-spanning total everywhere
+   the pair is measured — which is the opposite direction from the Zheng+Anderson
+   volume-derived bracket above (16.5-50.9 cm² male bilateral for the same pair), and
+   the two can now be stated against each other instead of only against the lump: a
+   measured anatomical-CSA floor of 4.4-6.1 cm² and a measured volume-derived PCSA
+   bracket of 16.5-50.9 cm², with the anatomical-vs-physiological gap (the paper's own
+   distinction, its companion 2025 study's methods section spells it out: "anatomical
+   CSA ... is distinct from physiological CSA, which estimates muscle force-generating
+   capacity") doing the work that neither number can.
+2. **The per-level shares the candidate table needed.** At C3-C4, multifidus alone is
+   2.09 cm² bilateral — the one-level C2/C3 candidate's cross-section is no longer
+   "as unsourced as the extensors'" (this README, 2026-09-12): it has an in-vivo
+   anatomical floor, from the same class of asymptomatic cohort the model already
+   accepts. At C3-C4 the deep pair carries **31.7%** of the four-muscle total
+   (442.9/1396.8), so the lump's own group is measured to be about a third of what
+   crosses the mid-cervical levels — the rest is semispinalis capitis and splenius
+   capitis, which this model already carries as named entries.
+3. **A second measured total to check the named entries against.** Semispinalis
+   capitis 4.80 cm² and splenius capitis 4.74 cm² bilateral at C3-C4 (Kamibayashi &
+   Richmond PCSA: 10.80 and 8.52 bilateral in this model) — the anatomical-CSA values
+   sit below the PCSA values, which is the direction anatomical-vs-physiological
+   predicts (anatomical CSA omits the pennation and fascicle-length term), so this is
+   a floor with a stated direction, not a contradiction to repair.
+
+It does **not** close the block, for three stated reasons:
+
+1. **The deepest level it measures is C3-C4.** `:c2c3` — the joint this block is
+   about — is one level rostral of the rostral-most measurement. The C3-C4 values
+   are the nearest measured level and the trend across C3-C4 → C5-C6 is
+   **upward** for both deep muscles (2.09 → 2.58 → 2.59 cm² multifidus), so if
+   anything the C2-C3 values they bracket from below are likely larger — but that is
+   an extrapolation against a measured gradient, and the paper itself did not image
+   C2-C3 (`:could-not-obtain` for the level this joint needs).
+2. **Anatomical CSA, not PCSA.** The model's cross-sections are PCSAs (force
+   capacity); these are anatomical CSAs on T2-weighted axial MRI (the paper's own
+   caution, and its companion 2025 study states the distinction explicitly). Installing
+   them as PCSAs would **understate** force capacity by the pennation/length term,
+   which is the error direction `:parameter-not-in-source` exists to name.
+3. **The lump still names four muscles and this measures two of them** — longissimus
+   and spinalis cervicis remain absent from every ROI list found, as recorded above.
+
+**No constant moves.** `cervical_extensors` keeps 12.0 cm², the C2/C3 block stays in
+`awaiting-muscles`, and the day a per-side C2-C3 PCSA appears it now has a measured
+per-level neighbourhood to land in. What changes is the claim: *"no source exists in
+vivo either"* is replaced by *"the nearest measured level is C3-C4, one level below
+the joint, and the partition is measured there"*. Hansraj 5-value and Wilke sitting
+348.86176709999995 N byte-identical.
+
 
 
 What *did* change at C2/C3: `longus_capitis` runs up the front of the column to the
