@@ -2864,16 +2864,33 @@ derives both from the level's own axis and asserts that the second is several ti
 
 ### What could not be sourced
 
-- **How lordosis divides between the sacrum and the lumbar discs.** Cho reports the
-  correlations (r = 0.731 with sacral slope, r = −0.842 with pelvic tilt) and **not the
-  partition**. This model has no vertebral wedging, so the pelvis carries all of it, which
-  **over-rotates the hips and both legs** in a lordotic posture. Named in
-  `posture/pelvic-tilt-for` with the direction of the error rather than split by a guess.
-- **Pelvic incidence.** The morphological constant that fixes how much sacral slope a
-  particular pelvis has needs a sacral endplate and a femoral-head geometry; this model has a
-  rod from L5/S1 to the hip axis. So `:pelvic-tilt-deg` is a **change** from the straight-lumbar
-  neutral, not an absolute pelvic tilt, and the model can compare two postures without being
-  able to state either one's SS or PT. Wilke's comparison is a difference too.
+- **How lordosis divides between the sacrum and the lumbar discs.** ⚠ *Half of this bullet
+  went stale on 2026-09-11 and its function name went stale with it (marked 2026-09-15,
+  bot/suji-anatomy — both corrections are inline).* Cho reports the correlations
+  (r = 0.731 with sacral slope, r = −0.842 with pelvic tilt) and **not the partition** —
+  from Cho that is still true. But *"the pelvis carries all of it"* stopped describing this
+  model the day the partition was measured from a second cohort: the pelvis spends **0.586**
+  of a lordosis change (`posture/sacral-slope-share-of-lordosis`, Mills et al. 2026,
+  ΔSS 16.7 / ΔLL 28.5 over the same posture change), installed in `pose/pelvic-rotation-deg`
+  — see *The segmental lordosis crossed the standing–sitting difference* below. The
+  over-rotation this bullet names is 0.586 × 46.5° = **27.25°** now, not 46.5°. And the
+  function it names, `posture/pelvic-tilt-for`, no longer exists — partition and posture key
+  moved together on 2026-09-11 (`pelvic-tilt-for` → `posture/lordosis-for`;
+  `:pelvic-tilt-deg` → `:lumbar-lordosis-deg`, which `pose/solve-pose` now **refuses**).
+  What is still unsourced is the partition **at Cho's own 46.5°**: Mills' ratio is measured
+  over a 28.5° change, and her regression over a 61.1° change gives 0.63 (R = 0.85), on
+  which reading the model would spend 4% less lordosis on the pelvis — the error direction
+  `posture/sacral-slope-share-of-lordosis`'s docstring already states.
+- **Pelvic incidence.** ⚠ *The key this bullet names is retired (marked 2026-09-15,
+  bot/suji-anatomy).* The morphological constant that fixes how much sacral slope a
+  particular pelvis has needs a sacral endplate and a femoral-head geometry; this model still
+  has a rod from L5/S1 to the hip axis, so the limitation itself stands unchanged. But
+  `:pelvic-tilt-deg` is no longer a key this library accepts — the posture key was renamed
+  `:lumbar-lordosis-deg` on 2026-09-11 and `pose/solve-pose` **refuses** a posture carrying
+  the old one. The sentence survives under the new key with the same content: the input is a
+  **change** from the straight-lumbar neutral, not an absolute pelvic tilt, and the model can
+  compare two postures without being able to state either one's SS or PT. Wilke's comparison
+  is a difference too.
 - **Wilke's own subject's lordosis, in either posture.** Both reference entries now carry
   `:parameter-not-in-source`. The sitting one's is zero and measured, which is why it stays
   comparable; the standing one's is 46.5° from a different cohort with an SD of 10.5°, and the
@@ -2917,7 +2934,7 @@ reads identically to a measured one.**
 
 | posture | lordosis | basis |
 |---|---|---|
-| `quiet-standing` | **46.5°** | **measured** — Cho standing 47.1° ± 10.5°, minus her stool's 0.6°. Derived as `(pelvic-tilt-for :standing)`, not written as a literal |
+| `quiet-standing` | **46.5°** | **measured** — Cho standing 47.1° ± 10.5°, minus her stool's 0.6°. Derived from the table, not written as a literal — `(pelvic-tilt-for :standing)` when this row was written, `(lordosis-for :standing)` since the 2026-09-11 rename |
 | `seated-posture` (the constructor's default) | **0.0°** | **measured** — Cho stool 0.6° ± 3.6°, minus itself. The one zero in this library that is a measurement, and it is derived the same way |
 | `standing-neutral` | 0.0° | **by construction** — every joint at neutral is the definition of the posture, and the lumbar spine is a joint. Not a claim about a body |
 | `deep-squat` | 0.0° | **`:parameter-not-in-source`** — Cho radiographs standing and five *sitting* postures; a squat is not among them. Direction stated: a squat is the posture lordosis is most often reported to reverse in, so a zero here likely **over**-states it |
@@ -2931,8 +2948,10 @@ for rather than answering `nil` — nil and *"no lordosis"* are the same value, 
 failure the table replaces. `posture-test` is the gate: add a posture without an entry and the
 suite goes red.
 
-Both Wilke reference entries now **derive** their tilts from the same table
-(`(pelvic-tilt-for :standing)` / `(pelvic-tilt-for :stool)`) instead of carrying `46.5` and
+Both Wilke reference entries now **derive** their tilts from the same table —
+`(pelvic-tilt-for :standing)` / `(pelvic-tilt-for :stool)` when this was written,
+`(posture/lordosis-for :standing)` / `(posture/lordosis-for :stool)` since the 2026-09-11
+rename (`:pelvic-tilt-deg` → `:lumbar-lordosis-deg` moved with it) — instead of carrying `46.5` and
 `0.0` as literals. `47.1 − 0.6 == 46.5` to the bit in double, so **neither cross-check moved**.
 
 ### Installing the measured standing lordosis breaks four other measurements
