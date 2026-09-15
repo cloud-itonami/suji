@@ -2053,6 +2053,63 @@ capacity is also the first measured scale for what a solver at `:c2c3` could cal
 from the extension side — comparable against that joint's demand the day the PCSA
 question closes.
 
+### The first in-vivo, per-muscle, level-resolved CSA for the deep extensors (found 2026-09-15, bot/suji-anatomy)
+
+**Izumida H, Daimon K, Umezawa H, Michikawa T, Fujiwara H, Okada E, Nojiri K, Katoh H,
+Shimizu K, Ishihama H, Nakamura M, Matsumoto M, Watanabe K, *Longitudinal MRI study
+over 20 years of cervical posterior extensor muscle area in asymptomatic subjects*,
+Scientific Reports 2025;15 (art. 2025 series, published 2025-07-01)
+(doi:10.1038/s41598-025-08055-6, PMID 40595211, PMC12218271; full text read 2026-09-15
+through the Europe PMC REST fullTextXML endpoint).** 55 asymptomatic volunteers
+(35 M / 20 F, mean age 31.9 ± 13.8 y at baseline, 21.9 ± 0.8 y between scans), T2-weighted
+axial MRI, each muscle's fascia traced manually in ImageJ (ICC-checked), at C3/4, C4/5 and
+C5/6. Its Table 2 measures, by name, two of the four muscles the lump's `:source` declares —
+**cervical multifidus and semispinalis cervicis, separately** — which is the separation
+Fortin 2018 declined and Elliott 2007's abstract did not carry. Bilateral sums at baseline:
+
+| level | multifidus | semispinalis cervicis | MF+SCer together |
+|---|---|---|---|
+| C3/4 | 146.4 ± 48.0 mm² | 180.3 ± 51.8 mm² | **3.27 cm²** |
+| C4/5 | 245.6 ± 75.6 | 318.6 ± 102.8 | **5.64 cm²** |
+| C5/6 | 239.0 ± 83.1 | 410.8 ± 148.0 | **6.50 cm²** |
+
+(The paper's own Total column confirms the per-muscle values are bilateral sums: at C4/5 the
+left + right group figures 868.6 + 840.8 = 1709.4 mm² equal the Total row.)
+
+**What this does to the two measured brackets the block already holds.** The
+Zheng-Anderson bracket put bilateral MF+SCer at 16.5–50.9 cm² (male) / 10.3–31.9 cm²
+(female) — and its floor sat ABOVE the lump's 12.0 cm², so the bracket's error direction
+read as "the lump under-states". Izumida's directly measured sums sit **below that floor by a
+factor of 2.5–5** and **straddle the lump from below** (3.27–6.50 cm² against 12.0 cm²). The
+two brackets are not contradictory; they measure different quantities:
+
+- Zheng/Anderson divide volume by fascicle length to approximate **PCSA** — the
+  force-producing cross-section this model's `:pcsa-cm2` actually asks for;
+- Izumida traces **anatomical CSA** on an axial image — the paper says so itself:
+  *"All measurements represent anatomical CSA, which can vary with body posture and does
+  not necessarily reflect force production."* Measured supine, mixed sex, and including
+  intramuscular fat — the paper's fatty-degeneration index is reported as a signal-intensity
+  ratio, not as a cross-sectional share, so its size here is `:could-not-obtain` (its sign is
+  stated: fat infiltration increased significantly at all three levels over the 20 years).
+
+So the honest statement the three sources give together: the lump's 12.0 cm² sits **above**
+the in-vivo anatomical CSA of the two muscles it names (C3/4–C5/6: 3.3–6.5 cm² bilateral,
+`error direction: capacity over-stated, %MVC under-stated, if 12.0 was meant as MF+SCer
+alone`), and **below** the PCSA-bracket floor built from volumes (16.5 cm² male). Whether
+12.0 was meant as those two muscles, as all four the `:source` names (Izumida's all-four
+sums are 14.7/17.1/16.5 cm² — bracketing 12.0 from above at every level), or as neither,
+is still not decidable from inside the model. The `:representative` tag stays; the lump's
+PCSA is not measured by anyone, and no constant moves.
+
+**What does NOT close at `:c2c3` either:** Izumida starts at C3/4 — the joint's own level
+C2/C3 is above its topmost row — and its fascicle-grouping is not resolved by vertebral
+span, so the one-level multifidus candidate the C2/C3 table needs is still not isolated.
+What changes is that the block's premise — *"a source that does not exist in vivo either"* —
+is now false for the deep extensor cross-sections at the three subaxial levels, with a
+measured, per-muscle, level-resolved, asymptomatic in-vivo table to argue against.
+Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical (comments and README
+prose only; no numeric literal outside the citation enters the source).
+
 
 What *did* change at C2/C3: `longus_capitis` runs up the front of the column to the
 basiocciput, so the level now carries an **anterior** line for the first time. Its
