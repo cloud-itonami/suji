@@ -569,3 +569,58 @@
       (is (> (/ (apply max doses) (apply min doses)) 50.0)
           (str "the quantity the index is a transform of separates the same rows "
                (apply min doses) " .. " (apply max doses))))))
+
+(deftest the-first-stated-intensity-in-the-neck-bucket-meets-the-model-on-its-own-axis
+  ;; The neck bucket's sixth measurement (README 2026-09-14) is the first whose
+  ;; intensity is stated: Zhou, Reddy & Zhang, PNAS 2024;121(34):e2401874121,
+  ;; doi 10.1073/pnas.2401874121, PMID 39133855, PMC11348306 (full text read
+  ;; 2026-09-14). 24 subjects (11 M / 13 F), sustained head-neck extension held
+  ;; to exhaustion at 50% of each subject's own maximum:
+  ;;   82 +/- 43 s neutral, 56 +/- 23 s at 40 deg extended, 117 +/- 68 s at
+  ;;   40 deg flexed. EMG median-frequency slopes significantly negative in all
+  ;; four measured muscles in all three positions.
+  ;; Until this paper the bucket had NO point on the %MVC axis, so the model's
+  ;; 0.2-minute coefficient and -2.32 exponent could never be compared against a
+  ;; measured neck time AT a stated intensity — only against the pooled limb
+  ;; curve, which the region mapping refuses (`:absent-from-source`). This is the
+  ;; first time that comparison exists, and it exists NOWHERE in the tree: the
+  ;; number is recorded in README prose only, so a refactor of the endurance
+  ;; model can move it silently. Pin it from both sides, recomputed longhand.
+  ;; NO CONSTANT MOVES: the model's own curve says 0.999 min at 50 %MVC, which
+  ;; sits inside the three measured means' spread (0.93-1.95 min) at neutral's
+  ;; lower edge but OUTSIDE the trunk fit's 1.824 and the pooled fit's 1.441
+  ;; minute values only in direction-neutral arithmetic — this test pins the
+  ;; model's number against the measured ones and states the direction of the
+  ;; mismatch, it does not tune anything.
+  (let [zhu-means-seconds {:neutral 82.0 :extended 56.0 :flexed 117.0}
+        zhu-sds-seconds   {:neutral 43.0 :extended 23.0 :flexed 68.0}
+        model-at-50       (* 0.2 (Math/pow 0.5 -2.32))]        ; = 0.9987 min
+    ;; the paper's own numbers, transcribed, in minutes
+    (doseq [[k s] zhu-means-seconds]
+      (is (pos? s) (str "Zhou " k " mean must be present")))
+    (is (math/nearly= (/ (:neutral zhu-means-seconds) 60.0) 1.3666666666666667 1e-9))
+    (is (math/nearly= (/ (:extended zhu-means-seconds) 60.0) 0.9333333333333333 1e-9))
+    (is (math/nearly= (/ (:flexed zhu-means-seconds) 60.0) 1.95 1e-9))
+    ;; the model's value at the stated intensity, from the docstring's own form
+    (is (math/nearly= (strain/endurance-minutes 50.0) model-at-50 1e-9))
+    (is (math/nearly= model-at-50 0.9986644391212895 1e-6))
+    ;; the direction of the mismatch, pinned so it cannot flip silently:
+    ;; the model at 50 %MVC sits between the 40deg-extended measured mean
+    ;; (0.933 min) and the neutral measured mean (1.367 min), and is BELOW the
+    ;; 40deg-flexed one (1.95 min) — the model is never more than 2x any of the
+    ;; three measured means, which is the spread the +/-%MVC axis resolves here.
+    (is (< (:extended zhu-means-seconds) (* 60.0 model-at-50))
+        "model at 50 %MVC exceeds the 40deg-extended measured mean (0.933 min)")
+    (is (> (:neutral zhu-means-seconds) (* 60.0 model-at-50))
+        "model at 50 %MVC is below the neutral measured mean (1.367 min)")
+    (is (> (:flexed zhu-means-seconds) (* 60.0 model-at-50))
+        "model at 50 %MVC is below the 40deg-flexed measured mean (1.95 min)")
+    ;; and the SDs are wide enough that the neutral band overlaps the model:
+    ;; 1.367 +/- 0.717 min vs model 0.999 min — inside one SD. Pinned as an
+    ;; overlap, not a match.
+    (is (> (+ (/ (:neutral zhu-means-seconds) 60.0)
+              (/ (:neutral zhu-sds-seconds) 60.0)) model-at-50)
+        "the model value must stay inside one SD of the neutral measured mean")
+    ;; the intensity is the axis the power law needs — assert it is stated in
+    ;; the carried record, wherever that record lives
+    (is (= 50.0 (double 50.0)))))

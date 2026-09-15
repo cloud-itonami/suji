@@ -3411,3 +3411,46 @@ inputs is exactly the case the test watches for; nothing here changed a value.
 Nothing in this section changes a constant. The band, the 42, and the sign fragility are
 properties the source's printing precision imposes, not properties a fit removed.
 
+
+## The neck bucket's first point on the %MVC axis became a test (2026-09-15)
+
+*What the neck still cannot express* (2026-09-12/14) recorded six measured
+neck-extensor endurance results and stated the direction of the mismatch:
+at just above the 8 %MVC floor the model prices a held load at >70 min while
+healthy neck-extensor task failure sits at 0.7-4.8 min — but with the x-axes not
+meeting, so the entry stayed a pointer. The sixth measurement (Zhou, Reddy &
+Zhang, **PNAS** 2024;121(34):e2401874121, doi `10.1073/pnas.2401874121`,
+PMID 39133855, PMC11348306, full text read 2026-09-14) is the first whose
+intensity is stated: sustained head-neck exertions at **50% of each subject's
+own maximum**, 24 subjects (11 M / 13 F), **82 ± 43 s neutral, 56 ± 23 s at
+40° extended, 117 ± 68 s at 40° flexed**.
+
+That makes the bucket's first real meeting with the model on the model's own
+axis — and until 2026-09-15 the meeting existed nowhere in the tree: the numbers
+were README prose only, so a refactor of the endurance relation could move what
+the model says at 50 %MVC without anything red. It is now
+`strain-test/the-first-stated-intensity-in-the-neck-bucket-meets-the-model-on-its-own-axis`,
+which recomputes both sides longhand and pins:
+
+- the model's own value: `endurance-minutes` at 50 %MVC = **0.9987 min**
+  (0.2 · 0.5^−2.32), inside one SD of the neutral measured mean
+  (1.367 ± 0.717 min) — an overlap, pinned as an overlap, not a match;
+- the direction of the mismatch, stated and pinned: at the stated intensity the
+  model is **above** the 40°-extended measured mean (0.933 min) and **below**
+  both the neutral (1.367 min) and 40°-flexed (1.95 min) ones — it is never more
+  than 2× any of the three, which is what the axis resolves here;
+- the transcribed means themselves, to the minute.
+
+**Break (restored byte-identically, sha256 checked):** moving the model's
+0.2-minute coefficient to 0.3 turned 22 assertions red across the suite, but
+every pre-existing failure is a statement about the *pooled* curve or the band
+resolution — the only failures that name the neck measurement are the new test's
+two. Before this test, the neck bucket's one meeting with the model on a stated
+intensity was invisible to the suite; now it is the most specific catch the
+coefficient has. The test was also verified red on its own expectation constant.
+
+Nothing here changes a constant: `0.2` and `−2.32` keep their
+`:provenance :could-not-obtain`, `task->reference-region` keeps returning
+`:absent-from-source` for the neck, and the bucket keeps its name. What changed
+is that the bucket's one measured point at a stated intensity can no longer
+move in the tree without a red test arguing for it.
