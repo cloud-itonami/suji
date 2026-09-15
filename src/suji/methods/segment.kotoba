@@ -67,7 +67,9 @@
 ;; joint real and let obliquus capitis inferior (C2 spinous → C1 transverse) be
 ;; written down — it is the one suboccipital that still cannot be. It would also
 ;; need a mass for a single vertebra, and the joint it opens is principally a
-;; ROTATION joint (40.5° axial against ~10° sagittal), so a sagittal model would
+;; ROTATION joint (measured axial 37.9 +/- 5.1 deg, Kang 2019, PMID 30990826 —
+;; the previously carried 40.5° had no obtainable source and was removed
+;; 2026-09-15; the ~10° sagittal figure stays :representative), so a sagittal model would
 ;; carry the cost and not the benefit. See `spine`'s docstring for the list of
 ;; what this model still cannot say.
 
