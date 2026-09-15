@@ -2869,6 +2869,30 @@ derives both from the level's own axis and asserts that the second is several ti
   partition**. This model has no vertebral wedging, so the pelvis carries all of it, which
   **over-rotates the hips and both legs** in a lordotic posture. Named in
   `posture/pelvic-tilt-for` with the direction of the error rather than split by a guess.
+  ⚠ *Annotated 2026-09-14 (bot/suji-anatomy): the disc-versus-body half of this
+  partition is measured, and the vertebral-body share is small.* Been E, Barash A,
+  Marom A, Kramer PA, *Vertebral bodies or discs: Which contributes more to
+  human-like lumbar lordosis?*, Clin Orthop Relat Res 2010;468(7):1822-1829
+  (doi:10.1007/s11999-009-1153-7, PMID 20012546, PMC2881992; full text read
+  2026-09-14 via PMC). 100 standing humans, lateral radiographs, Cobb (PS5→S1):
+  lordosis angle 51 ± 11°, of which intervertebral-disc wedging ΣD = 46 ± 10°
+  (per-disc 6 ± 3° at L1-2 up to 12 ± 4° at L5-S1, caudal-dominant — consistent
+  with the caudal-dominant shape Mills' standing column already installed) and
+  vertebral-body wedging ΣB = 5 ± 10°. So in this cohort's standing column the
+  discs carry ~90% of the standing lordosis and the bodies ~10%, with ΣB's SD
+  nearly twice its mean — the body share is not resolved from zero at n=100
+  (`:parameter-not-in-source` for any per-posture split; the 83%/17% the paper
+  headlines is the share of the *human-minus-macaque difference*, not of the human
+  column, and must not be quoted as the latter). What this does NOT close: the
+  model's residual after `sacral-slope-share-of-lordosis` (0.586) is the L1
+  endplate's in-space rotation, which mixes disc wedging with trunk orientation —
+  Been partitions the column's own angulation, not that remainder, and reports
+  standing adults only, so nothing here splits a seated or flexed lordosis.
+  Direction if anything moves: `lumbar-segmental-shares` is applied over the whole
+  chord today; a disc-only share would fall mostly on the same caudal levels and
+  leave the pelvis's share untouched, so the standing-compression disagreement
+  with Wilke does not move from this. No constant moves — Hansraj 5-value and
+  Wilke sitting 348.86176709999995 N byte-identical.
 - **Pelvic incidence.** The morphological constant that fixes how much sacral slope a
   particular pelvis has needs a sacral endplate and a femoral-head geometry; this model has a
   rod from L5/S1 to the hip axis. So `:pelvic-tilt-deg` is a **change** from the straight-lumbar
