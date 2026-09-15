@@ -3411,3 +3411,46 @@ inputs is exactly the case the test watches for; nothing here changed a value.
 Nothing in this section changes a constant. The band, the 42, and the sign fragility are
 properties the source's printing precision imposes, not properties a fit removed.
 
+## The C7 moment the prose chose as its anchor is pinned by nothing (2026-09-15)
+
+The girdle suspension muscles now declare `:crosses {:joint :c7}`, which makes their
+moment about C7 *available* at every posture. The paragraph above chose two of those
+values to make its case with — **−0.3786 N·m against a C7 demand of 4.9762 at
+`laptop-on-lap`, i.e. 7.6%**, and **−1.8428 N·m in a deep squat** — and those two
+magnitudes and their ratio live only in this prose. Nothing in the tree pins them.
+
+That is the failure shape this repo named for lordosis: *a number that is correct once
+and unset five times reads identically to a measured one.* The C7 moment is not unset —
+it is computed every time the pose solves — but a refactor of `attachment/mirror` or
+`attachment/coupled-arms` can move −0.3786 silently and the README's 7.6% stops being
+true with nothing red. The declaration is topology; it carries neither size, nor the
+comparison that makes the size readable, nor the sign.
+
+The sign matters here more than usual, and for a reason the README has already learned
+twice: the cervical group's straight-line arm flipped sign at 30° of flexion, and the
+anterior deltoid's did at 130°, because **a straight-line moment's sign is a statement
+about the line passing the joint, not about the muscle**. Upper trapezius runs
+occiput → lateral clavicle, so its line passes close to C7 (−3.22 mm, below the 5 mm
+leverage floor) and its moment about C7 is the small difference of two larger products;
+the same declared topology carries −0.3786 at laptop-on-lap and −1.8428 in a deep squat,
+a factor of nearly 5 from arm position alone. Which of those sits near a sign crossing
+is a fact the prose does not record and the declaration cannot express.
+
+**Proposed (not installed this tick):** a `muscle-test` pin,
+`the-girdle-suspension-muscles-c7-moment-matches-the-prose-anchors`, asserting the
+laptop-on-lap C7 suspension moment == −0.3786 N·m and the same posture's C7 demand ==
+4.9762 N·m, with 7.6% derived rather than written. Both numbers are the tree's own
+outputs at a named posture — no source, no constant, no fitted value. Hansraj 5-value
+and Wilke sitting 348.86176709999995 N are off the C7 path and untouched.
+
+**Direction of the residual drift if unpinned:** toward under-stating the C7 moment.
+`attachment/mirror`'s paired-joint fix this same wave is what stopped the arm from
+coming back nil and the moment from being silently unreported, and an arm below
+`recruit/min-coeff` is exactly one whose leverage a straight line under-states.
+The pin is a floor on that drift, not a source.
+
+**Breaks that would prove the pin worth having:** nil-arm regression in
+`attachment/mirror` (the documented pre-fix behaviour) passes every existing test and
+sails through `:crosses {:joint :c7}` — the moment simply stops being reported again,
+silently, which is the exact defect this wave recorded. A pin on the prose anchors is
+the one check that goes red on it.
