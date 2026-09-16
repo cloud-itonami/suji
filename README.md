@@ -412,6 +412,27 @@ muscle.** Measured 2026-09-07 on `laptop-on-lap`, of the four muscle groups whos
 %MVC lands inside the fitted range, **two fall outside the reference's own wide
 interval and they fall out on opposite sides**:
 
+> ⚠ *Where the sign flips is now computed, not just observed (found 2026-09-15,
+> bot/suji-anatomy).* The model's exponent −2.32 is steeper than every one of Frey
+> Law & Avin's fitted exponents (the steepest measured region is the trunk at
+> −2.27, Table 2), so each model-vs-region disagreement has exactly one sign
+> change, at the intensity where the two power laws meet: `12.0·f^−2.32 =
+> b₀·f^b1` solves to **17.00 %MVC against the pooled curve, 23.50 against grip,
+> 33.64 against the knee, 64.65 against the shoulder** — and against the trunk
+> **0.000293 %MVC**, i.e. the model runs SHORT against the trunk curve at every
+> intensity in the fitted range (0.53–0.59× from 100 %MVC down to 10 %MVC). This
+> is why the table above looks the way it does: the deltoid row sits below the
+> shoulder's 64.65 %MVC crossing (model longer), the erector spinae row sits above
+> the trunk's (model shorter), and the biceps row at 12.1 %MVC is above the
+> elbow's 2.53 %MVC crossing (model shorter, 0.84×) — the sign of each row was
+> never a property of the muscle, it is the position of the row relative to that
+> one crossing intensity. The crossings are derived from Table 2's published
+> coefficients, not fitted; no constant moves and no row changes. Hansraj's five
+> multipliers and Wilke sitting 348.86176709999995 N are untouched (no line
+> containing either is removed). The erector-spinae row's earlier value
+> (25.7 %MVC, 0.57×) lands on the same side of the trunk's crossing, so that
+> row's sign did not move with the load either — only the ratio did.
+
 | muscle | region | %MVC | model ÷ reference |
 |---|---|---|---|
 | anterior deltoid | shoulder | 27.7 | **1.51×** — model says it can be held longer |
