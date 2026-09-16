@@ -3699,6 +3699,44 @@ separately measured facts about quiet standing — see "Every posture's lordosis
 somewhere" above. No hardware, no live member scan, no live kami-genesis backend. Cells `.solve()` raise
 at R0; `load_solve` transitions are unit-tested.
 
+
+## A second external number for the standing–sitting difference (2026-09-14)
+
+The 2026-09-11 wave crossed the standing−sitting L4/L5 difference to **−10.859 N** against
+Wilke's +48 N, and left it honestly undershooting. This section adds **one independently
+published figure for the same posture class**, not an adjustment — so a reader can see whether
+the model's undershoot is outside the literature or inside its spread.
+
+Nishizawa, Katsuhira, Watanabe, Oka & Matsudaira, "A simple method for estimating the
+intervertebral disc compressive force based on the posture analysis of community-dwelling
+older adults", **J Phys Ther Sci 2021;33(5):423–428**, DOI `10.1589/jpts.33.423`, PMID
+`34083882`, PMC `PMC8165360` (**full text read 2026-09-14**, open access CC-BY-NC-ND): 36
+healthy older adults (>65 y, no LBP), 10 s of quiet static standing on two force plates,
+L4–L5 disc compressive force from the paper's own static approximation
+(20·|extension moment| + 13·|flexion moment| + 8·|side-bending| + 23·|rotation| + W_HAT·cosθ,
+the coefficients being the paper's stated disc-to-erector and disc-to-rectus-abdominis moment
+arms) — **512.68 ± 108.38 N** of standing lumbar compression.
+
+Against Wilke's own 0.5 MPa standing entry (this repo's convention, 0.5 MPa × 1800 mm² = 900 N
+for a 45 y / 70 kg / 1.68 m subject), that is **0.57 ×** — an independent method publishing a
+standing figure **43% below** the single in-vivo subject the Wilke entries are taken from.
+
+**:representative** — the cohort is mean age >65 y, not Wilke's 45-year-old, and the paper's
+±108 N is about 21% of the mean, which is the band this entry claims and no more. The
+difference this section asserts is a **level**, not the model's standing−sitting **difference**;
+equating the two would be the same class of error as pinning a difference where two pinned
+quantities are needed. **Error direction unstated on the cohort-to-Wilke comparison itself**
+(older spine geometry cuts both ways); what is stated is the band.
+
+**Nothing was installed.** No constant in `posture/`, `spine/` or `pose/` moves, no divisor,
+no fitted constant, no test re-pointed. The Hansraj anchor and the Wilke sitting pin are
+byte-identical. The one claim this section makes is the one a reader can check: an independent
+published method puts relaxed-standing lumbar compression below Wilke's own subject by about
+43%, so the model's post-crossing undershoot is a comparison against *one* reference, and a
+second reference sits on the other side of that reference — the spread is wider than any
+single number against it.
+
+
 ## The segmental lordosis crossed the standing–sitting difference (2026-09-11)
 
 The five lumbar levels stopped sharing one orientation, and the pelvis stopped spending the whole
