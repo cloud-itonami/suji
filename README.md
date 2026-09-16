@@ -2445,7 +2445,39 @@ capitis passive term at a posture where its active force is zero.
   no value moves on this branch. Direction of the error this fixes toward: if the
   measured 30.7 mm is the truth, the model's RCA origin/insertion offsets place the two
   ends too close together — most plausibly the insertion, 5 mm up the skull axis, where
-  a basiocciput attachment sits higher.
+  a basiocciput attachment sits higher.  ⚠ *Annotated 2026-09-16 (bot/suji-anatomy), a second candidate for the same failed
+  check — and it has a measured size.* The model puts BOTH ends of
+  `rectus_capitis_anterior` at `:lat 0.0`. The `:lat` coordinate exists and is
+  consumed (`mirror` negates it for the paired side), so flattening this midline
+  muscle onto the axis is a choice, not a structural limit — but the real origin is
+  NOT on the midline: it is on the anterior surface of the C1 LATERAL MASS. The
+  lateral offset the failed check implies is arithmetic on the two numbers this
+  bullet already carries: √(30.7² − 16.06²) = **26.2 mm** (22.9–29.3 mm across
+  Lin's ±1 SD, arithmetic `:representative`). Measured neighbours of the same
+  lateral column: the axis's superior articular facet's lateral-most edge sits
+  **22.8 mm (right) / 22.6 mm (left) from the midline** in 120 Indian dry C2
+  vertebrae, and the C2 transverse process tip **29.3 mm** (Singla M, Goel P,
+  Ansari MS, Ravi KS, Khare S, J Clin Diagn Res 9(5):AC04-9, 2015,
+  doi:10.7860/jcdr/2015/13118.5931, PMID 26155467; abstract read 2026-09-16 via the
+  Europe PMC REST API), and the atlantoaxial lateral mass joint surface itself is
+  **16.3–16.5 mm transverse** (Zhang Z, Zhao Y, Chou D, Zhang S, Zhou R, Ma Z,
+  Wang L, Yu Z, Liu Y, Wang Y, J Orthop Surg Res 18(1):919, 2023,
+  doi:10.1186/s13018-023-04410-3, PMID 38042858; abstract only, per-side values
+  `:could-not-obtain` at this level). The C1 lateral mass's own centroid distance
+  from the midline is `:could-not-obtain` from these abstracts — so the required
+  26.2 mm band (22.9–29.3) OVERLAPS the measured 22.8 mm C2 facet edge and
+  approaches the 29.3 mm C2 transverse distance, which makes a lateral origin of
+  that size anatomically plausible, NOT confirmed for C1. This does not contradict
+  the insertion-height candidate above: a chord 14.6 mm short of its measurement
+  can be short for more than one reason, and this arithmetic only shows the
+  lateral term is of the right size to be the dominant one. The one-line change it
+  points at is REPORTED, not made — give `:origin :lat` ≈ ±0.0154 (26.2/1.7, the
+  stature-fraction convention `attachment.kotoba` states at its head) — because
+  that moves the flexion moment arm about the atlanto-occipital joint, which is a
+  solver input, and a failed-length check's arithmetic is not a licence to move
+  one. No constant moves — Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical (README-only diff).
+
 - **Both flexors are modelled midline**, so longus capitis's ipsilateral rotation — which
   Vasavada attributes to its superomedial fascicle orientation — is absent, as is rectus
   capitis anterior's lateral bending.
