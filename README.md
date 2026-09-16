@@ -3286,7 +3286,38 @@ split placed a joint and nothing acts about it. It is named now, beside `:c2c3`,
 reason — this model states trunk extension as **one** equilibrium at `:l5s1`, its single
 lumped erector spinae inserts *below* T12/L1 and does not even cross it, and carving segmental
 fascicles out of a 34.0 cm² lump that is itself `:representative` would need a number to divide
-it by that this repo does not have. Its absence makes no number wrong; what is unavailable is
+it by that this repo does not have.
+  ⚠ *Annotated 2026-09-16 (bot/suji-anatomy): the dividing number's source family exists and
+  can now be named; its values remain* `:could-not-obtain`. Macintosh JE, Bogduk N, *"1987
+  Volvo award in basic science. The morphology of the lumbar erector spinae"*, **Spine
+  12(7):658–668, 1987** (PMID 3686217, doi:10.1097/00007632-198709000-00004); Macintosh JE,
+  Bogduk N, Pearcy MJ, *"The effects of flexion on the geometry and actions of the lumbar
+  erector spinae"*, **Spine 18(7):884–893, 1993** (PMID 8316889,
+  doi:10.1097/00007632-199306000-00013); Macintosh JE, Bogduk N, *"The attachments of the
+  lumbar erector spinae"*, **Spine 16(7):783–792, 1991** (PMID 1925755,
+  doi:10.1097/00007632-199107000-00017); Macintosh JE, Valencia FP, Bogduk N, Munro RR, *"The
+  morphology of the human lumbar multifidus"*, **Clin Biomech, 1986**
+  (doi:10.1016/0268-0033(86)90146-4) and Macintosh JE, Bogduk N, *"The biomechanics of the
+  lumbar multifidus"*, **Clin Biomech, 1986** (doi:10.1016/0268-0033(86)90147-6) — the
+  last two cited through the reference list of the thoraco-lumbar modelling systematic review
+  (*Advances in Musculoskeletal Modeling of the Thoraco-Lumbar Spine*, Ann Biomed Eng 2025,
+  PMC12575568; review full text read 2026-09-16 via the Europe PMC REST API). All three Spine
+  papers are paywalled with no PMC record (inEPMC = N, inPMC = N for PMIDs 3686217 / 8316889
+  / 1925755; checked 2026-09-16), so only the 1987 abstract is in hand — read via the Europe
+  PMC REST API — and it carries **no CSA value**; whether the papers' tables give
+  per-fascicle CSAs and per-level moment arms at every lumbar level is `:could-not-obtain`
+  at this level. What the 1987 abstract does pin, measured: the lumbar fibers *"arise from
+  the lumbar accessory processes and the L1–4 transverse processes, and insert independently
+  of the erector spinae aponeurosis into the ilium"*, and iliocostalis lumborum pars
+  lumborum *"constitutes a substantial portion of the total muscle mass acting directly on
+  the lumbar vertebrae"* — so in the dissected anatomy a substantial share of extensor
+  capacity acts **directly on lumbar vertebrae**, which is the exact thing this model's lump
+  cannot state. Direction of the model's artefact, then, both ways: it **over**-states the
+  trunk extension demanded at L5/S1 (the whole lump carries all of it) and states **no**
+  extension capacity at any upper lumbar level — the same over-concentration whose standing
+  overshoot (682.422 N, ratio 1.1374) is recorded above. It does not close the bullet: no
+  per-fascicle share of the 34.0 cm² is obtainable from here, so the lump stays
+  `:representative` and stays whole. Its absence makes no number wrong; what is unavailable is
 any statement about the thoracolumbar junction at all.
 
 ## Every posture's lordosis came from somewhere (2026-09-09)
