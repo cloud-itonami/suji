@@ -3196,6 +3196,43 @@ derives both from the level's own axis and asserts that the second is several ti
   rod from L5/S1 to the hip axis. So `:pelvic-tilt-deg` is a **change** from the straight-lumbar
   neutral, not an absolute pelvic tilt, and the model can compare two postures without being
   able to state either one's SS or PT. Wilke's comparison is a difference too.
+  ⚠ *Annotated 2026-09-16 (bot/suji-anatomy): the morphological constant now has a measured
+  asymptomatic-population value — the geometry to carry it is still missing.* Vialle R,
+  Levassor N, Rillardon L, Templier A, Skalli W, Guigui P, *Radiographic analysis of the
+  sagittal alignment and balance of the spine in asymptomatic subjects*, J Bone Joint Surg Am
+  87(2):260-267, 2005 (doi:10.2106/jbjs.d.02043, PMID 15687145; abstract read 2026-09-16 via
+  the Europe PMC REST API; full text `:could-not-obtain` — JBJS paywalled, no PMC record).
+  300 asymptomatic volunteers, standing radiographs, digitised: **pelvic incidence
+  55° ± 10.6°, sacral slope 41° ± 8.4°, pelvic tilt 13° ± 6°, maximum lumbar lordosis
+  60° ± 10°**; sacral slope–PI r = 0.8, lordosis–sacral slope r = 0.86, pelvic tilt–PI
+  r = 0.66, lordosis–(PI, pelvic tilt, thoracic kyphosis) r = 0.9; vertebral wedging and
+  intervertebral angulation T9–S1 were measured but the abstract carries only the T9 sagittal
+  offset (10.3° ± 3.1°), so the disc-vs-sacrum partition values are `:could-not-obtain` at
+  this level. What it pins without closing the bullet: (i) a measured standing pelvis holds a
+  60° lordosis with only **13° ± 6° of pelvic tilt about the same mechanical axis this model
+  rotates its pelvis about** (the femoral heads) — so in a measured asymptomatic population
+  the standing sacral pitch is mostly **morphology** (the 41° endplate slope inside PI), not
+  posture; the model has no sacral endplate, so it has nowhere to put the 41° and spends its
+  lordosis change as hip-axis rotation (0.586 × 46.5° = 27.25° since 2026-09-11) — more than
+  twice the measured mean PT and above its mean + 1 SD (19°). The two figures sit on
+  different conventions (the model's is a change from its own straight-lumbar neutral, with
+  anterior positive; Vialle's is absolute, posterior positive), so this is a measured anchor
+  for a quantity the model cannot state, **not** a refutation of its spend. (ii) Through the
+  per-subject identity PI = SS + PT (the published means satisfy it to rounding: 41 + 13 = 54
+  against PI 55), the model's spend implies its stool-neutral pelvis sits at SS ≈ 41 − 27.25
+  = 13.75° (`:representative` arithmetic on two published means from different cohorts —
+  true only if Mills' 0.586 share transfers to Cho's stool→standing pair; the direction if it
+  does not: a higher real stool SS means the model over-rotates the sacrum and hip by the
+  difference, the same direction bullet one confesses). (iii) Cho's own cohort — the source
+  the model's 46.5° comes from — measures PI/SS/PT per posture (Fig. 4, Legaye's method) but
+  publishes **no numeric SS/PT/PI value in text or table**: its two tables carry lordosis
+  only and the pelvic parameters appear only in figures (images), so the ΔSS/ΔPT of the very
+  stool→standing pair the 46.5° comes from stays `:could-not-obtain`. (iv) The source is
+  internally inconsistent: Cho's abstract states standing LL **48.5° ± 8.7°** while its body
+  text states **47.1° ± 10.5°** — this README's 46.5° derives from the body reading; the
+  abstract reading would give 47.9°. A +1.4° transcription choice inside the source itself,
+  now named at the constant it would move. **No constant moves** — Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical.
 - **Wilke's own subject's lordosis, in either posture.** Both reference entries now carry
   `:parameter-not-in-source`. The sitting one's is zero and measured, which is why it stays
   comparable; the standing one's is 46.5° from a different cohort with an SD of 10.5°, and the
