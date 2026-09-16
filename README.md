@@ -2053,6 +2053,77 @@ capacity is also the first measured scale for what a solver at `:c2c3` could cal
 from the extension side — comparable against that joint's demand the day the PCSA
 question closes.
 
+### A second in-vivo source the 2026-09-10 search missed (found 2026-09-16, bot/suji-anatomy)
+
+**Izumida H, Daimon K, Umezawa H, Michikawa T, Fujiwara H, Okada E, Nojiri K, Katoh H,
+Shimizu K, Ishihama H, Nakamura M, Matsumoto M, Watanabe K, *Longitudinal MRI study
+over 20 years of cervical posterior extensor muscle area in asymptomatic subjects*,
+Sci Rep 15:21826, 2025** (doi:10.1038/s41598-025-08055-6, PMID 40595211, PMC12218271;
+full text read 2026-09-16 through the Europe PMC REST fullTextXML endpoint, CC BY).
+55 asymptomatic volunteers (35 M / 20 F, mean 31.9 ± 13.8 y at baseline), 1.5-T T2
+axial MRI, each muscle's fascia traced by hand in ImageJ, by the convention of
+Elliott 2007 (ref 8) and Iizuka 2001 (ref 31) — the Elliott paper the search above
+checked, a different cohort and a decade later. Its Table 2
+measures **the deep group the lump declares, per muscle and per level, in vivo,
+asymptomatic** — which is what the 2026-09-10 search asked for and did not find:
+
+| level | multifidus (mm²) | semispinalis cervicis (mm²) | semispinalis capitis (mm²) | splenius capitis (mm²) | total (mm²) |
+|---|---|---|---|---|---|
+| C3/4 | 146.4 ± 48.0 | 180.3 ± 51.8 | 621.8 ± 207.9 | 522.8 ± 170.7 | 1458.0 ± 418.7 |
+| C4/5 | 245.6 ± 75.6 | 318.6 ± 102.8 | 594.5 ± 176.6 | 550.7 ± 206.7 | 1709.4 ± 499.0 |
+| C5/6 | 239.0 ± 83.1 | 410.8 ± 148.0 | 474.8 ± 148.0 | 527.7 ± 167.8 | 1652.9 ± 460.3 |
+
+The paper does not state whether a row is one side or both (`:could-not-obtain` —
+the side question is answered only for the group total, and the left-right table
+puts the whole group at 840.8 + 868.6 = 1709.4 mm² at C4/5, which **equals the
+multifidus row's level total, 245.6 + 318.6 + 594.5 + 550.7 = 1709.4**, so the
+arithmetic reads each column as BILATERAL sums; the same check closes at C5/6 to
+within 0.6 mm² and misses at C3/4 by 13.3 mm², i.e. the reading is arithmetic, not a
+statement in the source).
+
+Why it does not close the block, four stated reasons:
+
+1. **It is CSA, not PCSA** — a traced axial fascia outline includes fat and
+   non-contractile tissue (the same paper measures fatty degeneration at
+   109–115% of a young reference at baseline, rising to 170–200% over 20 y), so a
+   PCSA built from it would be an over-statement by that fat fraction, direction
+   of the error **over**-stating available force.
+2. **The levels are C3/4, C4/5, C5/6** — the lump's insertion sits below C6/C7, so
+   the level it actually crosses (C7/T1) is **below** every level the table
+   measures; the one-level multifidus the C2/C3 table needs runs C3 → C2, which is
+   **above** every level the table measures. Nothing in it is the cross-section at
+   either joint the model would solve.
+3. **It is whole-muscle**, not the one- or two-segment fascicle the candidate table
+   needs — a whole multifidus at C4/5 is the sum of its fascicles over several
+   levels, so it over-states any one-level subgroup.
+4. longissimus and spinalis cervicis remain unmeasured (absent from every ROI, as
+   with every other study found).
+
+**What it does add: the first measured per-muscle in-vivo numbers for the deep
+group, and they tighten the Zheng/Anderson bracket from above.** Summing the
+bilateral reading: MF+SSC at C3/4 = 0.33 cm², C4/5 = 0.56 cm², C5/6 = 0.65 cm² —
+two of the four muscles the lump declares, at **0.33–0.65 cm² per LEVEL**, against
+Zheng/Anderson's 16.5–50.9 cm² for the *whole muscle pair across the whole neck*.
+If the per-level reading is right, the pair's total over C3/4–C5/6 (plus the
+unmeasured C6/7 and C7/T1) is order **1.5–2 cm²**, and the 12.0 cm² lump then
+OVER-states the deep pair by roughly 6–8× (direction: capacity over-stated, %MVC
+under-stated) — the OPPOSITE direction from the Zheng/Anderson bracket, which said
+the lump UNDER-states. The two measured sources now point in opposite directions,
+so the 12.0 cannot be resolved by either alone; that is the finding, not a
+correction. **No constant moves** — 12.0 stays exactly where it is, the C2/C3
+block stays blocked on the same contradiction it was blocked on, and what changes
+is that the 2026-09-12 note's "the block is no longer 'no source exists'" gains a
+second, population-based reading that contradicts the first's direction. The 0.7
+N·m extension scale from Anderson stays the only measured capacity figure.
+
+Same paper's own 20-year drift is not a constant for this model either: the group
+mean moves +9.5% / −2.2% / −4.7% per level (initial → 20-y), a *change*, not a
+posture's cross-section, and its three levels C3/4–C5/6 are the upper three of
+`lower_cervical`'s five — all below the `:c2c3` joint where the candidate lives.
+
+Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical (prose only).
+
+
 
 What *did* change at C2/C3: `longus_capitis` runs up the front of the column to the
 basiocciput, so the level now carries an **anterior** line for the first time. Its
