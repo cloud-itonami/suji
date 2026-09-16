@@ -2869,6 +2869,30 @@ derives both from the level's own axis and asserts that the second is several ti
   partition**. This model has no vertebral wedging, so the pelvis carries all of it, which
   **over-rotates the hips and both legs** in a lordotic posture. Named in
   `posture/pelvic-tilt-for` with the direction of the error rather than split by a guess.
+  ⚠ *Annotated 2026-09-16 (bot/suji-anatomy): a measured instance of the partition itself
+  now exists, and it lands against the pelvis carrying any of it — for the share of lordosis
+  a lumbar support buys.* De Carvalho DE & Callaghan JP, *Influence of automobile seat
+  lumbar support prominence on spine and pelvic postures: a radiological investigation*,
+  **Applied Ergonomics 43(5), 2012** (doi:10.1016/j.apergo.2011.12.007, PMID 22280849;
+  abstract read 2026-09-16 via the Europe PMC REST API; full text paywalled,
+  `:could-not-obtain`). Eight male volunteers, radiographed standing and sitting in an
+  automobile seat at 0, 2 and 4 cm of lumbar support prominence (LSP): lordosis rose
+  **20° → 25° → 30°** across the three supports (0 vs 4 cm p < 0.0001, 2 vs 4 cm
+  p = 0.0256 — 2.5°/cm from the paper's own means, arithmetic `:representative`, so it
+  under-states the spread), while **every pelvic-posture measure moved sitting vs standing
+  (p < 0.0001) and none of them moved with the support** — the paper's own conclusion is
+  that the support changes vertebral rotations and "had no effect on pelvis postures", the
+  change landing mostly at the upper lumbar joints with the largest at the support apex
+  level, L2/L3. That is this bullet's stated direction, measured: a lordosis delivered with
+  the pelvis held still, which this model can only produce by rotating the pelvis (no
+  wedging), so for a back-supported workstation the model **over-rotates the hips and both
+  legs by the whole support-bought angle**. What it does not close: (i) Cho's correlations
+  ask for the partition of *posture* lordosis across sacral slope and pelvic tilt; this
+  measures the partition of the *response to an added support* — the same seam, not the
+  same question; (ii) an automobile seat, not a desk chair, and n = 8 males; (iii)
+  abstract-only, so the per-condition SDs and per-disc angles are `:could-not-obtain`.
+  **No constant moves** — Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff).
 - **Pelvic incidence.** The morphological constant that fixes how much sacral slope a
   particular pelvis has needs a sacral endplate and a femoral-head geometry; this model has a
   rod from L5/S1 to the hip axis. So `:pelvic-tilt-deg` is a **change** from the straight-lumbar
