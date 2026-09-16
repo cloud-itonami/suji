@@ -3263,6 +3263,25 @@ pinned absolutely now, and the same break then fails four assertions naming the 
   stands in for it, and because the offset is rigid this costs nothing measurable *today* — it
   will stop being free the moment a seat reaction is applied at a point rather than assumed to
   take the whole thigh.
+  A first measured instance of what that offset is made of, read 2026-09-16 via the Europe PMC
+  REST API: Chen YL & Yang PJ, *A preliminary study of the measurement of external ischial
+  tuberosity width and its gender differences*, Journal of Physical Therapy Science
+  28(3):820-823, 2016 (doi:10.1589/jpts.28.820, PMID 27134365, PMC4842446, CC BY-NC-ND). Thirty
+  healthy Taiwanese volunteers (15 M, 20.7 y / 175.6 cm / 66.7 kg; 15 F, 21.4 y / 158.9 cm /
+  52.6 kg) sat on clay (impress method) and on an mFLEX pressure mat (seated-pressure method):
+  **external ischial tuberosity width — the distance between the two tuberosities as the seat
+  meets them — 11.96 ± 1.24 cm (impress) and 13.42 ± 1.42 cm (pressure) in males, 13.52 ± 0.83
+  and 13.30 ± 0.91 cm in females**; the paper proposes 12.0 cm (male) and 13.5 cm (female) as
+  design parameters, and adds Sauer et al. 1992 (11.65 cm male / 13.49 cm female, n=12/14) as
+  the external check. This is the WIDTH the two sit bones make, not the offset the model's
+  bullet is about — the sagittal distance from the tuberosity to the hip axis, and its direction
+  relative to the seat, is `:could-not-obtain` from this source. What it does pin: the seat
+  contact is not at the model's hip-axis point but at two points 12-13.5 cm apart straddling
+  the midline, so a point seat reaction applied at one hip axis is a coarser idealisation than
+  the anatomy supplies, and the error of carrying the tuberosity at the hip axis is of order
+  several centimetres in a direction the model does not state (the tuberosity lies inferior and
+  posterior to the acetabulum; the magnitude of that separation is the still-unmeasured part).
+  No constant moves — the hip axis keeps standing in, the bullet stays open.
 - **Nothing was installed.** No divisor, no fudge factor, no fitted constant. Dividing the chord's
   sensitivity by 8 still brings the difference ratio to 1.03 and still lives nowhere.
 
