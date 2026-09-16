@@ -1516,12 +1516,12 @@ Three of four, PCSA measured from the same Kamibayashi & Richmond table as the c
 muscles (per side, mean, range; doubled below because a midline group here carries the
 bilateral sum):
 
-| muscle | PCSA/side | bilateral | modelled length | measured length |
-|---|---|---|---|---|
-| rectus capitis posterior major | 0.93 cm² (0.44–1.45) | 1.86 | 41.5 mm | 30–48 mm ✓ |
-| rectus capitis posterior minor | 0.50 cm² (0.48–0.83) | 1.00 | 23.0 mm | 26–31 mm — **3.0 mm short** |
-| obliquus capitis superior | 1.03 cm² (0.29–1.59) | 2.06 | 39.5 mm | 43–57 mm — **3.5 mm short** |
-| *obliquus capitis inferior* | *1.29 cm² (0.69–1.73)* | *2.58* | — | **not modelled** |
+| muscle | PCSA/side | bilateral | modelled length | measured length (K&R 1998) | measured length (Lin 2022) |
+|---|---|---|---|---|---|
+| rectus capitis posterior major | 0.93 cm² (0.44–1.45) | 1.86 | 41.5 mm | 30–48 mm ✓ | 42.1 ± 6.3 mm ✓ |
+| rectus capitis posterior minor | 0.50 cm² (0.48–0.83) | 1.00 | 23.0 mm | 26–31 mm — **3.0 mm short** | 29.1 ± 4.3 mm — **6.1 mm below the mean, 1.8 mm below the mean − SD** |
+| obliquus capitis superior | 1.03 cm² (0.29–1.59) | 2.06 | 39.5 mm | 43–57 mm — **3.5 mm short** | 43.3 ± 5.5 mm ✓ (inside the mean − SD) |
+| *obliquus capitis inferior* | *1.29 cm² (0.69–1.73)* | *2.58* | — | **not modelled** | 54.6 ± 5.4 mm (measured, unmodelled) |
 
 **They are calibrated against a measured LENGTH, not against an invented moment arm.**
 Everywhere else in `attachment` the offsets are chosen so the neutral arm reproduces a
@@ -1532,6 +1532,37 @@ the cadaver measurement, which is **reported and not tuned**: both shortfalls ha
 same cause and it is not these muscles — this model's `upper_cervical` is 37 mm where
 an atlas plus axis is nearer 50, because `segment` cuts the neck at the model's own
 uniform 18.6 mm level spacing and C2 with its dens is taller than a typical vertebra.
+
+**A second cohort measures the same three muscles, 2026-09-14.** Lin G, Wang W,
+Wilkinson T, *Changes in deep neck muscle length from the neutral to forward head
+posture. A cadaveric study using Thiel cadavers*, Clinical Anatomy
+2022;35(3):332-339 (doi:10.1002/ca.23834, PMID 35038194, PMC9304288; full text read
+2026-09-14 through the Europe PMC REST API — PubMed HTML serves a cookie page).
+Six Thiel-embalmed cadavers (4 M / 2 F, mean age 86.2 ± 8.7), 16 deep neck muscles
+per cadaver digitised attachment-to-attachment with a MicroScribe 3D Digitizer,
+straight line between attachments — the SAME length convention K&R used and the
+same one this model's line of action uses, so the two cohorts are directly
+comparable rather than merely both existing. Its Table 2 (neutral, 55° posture):
+
+- rectus capitis posterior **major** 42.1 ± 6.3 mm — the modelled 41.5 lands
+  inside this band too; the two cohorts agree with each other (K&R 30-48) as well
+  as with the model.
+- rectus capitis posterior **minor** 29.1 ± 4.3 mm — the modelled 23.0 is now
+  **6.1 mm below the mean, and 1.8 mm below the mean − SD**, where the K&R
+  shortfall was 3.0 mm. The second cohort makes the shortfall LARGER, not
+  smaller: it is not the spread of one cadaver sample.
+- obliquus capitis **superior** 43.3 ± 5.5 mm — the modelled 39.5 sits inside the
+  mean − SD, closer than K&R's range put it.
+
+The shortfall's stated cause — `upper_cervical` at 37 mm where an atlas plus axis
+is nearer 50 — predicts a shortfall of roughly the density difference between the
+two segments, and it under-predicts what both cohorts measure for the minor. What
+this changes is the SIZE of the open gap, not its direction: the direction was
+already stated (modelled short, understating the muscle's length and mis-stating
+its force-length operating point), and no value moves here — the 4 mm allowance in
+`the-suboccipital-lengths-are-checked-against-the-measurement` is the model's own
+error budget and is not widened to admit 6.1 mm without a mechanism that accounts
+for the difference between the 4 mm and the 6.1.
 
 **The moment arms vary with posture**, which is the thing a muscle with both ends on
 one bone can never do (−15° to 60° of head flexion):
