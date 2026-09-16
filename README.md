@@ -1864,6 +1864,28 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
   gap that measurement closed. See **The coupled solve**.
 - **A motion sequence.** The partition is a fixed proportion; real cervical flexion moves
   the lower column, then the upper, then the lower again.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the two columns are not proportionate —
+  measured, and the disagreement is direction-reversal, not just rhythm.* Ordway NR,
+  Seymour RJ, Donelson RG, Hojnowski LS, Edwards WT, *Cervical flexion, extension,
+  protrusion, and retraction. A radiographic segmental analysis*, Spine
+  24(3):240-247, 1999 (doi:10.1097/00007632-199902010-00008, PMID 10025018; abstract
+  read 2026-09-17 via the Europe PMC REST API; no PMC record, so the per-level
+  angular tables are `:could-not-obtain` — abstract-only). Lateral radiographs, 20
+  asymptomatic volunteers, occiput to C7, four end-range positions plus neutral.
+  Two measured facts a fixed-proportion partition cannot carry. (i) **The columns
+  move in opposite directions under a different task**: retraction is lower-cervical
+  EXTENSION with upper-cervical FLEXION, and protrusion is lower-cervical FLEXION
+  with upper-cervical EXTENSION — the model has no protrusion or retraction pose, so
+  it cannot even state the question. (ii) **A full-length pose does not spend the
+  upper column's end-range**: full-length flexion and full-length extension both leave
+  Occ-C1 and C1-C2 inside their range, and only retraction takes Occ-C1 and C1-C2 to
+  full end-range flexion (only protrusion, to their end-range extension) — so the
+  share each column receives depends on the task, not on a constant. What it does not
+  close: abstract-only, so no per-level degree value enters anywhere; and the
+  temporal rhythm the bullet names ("lower, then the upper, then the lower again") is
+  a dynamic question, while these are static end-range radiographs — this measures
+  the partition, not the sequence. No constant moves — Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 - **Lateral bend within the neck.** `pose` gives all three cervical segments the same
   lateral-bend angle, so there is no side-bending rhythm and no coupled axial rotation —
   which is most of what the atlanto-axial joint does.
