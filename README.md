@@ -624,7 +624,9 @@ own maximum, which is the axis the power law's x-coordinate needs.
 **Updated 2026-09-12: four MEASURED neck-extensor endurance results were found, and
 none of them is a curve. Updated 2026-09-14: a fifth was found, and it brought a
 measured neck-extension MVC with it; later the same day a sixth was found, and
-it is the first whose intensity is stated.** They are recorded here and nowhere else — no constant
+it is the first whose intensity is stated. Updated 2026-09-17: a seventh was
+found, and it brings the bucket's second stated intensity and a second measured
+neck-extension MVC.** They are recorded here and nowhere else — no constant
 moved, `task->reference-region` still returns `:absent-from-source` for the neck,
 and `:no-published-curve-for-this-region` keeps its name:
 
@@ -709,6 +711,43 @@ and `:no-published-curve-for-this-region` keeps its name:
    with its sign. Hansraj 5-value and Wilke sitting 348.86176709999995 N untouched
    — the dose layer holds no pinned quantity.
 
+7. **Marchand A-A, Houle M, Girard M-P, Hébert M-È, Descarreaux M, "Comparing neck
+   extensor muscle function in asymptomatic Canadian adults and adults with
+   tension-type headache: a cross-sectional study", *BMJ Open* 9(5):e020984, 2019
+   (doi:10.1136/bmjopen-2017-020984, PMID 31079076, PMC6530443 — full text read
+   2026-09-17 at bmjopen.bmj.com, open access CC BY-NC; the Europe PMC REST API
+   returned 503 throughout this session, so this came from the journal site).**
+   40 asymptomatic participants (47.5% female) plus 44 with tension-type headache;
+   prone, head and neck past the table edge, cervicothoracic junction stabilised,
+   strap over the external occipital protuberance; MVC from 3 ramp-and-hold
+   trials, endurance target set at **60% of each subject's own MVC with a ±5%
+   feedback window**. Its abstract states all three quantities items 2–5 lacked
+   at once: intensity (**60 %MVC** — the bucket's second stated intensity, after
+   Chowdhury/Zhou's 50%), time (**68.1 ± 32.3 s** control; 61.9 ± 20.1 s TTH,
+   mean difference 6.2 s, p > 0.05), and an MVC force measured on the same
+   subjects with the same apparatus (**111.3 ± 38.7 N** control, 95.9 ± 30.4 N
+   TTH). It extends the 2026-09-15 diagnostic table below to a SECOND stated
+   intensity: the model's own curve at f = 0.6 prices **39.2 s**
+   (12.0·0.6^-2.32) against 68.1 ± 32.3 s measured — model/measurement
+   **0.58×, −0.89 SD**, inside ±1 SD like the 0.73× at 50 %MVC, and the pair of
+   ratios (0.73× at 50 %MVC, 0.58× at 60 %MVC) is monotone downward in intensity,
+   the shape a measured decay steeper than the model's −2.32 would give — but two
+   cross-protocol points (different cohorts, apparatus and task-failure
+   definitions) cannot fix an exponent and both ratios sit inside the
+   measurements' own SDs, so no direction claim is proven; 60 %MVC is also
+   outside the 8–47 %MVC range the pooled curve was ever checked over, and the
+   model's own %MVC x-coordinate remains built from `cervical_extensors 12.0
+   cm2`, still `:representative`. What IS new beyond the table row: the paper
+   brings a **second measured neck-extension MVC 1.88× below item 5's** (111.3 vs
+   209 ± 76 N, `:representative` arithmetic on two published means — neither
+   reports a spread on the ratio): prone strap against a stabilised
+   cervicothoracic junction versus supine head-off-plinth against a hand-held
+   dynamometer at the occiput — different load path, posture and sex mix, neither
+   reading wins (`:could-not-obtain`), and any future %MVC for the cervical
+   extensors has to choose between them. No constant moves — `endurance-minutes`,
+   `endurance-floor-pct` and the pooled coefficients untouched; Hansraj 5-value
+   and Wilke sitting 348.86176709999995 N byte-identical.
+
 Direction of the mismatch, stated and NOT closed: at just above the 8 %MVC floor
 the model prices a held load at **>70 min**, while these tests put healthy
 neck-extensor task-failure at **0.7-4.8 min** at an intensity nobody stated (items 2-5), while item 6 holds
@@ -716,10 +755,12 @@ at a stated 50% of maximum for under two minutes. The
 x-axes do not meet — a measured point needs its %MVC to join a curve — so this
 entry is a pointer, not a calibration. The headline muscle remains in the
 `:no-published-curve-for-this-region` bucket; what changed is that the bucket now
-names the six measurements it is waiting for — the fifth carries the one
-neck-extension MVC (209 +/- 76 N, Vintimilla 2024) that any future %MVC for the
-cervical extensors has to be built from, and the sixth is the one entry whose
-own intensity is stated (50% of maximum, Chowdhury 2022).
+names the seven measurements it is waiting for — the fifth and seventh carry the
+measured neck-extension MVCs (209 ± 76 N supine hand-held, Vintimilla 2024;
+111.3 ± 38.7 N prone strap, Marchand 2019) that any future %MVC for the cervical
+extensors has to be built from, and the sixth and seventh are the entries whose
+own intensity is stated (50% of maximum, Chowdhury 2022; 60% of maximum,
+Marchand 2019).
 
 `branch: no-published-curve-for-this-region` keeps its name. But one comparison now
 meets on a shared x-axis, and it was measured 2026-09-15 (bot/suji-anatomy,
