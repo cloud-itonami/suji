@@ -3089,10 +3089,31 @@ fudge factor, no fitted constant was added on this branch.
   keeps `:lumbar-lordosis-deg 0.0` and the direction note now points here instead of saying
   "likely wrong" with no sign. Hansraj 5-value and Wilke sitting 348.86176709999995 N
   byte-identical.
-- **Which of Cho's two chairs a `:back-supported` workstation is.** *Chair with lumbar support*
-  (36.2° ± 8.4°) and *90°-angled chair* (17.7° ± 4.4°) are both plausible readings of the
-  library's one boolean, and reading either one onto it would be choosing. The bracket is
-  recorded instead.
+- ~~**Which of Cho's two chairs a `:back-supported` workstation is.** *Chair with lumbar
+  support* (36.2° ± 8.4°) and *90°-angled chair* (17.7° ± 4.4°) are both plausible readings
+  of the library's one boolean, and reading either one onto it would be choosing. The
+  bracket is recorded instead.~~ ⚠ **Annotated 2026-09-16 (bot/suji-anatomy): the source
+  itself makes the reading.** Cho's own Fig. 2 caption names the condition "(A) The subject
+  sat on chair with back support" for the 36.2° ± 8.4° chair — the lumbar-support chair is
+  the one the paper calls *back support*, so `:back-supported` maps to it by the paper's own
+  nomenclature rather than by a choice between two plausible readings; the 90°-angled chair
+  (17.7° ± 4.4°) remains a distinct posture this library has no boolean for. Andersson GB,
+  Murphy RW, Örtengren R, Nachemson AL, *The influence of backrest inclination and lumbar
+  support on lumbar lordosis*, Spine 4(1):52-58, 1979 (doi:10.1097/00007632-197901000-00009,
+  PMID 432716; abstract obtained 2026-09-16 via the Europe PMC REST API, full text
+  `:could-not-obtain` — paywalled, no PMC record) is the measured reason the discrimination
+  runs on the lumbar support and not on the backrest: 38 healthy subjects, four backrest
+  inclinations × four support sizes × three support levels, and its abstract states that
+  increases in the backrest-seat angle had **only minor effect** on the lumbar lordosis
+  while a lumbar support had a **significant** influence ("the lordosis increased with
+  increasing support"; support placement level not significant). The abstract states the
+  directions and significance, not per-condition angles (`:could-not-obtain` for the
+  numbers), so nothing here becomes a value. What the annotation does NOT do: it does not
+  install 36.2° as the `:back-supported` lordosis — the model's seated workstations keep
+  their current provenance, and the remaining openness is only that a real office chair's
+  lumbar pad depth is a continuous variable Andersson measured at four sizes, not the
+  binary the boolean implies. Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical.
 - ~~**How much of the 10.27 cm of translation a real standing pelvis would remove.**~~ **Sized
   on 2026-09-10: none of it.** The hip-rooted chain now exists and the answer is that re-rooting
   is a rigid translation, so it removes nothing. The split is also exact now —
