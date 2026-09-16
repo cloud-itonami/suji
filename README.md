@@ -1051,6 +1051,39 @@ hand-written expressions. `recruit` shares them by minimum cubed stress
 moves. The old trapezius expression also charged the head's extension load a second
 time, on top of the cervical group; that term is gone.
 
+**A second dissection cohort now measures what the girdle's own `:pcsa-cm2`
+entries are representative of (found 2026-09-17, bot/suji-anatomy).** The
+`attachment/muscles` table carries `upper_trapezius :pcsa-cm2 9.0` and
+`levator_scapulae :pcsa-cm2 5.0` as representative values with no measurement
+behind them. De La Paz JS, Buckley HR, Halcrow SE, Techataweewan N, Woodley SJ,
+*Architecture of head and neck soft tissues and associated entheses*, J Anat
+243(1):110–127, 2023 (doi:10.1111/joa.13853, PMID 36882366, PMC10273350; full
+text read 2026-09-17 via Europe PMC REST fullTextXML) measures upper trapezius
+PCSA in 20 donated cadavers (New Zealand ×10 embalmed, 83 ± 8 y; Thailand ×10
+fresh, 69 ± 13 y; sides pooled after finding no significant between-side
+difference, N = 10 muscles per sex/population group): **2.1 ± 0.6** (NZ M),
+**2.2 ± 1.0** (NZ F), **3.2 ± 1.1** (Thai M), **1.9 ± 0.7** (Thai F) cm² —
+with muscle volume 22.1–43.5 cm³ and fascicle length 10.7–13.9 cm. Its own
+Discussion groups Kamibayashi & Richmond 1998 among the previous dissection
+studies with which these upper trapezius values agree ("the upper trapezius
+ranges between 2.0 and 3.5 cm²", citing Bayoglu 2017, Borst 2011, Johnson 1994,
+Kamibayashi & Richmond 1998) — a citing-paper summary, since the K&R original
+itself is paywalled (`:could-not-obtain` at this level; the 1998 table's
+trapezius row, and whether the 9.0 was ever meant to be K&R's clavotrapezius,
+remains unverified from the primary source). Against the measured band the
+model's 9.0 cm² is **2.8–4.7× per-side dissection PCSA, error direction
+over-stating force capacity**; the same paper measures the upper trapezius
+*clavicle enthesis area* at **8.8–10.6 cm²** (Table 4: 10.5/9.5/10.6/8.8) — a
+band the 9.0 sits inside, which names a candidate mechanism (an attachment-area
+magnitude where a force-producing cross-section is wanted) without asserting it
+happened. No constant moves: `:pcsa-cm2 9.0` and 5.0 stay byte-exact and
+unverified either way — this entry is a second measured anchor, not a
+replacement; elderly cadavers (67–93 y) and the embalmed half of the sample
+shrink PCSA (the paper's own Discussion: semispinalis capitis ran smaller than
+all four cited dissection studies), so the over-statement direction is the one
+robust reading. Hansraj's five multipliers and Wilke sitting
+348.86176709999995 N are untouched.
+
 **Passive tension (2026-09-06).** A stretched muscle produces force without being
 activated and without costing anything metabolically — it is the tissue resisting
 being stretched. This actor assigned the whole of every load to active contraction
