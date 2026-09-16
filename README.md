@@ -2150,6 +2150,91 @@ It does not close the block, for three stated reasons:
 3. semispinalis cervicis, longissimus cervicis and spinalis cervicis are still
    unmeasured by it.
 
+**The 2026-09-12 search is extended one day later, 2026-09-15, and the two
+measured numbers above now have a measured counterweight from the other
+direction.** The bracket above derives a PCSA from a volume and a fascicle
+length. Three independent in-vivo imaging cohorts measure the same two
+muscles the lump names as a direct anatomic cross-section — none measures a
+PCSA, so none closes the block, but all three measure the same quantity at
+the same anatomical scale, and they disagree with the volume-derived bracket
+by roughly an order of magnitude:
+
+1. **Okada E, Matsumoto M, Ichihara D, et al., "Cross-sectional area of
+   posterior extensor muscles of the cervical spine in asymptomatic subjects:
+   a 10-year longitudinal magnetic resonance imaging study", Eur Spine J
+   2012;20(9):1563-1573** (doi:10.1007/s00586-011-1774-x), extended 20-year by
+   the same group, Sci Rep 2025 (s41598-025-08055-6; the 20-year full text was
+   read 2026-09-15 and its Table 2 is the initial-investigation cohort of the
+   same 1993-96 scans). **Per-muscle, per-level, bilateral mean CSA, T2 MRI,
+   497→55 healthy adults (35 M / 20 F, baseline mean age 31.9 ± 13.8):**
+   initial investigation, bilateral mm2 — multifidus **146.4 / 245.6 / 239.0**
+   and semispinalis cervicis **180.3 / 318.6 / 410.8** at C3/4, C4/5, C5/6;
+   i.e. **MF+SC together 3.27 / 5.64 / 6.50 cm2 per level**. These are the
+   first per-muscle per-level in-vivo means this block's two named muscles
+   have had. Caveats, all stated by the source or implicit in it: anatomic
+   CSA, not PCSA — the 20-year paper says so in its own methods; T2
+   signal-intensity fat grading the authors call not yet standardised; and a
+   population-average cohort, not this model's 70 kg / 1.70 m reference body.
+
+2. **Fernandez-de-las-Penas C, Albert-Sanchis JC, Buil M, Benitez JC,
+   Alburquerque-Sendin F, "Cross-sectional area of cervical multifidus muscle
+   in females with chronic bilateral neck pain compared to controls",
+   J Orthop Sports Phys Ther 2008;38(4):175-180**
+   (doi:10.2519/jospt.2008.2598, PMID 18459244; full text read 2026-09-15).
+   20 healthy women, ultrasound, C3-C6 bilaterally: **per-side cervical
+   multifidus CSA 0.79 / 0.87 / 0.89 / 0.80 cm2** (mean, C3/C4/C5/C6, with
+   95% CI in the source) — **bilateral 1.6-1.8 cm2 per level**, female-only,
+   prone at a slightly flexed upper cervical posture. The paper also states
+   C3 is the smallest level in both groups, and its control cohort agrees
+   with the whiplash- literature that the muscle is level-graded rather than
+   uniform.
+
+3. **Rankin G, Stokes M, Newham DJ, "Size and shape of the posterior neck
+   muscles measured by ultrasound imaging: normal values in males and females
+   of different ages", Man Ther 2005;10(2):108-115**
+   (doi:10.1016/j.math.2004.08.004, PMID 15922231; full text read 2026-09-15).
+   99 healthy subjects (46 M / 53 F, 18-72 y), ultrasound at the C3 level,
+   prone, neutral. It scanned **semispinalis cervicis + cervical multifidus +
+   rotatores as ONE ROI**, because *the fascial division between multifidus
+   and semispinalis cervicis could not be identified consistently in all
+   subjects* — the same inseparability Fortin 2018 recorded at C2-C3. The
+   paper's Table 2 values did not survive the text extraction, so its exact
+   per-side means are `:could-not-obtain` here; what is readable is the shape
+   (teardrop, lateral dimension about half the AP), males larger (P < 0.001,
+   not significant once normalised for body mass), no age effect, and a male
+   regression **CSA = 1.61 x spinous-process length − 1.42** (r = 0.79,
+   P < 0.001), which at a 4.4 cm C3 spinous process predicts a per-side
+   deep-group CSA of about **5.6 cm2** — `:representative`, derived from the
+   paper's own regression rather than read from its table, and the
+   spinous-process length is the paper's cohort's, not this model's.
+
+**What the three cohorts do to the block's defence.** The block's operative
+claim stays true: none of them measures a **PCSA**, which is what the model's
+`:pcsa-cm2` field and Crowninshield-Brand sharing consume, and none separates
+the fascicular subgroups the Anderson 2005 dissection showed the muscle is
+built from. What changes is the SIZE of the neighbourhood 12.0 cm2 lives in.
+The volume-derived bracket above puts the whole four-muscle group at
+16.5-50.9 cm2 bilateral; the direct CSA cohorts put **one level's** MF+SC at
+3.3-6.5 cm2 bilateral (Okada, mixed sex) and one level's MF alone at
+1.6-1.8 cm2 bilateral (Fernandez, female-only). The two measured populations
+are consistent with each other once the level axis is fixed, and they bracket
+the lump from the other side: **12.0 cm2 is 1.8-3.7x the measured per-level
+MF+SC cross-section, and 7-7.5x the measured per-level multifidus alone**.
+Per-level CSAs of segmental muscles must not be summed over levels — the same
+telescoping error this repo has already named once — so the measured scale
+that most nearly matches what the lump represents at its own single-level
+insertion (below C6/C7, per its `:source`) is the 3.3-6.5 cm2 figure, and
+against that figure the lump **over-states** capacity (error direction:
+%MVC under-stated). Against the volume-side bracket it **under-states**
+(error direction: %MVC over-stated). Both directions are recorded and
+neither is averaged away; the resolution is a mechanism question — how much
+of a segmental muscle's per-level slice is one anatomical muscle counted
+several times — that no paper in this file answers. **No constant moves** —
+12.0 stays exactly where it is, the C2/C3 block stays closed-for-provenance,
+and `task->reference-region` still returns `:absent-from-source` for the deep
+extensors. Hansraj 5-value and Wilke sitting 348.86176709999995 N
+byte-identical.
+
 **What it does add: the first measured bracket on the lump, from two measured
 numbers.** Zheng L, Siegmund G, Ozyigit G, Vasavada A, *Sex-specific prediction of
 neck muscle volumes*, J Biomech 46(5):899-904, 2013 (doi:10.1016/j.jbiomech.2012.12.018,
