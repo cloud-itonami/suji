@@ -1617,6 +1617,37 @@ its force-length operating point), and no value moves here — the 4 mm allowanc
 error budget and is not widened to admit 6.1 mm without a mechanism that accounts
 for the difference between the 4 mm and the 6.1.
 
+**A third cohort measures the three modelled suboccipitals' cross-section
+alive, 2026-09-16.** Cigana I, Libardi R, *Reliability of rehabilitative
+musculoskeletal sonography for measuring the visible cross-sectional area of
+suboccipital muscles*, Cureus 16(10):e68772, 2024 (doi:10.7759/cureus.68772,
+PMID 39371882, PMC11456216; full text read 2026-09-16 through the Europe PMC
+REST fullTextXML endpoint). Seventeen pain-free, healthy participants (9 F /
+8 M, 22-65 y, mean 42.5 ± 14.1, mean BMI 25.2), **sitting**, real-time B-mode
+sonography, linear probe aligned perpendicular to the muscle fibres: visible
+CSA of rectus capitis posterior minor, rectus capitis posterior major and
+obliquus capitis inferior — the same three suboccipitals the table above
+models, on the living side of the cadaver/living divide. Initial-session
+means: **RCPM 140.24 ± 26.48 mm², RCPMaj 97.41 ± 26.22 mm², OCI
+235.29 ± 60.74 mm²** (Examiner 2: 144.12 / 81.59 / 227.65; single-measure
+reliability ICCs 0.71-0.86). Whether a row is one side or both is not stated
+(`:could-not-obtain` — one probe position per muscle per scan); read per-side,
+the same convention as the K&R column. Against K&R's per-side PCSA:
+**RCPMaj 0.97 vs 0.93 cm² — agrees within 4%, inside K&R's own range
+(0.44-1.45)**; RCPM 1.40 vs 0.50 cm² — **2.8×, above K&R's range max
+(0.83)**; OCI 2.35 vs 1.29 cm² — **1.8×, above K&R's range max (1.73)**. What
+the two discrepancies cannot be resolved into: visible CSA is one cut through
+living tissue in a chosen probe plane, while K&R's PCSA is mass over fibre
+length in embalmed cadavers — an oblique cut over-states a short pennated
+muscle's cross-section and embalming shrinks its volume, so both biases point
+the same way and their sizes are unknown; the direction of the disagreement
+between the two readings is nameable, its magnitude is not, so neither reading
+wins and the RCPMaj agreement is the only point where the two modalities
+actually meet. No constant moves — the K&R PCSAs stay exactly where they are,
+the OCI stays unmodelled (it still needs an atlas and an axis as separate
+bodies), and Hansraj 5-value and Wilke sitting 348.86176709999995 N
+byte-identical.
+
 **The moment arms vary with posture**, which is the thing a muscle with both ends on
 one bone can never do (−15° to 60° of head flexion):
 
