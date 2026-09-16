@@ -721,6 +721,38 @@ neck-extension MVC (209 +/- 76 N, Vintimilla 2024) that any future %MVC for the
 cervical extensors has to be built from, and the sixth is the one entry whose
 own intensity is stated (50% of maximum, Chowdhury 2022).
 
+`branch: no-published-curve-for-this-region` keeps its name. But one comparison now
+meets on a shared x-axis, and it was measured 2026-09-15 (bot/suji-anatomy,
+diagnostic only - no constant moves, no keyword changes):
+
+Zhou 2024 states the intensity (50% of each subject's own maximum) and states the
+holding times, so at **that one intensity** the model's curve and the measurement
+can both be evaluated without inventing anything:
+
+| quantity at 50 %MVC | value | source |
+|---|---|---|
+| this model's pooled curve | **59.9 s** | `strain/model-form` ET = 12.0*f^-2.32 s at f = 0.5 |
+| Frey-Law & Avin `general` | 86.5 s | 21.92*0.5^-1.98 |
+| Frey-Law & Avin `trunk` | 109.4 s | 22.69*0.5^-2.27 |
+| Zhou neutral | 82 +/- 43 s | measured |
+| Zhou 40 deg extended | 56 +/- 23 s | measured |
+| Zhou 40 deg flexed | 117 +/- 68 s | measured |
+
+Model/measurement = **0.73x (-0.51 SD), 1.07x (+0.17 SD), 0.51x (-0.84 SD)** - all
+three inside +/-1 SD of the measurement, and the 1.07 and 0.73 also sit inside the
++/-47 % prediction interval of the general curve the repo already carries. So the
+paragraph above is right *where it can be checked* only in the sense that the
+direction claim is silent there: the >70-minute-vs-4.8-minute mismatch lives at
+intensities nobody stated, and at the one intensity that IS stated the pooled
+curve does not misprice the neck by an order of magnitude - the wide statement
+cannot be extrapolated down to the floor from either side. What is still true and
+still not closed: three directions x one intensity is three points, not a curve;
+Zhou's subjects held to exhaustion at 50 %MVC, which is a task-failure protocol,
+not a held posture; and the model's %MVC for the cervical extensors is built from
+`cervical_extensors 12.0 cm2`, which is `:representative` - the x-coordinate of the
+model's own point is the least-sourced number in the comparison. No constant moves;
+Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical.
+
 ## Isaac Sim / kami-genesis
 
 `wire/wit/kami-biomech.wit` is the articulation contract a kami-genesis `PlanarChain` / nv-compat
