@@ -192,7 +192,19 @@
    ;; and the axis in ONE segment, `upper_cervical` — so both its ends are still on
    ;; one bone and it would still be the error above. Splitting the atlas from the
    ;; axis would fix it and would open the atlanto-axial joint, whose cardinal
-   ;; motion is 40.5 deg of AXIAL ROTATION against about 10 deg of flexion; a
+   ;; motion is axial rotation. ⚠ PROVENANCE: the "40.5 deg of axial rotation"
+   ;; figure this comment carried until 2026-09-15 is a citation this repo could
+   ;; not obtain — the 2026-09-13 check found it in neither Bogduk & Mercer nor
+   ;; Dvorak et al. (whose 8.7 deg per side at C1/C2 is a SAGITTAL range, Table 5,
+   ;; N=28), so it was removed from here and from `segment`. What the joint does
+   ;; carry measured is Kang J, Chen G, Zhai X, He X, PLoS ONE
+   ;; 14(4):e0215357, 2019 (doi:10.1371/journal.pone.0215357, PMID 30990826,
+   ;; full text via Europe PMC REST, PMC6467451): C1-C2 axial rotation
+   ;; 37.9 +/- 5.1 deg in 20 asymptomatic volunteers (CT, Cardan angles) and
+   ;; 34.6 +/- 3.3 deg in cervical-spine patients — both inside the old 40.5, so
+   ;; the replacement is same-direction and tighter-spread, not a reversal. A
+   ;; sagittal model still spends none of it; no numeric pin touches it. About
+   ;; 10 deg of flexion at this joint stays :representative and unmeasured. a
    ;; sagittal model would pay for a vertebra-level mass split that no
    ;; anthropometric table publishes and collect almost none of the benefit. See
    ;; `segment/head-share-of-complex` for the three tables that were checked.
