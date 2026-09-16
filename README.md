@@ -3696,6 +3696,33 @@ pinned absolutely now, and the same break then fails four assertions naming the 
   pelvis` (`pose/lumbar-lordosis-deg`), which is what spends 46.5° of Cho's lordosis change as
   46.5° of pelvic rotation and produces both travels above. Nothing here measures whether a real
   stool-to-standing pelvis rotates that far.
+  ⚠ *Annotated 2026-09-16 (bot/suji-anatomy): the identity's two sides are now measured
+  simultaneously in real people.* Endo K, Suzuki H, Nishimura H, Tanaka H, Shishido T, Yamamoto K,
+  *Sagittal lumbar and pelvic alignment in the standing and sitting positions*, **J Orthop Sci
+  17(6):682-686, 2012** (doi:10.1007/s00776-012-0281-1, PMID 22915074; abstract read 2026-09-16
+  via the Europe PMC REST API; full text paywalled, `:could-not-obtain`). Fifty healthy adults,
+  lateral radiographs in standing and sitting, with lumbar lordotic angle (LLA), sacral slope
+  (SS), pelvic tilt (PT) and pelvic incidence (PI) measured per posture: the paper's stated
+  changes standing→sitting are **LLA −16.6°, sacral slope −18.7°, pelvic tilt +18.3°**
+  (P < 0.01; PI unchanged, so the per-subject identity PI = SS + PT closes at both ends).
+  Measured partition of the same postural change: the pelvis rotated **1.10× the lordosis
+  change** (18.3 / 16.6, arithmetic on the paper's own stated means, `:representative`) — the
+  rigid-pelvis identity is the right *shape*: a lordosis delivered without vertebral wedging
+  really does ride on the pelvis, which is what this model assumes. Measured against the model's
+  spend: the model partitions Cho's 46.5° stool→standing lordosis change as **0.586 × 46.5° =
+  27.25°** of hip-axis rotation (Mills' share, since 2026-09-11); the measured 1.10 partition
+  applied to the same 46.5° would rotate the pelvis **≈51.2°**. Direction of the error as the
+  model stands: IF Endo's partition transfers to Cho's stool→standing pair, the model
+  **under**-rotates its hips and legs for the lordosis it spends — by about half — which is the
+  same seam the lordosis-partition bullet above confesses, seen from the other side of the
+  0.586 cut. Two caveats keep it from being a correction: different cohort (Endo's standing LLA
+  33.3° ± 11.2° against Cho's 46.5/47.1° — how the partition scales with the size of the
+  lordosis being partitioned is not measured by either paper), and Endo's sitting condition is
+  not stated in the abstract (chair vs stool `:could-not-obtain` at this level; the same
+  abstract carries the summary readings LLA −50% and PT +25%, so the magnitudes quoted here are
+  the paper's own stated values, not this repo's recomputation). **No constant moves** — Mills'
+  0.586 is not touched, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
 - ~~**Say whether 21.407 N·m is the right standing lumbosacral moment.**~~ **Superseded by the
   2026-09-11 wave below: the chord stopped being derived from the rigid-pelvis identity, so the
   standing lumbosacral moment is now a number the model computes (0.0496 N·m at Cho's 46.5°) rather
