@@ -670,6 +670,23 @@ and `:no-published-curve-for-this-region` keeps its name:
    No constant moves: the numbers are recorded here only. The dose layer's
    comparison stays `:no-published-curve-for-this-region` — a curve is a family
    over intensity, and one intensity per posture direction is not a curve.
+   ⚠ *Annotated 2026-09-16 (bot/suji-anatomy): the sixth measurement carries an axis
+   the dose layer does not have at all.* The three Zhou 2024 times are one
+   intensity, three HEAD-NECK POSTURES — the 56 ± 23 s at 40° extended is 32% shorter
+   than the 82 ± 43 s neutral, and the 117 ± 68 s at 40° flexed is 43% longer
+   (ratios of the paper's own means: 0.68 and 1.43, `:representative` — the paper
+   reports no posture ratio, and a ratio of means understates the spread of a ratio).
+   The model's endurance layer is a function of %MVC alone (`strain/endurance-min`
+   takes f = %MVC/100 and nothing else), so two workstations whose cervical
+   extensors sit at the SAME %MVC at different head tilts are priced at the SAME
+   endurance time and the same dose, where the measurement says they should differ by
+   about 0.68-1.43x. That is a missing independent variable, not a wrong
+   coefficient: `task->reference-region` still returns `:absent-from-source` for the
+   neck, and nothing here proposes a posture term for the power law — three postures
+   at one intensity cannot fit one. What the annotation adds is the direction the
+   missing axis runs (flexion buys time, extension spends it), so the gap is named
+   with its sign. Hansraj 5-value and Wilke sitting 348.86176709999995 N untouched
+   — the dose layer holds no pinned quantity.
 
 Direction of the mismatch, stated and NOT closed: at just above the 8 %MVC floor
 the model prices a held load at **>70 min**, while these tests put healthy
