@@ -383,6 +383,16 @@
    ;; (+4 to +6 mm over a subaxial unit), which is the part that made the
    ;; uniform-spacing cut short. Errors run modelled-length SHORT; see
    ;; `the-suboccipital-lengths-are-checked-against-the-measurement`.
+;;   ⚠ Supplemented 2026-09-15 (bot/suji-anatomy): an IN-VIVO whole-C2 height now
+;;   exists — Polat S, Oksüzler M, "Determination of reference values of the
+;;   craniovertebral junction in healthy individuals using computed tomography",
+;;   Cukurova Medical Journal 2025;50(3):732-743 (doi:10.17826/cumj.1708045,
+;;   no PMID found; abstract read via the publisher page, full text
+;;   :could-not-obtain): axis height 34.78 +/- 2.82 mm (n=180 CT; M 36.40 +/- 2.61,
+;;   F 33.33 +/- 2.15), dens tip to inferior endplate. That is +16.2 mm over the
+;;   18.6 mm subaxial unit at the mean — about 3x the +4 to +6 mm the Xu body-only
+;;   heights give, same direction, larger size. The ~50 mm stack total remains
+;;   :representative and installed nowhere.
 
    "rectus_capitis_posterior_major"
    {:name "rectus_capitis_posterior_major" :pcsa-cm2 1.86
