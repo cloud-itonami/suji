@@ -3753,6 +3753,28 @@ Against Wilke's own 0.5 MPa standing entry (this repo's convention, 0.5 MPa × 1
 for a 45 y / 70 kg / 1.68 m subject), that is **0.57 ×** — an independent method publishing a
 standing figure **43% below** the single in-vivo subject the Wilke entries are taken from.
 
+⚠ *Annotated 2026-09-16 (bot/suji-anatomy): the parenthetical above mislabels the conversion,
+and the correction moves this section's conclusion.* `0.5 MPa × 1800 mm² = 900 N` is **not**
+this repo's convention: the same README's *A pressure is not a force* section establishes that
+a nucleus pressure is not a mean disc stress, and `spine/lumbar-cross-check` converts Wilke's
+pressure through `pressure->compressive-force-n` **via `nachemson-pressure-index`** — which is
+why this README's own recorded standing ratios are 682.422 N / **600 N** = 1.1374 (before the
+2026-09-11 wave) and 338.002 N / **600 N** = 0.563 (since). Through the index, the 0.48–0.50 MPa
+standing band is **508–600 N**. On the repo's own conversion this section's arithmetic reads:
+Nishizawa's **512.68 ± 108.38 N against 600 N is 0.85 ×** — about 15% below, inside its own
+±21% band and with its mean **inside Wilke's converted 508–600 N band** — not 0.57 ×, not 43%
+below. So the two published figures **agree** within their own spreads, the "second reference
+sits on the other side of that reference — the spread is wider than any single number" reading
+collapses, and what survives is stronger and one-sided: the model's post-crossing standing
+figure (338.0 N) undershoots **both** published references (0.56 × Wilke-converted, 0.66 ×
+Nishizawa). Error direction of the defect as written: the 900 N basis over-states Wilke's
+standing force by exactly the index (× 1.5), which over-states the disagreement between the
+two references; the model side is untouched by it — the cross-check that produced 0.563
+already used the index conversion, so this is a prose-only inconsistency, and fixing the prose
+moves the model **away** from agreement with both references (the undershoot is confirmed, not
+explained). Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical (annotation
+only; no line containing either is removed, and `nachemson-pressure-index` is not touched).
+
 **:representative** — the cohort is mean age >65 y, not Wilke's 45-year-old, and the paper's
 ±108 N is about 21% of the mean, which is the band this entry claims and no more. The
 difference this section asserts is a **level**, not the model's standing−sitting **difference**;
