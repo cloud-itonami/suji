@@ -3481,6 +3481,41 @@ derives both from the level's own axis and asserts that the second is several ti
   same question; (ii) an automobile seat, not a desk chair, and n = 8 males; (iii)
   abstract-only, so the per-condition SDs and per-disc angles are `:could-not-obtain`.
   **No constant moves** — Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the transverse load this model does not
+  carry has a measured in-vivo counterpart, and it is not small.* Rohlmann A, Pohl D,
+  Bender A, Graichen F, Dymke J, Schmidt H, Bergmann G,
+  *Activities of everyday life with high spinal loads*,
+  **PLoS ONE 9(5):e98510, 2014** (doi:10.1371/journal.pone.0098510, PMID 24866883,
+  PMC4035320; full text read 2026-09-17 via the Europe PMC REST fullTextXML
+  endpoint, CC BY). Telemeterised vertebral-body replacement, 5 patients
+  (fixators spanning T12–L2 to L2–L4; VBR at L1 for four of them, L3 for one),
+  more than 13,500 datasets over up to 65 months, implant load components
+  measured directly. The measurement names exactly the mechanism this model
+  refuses: *"At level L1, the spine is slightly curved; in a standing position,
+  this vertebra is mostly posteriorly inclined, which may be the reason for high
+  shear forces in the posterior direction ... a part of that resultant force acts
+  in the posterior direction"* — a standing, posteriorly-inclined lumbar level
+  carries measured shear, the same geometry this model's `W × sin` term describes.
+  Magnitudes: posterior shear up to **230 N** (arm elevation with a weight in
+  hands; in all 5 patients) and six further activities above 150 N (Table 6),
+  anterior up to **130 N** (upper body flexion, Table 5), lateral up to 212 N —
+  and even lying relaxed supine, the instrumented level measures an ap shear of
+  5 / 68 / 111 / −39 / −59 N across the five patients (Table 1). Often the shear
+  was *already acting in the posterior direction before the exercise started*,
+  which the paper attributes to muscle forces: a real lumbar level carries its
+  shear through facets, ligaments and muscle, not through the disc's compressive
+  term. What this does not close: (i) the measurement is an **implant** load at
+  L1 or L3 in fused/partially-replaced spines, not the disc interface at L4/L5 —
+  level and convention are `:could-not-obtain` for this model's own levels;
+  (ii) the tables are top-10 lists, not a standing-relaxed value — no quiet-
+  standing per-level shear number is published here (`:could-not-obtain`);
+  (iii) several of the high-shear trials had weights in the hands, so they are
+  not this model's empty-handed workstations. It pins order and direction, not a
+  constant: the 137.711 N this model leaves uncarried at 46.5° of lordosis is the
+  same order as what a real posteriorly-inclined lumbar level is measured to
+  carry in ordinary life. **No constant moves** — the model still computes no
+  shear, and the README caveat above stands; Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical.
   byte-identical (README-only diff).
 - **Pelvic incidence.** The morphological constant that fixes how much sacral slope a
   particular pelvis has needs a sacral endplate and a femoral-head geometry; this model has a
