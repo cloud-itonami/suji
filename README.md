@@ -3563,6 +3563,48 @@ derives both from the level's own axis and asserts that the second is several ti
   `:parameter-not-in-source`. The sitting one's is zero and measured, which is why it stays
   comparable; the standing one's is 46.5° from a different cohort with an SD of 10.5°, and the
   entry says so rather than letting a ratio imply that one paper supplied both halves.
+- **Wilke's own subject's lordosis, in either posture.** Both reference entries now carry
+  `:parameter-not-in-source`. The sitting one's is zero and measured, which is why it stays
+  comparable; the standing one's is 46.5° from a different cohort with an SD of 10.5°, and the
+  entry says so rather than letting a ratio imply that one paper supplied both halves.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the standing entry's import now has a second,
+  much larger measured cohort behind it — and the measured sitting-minus-standing DIFFERENCE
+  is the part the 46.5° never had.* Durbas A, Subramanian T, Simon C, Allen MRJ, Samuel J,
+  Colón LF, Mazzucco MR, Pagan C, Karasavvidis T, Vigdorchik J, Cunningham ME, Kim HJ,
+  Lovecchio FC, *Evaluating Variations in Spinopelvic Parameters from Sitting to Standing:
+  A Comparative Analysis of 1447 Older Adults Across Age, BMI, and Gender Subgroups*,
+  **J Clin Med 14(9):2952, 2025** (doi:10.3390/jcm14092952, PMID 40363985, PMCID PMC12072520;
+  full text read 2026-09-17 through the Europe PMC REST fullTextXML endpoint, CC BY).
+  1447 preoperative hip-replacement candidates (795 F / 652 M, mean 63.59 ± 10.85 y,
+  BMI 28.81 ± 5.70), each with BOTH a sitting and a standing lateral lumbar radiograph
+  (coronal Cobb < 20°, no spondylolisthesis, no prior fusion) — the largest series measured
+  in both postures, by two orders of magnitude over Cho's 30 and Mills' 50. Table 1:
+  standing LL **48.49 ± 12.21°**, sitting LL **30.05 ± 11.92°**, ΔLL (standing − sitting)
+  **18.44 ± 13.29°**, ΔSS +14.67 ± 10.18, ΔPT −19.20 ± 11.00. Three things this measures
+  that nothing in-tree had: (i) the standing entry's 46.5° was read from ONE cohort of 30
+  and its SD 10.5 was the only stated spread — the standing named posture is now measured
+  at 47.1 ± 10.5 (Cho, 31 y) / 53.3 ± 10.7 (Mills, 25.7 y) / 48.49 ± 12.21 (Durbas, 63.6 y),
+  and Cho's reading sits at the low edge of a real three-cohort band rather than alone;
+  (ii) the model spends **46.5° of standing-minus-sitting lordosis** while the largest
+  cohort's mean difference is 18.44 ± 13.29° — 2.52× the mean, z = 2.11 against its SD —
+  so the 46.5° is now bracketed, not just imported: it over-states the measured mean
+  posture difference, direction stated, and the sitting side is why (Durbas' sitting film
+  is a preoperative seat whose geometry the paper does not state, `:could-not-obtain`,
+  sitting LL 30.05 against the model's stool-measured 0.6 — the stool is Wilke's own
+  posture word, so the model's zero stays measured where it is and the two sitting
+  numbers are not the same posture); (iii) free of any cohort, the DIRECTION is now
+  four-source (Cho, Mills, Durbas, and the LBP cohort Durbas cites): standing is the more
+  lordotic posture, matching Wilke's 0.50 > 0.46 MPa — direction only, and this README's
+  own rule that direction-is-not-evidence stands. Also landing near a transcription seam
+  this README already named: Cho's abstract reading 48.5° (which would make the entry
+  47.9°) is the number Durbas' 1447-subject standing mean lands on (48.49 ± 12.21), so
+  the +1.4° body-versus-abstract choice inside Cho is no longer anchored to Cho alone.
+  What this does NOT close: Wilke states no lordosis, so both entries keep
+  `:parameter-not-in-source`; Durbas are older (ΔLL falls 47% from <60 y to ≥70 y,
+  p < 0.001, their own Table 2), heavier (BMI 28.8), hip-OA candidates, and their sitting
+  chair is unspecified — none of them is Wilke's 45-y 70-kg subject either. **No constant
+  moves** — `posture/lordosis-for :standing` stays 46.5 byte-exact and the Wilke sitting
+  348.86176709999995 N pin is untouched; Hansraj 5-value byte-identical.
 
 ### What did not move
 
