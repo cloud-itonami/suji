@@ -2014,6 +2014,36 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
 
 - **Obliquus capitis inferior**, 2.58 cm² bilateral — C2 spinous → C1 transverse, both
   ends on `upper_cervical`. It needs the atlas and the axis to be separate bodies.
+  ⚠ *Annotated 2026-09-18 (bot/suji-anatomy): the number is the source's own measured
+  row, read this day in the fetched full text — and the row's function statement
+  sharpens what the missing segmentation is missing.* Read 2026-09-18 from the Vasavada
+  2010 chapter PDF (<https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf>,
+  `pdftotext -layout`, the same fetch the splenius entry's annotation used). Its
+  Table 3-3 (p.65, the data reproduced from Kamibayashi & Richmond 1998, Spine
+  23:1314-1323) prints a row **"Obliquus capitis inferior"**: N=9, mass 5.1 (1.8) g,
+  **PCSA 1.29 (0.54) cm² per side, range 0.69–1.73** — the bullet's 2.58 cm² is exactly
+  that row doubled, so the figure this bullet carries is measured, not
+  `:representative`, and now has its row named. What the row cannot say, the chapter's
+  text does (p.66): OCI *runs primarily mediolaterally from the spinous process of C2
+  to the transverse process of C1* — both ends of that line ride on the two bodies
+  this model merges into `upper_cervical` — and *the rectus capitis posterior major
+  and the obliquus capitis inferior are oriented to produce ipsilateral rotation*,
+  with extension only the shared contribution of all four suboccipitals (*"all four of
+  these muscles can contribute to extension of the head with respect to the neck"*).
+  So the gap is not only the missing body: an atlas and axis split apart in this
+  MIDLINE SAGITTAL model would still have no task for the muscle's dominant measured
+  orientation, because axial rotation is the degree of freedom this model does not
+  have at any cervical level — the same absence *What the neck still cannot express*
+  names for the lateral-bend bullet and the atlanto-axial joint. What this does not
+  close: (i) the row is cadaveric, N=9 — the same class of source this model already
+  accepts — and no in-vivo OCI cross-section was found (searched 2026-09-18, abstracts
+  only: the muscle is below MRI ROI resolution in the cohorts this file already cites,
+  which is the reason those papers scan MF+SC as one ROI and skip the suboccipitals);
+  (ii) the chapter states no per-muscle moment arm for rotation, so the size of the
+  unfed rotational role is `:could-not-obtain`. **No constant moves** — no
+  `obliquus_capitis_inferior` instance is created, the atlas and axis stay one
+  segment, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
 - **The atlanto-axial joint.** ⚠ Its "cardinal motion is 40.5° of axial rotation"
   is a citation, not a number the source carries — a note dated 2026-09-13 could not
   find it in the source it was attributed to (Bogduk & Mercer's Table 5 is Dvorak
