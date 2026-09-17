@@ -1998,6 +1998,45 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
 - **Lateral bend within the neck.** `pose` gives all three cervical segments the same
   lateral-bend angle, so there is no side-bending rhythm and no coupled axial rotation —
   which is most of what the atlanto-axial joint does.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the shared angle is doubly non-uniform —
+  per level, and between levels and tasks.* Ishii T, Mukai Y, Hosono N, Sakaura H,
+  Fujii R, Nakajima Y, Tamura S, Iwasaki M, Yoshikawa H, Sugamoto K, *Kinematics of
+  the cervical spine in lateral bending: in vivo three-dimensional analysis*,
+  **Spine 31(2):155-160, 2006** (doi:10.1097/01.brs.0000195173.47334.1f, PMID
+  16418633; abstract read 2026-09-17 via the Europe PMC REST API; no PMC record, so
+  the per-level tables are `:could-not-obtain` — abstract-only). Twelve healthy
+  volunteers, 3D MRI in 7 positions at 10° increments of lateral bending, volume
+  registration per vertebra. Three measured facts a single shared angle cannot
+  carry. (i) **Per-level lateral bending is not uniform**: mean maximum lateral
+  bending to one side spans **1.6° to 5.7°** across levels (about 3.5× between the
+  least- and most-mobile level; the abstract names no level `:could-not-obtain`),
+  while `pose` spends the same angle on every cervical segment. (ii) **The
+  coupling is real and bimodal in sign**: coupled axial rotation runs
+  **opposite** to the lateral bending at Oc-C1 (0.2°) and C1-C2 (**17.1°**), and
+  in the **same** direction at the subaxial levels except C7-T1 — the
+  atlanto-axial joint indeed does most of it, and 17.1° of it is invisible to a
+  sagittal model. (iii) Coupled flexion-extension stays under **1.1°** at every
+  level, so the sagittal plane this model owns is the *small* component — the
+  missing terms are the two it cannot state. Lin CC, Lu TW, Wang TM, Hsu CY, Hsu
+  SJ, Shih TF, *In vivo three-dimensional intervertebral kinematics of the
+  subaxial cervical spine during seated axial rotation and lateral bending via a
+  fluoroscopy-to-CT registration approach*, J Biomech 47(13):3907-3913, 2014
+  (doi:10.1016/j.jbiomech.2014.08.014, PMID 25218506; abstract read 2026-09-17
+  via the Europe PMC REST API; no PMC record) is the upright, weight-bearing
+  check: ten asymptomatic young adults, biplane fluoroscopy, subaxial per-level
+  ROM to one side **6.1-6.4° during lateral bending** (C3/C4-C6/C7; 4.2/4.6/3.0/
+  1.3° during axial rotation), with the coupled-rotation/lateral-bending ratio
+  spanning **0.23-0.75 across levels in LB** — and Lin's own finding that this
+  upright dynamic pattern *differs from previous supine static studies*
+  (significance at C4/5-C6/7, p <= 0.0037) means the two sources do not collapse
+  to one per-level table. What this does not close: both are abstract-only here,
+  so no per-level angle enters the model or `pose` (`:could-not-obtain`); neither
+  paper equates MRI-static to fluoroscopy-dynamic conventions; and neither names
+  the moment or load a coupled rotation implies — kinematics only, no force
+  claim. The annotation pins shape and direction, not a constant: the shared
+  angle over-states the least-mobile level and under-states C1-C2's coupling.
+  No constant moves — Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff).
 - **The three suboccipitals are modelled midline**, so their lateral flexion and their
   role in steadying the head in rotation are absent. That costs most for obliquus capitis
   superior, which really runs from a transverse process 25 mm off the midline.
