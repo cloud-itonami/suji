@@ -1518,6 +1518,37 @@ All the change is in the levels above it, which is the point.
 - **It is modelled midline, so its lateral flexion and axial rotation are absent.**
   Those would need it paired and in `:cervical-lateral-flexion`, and a muscle
   belongs to one task here.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the refused muscle has a measured in-vivo
+  size now, and it is not small.* Rozenstoka S, Comadran de Barnola E, Kauzena S,
+  Akuratere G, Galeja Z, Deicmane D, *Sternocleidomastoid muscle morphology is
+  independently associated with neck strength and endurance in athletes and
+  para-athletes*, **Front Physiol 17:1852707, 2026** (doi:10.3389/fphys.2026.1852707,
+  PMID 42661709, PMC13518177; full text read 2026-09-17 through the Europe PMC REST
+  fullTextXML endpoint, CC BY). 195 men — athletes, para-athletes and physically active
+  controls (mean 33.5 ± 9.4 y), acute neck injury / recent cervical surgery excluded —
+  bilateral axial ultrasound at the carotid-bifurcation level, fascia traced:
+  **SCM CSA 4.69 ± 1.03 cm² bilateral average** (right 4.67 ± 0.97; clavicular head
+  1.81 ± 0.43 and sternal head 1.72 ± 0.53, traced at the distal division and summing to
+  less than the whole-muscle figure — an internal inconsistency of the paper's own
+  tables, the reconciliation `:could-not-obtain`). Against the lump that stands for the
+  side it fights: **0.39× the `cervical_extensors` 12.0 cm²** (arithmetic on one
+  published mean and one `:representative` constant, both bilateral) — the antagonist
+  this model refuses in every posture is measured at over a third of the extensor
+  lump's cross-section, and the refusal's cost is compression, not force share, as the
+  refusal bullet above states. The same paper ties morphology to function on the
+  flexion side: SCM CSA was independently associated with maximal flexor strength
+  (β = +1.32 kg per cm², 95% CI [+0.56, +2.07]) and neck-flexor endurance
+  (β = +0.53 min per cm², 95% CI [+0.23, +0.83]) after age, BMI, handgrip and sport
+  domain — a measured per-cm² slope, not a curve, on a trained cohort. What it does
+  not close: (i) **males only, all trained** — for this actor's desk bodies the size is
+  likely an OVER-statement (a sedentary SCM is smaller; direction stated, no sedentary
+  value in this source); (ii) ultrasound **anatomical** CSA traced at one level, not
+  PCSA — it includes non-contractile tissue, so as a capacity input it would over-state
+  force, the same direction as the Izumida caveat at C2/C3; (iii) no attachment
+  coordinates (`:could-not-obtain`) — an instance still has nowhere to be put, because
+  the midline/pairing limits named in the next bullet apply to it too. **No constant
+  moves** — no `sternocleidomastoid` instance is created, the refusal stands, Hansraj
+  5-value and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 - **The wrap radius is the cervical column's own, 0.012 m**, shared with
   `cervical_extensors` because it is the same column. A muscle lying further out
   from the bone has a larger effective radius and this model does not know how much
