@@ -1527,6 +1527,43 @@ All the change is in the levels above it, which is the point.
   +29.8 mm at neutral and **−10.3 mm at 45° of head flexion**, so without it the
   model's principal head extensor would be reported as a flexor in the posture this
   actor exists to describe.
+> ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the other side of this caveat is now
+> measured, in vivo.* Suderman BL & Vasavada AN, *Neck muscle moment arms obtained
+> in vivo from MRI: effect of curved and straight modeled paths*, Ann Biomed Eng
+> 45(8):2009-2024, 2017 (doi:10.1007/s10439-017-1830-8, PMID 28397021; abstract
+> read 2026-09-17 via the Europe PMC REST API; full text paywalled, no PMC record,
+> `:could-not-obtain`). Two subject-specific cervical models built from in-vivo
+> MRI, 15 neck muscles, curved vs straight paths crossed with three moment-arm
+> methods (tendon excursion, geometric, effective torque): curved paths give
+> significantly different moment arms than straight ones for **10 of 15 muscles**
+> (p < 0.05), the three methods disagree for **11 of 15** (p < 0.05), and the
+> abstract's stated direction is that **straight lines over-estimate the
+> extension moment**. The model's wrap is the curved-path choice and exists for
+> exactly the sign reason the paper names (the unwrapped `semispinalis_capitis`
+> chord is −10.3 mm at 45° of head flexion); what the paper measures is that the
+> wrap parameters are not free either — Suderman BL, Krishnamoorthy B & Vasavada
+> AN, *Neck muscle paths and moment arms are significantly affected by wrapping
+> surface parameters*, Comput Methods Biomech Biomed Engin 15(7):735-744, 2012
+> (doi:10.1080/10255842.2011.558085, PMID 21416413; abstract read 2026-09-17 via
+> the Europe PMC REST API; full text paywalled, `:could-not-obtain`) — the same
+> `semispinalis capitis` checked against MRI centroid paths: **both the wrapping
+> radius and its kinematic linkage to the vertebrae significantly affect the
+> moment arm** (radius is the parameter this bullet fixes at 0.012 m;
+> per-muscle and per-radius values `:could-not-obtain`, abstract-only), and with
+> wrapping surfaces poorly matched to the centroid path a kinematic method
+> (tendon excursion) predicted **flexion** moment arms in certain postures where
+> the geometric method (distance to the instant centre) predicted extension —
+> the very sign-flip class the wrap exists to prevent, arriving from the wrapped
+> side. So the bullet's stated direction stands (a larger real radius
+> over-states the force and the compression that follows), and it gains a
+> stronger one: at a radius set without a measured check, not only the magnitude
+> but the **sign** of an arm is what the wrapping parameter can flip. What it
+> does not close: neither abstract carries a number for the 0.012 m itself or
+> for this model's `semispinalis_capitis` arm at any posture (`:could-not-obtain`
+> at this level); two subjects in the 2017 cohort; the 2012 surface-fitting
+> details are behind the paywall. **No constant moves** — the 0.012 m wrap
+> radius stays exactly where it is, and Hansraj 5-value and Wilke sitting
+> 348.86176709999995 N are byte-identical (README-only diff).
 - **The splenius entry is capitis + cervicis.** The source gives one mass and one
   PCSA for both and separates them only by fascicle length, so this entry puts a
   share of splenius cervicis's cross-section on a cranial insertion it does not have
