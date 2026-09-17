@@ -1600,6 +1600,41 @@ All the change is in the levels above it, which is the point.
   share of splenius cervicis's cross-section on a cranial insertion it does not have
   (cervicis runs to the C1–C3 transverse processes). It crosses the same six levels
   either way, so the error is in *where on the skull* the force is applied.
+  ⚠ *Annotated 2026-09-18 (bot/suji-anatomy): the one-row premise is confirmed in the
+  fetched full text, and the repo's own citation family is where the split exists —
+  paywalled.* Read 2026-09-18 from the same Vasavada 2010 chapter PDF
+  (<https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf>, `pdftotext -layout`):
+  Table 3-3 p.65 carries a row printed literally **"Splenius"**, N=9 — mass 42.9 (13.8) g,
+  NF length 9.5 (2.3) cm, **PCSA 4.26 (1.04) cm² per side, range 2.57–5.48** — and the only
+  per-part values it carries are two muscle-length sub-lines (capitis 12.3 (1.5) cm,
+  cervicis 14.7 (2.3) cm). The chapter's own text says why the parts are not
+  interchangeable even at equal PCSA: the fascicle lengths are similar but the
+  muscle-tendon lengths are not, because the splenius capitis has **short aponeuroses**
+  and the splenius cervicis **long** ones — the single PCSA row blends two architectures
+  that differ in tendon fraction. The per-muscle split the lump lacks exists in the
+  repo's own citation family: Vasavada A, Li S, Delp S, *Influence of muscle morphometry
+  and moment arms on the moment-generating capacity of human neck muscles*, Spine
+  23(4):412-422, 1998 (PMID 9516695; abstract read 2026-09-18 via the Europe PMC REST
+  API; inEPMC = N, inPMC = N, no PMC record, full text `:could-not-obtain` — paywalled
+  Spine) — the model the chapter quotes for the semispinalis/splenius moment-arm
+  statements this entry already relies on — treats splenius capitis and splenius
+  cervicis as **two muscles**, and its abstract states that at upright neutral
+  splenius capitis carries one of the largest extension moment arms in the neck and
+  that its force-generating capacity **varies substantially with head posture** (large
+  arm, short fascicles). The chapter states the per-muscle consequence directly
+  (p.67-68): *"the splenius capitis has a much larger moment arm than the splenius
+  cervicis."* Direction of the error, now anchored rather than inferred: the
+  skull-attached entry applies capitis's larger arm to the whole 8.52 cm² bilateral
+  PCSA, so the cervicis share inside the lump is delivered through a larger arm than
+  its own **and** at a joint its own line does not reach — the atlanto-occipital
+  extension capacity and the C7 extension arm are both **over-stated** by the
+  cervicis share's fraction of the lump. No source in hand sizes that fraction: K&R
+  carry one row (checked in the fetched text), and the Vasavada/Li/Delp per-muscle
+  tables are `:could-not-obtain`. The abstract adds one more thing the entry's fixed
+  PCSA cannot say: splenius capitis's per-PCSA force capacity is posture-dependent, so
+  the constant 8.52 cm² answers at the neutral capacity in every head posture. No
+  constant moves — no per-partition share is installed, and Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 - **The specimens were cadavers.** Kamibayashi & Richmond's own N is 9 or 10 per
   muscle and the ranges are wide — semispinalis capitis spans 3.93 to 7.32 cm²,
   nearly a factor of two.
