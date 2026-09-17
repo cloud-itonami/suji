@@ -322,6 +322,52 @@ pressure in the third lumbar disc. **The full text is still `:could-not-obtain`*
 per-task value is used here — only the abstract’s own maxima, which is the level
 this entry is allowed to claim.
 
+**Annotated 2026-09-18 (bot/suji-anatomy): the calculation scheme this paper
+validates is publicly readable, and it names where the absent intra-abdominal
+pressure term lives.** Schultz AB, Andersson GBJ, *Analysis of loads on the
+lumbar spine*, Spine 6(1):76–82, 1981 (doi:10.1097/00007632-198101000-00017,
+PMID 7209677; full text read 2026-09-18 from the CDC Stacks copy,
+<https://stacks.cdc.gov/view/cdc/224809>). Same series, companion paper — its
+own reference 12 is the JBJS study above, still listed as *"(Unpublished
+manuscript)"* at the 1981 submission. Three things it carries that this entry
+could not reach while the JBJS full text stayed `:could-not-obtain`.
+(i) **The general model carries an explicit intra-abdominal pressure
+resultant.** Ten muscle equivalents (five per side: latissimus dorsi, erector,
+external oblique, internal oblique, rectus abdominis), an IAP force `P` at
+`(0, y_r)` that enters the z-equation with the **same sign as the
+motion-segment compression `C`** (`Fz = C + P − …`, Table 1, p.79), and spine
+resistances `C, Sx, Sy`; *"the intra-abdominal pressure resultant can be
+determined from experimental measurements"* (p.79). That is the term the
+*Why it is short* bullet calls absent here: its published sign **adds to the
+compression the spine carries**, so its absence puts this model's ~349 N on
+the LOW side — the same side of the disagreement the section already
+attributes to the missing tissue terms; this annotation does not claim the
+term closes the gap, only that it points the same way. (ii) **The validation
+link itself is in this paper, on data from the JBJS study**: Fig. 5 is
+predicted spine compression against **measured L3 intradiscal pressure**,
+r = 0.91, from its reference 12 (the JBJS paper); Fig. 4 is predicted erector
+tension against EMG, r = 0.984/0.988, from its reference 9 (Andersson et al
+1980, seated table work). This repo currently bridges pressure→force through
+Nachemson's cadaver pressure index instead; the 1981 figure is the in-vivo
+version of that bridge, on this exact study's data — a reading, not a
+replacement, and no number moves here. (iii) **Its indeterminacy handling is
+a bounded objective, and it is not this model's**: linear programming
+minimizing spine compression with muscle tension capped at 100 N/cm²
+(pp.79–80), against this repo's minimum cubed stress (Crowninshield &
+Brand). The paper's own caution (p.81) says objective-function choice moves
+sub-maximal muscle-tension estimates while leaving compression and maximal
+effort relatively insensitive — so the two objectives can diverge in the
+muscle forces without diverging in the compression, which is the direction
+in which this repo's comparison to Wilke (compression) is the more robust
+half. What this does not do: it installs no IAP value — the paper states the
+term and points to measurement (its reference 8: Örtengren R, Andersson GBJ,
+Nachemson AL, *Studies of relationships between lumbar disc pressure,
+myoelectric back muscle activity and intra-abdominal (intragastric)
+pressure*, Spine 6(1):98–103, 1981 — same issue, adjacent paper), whose
+per-task numbers are not read here; the JBJS 1982 full text remains
+`:could-not-obtain`. **No constant moves**: Hansraj's five multipliers and
+Wilke sitting 348.86176709999995 N are byte-identical (README-only diff).
+
 ## The dose layer against the endurance literature — and it disagrees
 
 The stiffness index (強張り) is what a reader of this app actually sees: it is the
