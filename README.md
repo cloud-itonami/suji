@@ -2001,6 +2001,34 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
 - **The three suboccipitals are modelled midline**, so their lateral flexion and their
   role in steadying the head in rotation are absent. That costs most for obliquus capitis
   superior, which really runs from a transverse process 25 mm off the midline.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the 25 mm carries no source — not in this
+  bullet and not in `attachment.kotoba`'s `:source` string, which states the same 25 mm —
+  so it is `:parameter-not-in-source`, and for the first time it has a measured floor.*
+  Cacciola F, Phalke U, Goel A, *Vertebral artery in relationship to C1-C2 vertebrae:
+  an anatomical study*, Neurology India 52(2):178-184, 2004 (PMID 15269464; no DOI,
+  no PMC record; **full PDF read 2026-09-17** from the University of Toronto public copy —
+  PubMed HTML serves a cookie page and Europe PMC carries abstract only). Ten cadaveric
+  heads (20 sides) plus ten dry C1-C2 pairs, digital calliper: the distance from the
+  **midline to the medial-most edge of the vertebral artery groove on the outer cortex of
+  the C1 posterior arch is 14.3-19.7 mm, mean 18.2 mm**, and the artery itself rides the
+  groove at a mean **22.1 mm** from the midline. The groove runs laterally INTO the
+  transverse foramen, which the same paper states sits "in the transverse process lateral
+  to the lateral mass" — so every landmark the OCS origin could sit on is at or lateral to
+  the groove, and the measured floor for the origin's lateral offset is **18.2 mm** (the
+  transverse-process tip itself is `:could-not-obtain` from this source; the C2
+  transverse-process tip, 29.3 mm, is already cited in the rectus-capitis-anterior bullet
+  above). What this does to the pinned length check:
+  `the-suboccipital-lengths-are-checked-against-the-measurement` pins OCS's flattened
+  chord SHORT of 43 mm (39.5 modelled against K&R's 43-57), and the missing lateral term
+  is a candidate mechanism of exactly that size — sqrt(39.5^2 + 18.2^2) ~= **43.5 mm**
+  (arithmetic `:representative` on one modelled chord and one measured floor), which would
+  carry the chord into the measured range with no segment change at all. The arithmetic
+  does NOT close the question: the confessed 37-vs-50 mm `upper_cervical` cut shortens the
+  same chord, so the pinned shortfall is the sum of (at least) two same-direction terms
+  and one chord cannot separate them. Reported, not built: `:lat` stays 0.0 — restoring
+  the measured floor would break the pinned length test and move a solver input, and
+  neither the measured floor nor this arithmetic is a licence for either. No constant
+  moves — Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical.
 - **`upper_cervical` is 37 mm where an atlas plus axis is nearer 50**, because the model
   cuts the neck at its own uniform level spacing. Everything spanning that joint comes out
   short, and a short muscle changes length by a larger fraction for the same rotation — so
