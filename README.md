@@ -2534,6 +2534,38 @@ capitis passive term at a posture where its active force is zero.
   **Closed 2026-09-08.** The coupled solve was built; there is no surplus.
 - **Rectus capitis lateralis** — a lateral bender, and a midline sagittal model has
   nowhere to put it. Also unmeasured by the source.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): "unmeasured by the source" remains true of
+  Kamibayashi & Richmond, but measured geometry AND measured passive stiffness for this
+  muscle exist outside it, and neither is folded in.* (a) Ma SC, Liu S, Agazzi S, Jia W,
+  *Rectus Capitis Lateralis Muscle: A Cadaveric Study of a Key Surgical Landmark in the
+  Posterior and Lateral Approaches to the Jugular Foramen*, World Neurosurgery
+  2019;128:e859-e864 (doi:10.1016/j.wneu.2019.05.018, PMID 31082563; abstract read
+  2026-09-17 via the Europe PMC REST API — the abstract carries no dimensions; the
+  numbers below were read on the publisher's page, no PMC record, full text
+  subscription-only). Eight formaldehyde-semifixed cadaveric heads: craniocaudal length
+  **21.3 mm** (range 20–23 mm), and anteroposterior depth **6.5 mm** (range 6–7 mm) at
+  the cephalad end where it inserts on the jugular process. The origin/insertion pair
+  this fixes the shape of — C1 transverse process → jugular process — is the same lateral
+  column the 2026-09-16 `rectus_capitis_anterior` annotation above needs a `:lat`
+  coordinate for, so a first measured span exists for exactly the line a lateral-bender
+  instance would need; the C1-side lateral coordinate itself is still
+  `:could-not-obtain` from these sources. Error directions kept: semifixed cadaveric
+  surface length, not fibre length, and fixation shrinks soft tissue, so the true
+  in-vivo span is if anything longer; no mass and no PCSA in either abstract
+  (`:could-not-obtain`). (b) Hallgren RC, *Injury Threshold of Rectus Capitis Muscles at
+  the Atlanto-occipital Joint*, J Manipulative Physiol Ther 2017;40(2):71-76
+  (doi:10.1016/j.jmpt.2016.11.001, PMID 27993391; abstract read 2026-09-17 via the
+  Europe PMC REST API). Three unembalmed head-neck specimens, servo-controlled
+  load-displacement to failure: the RCL failed at **significantly higher load and strain
+  than the other three rectus capitis pairs**, and RCL + rectus capitis anterior had
+  **significantly higher passive stiffness** than the other two (yield loads and
+  stiffness values themselves `:could-not-obtain` from the abstract, n=3, all female,
+  aged 63-70+). Read together, the muscle this bullet says has "nowhere to put it" is
+  measured to be the stiffest passive element at the atlanto-occipital joint — the
+  midline sagittal model has nowhere to put an active lateral line, but the measured
+  fact is a *passive* stabiliser's contribution, which no joint this model has expresses
+  at all. Reported, not built: no instance, no constant moves — Hansraj 5-value and
+  Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 - **Longus colli**, all three parts. Its superior oblique part is expressible (above); its
   vertical part runs within `lower_cervical` at both ends and is the known error shape.
   ⚠ *Stale sentence below - corrected 2026-09-12:* this section said none of the three
