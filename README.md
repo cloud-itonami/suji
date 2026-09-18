@@ -3443,6 +3443,38 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   sensitive to it. Measured over 36 postures: **11.23 %MVC** is the worst forward-head
   co-contraction and **38.06 %** the worst genuine flexion demand (head tipped back), against
   the **184.82 %** that assigning the old surplus would have produced.
+  ⚠ *Annotated 2026-09-18 (bot/suji-anatomy): the flexor side of this co-contraction has a
+  measured resting counterpart, and it is five times below the worst-case prediction.*
+  Khan A, Khan Z, Bhati P, Hussain ME, *Influence of Forward Head Posture on
+  Cervicocephalic Kinesthesia and Electromyographic Activity of Neck Musculature in
+  Asymptomatic Individuals*, **J Chiropr Med 19(4):733–740, 2020**
+  (doi:10.1016/j.jcm.2020.07.002, PMID 33536860, PMC7835487; full text read 2026-09-18
+  from the PMC copy — the Europe PMC `fullTextXML` endpoint returned HTTP 500 throughout
+  the session, the NCBI PMC HTML was the source). 22 asymptomatic volunteers with forward
+  head posture (craniovertebral angle 50.9 ± 1.77°) and 22 without (67.4 ± 7.89°), surface
+  EMG over the lower third of the sternal head of the sternocleidomastoid, normalized per
+  subject to a supine resisted neck-flexion MVIC (mean of 3 trials): **SCM at rest in
+  relaxed sitting 2.2 ± 0.40 / 2.4 ± 0.83 %MVIC (right/left) in the FHP group against
+  1.7 ± 1.00 / 1.9 ± 0.96 in the control group** (p = .04, Table 3), and during an active
+  supine flexion task 58–84 %MVIC (Table 4). Against the model's worst forward-head
+  atlanto-occipital co-contraction of 11.23 %MVC, the measured resting flexor tone in a
+  forward-head sitter is ~0.20× the prediction (right 2.2/11.23 = 0.196, left 2.4/11.23 =
+  0.214 — arithmetic on published means and one model output). What it does not close:
+  (i) surface EMG sees only the superficial flexor; the model's flexor dose also carries
+  `longus_capitis` (9.94 %MVC at `laptop-on-lap`), which surface electrodes cannot see, so
+  the measured number under-counts the very share the model prices
+  (`:muscle-coverage-not-in-source`, direction stated); (ii) relaxed sitting is not the
+  model's worst forward-head workspace posture — the ≤53° / >53° CVA split is a cohort
+  cut, not a matched posture set, and no %MVIC at a specified craniovertebral angle on
+  this subject pool exists (`:could-not-obtain`); (iii) the MVIC normalizer is a supine
+  resisted flexion, not this model's per-muscle maximum-force construct. The direction
+  that survives: a real forward-head sitter carries a *small* continuous flexor tone —
+  order 2 %MVIC, five times below the 11.23 %MVC worst case — so the prediction reads as
+  a worst-posture bound rather than a typical-desk value, and the caveat that the whole
+  effect is sensitive to the `:representative` 12.0 mm wrapping radius stands.
+  **No constant moves** — no instance created, the 26.8 / 32.9 / 12.0 mm arms stay
+  `:representative`, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
 - **The suboccipitals still carry nothing at a desk**, and the reason is better than it was.
   It used to be that their load was floored at zero by a decomposition; now the joint *has* a
   load, the load is *met*, and the coupled optimum simply prefers the muscles that were going
