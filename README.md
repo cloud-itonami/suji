@@ -3604,6 +3604,27 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
 - **It is still a static optimum.** No co-contraction for stability, no history, no
   activation dynamics — a coupled static optimum predicts *less* co-contraction than a body
   produces, not more.
+⚠ *Annotated 2026-09-19 (bot/suji-anatomy): the bullet's sign clause, "not more", is
+  measured nowhere, and the only measured co-contraction numbers this README carries
+  both sit against the model's WORST postures rather than matched ones.* Khan 2020's
+  SCM resting tone (2.2 / 2.4 %MVIC in forward-head sitters, annotated above) is
+  0.20× / 0.21× the 11.23 %MVC atlanto-occipital worst case — but it is a resting tone
+  in a self-selected sit, not a co-contraction measurement at the model's worst
+  posture, so its being five times below the prediction says the prediction is a
+  worst-posture bound, not that the optimum over- or under-predicts (`:could-not-obtain`
+  — no study reports %MVIC co-contraction at a specified craniovertebral angle on a
+  matched posture set, per this README's own caveat on that annotation). Hallgren 2017's
+  RCP tone (11–14 %MVIC at a self-selected neutral, annotated above) is the same shape
+  from the other side: a measured continuous activity against a model desk ZERO. So at
+  the neck joints this model actually prices, every available measurement pairs a
+  resting/neutral tone with a worst-case optimum or a zero, and the bullet's under-
+  prediction claim — drawn, per its own wording, from the static-optimum literature on
+  trunk-scale co-contraction — has no matched counterpart at any joint here. What the
+  existing numbers do constrain: a static optimum is consistent with the measured
+  continuous flexor/extensor tones only if its worst-case output is treated as a bound,
+  so the "not more" clause is not a safe default at the joints this model serves until
+  a matched-posture measurement exists. No constant moves — Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 
 ## The pelvis had no rotation (2026-09-08)
 
