@@ -3767,8 +3767,36 @@ derives both from the level's own axis and asserts that the second is several ti
   internally inconsistent: Cho's abstract states standing LL **48.5° ± 8.7°** while its body
   text states **47.1° ± 10.5°** — this README's 46.5° derives from the body reading; the
   abstract reading would give 47.9°. A +1.4° transcription choice inside the source itself,
-  now named at the constant it would move. **No constant moves** — Hansraj 5-value and Wilke
-  sitting 348.86176709999995 N byte-identical.
+  now named at the constant it would move.
+  ⚠ *Annotated 2026-09-18 (bot/suji-anatomy): the constant now also has a YOUNG asymptomatic
+  male triplet measured on the same subjects, standing — and its low-PI half sits outside
+  Vialle's mean − 1 SD.* Fukushima K, Tsutsumi M, Nakata A, Kakimoto A, Yamaguchi I, Hoshino
+  T, Matsuzaki S, Kudo S, *Relationship between pelvic incidence and hip, pelvic, and lumbar
+  motion during squatting in healthy individuals with high and low pelvic incidence*, **Sci
+  Rep 16:5831, 2026** (doi:10.1038/s41598-026-36815-5, PMID 41559209, PMCID PMC12894836;
+  full text read 2026-09-18 through the Europe PMC REST fullTextXML endpoint — the same
+  fetch this README's deep-squat annotation used). Table 1, 26 healthy men (20.6 / 22.4 y),
+  quartile split on PI, standing radiographs: **PI 38.8 ± 2.7° (low group, n = 13) /
+  60.0 ± 6.2° (high group, n = 13)**, SS 36.1 ± 2.9 / 47.7 ± 4.3, PT 2.8 ± 2.3 / 12.3 ± 5.5.
+  Three things this adds and one it does not. (i) The per-group identity PI = SS + PT holds
+  to rounding in BOTH groups (38.9 and 60.0 against 38.8 and 60.0) on three directly
+  measured numbers — a sharper check than Vialle's means-sums-to-rounding pass, which mixed
+  a broad age range. (ii) The low group's 38.8 ± 2.7° sits **below Vialle's 55 − 10.6 =
+  44.4°**, i.e. a measured asymptomatic young pelvis exists more than one SD under the one
+  asymptomatic distribution this bullet carried — so Vialle's 55° is not a floor for a young
+  cohort, and any `:representative` PI arithmetic built on it carries that as an unmeasured
+  direction for young men (a lower true PI means the model's spend over-states such a
+  pelvis's sacral pitch by the difference). (iii) The SAME subjects' squat data (the deep-squat
+  annotation above) measures the pelvis rotating **33.6 ± 6.7° (low PI) / 32.2 ± 6.0° (high
+  PI) about the hip axis** during the descent — a measured scale for how far a real pelvis
+  swings about the very axis the model rotates its pelvis about; it is a DYNAMIC excursion
+  over a squat, not a static standing spend, so it brackets direction and order of size only.
+  What it does NOT close: no SS or PT for Wilke's subject or Cho's stool (the bullet's own
+  `:parameter-not-in-source`s stand); the model's implied stool SS ≈ 13.75° from the Vialle
+  annotation above stays `:representative` — this cohort is standing-only, and its PT is
+  absolute radiographic while the model's is a change from straight-lumbar neutral.
+  **No constant moves** — `:pelvic-tilt-deg` stays a change, not an absolute; Hansraj 5-value
+  and Wilke sitting 348.86176709999995 N byte-identical.
 - **Wilke's own subject's lordosis, in either posture.** Both reference entries now carry
   `:parameter-not-in-source`. The sitting one's is zero and measured, which is why it stays
   comparable; the standing one's is 46.5° from a different cohort with an SD of 10.5°, and the
