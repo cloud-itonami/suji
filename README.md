@@ -368,6 +368,44 @@ per-task numbers are not read here; the JBJS 1982 full text remains
 `:could-not-obtain`. **No constant moves**: Hansraj's five multipliers and
 Wilke sitting 348.86176709999995 N are byte-identical (README-only diff).
 
+⚠ *Annotated 2026-09-18, later the same day (bot/suji-anatomy), a second read of the same
+companion paper: it also prints the series' own chain-side standing anchor, and the model's
+standing figure sits below it by less than a fifth.* Three numbers the morning read of this
+section did not carry. (i) The paper's motivation paragraph states the range of lumbar
+compression outright: *"might be near zero in quiet lying, **400 Newtons (N) in quiet
+standing**, and 4,000 N in a strenuous exertion"* (p.76) — a chain-convention statement (a
+net reaction, the quantity class this model computes), not a disc pressure routed through
+any index. Against the model's post-2026-09-11 standing figure **338.002 N** at L4/L5, that
+is **0.845 ×** (arithmetic `:representative` on a prose anchor and a model output): the
+model undershoots this series' own chain-side quiet-standing statement by ~15%, where it
+undershoots the index-converted Wilke entry (600 N) by 44% and Nishizawa's measured
+512.68 ± 108.38 N by 34%. (ii) The two reference classes sit exactly the index factor
+apart from each other: the paper's chain-side 400 N through the repo's own
+`nachemson-pressure-index` (×1.5, the conversion *A pressure is not a force* establishes)
+is **600 N** — the same figure the Wilke standing entry converts to. That equality is
+arithmetic on two published numbers and the repo's own index, and it does not validate the
+index — the index's provenance lives in this README's own section, not in this paper; what
+it does show is that the model's two standing undershoots (0.56 ×, 0.845 ×) are one
+undershoot seen through the conversion this README already documents, not two independent
+failures. (iii) The paper's worked Example 1 computes the net reaction for holding a 40 N
+weight in one hand: **F_z = 391 N, M_x = 31.3 N·m** (first data set) and **F_z = 390 N,
+M_x = 33.2 N·m** (second, y_q = 40 cm), from a body split the paper states as W_trunk
+252 N (36% of body weight, cutting plane at L3), W_head 35 N, both limbs ~63-64 N, hand
+load 40 N — the series' own cutting-plane arithmetic, at L3 where this model sums at L4/L5
+(level `:could-not-obtain` to equate), and with a 40 N hand load the model's quiet standing
+does not carry. Its trunk cross-section geometry is named too: *"representative of a person
+who has a trunk width of 30 cm and a trunk depth of 20 cm at the L3 level"*, with ten
+muscle-equivalent coordinates read off cross-section anatomy (Eycleshymer & Schoemaker
+1911, its ref 5: x_erector = 3.6 cm, y_erector = 10.8 cm; x_external-oblique = 13.5,
+y = 3.8; x_latissimus = 5.4, y = 4.4; x_internal-oblique = 6.3, y = 5.6, cm) — the same
+series' erector geometry this repo's erector-spinae chain has no published counterpart for.
+What this does not close: the 400 N is a prose *"for example"* in a calculation-scheme
+paper, not a per-subject measurement row — no cohort, no level, no SD (`:could-not-obtain`);
+and the 1982 JBJS full text, where the same series validates these estimates against
+intradiscal pressure (Fig. 5 here, r = 0.91), stays `:could-not-obtain`, so the paper's own
+400 N cannot be traced to a measurement through it. **No constant moves** — Hansraj's five
+multipliers and Wilke sitting 348.86176709999995 N are byte-identical (README-only diff).
+
 ## The dose layer against the endurance literature — and it disagrees
 
 The stiffness index (強張り) is what a reader of this app actually sees: it is the
