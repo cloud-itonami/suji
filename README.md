@@ -3481,6 +3481,46 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   to cross that joint anyway. They do take force where the optimum wants them — 0.32 / 0.11 /
   0.26 N at head −55° on a trunk flexed 75° — which is what makes the desk zero a measurement
   rather than a constant.
+  ⚠ *Annotated 2026-09-18 (bot/suji-anatomy): at a seated head the measured suboccipitals are
+  not silent — the desk zero is the side the model errs on, and a fine-wire study puts a number
+  on the tone this zero omits.* Hallgren RC, Pierce SJ, Sharma DB, Rowan JJ, *Forward Head
+  Posture and Activation of Rectus Capitis Posterior Muscles*, **J Am Osteopath Assoc
+  117(1):24-31, 2017** (doi:10.7556/jaoa.2017.004, PMID 28055084; abstract read 2026-09-18 via
+  the Europe PMC REST API — PubMed HTML serves a consent page; no PMC record, full text
+  `:could-not-obtain`). 20 asymptomatic participants, bipolar fine-wire intramuscular
+  electrodes in rectus capitis posterior minor and major, head moved from a self-selected
+  neutral seated position into a protruded position and back, 4 cycles, mixed-effects β
+  regression: **at the neutral head position the RCP muscles are already active — 11 %MVIC
+  (minor) and 14 %MVIC (major)** — and at the protruded position **35 %MVIC (minor) and
+  39 %MVIC (major)**, the neutral→protruded increase significant (abstract truncates the
+  exact p-value, `:could-not-obtain`). The companion paper is the neutral-activity result
+  stated on its own terms: Hallgren RC, Pierce SJ, Prokop LL, Rowan JJ, Lee AS,
+  *Electromyographic activity of rectus capitis posterior minor muscles associated with
+  voluntary retraction of the head*, **Spine J 14(1):104-112, 2014**
+  (doi:10.1016/j.spinee.2013.06.011, PMID 23954557; abstract, full text
+  `:could-not-obtain`) — 17 asymptomatic subjects, fine-wire in both RCPm, and its
+  conclusion is that *RCPm is active when the head is held in a neutral position*, rising
+  significantly in retraction. Against this bullet's desk zero: the model reports the
+  suboccipitals carrying nothing at desk postures and 0.32 / 0.11 / 0.26 N at head −55° on a
+  trunk flexed 75°; the measurement says a real seated head carries a continuous
+  suboccipital tone of order **one-tenth of its own maximum** already at neutral, so the
+  model's zero is an **under**-statement of the desk-time load, and the direction of the
+  error is the opposite of what "the joint has a load and it is met" could be read to imply
+  — the optimum finds a cheaper way to meet the joint's load through other muscles than the
+  measured nervous system does. What this does not close: (i) the quantities are not the
+  same — a %MVIC reading from fine-wire electrodes in muscles of this size is not a force
+  in N, and this model's %MVC construct normalizes by its own per-muscle maximum-force
+  parameter, so 11–14 %MVIC is recorded as the measured *presence and order* of desk-time
+  tone, not substituted for the model's zero (`:quantity-not-equatable`); (ii) the normalizer
+  is an MVIC effort performed with fine-wire electrodes in two of the smallest muscles in the
+  body — a low maximum inflates every percentage, and the paper's own MVIC task is not this
+  model's construct (`:parameter-not-in-source`); (iii) 20 / 17 asymptomatic volunteers in a
+  self-selected neutral seat, not this actor's named desk postures, and protrusion (the
+  35/39 % condition) is a pose this model does not even state — the posture-side bridge is
+  `:could-not-obtain`; (iv) obliquus capitis superior — the model's third suboccipital — was
+  not sampled. **No constant moves** — no suboccipital instance changes, the desk zero
+  stands and is now annotated with the direction it errs in, Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 - **A muscle cannot be in two coupled groups.** `coupled-groups` is a partition. Nothing in
   this anatomy needs to be in two, but a trunk model that coupled the lumbar spine to the hip
   would.
