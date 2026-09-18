@@ -4208,6 +4208,36 @@ fudge factor, no fitted constant was added on this branch.
   0.832 cm below L5/S1 — without the counterfactual the ≈7.1/≈3.2 estimate needed. See below.
 - **Wilke's own subject's lordosis**, in either posture — unchanged from 2026-09-08, and still
   the reason both entries carry `:parameter-not-in-source`.
+  ⚠ *Annotated 2026-09-19 (bot/suji-anatomy): the paper built to carry the subject's geometry
+  has now been read in full, and the number is absent by construction, not by paywall.*
+  Wilke H-J, Neef P, Hinz B, Seidel H, Claes L, *Intradiscal pressure together with
+  anthropometric data — a data set for the validation of models*, Clinical Biomechanics
+  16(Suppl 1):S111-S126, 2001 (doi:10.1016/s0268-0033(00)00103-0, PMID 11275349; full text
+  read 2026-09-19 from the publisher page served through the DOI resolver; no PMC record,
+  Europe PMC REST metadata has `inEPMC=N`, `isOpenAccess=N`). Three things this read fixes
+  about the gap. (i) **The paper's own angle axis is an excursion from the subject's standing
+  neutral, not an absolute orientation.** The Zebris CMS50 mobility was measured "between the
+  sacrum and the thoracolumbar junction", and "all motions were started from the neutral
+  position, defined when he was standing relaxed": pressures are printed against that axis —
+  1.08 MPa at 36° of standing flexion, 0.6 MPa at 19° of standing extension, 0.63 MPa at
+  about 20° of stool-sitting forward bend. So the datum this bullet asks for is not merely
+  absent from the paper; it is zeroed out by the paper's own coordinate convention — the
+  neutral's lordosis is the origin of the axis, not a point on it. Both
+  `:parameter-not-in-source` entries keep their name. (ii) **What the paper publishes instead,
+  and the model does not have: the subject's lumbar spinous heights in BOTH postures**
+  (Appendix A: standing L3/L4/L5 = 109.0/105.0/102.5 cm above the floor; sitting
+  23.0/20.1/15.0 cm above the 45.6 cm seat surface, i.e. 68.6/65.7/60.6 cm above the floor),
+  measured 2.5 y after the pressure run on the same subject at 72 kg against the 70 kg of the
+  pressure study. The 40.4 cm of L3 descent between the two postures is a measured sit-vs-
+  stand geometry fact; what share of it is pelvis versus spine the paper does not say
+  (`:could-not-obtain` — its own caveat that the video recordings had no body markers and no
+  constant camera position stands), so it is not a partition, and no model constant can be
+  built from it. (iii) **Both pinned Wilke entries survive at the relaxed end.** The full
+  text repeats relaxed standing at 0.5 MPa (reproducible band 0.43-0.50 MPa) and reports
+  stool-relaxed sitting at 0.45-0.50 MPa against the abstract's 0.46 MPa — the two postures
+  this model compares are the same pressure band in the source, so the source itself does not
+  separate them at the relaxed end. **No constant moves** — Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical (README-only diff).
 
 ### Breaks that produced no failure
 
