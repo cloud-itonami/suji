@@ -3726,6 +3726,33 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   its moment there is still reported as `:two-joint-unfed-nm` and still fed to nobody. The
   blocker is unchanged and is **provenance, not the solver**: see *C2/C3: expressible, and
   blocked by provenance*. This is the one survivor of the original finding.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the two numbers the README quotes for this
+  unfed moment are both prose only — no `deftest` anywhere in the tree asserts any
+  `:c2c3` value.* The suite's contact with `:c2c3` is structural, never numeric:
+  `lower-limb-test` pins the deep-squat unfed map to the KEY SET exactly `#{:c2c3 :c7}`
+  (`the-three-equilibria-hold-simultaneously`, asserting `(= #{:c2c3 :c7} (set (keys
+  (:two-joint-unfed-nm summary))))`) — it asserts the map has the key, and never a
+  number under it — and `spine-test`/`attachment-test` pin that NO muscle is solved at
+  `:c2c3` and that the candidate arms move with the joint, neither of which touches the
+  unfed moment's magnitude. So the two copies this README carries are the only copies:
+  **1.9e-4 N·m at `laptop-on-lap`** (the derivation table's `longus_capitis` row, under
+  *The derivation, and how it was checked*) and **−0.0585 N·m at `deep-squat`** (the
+  what-moved table's `:two-joint-unfed-nm` row above). A tree-wide scan on 2026-09-20
+  found the strings `1.9e-4` and `0.0585` in no `.kotoba`/`.clj` file under `test/` or
+  `src/` — a refactor of `tension-summary` or the crossing bookkeeping could move the
+  `:c2c3` entry at every posture while the key-set assertion and the `:c7` laptop pin
+  stay green, which is the same silently-drifting-prose class the `:c7` bullet's own
+  2026-09-19 annotation records for its neighbours. Note the deep-squat `:c2c3` value is
+  308× the laptop one — the head's moment arm grows as the trunk falls forward — so the
+  entry is NOT a rounding artefact that the key set could stand in for. Pins requested,
+  **not installed here** — this session could not run the suite at all (`kbb` resolves
+  no git coordinates; `io.github.kotoba-lang/text` not on the classpath, the same
+  blocker recorded 2026-09-19), so this is a README-only diff: at `math/nearly=` 1e-12,
+  next to the existing pins, assert the laptop `:c2c3` total and the deep-squat `:c2c3`
+  total; the break that must go red is any perturbation of the longus-capitis crossing
+  or of `attachment/coupled-arms` at `:c2c3`. **No constant moves** — no provenance
+  change, no value recomputed, Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff).
 - **`:c7`, and this one is new — found by asking what else the closed solve was hiding.**
   Upper trapezius and levator scapulae run past the cervicothoracic junction (occiput and
   nuchal line → lateral clavicle; upper cervical transverse processes → scapula), so both
