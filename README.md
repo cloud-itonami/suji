@@ -4803,6 +4803,29 @@ inputs is exactly the case the test watches for; nothing here changed a value.
 Nothing in this section changes a constant. The band, the 42, and the sign fragility are
 properties the source's printing precision imposes, not properties a fit removed.
 
+**Updated 2026-09-19 (bot/suji-anatomy): the sweep stopped carrying a second
+transcription, and the band endpoints are pinned.** Two things the 2026-09-12
+breaks exposed but did not fix. (i) The test hard-coded the seven inputs a
+second time as literals (`16.7`, `28.5`, `13.4 … 5.6`), so the sweep and the data
+in `posture.kotoba` could drift apart silently: a drifted literal keeps all four
+assertions true — the band it sweeps is rebuilt around whatever the literals say,
+and the installed point rides near its middle — while the README's printed band
+quietly stops being the test's band. The sweep now reads all seven inputs out of
+`spinopelvic-motion` itself, so there is exactly one transcription; a correction
+still legitimately changes the band, and the data's own pins (`= 16.7 ss`, `=
+28.5 ll`, the five-segment vector) remain what catch it. (ii) None of the four
+assertions said what the band IS. Three new assertions pin the band endpoints
+and the negative count to the numbers this section prints: low end
+**−0.1341°**, high end **+0.2393°**, **42 of 128 negative** — verified by a
+temporary 16.7 → 16.8 perturbation of one input: 7 failures, of which the three
+new pins are red with the recomputed band (0.0288 / 0.4028 / 0 negative) while
+the four 2026-09-12 assertions stay green — which is the point: the old four
+never named the band, so only the new pins mark that a correction now also
+requires updating the band printed here. Restored byte-identically (sha256
+verified); 15 tests / 139 assertions green on both hosts (nbb and kbb sci). No
+constant moves — Hansraj 5-value and Wilke sitting 348.86176709999995 N
+byte-identical (test+README diff only).
+
 
 ## The neck bucket's first point on the %MVC axis became a test (2026-09-15)
 
