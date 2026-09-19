@@ -2336,6 +2336,38 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
   short, and a short muscle changes length by a larger fraction for the same rotation — so
   the force–length term falls off faster than it should, biasing these three toward *less*
   available force and a *higher* %MVC than a correctly scaled model would report.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the "nearer 50" now has a measured floor, and
+  the under-statement direction is measured, not asserted.* Sunar M & Kapakin S,
+  *Morphometric Evaluation of Craniocervical Junction by Magnetic Resonance Imaging Method*,
+  Asian J Neurosurg 14(3), 2019 (doi:10.4103/ajns.ajns_293_17, PMID 31497088,
+  PMC6703074; full text and Table 3 read 2026-09-20 via the Europe PMC REST fullTextXML
+  endpoint, CC BY-NC-SA). 306 individuals (95 male / 211 female, aged 20+), sagittal MRI,
+  in vivo. The source measures the **dens axis height (DAH)** — its own definition: "the
+  distance between the center of the basis of the dens axis and the apex" — at
+  **30.9 ± 2.3 mm (female) and 33.8 ± 2.2 mm (male)** (sex difference significant), and the
+  **total cervical length (TLCV)** — "the distance from the apex of the dens to the basis of
+  the corpus of the seventh cervical vertebra" — at **106.6 ± 6.4 / 116.7 ± 7.3 mm**. Set
+  against this model's derivation: `upper_cervical` spans 0.12 of the C7→vertex length
+  (`segment.kotoba`: `atlanto-occipital-along` 0.42 − `lower-cervical-span` 0.30), i.e.
+  0.12 × 0.182 × 1.70 m = **37.1 mm** (the README's 37, on the model's own reference
+  stature). The odontoid process **alone**, measured in vivo, is 0.83× (female) to 0.91×
+  (male) of the model's entire atlas+axis span, leaving **3.3 mm (male) to 6.2 mm (female)**
+  of the 37.1 mm for the atlas ring, the C2 corpus and the C2/C3 disc together (arithmetic
+  on two published means and one derived constant, `:representative`). DAH is a *floor* on
+  the unit height, and it under-counts in the model's favour twice: the unit's top end (the
+  atlanto-occipital joint) sits above the dens apex, and the dens base-center start point
+  sits inside the C2 body — so the true unit height is at least DAH plus everything this
+  read did not measure (atlas ring height, C2 corpus height: `:could-not-obtain` here). The
+  total-length row cross-checks the other end: TLCV to the C7 corpus *base* is
+  106.6–116.7 mm, and the model's occipito-atlantal cut sits 0.42 × 309.4 = 130 mm above C7
+  — consistent once the C7 body and the C7/T1 disc below its corpus are added back, i.e. the
+  model's total cervical height is not the error; the error is its *distribution*, uniform
+  18.6 mm per level against a top unit the measurement puts at a floor of 30.9–33.8 mm
+  before the atlas is counted. The "nearer 50" stays `:representative` — no source here
+  measures the atlanto-occipital-to-C2/C3 span itself, and no instance, length or mass
+  moves on this annotation. **No constant moves** — `upper-cervical-span` and its 0.12
+  derivation are untouched, Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff).
 - **The five lower cervical levels still share one orientation.** `lower_cervical` is C3
   to C7 and is still one rigid body; C7/T1 … C3/C4 are five samples of it. What is no
   longer true is that the *skull* shares that frame.
