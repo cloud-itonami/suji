@@ -2371,6 +2371,33 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
 - **The five lower cervical levels still share one orientation.** `lower_cervical` is C3
   to C7 and is still one rigid body; C7/T1 … C3/C4 are five samples of it. What is no
   longer true is that the *skull* shares that frame.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the code's own gap sentence got its
+  measured witness, and the witness is a rank order, not a number row.* `spine.kotoba`
+  says `lower_cervical` carries five levels that share one frame "for exactly the
+  reason the lumbar spine did until 2026-09-11: nobody has put a measured segmental
+  distribution into this file for it" (`lumbar-segment-name` docstring). A measured
+  segmental distribution for the lower cervical levels exists in the paper this
+  section already reads — Kang 2019 (PMID 30990826, PMC6467451, the same fetch the
+  atlanto-axial bullet cites, re-read 2026-09-20 from the PMC copy): it distributes
+  the *regions'* maximal active rotation (69.7 ± 5.5° total, 63.13% of it taken
+  above the lower cervical spine) and states the per-segment ranks in words —
+  **C2-C3 is the smallest rotation among the lower cervical segments; C3-C4 and
+  C4-C5 carry relatively large rotation; C5-C6 and C6-C7 are the smallest in the
+  entire spine, confined by the thorax** — with the cause carried as an attribution
+  from Bogduk's anatomy, not measured here: the orientation of the zygapophysial
+  joint surfaces. That rank order is the part a one-frame `lower_cervical` cannot
+  carry: five samples of one segment read as interchangeable, while the measured
+  ranks make the middle two segments the rotators and the end segments the stiff
+  ones. The error direction of the current straight frame is fixed by those ranks
+  if the segment is ever split: an equal `:along` share would overstate the end
+  levels (C2-C3 and the C6-C7 side) and understate C3-C4/C4-C5. What this does not
+  close: the per-segment *numbers* behind the ranks are printed only in the paper's
+  Fig 6 — figure-only here, `:could-not-obtain` as a number row — and the ranks
+  are *axial* rotation, so the sagittal distribution the lumbar analog
+  (`posture/lumbar-segmental-shares`) consumes, per-level cervical lordosis shares,
+  is still without a source. **No constant moves** — `lower_cervical` stays one
+  segment, `level-axis-offset-deg` stays zero off the lumbar spine, Hansraj 5-value
+  and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 
 ## The upper cervical spine had no flexors (2026-09-08)
 
