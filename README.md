@@ -4794,6 +4794,35 @@ pinned absolutely now, and the same break then fails four assertions naming the 
   several centimetres in a direction the model does not state (the tuberosity lies inferior and
   posterior to the acetabulum; the magnitude of that separation is the still-unmeasured part).
   No constant moves — the hip axis keeps standing in, the bullet stays open.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the WIDTH gets a second, bone-side measurement on
+  a different modality — and the soft-tissue layer between the seat and the bone is now measured
+  as the difference of the two.* Musielak B, Jóźwiak M, Rychlik M, Chen BP, Idzior M,
+  Grzegorzewski A, *Does hemipelvis structure and position influence acetabulum orientation?*,
+  **BMC Musculoskelet Disord 17:131, 2016** (doi:10.1186/s12891-016-0982-2, PMID 26984181,
+  PMC4794903; full text read 2026-09-20 from the PMC copy, CC BY). 31 consecutive adult MALE
+  pelvices (62 hemipelves), 3D CT reconstruction (0.63 / 1.25 mm slices), bony landmarks:
+  **intertuberous distance — the distance between the lowest points (in the sagittal plane) of
+  the two ischial tuberosities — 105.91 ± 11.50 mm** (range 82.14–124.50), with interspinous
+  distance 251.56 ± 18.32 mm and pelvic height 151.92 ± 16.81 mm (Table 3). Against the 2026-09-16
+  instance above (Chen & Yang's external seated widths, male impress 119.6 ± 12.4 mm): the bony
+  pair sits **13.7 mm narrower** than where the seat meets them — ≈ 6.8 mm of soft tissue plus
+  seated-load displacement PER SIDE (arithmetic on two published means from different cohorts,
+  modalities and postures, `:representative`; supine CT bone distance vs. seated-loaded external
+  impression, so part of the gap is load deformation, share `:could-not-obtain`; the pressure-mat
+  reading 134.2 mm widens the same gap to 28.3 mm, 14.1 mm per side, as the upper bound). The
+  error direction of the seat idealisation sharpens both ways: what the seat reaction meets is
+  NOT the bone pair — the seat loads two patches ~13 cm apart centred on bones ~10.6 cm apart, so
+  a reaction built on the bony ITD would under-state the contact spread, and the bony anchor the
+  model would place sits ~7 mm per side medial of where the seat actually loads. The sex split
+  stays external-side only: Chen & Yang measure female external widths wider than male
+  (135.2 / 133.0 vs 119.6 mm) while Musielak measured males only, so a bony female ITD is
+  `:could-not-obtain` here. What it does NOT close is the bullet's own still-unmeasured part —
+  the SAGITTAL tuberosity-to-hip-axis separation: neither paper measures it, and Musielak's own
+  limitation states it ("we did not find any good indicator to evaluate the position and
+  structure of the hemipelvis in the sagittal plane"); the inferior-and-posterior direction
+  remains asserted anatomy, not a measurement. No constant moves — the hip axis keeps standing
+  in, the bullet stays open; Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff).
 - **Nothing was installed.** No divisor, no fudge factor, no fitted constant. Dividing the chord's
   sensitivity by 8 still brings the difference ratio to 1.03 and still lives nowhere.
 
