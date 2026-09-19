@@ -832,6 +832,41 @@ and `:no-published-curve-for-this-region` keeps its name:
    `endurance-floor-pct` and the pooled coefficients untouched; Hansraj 5-value
    and Wilke sitting 348.86176709999995 N byte-identical.
 
+8. **O'Leary S, Hoogma C, Solberg ØM, Sundberg S, Pedler A, Van Wyk L,
+   "Comparative Strength and Endurance Parameters of the Craniocervical and
+   Cervicothoracic Extensors and Flexors in Females With and Without Idiopathic
+   Neck Pain", *J Appl Biomech* 35(3):209-215, 2019 (doi:10.1123/jab.2018-0033,
+   PMID 30860406; abstract read 2026-09-19 via the Europe PMC REST API; the
+   per-direction table behind the same Human Kinetics paywall as item 1 —
+   re-attempted 2026-09-19, the article page serves the abstract only to an
+   anonymous reader, no PMC record, UQ eSpace requires login, so the absolute
+   seconds are again `:could-not-obtain`).** The same group's companion to item
+   1: 30 women with idiopathic neck pain against 30 matched-BMI controls, the
+   SAME protocol — time to task failure in seconds at **50 %MVC**, in 4
+   directions (craniocervical flexion/extension, cervicothoracic
+   flexion/extension) and 6 ratios. What its abstract adds that item 1's does
+   not: a measured statement about the EXTENSOR side of the axis the dose layer
+   runs on. In neck pain, the measured deficit is **confined to the flexors** —
+   endurance time **10.77-10.9 s less (23.3%-27.5%, P < .03)** at both flexion
+   axes, with extensor **strength** reduced (**1.58-4.7 N·m, 12.4%-17.9%,
+   P < .04**) but *"no other strength or endurance ratio was significantly
+   different between groups"*, i.e. no measured extensor-endurance deficit.
+   Read against this bucket: the extensors are the muscles this README's
+   `:cervical-extension` dose layer prices, and the one neck-pain measurement it
+   can reach at a stated intensity says their endurance share is the part that
+   does NOT drop when the flexors' does (23-28%) — while item 1's own healthy
+   finding is that the extensors endure 2-2.4× longer than the flexors at the
+   same 50 %MVC. Neither abstract states an absolute per-direction second, so
+   neither number can enter the power law's y-axis; the 10.77-10.9 s is a
+   BETWEEN-GROUP difference (`:representative` range as stated by the source,
+   spread `:could-not-obtain`), not a holding time this model can price. What
+   the entry does close: item 1's regional split (craniocervical vs
+   cervicothoracic) is now measured in a second cohort, and the bucket's
+   extensor side has a directional witness rather than a silence. No constant
+   moves — `endurance-minutes`, `endurance-floor-pct` and the pooled
+   coefficients untouched; Hansraj 5-value and Wilke sitting
+   348.86176709999995 N byte-identical.
+
 Direction of the mismatch, stated and NOT closed: at just above the 8 %MVC floor
 the model prices a held load at **>70 min**, while these tests put healthy
 neck-extensor task-failure at **0.7-4.8 min** at an intensity nobody stated (items 2-5), while item 6 holds
