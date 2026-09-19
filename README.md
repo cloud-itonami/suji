@@ -2889,6 +2889,40 @@ capitis passive term at a posture where its active force is zero.
   Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 - **Longus colli**, all three parts. Its superior oblique part is expressible (above); its
   vertical part runs within `lower_cervical` at both ends and is the known error shape.
+  ⚠ *Annotated 2026-09-19 (bot/suji-anatomy): the blocker clause itself is contradicted by
+  the source this section already carries — the vertical part's caudal end is NOT
+  cervical. Lin 2022 (doi:10.1002/ca.23834, PMC9304288, full text re-read 2026-09-19
+  via the Europe PMC REST API; the same paper the 2026-09-14 `rectus_capitis_anterior`
+  check below comes from) digitises the longus colli as three separate rows, and its
+  primary-landmark list for locating the deep cervical muscles' attachments includes
+  "the center point of the anterior surface of the **T3 vertebral body**" alongside the
+  transverse processes of C7, T1 and T2 — landmarks that exist in the protocol only
+  because the longus colli's caudal attachments (its vertical and inferior oblique
+  parts; the paper cites Standring 2016 for the attachments) sit on thoracic bodies
+  below the model's lowest joint, which is C7/T1 (`spine.kotoba`: `lower_cervical` is
+  C3-C7 and one rigid body; nothing sits below it). The measured length agrees with
+  the arithmetic of that anatomy: Lin's Table 2 gives longus colli (vertical)
+  **139.9 ± 7.2 mm** at the 55° neutral posture (n=6 Thiel-embalmed cadavers,
+  straight line between attachments — the model's own chord convention), which is
+  **2.1x** the same-table superior oblique part (65.9 mm) digitised with the same
+  convention on the same six specimens; arithmetic `:representative` on two published
+  means (139.9/65.9 = 2.123). A chord 2.1x the part that reaches the atlas does not
+  fit inside one cervical column, and the vertical part's FHP response stays flat
+  (-1.1 ± 1.2% slight, -2.1 ± 2.5% severe, both non-significant) the way a mid-column
+  anchored muscle does when only the head moves forward. So the real blocker is not
+  "both ends within one segment" — it is that the model has **no thoracic body at
+  all**; the clause as written understates the fix by one whole body set, and the
+  inferior oblique part shares the caudal end (same thoracic bodies, same missing
+  segment), so the correct error shape for BOTH parts is an attachment the model
+  cannot place, not a two-end collision inside `lower_cervical`. Check constants for
+  the day a thoracic body exists: vertical 139.9 ± 7.2 mm, inferior oblique
+  100.3 ± 10.7 mm (Lin Table 2, 55° neutral; per-cadaver scatter and level-resolved
+  values `:could-not-obtain` at this level). Error directions kept: Thiel-embalmed
+  cadaver chord, not fibre length, n=6 aged 86.2 ± 8.7; the same table measured the
+  model's RCA 30.7 mm against the model's own 16.06 mm, so this source runs long
+  against this model's chord convention the other way, not uniformly.
+  Reported, not built: no instance, no constant moves — Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
   ⚠ *Stale sentence below - corrected 2026-09-12:* this section said none of the three
   has a published PCSA, but the Stemper 2010 search recorded in *C2/C3: expressible,
   and blocked by provenance* above **does** give longus colli an in-vivo number:
