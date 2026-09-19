@@ -2831,6 +2831,33 @@ Why it does not close the block, four stated reasons:
    levels, so it over-states any one-level subgroup.
 4. longissimus and spinalis cervicis remain unmeasured (absent from every ROI, as
    with every other study found).
+⚠ *Annotated 2026-09-19 (bot/suji-anatomy): "absent from every ROI" holds for every CSA
+  cohort, but one of the two muscles has a measured in-vivo VOLUME.* Belavý DL,
+  Miokovic T, Armbrecht G, Felsenberg D, *Hypertrophy in the cervical muscles and
+  thoracic discs in bed rest?*, **J Appl Physiol 115(4):586-596, 2013**
+  (doi:10.1152/japplphysiol.00376.2013, PMID 23813530; abstract read 2026-09-19 via
+  the Europe PMC REST API; no PMC record, full text paywalled, per-muscle volume
+  values `:could-not-obtain`). The 2nd Berlin Bed Rest Study (BBR2-2): 24 males,
+  60-day bed rest (no exercise / resistive / resistive + vibration arms), axial
+  cervical MRI from skull to T3, and the measured volume list includes **spinalis
+  cervicis by name** — alongside semispinalis capitis, splenius capitis, longus
+  capitis, longus colli, levator scapulae, sternocleidomastoid and the scalenes —
+  with every listed muscle increasing in volume during bed rest except semispinalis
+  capitis (P < 0.025). What this changes in this section: the claim narrows again.
+  spinalis cervicis is measured in vivo — just not as a per-level CSA and not as a
+  PCSA. A volume with a fascicle length is the same quantity class the Zheng/
+  Anderson chain already built a bracket from (volume ÷ fascicle length, cos(pennation)=1
+  over-stating), so this muscle is one readable full text away from the same kind of
+  bracket the other two lump members have. What it does not close: (i) the measurement
+  is a bed-rest *change* from hypertrophy, not a posture's cross-section — any volume
+  figure read off this study would over-state a neutral seated or standing neck
+  (direction stated; magnitude `:could-not-obtain` from the abstract, as are the
+  per-muscle values); (ii) abstract-only; (iii) **longissimus cervicis stays
+  unmeasured** — absent from this list too, and the lump's `:source` names both halves,
+  so the pair the block still needs remains half-measured. **No constant moves** —
+  the 12.0 cm² stays byte-exact where it is, the `:c2c3` block stays
+  blocked-for-provenance, Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff).
 
 **What it does add: the first measured per-muscle in-vivo numbers for the deep
 group, and they tighten the Zheng/Anderson bracket from above.** Summing the
