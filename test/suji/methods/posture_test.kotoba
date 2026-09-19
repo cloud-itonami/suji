@@ -363,14 +363,22 @@
                         turn (posture/chord-turn-fraction
                               (posture/turn-nodes shares))]
                     (* (- (/ ss ll) turn) lordosis)))
-        alts [(- 16.7 0.05) (+ 16.7 0.05)]
-        alts-ll [(- 28.5 0.05) (+ 28.5 0.05)]
+        ;; MEASURED 2026-09-19 (bot/suji-anatomy): the seven inputs are no longer
+        ;; transcribed a second time as literals here — they are read out of
+        ;; `spinopelvic-motion` itself, so the sweep and the data cannot drift
+        ;; apart silently. A transcription correction still changes the band
+        ;; (legitimately); the data's own pins (= 16.7 ss, = 28.5 ll, the
+        ;; five-segment vector) are what catch the correction.
+        alts (let [ss (:deg (:sacral-slope d))] [(- ss 0.05) (+ ss 0.05)])
+        alts-ll (let [ll (:deg (:lumbar-lordosis d))] [(- ll 0.05) (+ ll 0.05)])
         alt-seg (fn [x] [(- x 0.05) (+ x 0.05)])
+        seg-degs (mapv :deg segs)
         point (pose/lumbar-chord-tilt-deg 0.0 lordosis)
         ;; the 128-combination sweep over the last printed digit of each input
         tilts (for [ss alts ll alts-ll
-                    s1 (alt-seg 13.4) s2 (alt-seg 14.2) s3 (alt-seg 11.2)
-                    s4 (alt-seg 7.7) s5 (alt-seg 5.6)]
+                    s1 (alt-seg (nth seg-degs 0)) s2 (alt-seg (nth seg-degs 1))
+                    s3 (alt-seg (nth seg-degs 2)) s4 (alt-seg (nth seg-degs 3))
+                    s5 (alt-seg (nth seg-degs 4))]
                 (tilt-of ss ll [s1 s2 s3 s4 s5]))
         lo (reduce min tilts)
         hi (reduce max tilts)
@@ -408,6 +416,19 @@
                                  posture/lumbar-chord-turn-fraction)
                                lordosis)
                        1e-12)
-        "and the installed value is exactly that difference times the lordosis"
-        )))
+        "and the installed value is exactly that difference times the lordosis")
+    ;; MEASURED 2026-09-19 (bot/suji-anatomy): the band endpoints themselves are
+    ;; now pinned, to the last digit the README states them at (2026-09-12
+    ;; section: [-0.1341, +0.2393]). Before this, none of the four assertions
+    ;; above said what the band IS — a drifted input literal would have kept all
+    ;; four true while the README's band quietly stopped being this test's band.
+    ;; The inputs are read from `spinopelvic-motion`, so this pin now ties the
+    ;; README's printed band to the transcribed data itself.
+    (is (math/nearly= lo -0.1341 0.00005)
+        (str "band low end " lo " deg — README states -0.1341"))
+    (is (math/nearly= hi 0.2393 0.00005)
+        (str "band high end " hi " deg — README states +0.2393"))
+    (is (= 42 negatives)
+        (str negatives " of the 128 combinations negative — README states 42"))
+    ))
 
