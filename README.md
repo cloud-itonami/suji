@@ -3131,6 +3131,78 @@ capitis passive term at a posture where its active force is zero.
 - **Both flexors are modelled midline**, so longus capitis's ipsilateral rotation — which
   Vasavada attributes to its superomedial fascicle orientation — is absent, as is rectus
   capitis anterior's lateral bending.
+
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the midline placement clause is contradicted
+  by a measured one, and where the model averages it is measured too.* Kennedy E, Albert M,
+  Nicholson H, *Do longus capitis and colli really stabilise the cervical spine? A study of
+  their fascicular anatomy and peak force capabilities*, Musculoskeletal Science & Practice
+  **32:104-113, 2017 Dec** (doi:10.1016/j.msksp.2017.10.005, PMID 29107220; no PMC record,
+  Europe PMC REST metadata `inEPMC=N` `isOpenAccess=N`, so the record is a citation and not
+  a link; full text read 2026-09-20 from the Otago University Research Archive deposit PDF,
+  30 pp — an author deposit of a manuscript whose cover leaves journal ISSN/volume/month
+  and ethics committee names as "XX" placeholders, not the Elsevier page, so the journal
+  facts above come from the Europe PMC REST `core` record and not from the PDF cover).
+  Dissected 7 embalmed cadavers (3 M aged 65–95 / 4 F aged 63–93), both sides where
+  possible, fascicles identified by unique attachment sites. Three measured statements,
+  each against one clause of this bullet:
+  (a) **the lateral placement.** The Introduction says both muscles are **"located deep in
+  the anterior neck, lying against the cervical spine"** and the retained results sentence
+  says they **"lie closely against the **anterolateral** aspect of the cervical spine,
+  running longitudinally for the length of the cervical spine"**. Both are measured
+  laterally placed — so all four offsets of the two flexors (`longus_capitis` origin
+  and insertion, `rectus_capitis_anterior` origin and insertion) sitting at `:lat 0.0`
+  flatten a measured anterolateral column onto the midline. The `:lat` coordinate exists
+  and is consumed (`attachment`'s `:lat` strap), so the flattening is a chosen placement, not a
+  structural limit; this is the LONGUS CAPITIS muscle this clause names, and RCA carrying
+  the same flattening is the separate pair already annotated on 2026-09-16.
+  (b) **the ipsilateral-rotation clause this bullet gives to Vasavada is this source's
+  *speculation*, not this source's measurement.** The measured counterpart is the
+  source's own review sentence: anatomical descriptions of lateral flexion and
+  contralateral rotation are **"speculative rather than based on formal investigation
+  and, given their small size, potentially overstate the functional abilities"**, and
+  the Introduction carries Vasavada 1998's measured estimate that, with the head in the
+  neutral posture, longus capitis and longus colli could contribute to **17% of the total
+  flexion moment** while **"longus capitis/colli would not contribute substantially to any
+  other movements"**. So the absent ipsilateral line is a claim no measured study confirmed
+  — the model keeps absent it, and nothing in this source's measured half licenses putting
+  a `:lat` direction into that line. Both directions therefore hold: the measurements
+  give the lateral placement and leave the *rotation name* speculative.
+  (c) **the origin `:along 0.50` is a model average of four measured separate rows.** Table 1
+  digitises longus capitis by unique attachment sites per cadaver: fascicles whose unique
+  attachment site is each one of the **anterior tubercles of C3 / C4 / C5 / C6** — four
+  separate rows — male mean fascicle length 5.29 (SEM 0.59) / 6.34 (1.51) / 4.23 (0.96) /
+  4.96 (1.13) mm n=3, female 4.03 (0.34) / 6.00 (1.57) / 3.76 (0.45) / 5.36 (1.64) mm n=4
+  (rows measured against pen and ruler to the nearest mm, embalmed cadavers, so
+  `:representative` for reach and a floor for what a single modeled chord can carry);
+  the aponeurosis measured on the anterior surface is a **consistent feature fusing the
+  fascicles to C5 and C6 in the middle**, and small fascicles reached the T2 and T3
+  vertebral bodies in 2 cadavers while one fascicle reached the **atlanto-axial joint
+  capsule in 1**. The model collapses these to ONE origin at C3–C6's midpoint (`:along
+  0.50`) and ONE insertion on the clivus, both `:lat 0.0` — averaging four measured
+  tubercle strands, three of which are laterally offset from the column's own facet line,
+  onto the axis point; the AA-capsule strand is the one `upper_cervical` node merge
+  (`segment` already records the axis-only split as a gap) absorbs without an
+  `:atlanto-axial` joint existing anywhere in the tree, and the measured T2/T3 strands
+  land below C7/T1 into the thorax body which the segment tree does not partition.
+  *The lateral span and per-tubercle coordinates :could-not-obtain here:* this deposit
+  prints peak-force and torque tables (Tables 4–6) but no attachment-coordinate table
+  — the paper's 3D coordinate step used OsiriX/CT+IAR and is not printed numerically —
+  so no numeric lateral offset for either flexor is available from this source, and the
+  error's direction (measured lateral to the axis vs modeled on it) is carried by a
+  placement sentence and a per-tubercle row set, no number.
+  What this does NOT close: (i) no in-vivo per-fascicle x,y,z coordinate is published;
+  (ii) the measured aponeurosis turns four strands into one fused anterior belly in vivo,
+  so the one-point origin is nearer the measured corpus than the four-row per-fascicle
+  anatomy alone suggests — both directions held, nothing here licenses moving an
+  `:lat` or `:along`; (iii) the MRI-derived muscle VOLUMES (longus capitis male 7.3 (0.3) /
+  female 4.9 (0.3) cm², dissected 4.0 (0.6) / 3.6 (1.6) per side) are VOLUMES — PCSA
+  computed as volume/fascicular length here — not the model's `1.84` (Kamibayashi &
+  Richmond Table 2 per-side 0.92 unitless); volume cm² is not PCSA cm², so no PCSA
+  converges on 1.84 from this deposit.
+  **No constant moves** — the four `:lat 0.0` stay, `longus_capitis` PCSA stays 1.84,
+  `rectus_capitis_anterior` 1.00 stays, `:along 0.50` stays, Hansraj 5 values and Wilke
+  sitting `348.86176709999995 N` byte-identical — README-only diff.
+
 - **`upper_cervical` is still 37 mm where an atlas plus axis is nearer 50**, so
   `rectus_capitis_anterior`, which spans it, is short for the same reason
   `rectus_capitis_posterior_minor` is. The "nearer 50" now has a measured
