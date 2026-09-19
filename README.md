@@ -915,6 +915,48 @@ Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical.
    pooled coefficients untouched; Hansraj 5-value and Wilke sitting
    348.86176709999995 N byte-identical.
 
+9. **Parrella M, Arvanitidis M, Macaluso A & Falla D, "The effects of ageing on
+   fatigue and endurance of the spinal extensor muscles: a systematic review and
+   meta-analysis", *GeroScience* 2026 (doi:10.1007/s11357-025-01987-x, PMID
+   41206405, PMC13575018 — full text read 2026-09-19 from the PMC copy, open
+   access).** A 2026 systematic review of fatigue and endurance of the spinal
+   extensor muscles — scope stated as including "the lumbar, thoracic and
+   cervical (neck) extensors", Medline/EMBASE/PubMed/Web of Science/CINAHL
+   searched from inception to **28 June 2025**, 1253 records screened, 13
+   studies included, 9 in the meta-analysis — and its neck result is the
+   negative this bucket has been claiming, dated and independent: *"no studies
+   investigating the neck extensor muscles in the context of fatigue and ageing
+   were retrieved"*, with the discussion asking for age-related neck-extensor
+   fatigue studies *"as no such data were identified in the present review."*
+   An independent team, searching to mid-2025, retrieved zero neck-extensor
+   fatigue/endurance data on the one dimension this review was built for — which
+   is not the same as finding no curve, but it is the first *systematically
+   searched* confirmation of the emptiness, and it makes the bucket's claim
+   nobody's oversight: someone went looking with a written protocol and came
+   back with nothing. The measurement it does have is on the neighbouring
+   region: a random-effects meta-analysis, moderate certainty of evidence
+   (GRADE), gives endurance time of the **back extensors** during sustained
+   isometric contractions as **−41.31 s in older adults (>60 y) versus younger
+   controls (95% CI −64.04 to −18.57)**. What that adds here is a second axis
+   the bucket has never named: `endurance-minutes` is a function of %MVC (plus
+   the 8 %MVC floor) and nothing else, so this model prices a 70-year-old's
+   held posture identically to a 25-year-old's at the same %MVC — and the one
+   region the ageing evidence covers says the model **over-states endurance
+   time for the older body** by tens of seconds per task (error direction
+   stated; for the neck the review's own search returned nothing, so the age
+   direction on the headline muscle stays `:could-not-obtain` — and no curve
+   for the neck exists to receive an age term anyway). What it does not close:
+   (i) the −41.31 s is back extensors under prone Biering-Sørensen-type
+   protocols, not cervical — the review retrieved no cervical protocol on this
+   axis at all, which is the point; (ii) the model's actors carry no age at
+   all — the over-statement applies to a hypothetical older actor, not to any
+   body this repo currently reports; (iii) the review notes the included
+   studies' EMG findings are inconsistent, so the neuromuscular mechanism
+   behind the time decline is open even where the decline itself is not.
+   **No constant moves** — `endurance-minutes`, `endurance-floor-pct` and the
+   pooled coefficients untouched; Hansraj 5-value and Wilke sitting
+   348.86176709999995 N byte-identical (README-only diff).
+
 ## Isaac Sim / kami-genesis
 
 `wire/wit/kami-biomech.wit` is the articulation contract a kami-genesis `PlanarChain` / nv-compat
