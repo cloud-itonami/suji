@@ -3597,6 +3597,41 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   Measured at `laptop-on-lap`: **−0.3786 N·m against a C7 demand of 4.9762, i.e. 7.6%**;
   −1.8428 N·m in a deep squat, where the arms are held out. They now declare
   `:crosses {:joint :c7}`, so it is a number at every posture rather than this paragraph.
+  ⚠ *Annotated 2026-09-19 (bot/suji-anatomy): of the three numbers this bullet
+  quotes, one is pinned at full precision and the other two are prose only —
+  and the one pin the suite does carry is on a DIFFERENT posture than the one
+  this bullet leads with.* What the suite holds, measured in
+  `test/suji/methods/muscle_strain_test.kotoba`
+  (`the-girdle-suspension-muscles-load-c7-and-are-not-in-its-group`):
+  **laptop-on-lap** is pinned, `math/nearly= -0.3786202544993853` at 1e-12
+  tolerance, with the 5–15%-of-demand band asserted around it. What the suite
+  does NOT hold: (i) the **deep-squat** figure this bullet quotes second,
+  **−1.8428 N·m**, appears nowhere in the test tree — no `deftest` asserts any
+  value at `posture/deep-squat` for `:two-joint-unfed-nm :c7`
+  (`lower-limb-test` pins the three deep-squat equilibria's UNFED map to be
+  exactly `#{:c2c3 :c7}` and the arm×force identity there, but no number at
+  C7), so the README's second number is the only copy of it; (ii) the two
+  **per-muscle arms the floor argument rests on** (−3.22 mm upper trapezius,
+  −1.13 mm levator scapulae) are asserted only as *a number below
+  `recruit/min-coeff`* — the magnitude is unpinned, so an arm drifting to any
+  value under the 5 mm floor (and every proportionality that follows it, the
+  unfed moment at every posture) passes green while this paragraph keeps
+  quoting whatever it quoted when written. The same bullet's own ⚠ about the
+  `attachment/mirror` bug showed exactly this failure class: a silently
+  nil-reported moment. Proposed pins, **not installed here** — this session
+  could not run the suite at all: `kbb` resolves no git coordinates
+  (`io.github.kotoba-lang/text` is not `:local/root` and is not on the
+  classpath; `Could not find namespace`), the same blocker recorded for
+  biomech on 2026-09-18 — so this is a README-only diff and the pins are
+  requested from a host where the suite runs: the deep-squat
+  `:two-joint-unfed-nm :c7` total and both four entries' `:secondary-arm-m`
+  at `math/nearly=` 1e-12, next to the laptop pin that already exists; the
+  break that must go red is any arm perturbation (the laptop total will NOT
+  move for a levator-only arm change unless its own arm×force identity
+  reaches the summary — see the arm×force check at deep squat in
+  `lower-limb-test`, which is where that break is catchable today). No
+  constant moves — no `min-coeff` change, no arm recomputed, Hansraj 5-value
+  and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
   **They are not in the `:neck` group and the obstacle is the solver's INPUTS, not the
   solver:** their own equilibrium is a suspension balance — a force, with a dimensionless
   direction cosine for a coefficient — and the neck group's rows are moments.
