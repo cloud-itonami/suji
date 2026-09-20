@@ -2230,6 +2230,35 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
   the occiput and its function is **lateral bending**, not sagittal flexion; a midline
   sagittal model has nowhere to put it, and Kamibayashi & Richmond do not measure it
   either.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the muscle this bullet says has nowhere
+  to be put has a measured chord under the model's own sagittal task — and the chord
+  does not move.* Lin G, Wang W, Wilkinson T, *Changes in deep neck muscle length from
+  the neutral to forward head posture. A cadaveric study using Thiel cadavers*,
+  Clinical Anatomy 2022;35(3):332-339 (doi:10.1002/ca.23834, PMID 35038194,
+  PMC9304288; full text re-read 2026-09-20 from the PMC HTML copy; the same paper
+  this file already reads for `rectus_capitis_anterior` 30.7 mm and the longus colli
+  parts). Its Table 2 groups rectus capitis lateralis under "Occipital flexors" —
+  the bullet's own class — and measures, on six Thiel-embalmed cadavers (4 M / 2 F,
+  mean 86.2 ± 8.7 y, MicroScribe digitised attachment-to-attachment, the model's
+  straight-line chord convention): **18.8 ± 3.0 mm at the neutral posture**, 18.3 ± 2.7
+  at slight FHP (−2.6 ± 3.7 %) and 18.1 ± 1.9 at severe FHP (−3.0 ± 5.8 %), p = 0.21 —
+  **no significant length change at either severity**; within its own group only
+  longus capitis moves (4.1 / 8.8 %, p < 0.05), while rectus capitis anterior's row is
+  the same flat shape (3.2 ± 6.5 %, non-significant). Cross-check against the
+  2026-09-17 annotation on this muscle in *What the upper cervical spine still cannot
+  express*: Ma 2019's formalin-semifixed **21.3 mm** craniocaudal surface length vs
+  Lin's **18.8 mm** chord — a chord between attachment centres is shorter than a
+  surface-following path by geometry, so the two measurements agree in order without
+  either being averaged into the other. What this adds that the earlier annotation
+  did not have is a measured *behaviour* statement: across the sagittal severity range
+  this model's postures live in, the lateral column's chord is static — the measured
+  shape of "nowhere to put it", because a line that carries no sagittal length change
+  also has no sagittal equilibrium to enter. Error directions kept: Thiel-embalmed
+  cadaver chord between attachment centres, not fibre length, n=6, the oldest cohort
+  this file cites; no mass and no PCSA in this paper either (`:could-not-obtain`), so
+  the capacity question stays as the 2026-09-17 annotation left it. Reported, not
+  built: no `rectus_capitis_lateralis` instance, no constant moves — Hansraj 5-value
+  and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 - ~~**A coupled solve over the C7 and atlanto-occipital constraints.**~~ **Closed
   2026-09-08** — `recruit/solve`, one dual variable per constraint, active set read off
   the KKT prices. The gap the flexors turned from a suspicion into a measurement is the
