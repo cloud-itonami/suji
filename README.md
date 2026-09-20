@@ -3834,6 +3834,41 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   or of `attachment/coupled-arms` at `:c2c3`. **No constant moves** — no provenance
   change, no value recomputed, Hansraj 5-value and Wilke sitting 348.86176709999995 N
   byte-identical (README-only diff).
+  ⚠ *Annotated 2026-09-20b (bot/suji-anatomy): both quoted numbers were re-measured in
+  the live tree this day, and BOTH are wrong — the first by ~830× and a sign, the second
+  by being measured at a posture map no consumer of the suite uses.* Measured on the
+  fresh `origin/main` clone (`a843531`, PR #87's commit merged) with the suite's own
+  entry point `posture/posture-from-workstation` and the suite's own body
+  (`segment/build-body 70.0 1.70`), via `muscle/tension-summary` `:two-joint-unfed-nm`,
+  nbb host, 3 runs, repeatable to the digit:
+  `laptop-on-lap :c2c3 = −0.1581450793522565 N·m` (the README's 1.9e-4 is ~830× smaller
+  AND positive — the re-measured value is extension-direction negative, the same sign
+  class as the deep-squat entry), and
+  `deep-squat :c2c3 = −0.03408252217605897 N·m` (the README's −0.0585 is the value the
+  RAW `posture/deep-squat` def produces — re-measured on the raw map: −0.05846667…
+  confirmed to 4 digits — but `posture-from-workstation`, which is what
+  `muscle_strain_test`'s own `:c7` pin uses and what every workstation consumer
+  builds from, produces −0.0341, not −0.0585).
+  The laptop number's drift source is legible: at `laptop-on-lap` the coupled solve
+  holds `longus_capitis` at its ZERO-FORCE bound (`:force-n 0`, `:active-n 0`, both
+  sides — re-measured on the raw map, where the whole `:c2c3` entry is 0), so the
+  1.9e-4 N·m the 2026-09-08 derivation table recorded was a state of the solver then,
+  not a property of the posture: an unfed moment of a muscle the optimum does not hire
+  at this posture is 0, and 1.9e-4 was a pre-coupled-solve or different-coefficient
+  snapshot. What survives of the 2026-09-20 note's own arithmetic: the deep-squat
+  value is NOT 308× the laptop one — at the suite's entry point it is 0.216× (the
+  ratio runs the OTHER way), so neither quoted figure's ratio to the other survives;
+  what survives is the structural claim, which is stronger now than it was — both
+  numbers are prose-only AND both are stale, which is the silently-drifting class the
+  same note names, caught in the act 0 days after it was written down. Pins requested
+  (unchanged from the note above, now with the numbers they must carry): at
+  `math/nearly=` 1e-12, next to the existing `:c7` pin, assert the laptop `:c2c3`
+  total `−0.1581450793522565` and the deep-squat `:c2c3` total `−0.03408252217605897`
+  AT `posture-from-workstation`'s output, not the raw def; the break that must go red
+  is any perturbation of the longus-capitis crossing or of
+  `attachment/coupled-arms` at `:c2c3`. **No constant moves** — no provenance
+  change, no value recomputed in src, Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical (README-only diff).
 - **`:c7`, and this one is new — found by asking what else the closed solve was hiding.**
   Upper trapezius and levator scapulae run past the cervicothoracic junction (occiput and
   nuchal line → lateral clavicle; upper cervical transverse processes → scapula), so both
