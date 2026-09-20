@@ -2240,6 +2240,31 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
   sagittal model still has nowhere to spend any of it, and Oc-C1's share is small:
   the paper quotes prior in-vivo Oc-C1 rotation at about 1.7° and the joint's own
   in-vitro range at about 5°.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy, second note): the 40.5 has a source now,
+  and it is not the one it was attributed to.* Penning L, Wilmink JT, *Rotation of
+  the cervical spine. A CT study in normal subjects*, **Spine 12(8):732-740, 1987**
+  (doi:10.1097/00007632-198710000-00003, PMID 3686228; abstract read 2026-09-20 via
+  the Europe PMC REST API; no PMC record, full text `:could-not-obtain`). Twenty
+  normal subjects aged 20-26, axial CT sections with the head in maximal rotation
+  to the right or the left, each of the eight segments occiput→T1 read as its
+  rotation difference from the sagittal plane; the abstract's mean values in
+  segment order are **1.0 / 40.5 / 3.0 / 6.5 / 6.8 / 6.9 / 5.4 / 2.1 degrees** —
+  the second, C1-C2, is the bullet's 40.5° to one side. The abstract carries no SD
+  and no per-segment spread (`:could-not-obtain` at this level; a range of 29-46°
+  is quoted for this paper in secondary literature only, not read in the primary).
+  What this repairs and what it does not: (i) the number the bullet carries is a
+  measured in-vivo mean from a 1987 CT study, not an invented constant — but it was
+  attributed to Bogduk & Mercer, and the attribution was wrong, which is the
+  failure the 2026-09-13 note recorded; the bullet's figure remains prose, now
+  with its origin named instead of orphaned. (ii) It does not disagree with Kang's
+  37.9 ± 5.1: 40.5 sits 0.51 SD above Kang's mean (arithmetic on the two papers'
+  own stated values, `:representative`), and the methods differ — Penning reads
+  per-segment rotation differences from axial CT sections at maximal rotation,
+  Kang reconstructs Cardan angles per vertebra from markers; both are one-side
+  maxima. (iii) Neither changes the model: a midline sagittal model has no
+  axial-rotation degree of freedom at any cervical level, the atlas and axis stay
+  one segment, no instance is created. **No constant moves** — Hansraj 5-value
+  and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 - ~~**Any upper cervical flexor**~~ **Closed 2026-09-08** — `longus_capitis` (PCSA
   measured) and `rectus_capitis_anterior` (PCSA representative) act about the
   atlanto-occipital joint. ~~What is *not* closed is the surplus: carrying it would take
