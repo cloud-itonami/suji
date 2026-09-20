@@ -867,6 +867,31 @@ and `:no-published-curve-for-this-region` keeps its name:
    coefficients untouched; Hansraj 5-value and Wilke sitting
    348.86176709999995 N byte-identical.
 
+9. **Kennady F, Sannasi R, Premkumar M, Dsouza GA, "Normative Values of Neck
+   Extensor Endurance Test in Adults: An Observational Study", *Physiother Res
+   Int* 31(1):e70162, 2026 (doi:10.1002/pri.70162, PMID 41532949; abstract read
+   2026-09-20 via the Europe PMC REST API — no PMC record, so only the abstract
+   is held).** 448 healthy adults aged 29-60 y, the standardized NEET protocol:
+   mean **38.42 ± 24.04 s** (median 35.82, IQR 16.96 s), endurance declining
+   progressively with age, higher with IPAQ physical-activity level (p < 0.05),
+   25th percentile ≈ 26 s. The intensity is again unstated
+   (`:parameter-not-in-source`) — the same reason items 2-5 cannot enter the
+   power law's x-axis. What it adds beyond item 4 (440 healthy young adults
+   18-28 y, same test family, 43.1 s): an **age direction inside one protocol
+   family** — the two published means give 38.42/43.1 = **0.89
+   (`:representative` arithmetic on two means from different cohorts and
+   continents; neither paper states an age coefficient, item 4's spread is not
+   stated in this file, and Kennady's own SD is 24 s, so the pair brackets a
+   trend the abstract itself states rather than measuring one)** — and the
+   bucket's first entry to carry the healthy cohort's SPREAD as a median with
+   an IQR rather than a mean alone: half of 448 healthy adults fail the test in
+   under ~36 s, against the model's >70 min price for a held cervical load just
+   above the 8 %MVC floor (the paragraph below) — a second cohort on the
+   measurement side of that mismatch. No constant moves — `endurance-minutes`,
+   `endurance-floor-pct` and the pooled coefficients untouched; the bucket
+   keeps `:no-published-curve-for-this-region`; Hansraj 5-value and Wilke
+   sitting 348.86176709999995 N byte-identical.
+
 Direction of the mismatch, stated and NOT closed: at just above the 8 %MVC floor
 the model prices a held load at **>70 min**, while these tests put healthy
 neck-extensor task-failure at **0.7-4.8 min** at an intensity nobody stated (items 2-5), while item 6 holds
