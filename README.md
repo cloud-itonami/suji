@@ -4990,6 +4990,44 @@ pinned absolutely now, and the same break then fails four assertions naming the 
   remains asserted anatomy, not a measurement. No constant moves — the hip axis keeps standing
   in, the bullet stays open; Hansraj 5-value and Wilke sitting 348.86176709999995 N
   byte-identical (README-only diff).
+  ⚠ *Annotated 2026-09-20, 23:10 (bot/suji-anatomy), a second pass on the same bullet: the
+  separation's INFERIOR half is measured, so "the inferior-and-posterior direction remains
+  asserted anatomy" above is now half wrong — the posterior half is still asserted.* Bombaci H,
+  Simsek B, Soyarslan M, Murat Yildirim M, *Determination of the hip rotation centre from
+  landmarks in pelvic radiograph*, **Acta Orthop Traumatol Turc 51(6):470-473, 2017**
+  (doi:10.1016/j.aott.2017.09.004, PMID 29029869, PMC6197315; full text read 2026-09-20 via
+  the Europe PMC REST fullTextXML endpoint). 100 healthy adults (50 M / 50 F, mean age 46.2,
+  range 18-91), standard AP pelvic radiographs, hip rotation centre located by concentric
+  circles on the femoral head: **the distance from the HRC to the inter-ischial line — the
+  line drawn through the lowest end of the pelvis, tangent to both ischial tuberosities — is
+  71 ± 6.35 mm in males and 65 ± 6.72 mm in females, i.e. 30.01 ± 2.05% and 29.10 ± 2.35% of
+  pelvic height** (pelvic height itself 239 ± 13.58 / 225 ± 12.52 mm, measured up to the
+  tangent on the upper ilium). That vertical is the inferior component of exactly the vector
+  the substitution rides on: the model roots the seated chain at the hip axis "standing in"
+  for the tuberosities, and the measured distance between the two roles is **≈ 6.5-7.1 cm**
+  (arithmetic on two published means, `:representative`) — the size the bullet's own
+  conditional says "will stop being free the moment a seat reaction is applied at a point
+  rather than assumed to take the whole thigh", now measured at the same order as the
+  12-13.5 cm contact spread the 2026-09-20 width annotation above carries. The 2026-09-10
+  invariance argument is untouched — a rigid translation moves no moment, and this
+  measurement does not challenge that; it sizes the vector the invariance silently carries.
+  What stays `:could-not-obtain`: (i) the POSTERIOR (sagittal) component — an AP radiograph
+  measures frontal-plane distances only, so 65-71 mm is a LOWER bound of the 3D
+  tuberosity-to-HRC separation and no source in hand prints the posterior offset; (ii) the
+  seated-LOADED geometry — supine and unloaded, while the model's root carries the trunk;
+  Chen & Yang's impress-versus-pressure spread is the external analogue of the same
+  deformation; (iii) the "vertical" is the radiograph's frame — supine pelvic tilt is not
+  seated pelvic tilt, so the direction "inferior" transfers and the angle does not.
+  Corroboration inside the same convention: the paper's own horizontal-from-teardrop ratios
+  (14.25% / 13.69% of pelvic height) reproduce the cadaver convention it cites — John JF,
+  Fisher PE, *Radiographic determination of the anatomic hip joint center: A cadaver study*,
+  Acta Orthop Scand 65(5):509-510, 1994 (doi:10.3109/17453679409000901, PMID 7801750; full
+  text from the journal's open archive: 31 specimens, 57 hips, joint centre 13% of pelvic
+  height lateral and 7% superior to the teardrop, pelvic height itself measured from the
+  ischiadic tubercles to the iliac crest) — a second cohort on a second modality agreeing on
+  the normalized convention, not on the sagittal number this bullet still lacks. No constant
+  moves — the hip axis keeps standing in, the bullet stays open; Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 - **Nothing was installed.** No divisor, no fudge factor, no fitted constant. Dividing the chord's
   sensitivity by 8 still brings the difference ratio to 1.03 and still lives nowhere.
 
