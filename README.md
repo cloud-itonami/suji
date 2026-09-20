@@ -1861,6 +1861,32 @@ All the change is in the levels above it, which is the point.
 - **The specimens were cadavers.** Kamibayashi & Richmond's own N is 9 or 10 per
   muscle and the ranges are wide — semispinalis capitis spans 3.93 to 7.32 cm²,
   nearly a factor of two.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the cadaver caveat has a measured in-vivo
+  comparator, and the three living means land inside the cadaver range.* Izumida H,
+  Daimon K, Umezawa H, Michikawa T, Fujiwara H, Okada E, Nojiri K, Katoh H, Shimizu K,
+  Ishihama H, Nakamura M, Matsumoto M, Watanabe K, *Longitudinal MRI study over 20 years
+  of cervical posterior extensor muscle area in asymptomatic subjects*, **Sci Rep
+  15(1):21826, 2025** (doi:10.1038/s41598-025-08055-6, PMID 40595211, PMC12218271;
+  full text read 2026-09-20 via the Europe PMC REST fullTextXML endpoint, CC BY). 55
+  living asymptomatic volunteers (35 M / 20 F, mean age 31.9 ± 13.8 y at the initial
+  scan, mean interval 21.9 ± 0.8 y between scans), T2-weighted axial 1.5-T MRI,
+  semispinalis capitis traced inside its visible fascia at three levels: **621.8 ± 207.9
+  mm² at C3/4, 594.5 ± 176.6 mm² at C4/5, 474.8 ± 148.0 mm² at C5/6** (Table 2, initial
+  investigation). All three per-level means sit **inside** Kamibayashi & Richmond's
+  cadaver span 3.93–7.32 cm² (6.218 / 5.945 / 4.748 cm² — arithmetic on one published
+  range and three published means, `:representative`; the comparison bounds the
+  cadaver-versus-living gap, it does not measure one). What keeps it from being a check
+  of the PCSA itself: the paper states in its own methods that these are **anatomical**
+  CSA — *"does not necessarily reflect force production"*, its own distinction from
+  physiological CSA — so as a capacity input it would over-state force by the
+  non-contractile share, while cadaveric fixation shrinks tissue the other way; the two
+  error directions are opposite and neither is quantified here. The measurement is
+  level-resolved slices and no whole-muscle in-vivo figure is carried — a sum across
+  C3/4–C5/6 would over-count a belly that spans the levels (`:could-not-obtain` at this
+  level). Baseline images came from film, the cohort is Japanese, fatty degeneration was
+  already present at baseline, and dropout was age-skewed (58.8–85.4% by decade). No
+  constant moves — no instance, no PCSA touched, Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical (README-only diff).
 
 ## The neck had one joint (2026-09-07)
 
