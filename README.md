@@ -1793,6 +1793,35 @@ All the change is in the levels above it, which is the point.
   the midline/pairing limits named in the next bullet apply to it too. **No constant
   moves** — no `sternocleidomastoid` instance is created, the refusal stands, Hansraj
   5-value and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
+  ⚠ *Annotated 2026-09-22 (bot/suji-anatomy): this same file already carries the
+  muscle's measured dissection PCSA, and it is smaller than the ultrasound number the
+  annotation above prices with — the two published sizes have never been put side by
+  side.* Table 3-3 of the Vasavada 2010 chapter (the same fetch this file's splenius
+  entry reads; Kamibayashi & Richmond 1998, Spine 23(12):1314–1323, read in full
+  2026-09-07) prints a row **"Sternocleidomastoideus"**: N = 9, mass 40.4 (9) g,
+  muscle length 19 (1.6) cm, NF length 10.8 (0.9) cm, **PCSA 3.72 (0.91) cm² per
+  side, range 1.81–5.26** — carried in this file since the neck split as one of the
+  three measured values of the PCSA column, without ever being cross-checked against
+  Rozenstoka's 4.69 ± 1.03 cm². The annotation's own caveat (ii) says the ultrasound
+  class over-states PCSA; the two published numbers put the direction as arithmetic:
+  4.69 / 3.72 = **1.26×** (`:representative` on two means from different cohorts —
+  195 living trained males vs 9 cadavers — so the ratio carries both cohorts' caveats
+  and its magnitude is `:could-not-obtain` at the per-subject level, but its sign is
+  the one the modality difference predicts: anatomical CSA ≥ PCSA). The refusal's
+  comparator follows the capacity-relevant number: per-side PCSA against the lump is
+  **3.72 / 12.0 = 0.31×** (`:representative`; the 12.0 cm² `cervical_extensors`
+  divisor is itself `:representative` with no source, `:parameter-not-in-source`, so
+  the ratio inherits both entries' provenance), not the 0.39× stated above — the
+  refused antagonist is about a third of the extensor lump's cross-section on the
+  measured PCSA this file already had, and the 0.39× stands as the anatomical-CSA
+  reading of the same comparison. What this does not close: (i) the compression the
+  refusal costs remains unpriced — an instance is still not created; (ii) no
+  attachment coordinates (`:could-not-obtain`, unchanged); (iii) modality explains
+  the 1.26× gap in direction, but cohort (cadaveric vs living trained) and fixation
+  share the explanation and their split is `:could-not-obtain`. **No constant moves**
+  — no `sternocleidomastoid` instance is created, the refusal stands, the annotation
+  above keeps its text with this correction appended, Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 - **The wrap radius is the cervical column's own, 0.012 m**, shared with
   `cervical_extensors` because it is the same column. A muscle lying further out
   from the bone has a larger effective radius and this model does not know how much
