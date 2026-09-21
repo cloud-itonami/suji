@@ -1348,6 +1348,45 @@ all four cited dissection studies), so the over-statement direction is the one
 robust reading. Hansraj's five multipliers and Wilke sitting
 348.86176709999995 N are untouched.
 
+⚠ *Annotated 2026-09-21 (bot/suji-anatomy): the K&R half of this gap is not
+`unverified` — it was resolved in the source eight days before this paragraph was
+written, and the two measurements the paragraph does not carry are the ones the
+paragraph's own premise needs.* This 2026-09-17 entry states the K&R original is
+`:could-not-obtain` at this level and that "the 1998 table's trapezius row, and
+whether the 9.0 was ever meant to be K&R's clavotrapezius, remains unverified
+from the primary source," and frames both `:pcsa-cm2` entries (9.0 / 5.0) as
+"representative values with no measurement behind them." That is not what the
+primary source of record says. It was read in full on 2026-09-09 — Vasavada AN,
+ch. 3 of *Rothman-Simeone: The Spine* (pp. 64–65, which reprints Kamibayashi LK
+& Richmond FJR, *Morphometry of human neck muscles*, Spine 23(12):1314–1323,
+1998, Table 3-3), obtained 2026-09-07, read as the chapter, not as an abstract —
+and the resolution was committed with it: `d29095b` "suji: resolve the
+upper_trapezius / levator_scapulae → K&R mapping" (PR #4, merged 2026-09-09),
+which wrote the "MAPPING RESOLVED 2026-09-09" note into the `:source` of **both**
+entries in `attachment/muscles` (the same note the 2026-09-10 `.cljc → .kotoba`
+rename `8fae392` carried verbatim). The two measured rows the 2026-09-17
+paragraph lacks: (i) `upper_trapezius`'s attachment — occiput and nuchal line to
+the lateral clavicle — is exactly the CAVOTRAPEZIUS, the rostral segment (pars
+descendens, skull to clavicle); the chapter's two caudal segments (acromiotrapezius /
+spinotrapezius) attach to the acromion and the scapular spine, which this model
+does not carry, so the whole entry is the one segment K&R measures, at **1.96
+(0.62) cm² PER SIDE, range 1.25–2.94, N = 10** — the model's 9.0 exceeds it **4.6×**;
+(ii) `levator_scapulae` IS in that same table, at **2.18 (0.80) cm² PER SIDE, range
+1.39–3.24, N = 8** — the model's 5.0 exceeds it **2.3×**. Both are exactly the SOUL
+gap's pair, both with the error direction already stated in the source (capacity
+OVERSTATED, so scapular-suspension %MVC UNDERSTATED — an overstatement, not a
+direction flip), and both entries say the value is NOT changed: "`:pcsa-cm2` stays
+9.0 / 5.0 in BOTH tables, so the-pcsa-written-twice-is-written-the-same-twice still
+holds" — confirmed here: `muscle/muscles` line 233 / 234 and `attachment/muscles`
+line 544 / 569 carry 9.0 / 5.0, byte-identical. What this does not close: De La Paz
+2023 is a *second*, independent cohort for the trapezius row (2.1–3.2 cm², 20
+cadavers), and it does not measure `levator_scapulae` — so the K&R levator row
+(N = 8 cadavers, 1998) remains the only measurement behind the 5.0; the two trapezius
+sources agree in magnitude (K&R 1.96 vs De La Paz 2.1–3.2, `:representative`
+arithmetic on per-side means, no cross-study comparison) but neither is the value the
+model carries. **No constant moves** — 9.0 and 5.0 stay byte-exact, Hansraj's five
+multipliers and Wilke sitting 348.86176709999995 N are untouched (README-only diff).
+
 **Passive tension (2026-09-06).** A stretched muscle produces force without being
 activated and without costing anything metabolically — it is the tissue resisting
 being stretched. This actor assigned the whole of every load to active contraction
