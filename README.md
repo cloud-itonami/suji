@@ -406,6 +406,42 @@ intradiscal pressure (Fig. 5 here, r = 0.91), stays `:could-not-obtain`, so the 
 400 N cannot be traced to a measurement through it. **No constant moves** — Hansraj's five
 multipliers and Wilke sitting 348.86176709999995 N are byte-identical (README-only diff).
 
+⚠ *Annotated 2026-09-22 (bot/suji-anatomy): a readable IAP source in the same measurement
+class exists, and the absent term's magnitude is now known at the two postures this model
+compares.* The per-task numbers this entry waits on (the 2026-09-18 annotation's item (i):
+Örtengren R, Andersson GBJ, Nachemson AL, *Studies of relationships between lumbar disc
+pressure, myoelectric back muscle activity and intra-abdominal (intragastric) pressure*,
+Spine 6(1):98–103, 1981) have no abstract to read — verified 2026-09-22: neither the
+Europe PMC REST core record (PMID 7209681) nor Crossref (doi:10.1097/00007632-198101000-00021)
+carries an `abstractText`, so the paper is a title that answers no question at abstract
+level (`:could-not-obtain`). The nearest readable measurement of the same quantity:
+**Cobb WS, Burns JM, Kercher KW, Matthews BD, Norton HJ, Heniford BT, "Normal
+intraabdominal pressure in healthy adults", *J Surg Res* 129(2):231–235, 2005
+(doi:10.1016/j.jss.2005.06.015, PMID 16140336; abstract read 2026-09-22 via Europe PMC
+REST; full text `:could-not-obtain`, Elsevier subscription, no PMC record)**. 20 healthy
+nonobese adults (10 male / 10 female, ≤30 y, mean 22.7 y, BMI 24.6 kg/m²), transurethral
+bladder (Foley) catheter, 13 tasks: mean IAP **sitting 16.7 mm Hg, standing 20 mm Hg** —
+the two postures this model's sitting/standing pair compares — with cough 107.6 and
+jumping 171 mm Hg the only larger tasks, and 25.5 mm Hg the max over the remaining
+low-load ones. Ordering: **standing > sitting**; ratio of means 20/16.7 = 1.20
+(`:representative` arithmetic on two abstract means — the abstract gives no per-task SDs
+(`:could-not-obtain`), and a ratio of means understates the spread of a ratio). What it
+does not do: it installs no IAP term. Bladder-catheter IAP is an abdominal surrogate, not
+the intragastric/direct class the Örtengren study measured, and the abstract states no
+equivalence between the two conventions (`:could-not-obtain`); converting pressure to a
+force through this repo's `nachemson-pressure-index` would apply the same ×1.5 the
+section's own text declines to validate. The annotation only pins that the term whose
+absence the 2026-09-18 read located — the published sign of which **adds to the
+compression the spine carries**, putting this model's ~349 N on the LOW side — has a
+measured magnitude of order 16.7–20 mm Hg at exactly the two postures compared, from a
+readable source; so the missing term's direction now carries a number, not just a sign.
+What it does not close: the JBJS 1982 full text stays `:could-not-obtain` and with it the
+chain between this IAP and the 2400 N / 1800 N / 1600 kPa abstract maxima; the Cobb cohort
+is young (mean 22.7 y) and n=20; IAP varies with BMI (the paper's own correlation finding)
+and this repo's postures carry no BMI (`:parameter-not-in-source`). **No constant moves**:
+Hansraj's five multipliers and Wilke sitting 348.86176709999995 N are byte-identical
+(README-only diff).
+
 ## The dose layer against the endurance literature — and it disagrees
 
 The stiffness index (強張り) is what a reader of this app actually sees: it is the
