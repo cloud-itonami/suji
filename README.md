@@ -4111,6 +4111,40 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
 - **A muscle cannot be in two coupled groups.** `coupled-groups` is a partition. Nothing in
   this anatomy needs to be in two, but a trunk model that coupled the lumbar spine to the hip
   would.
+  ⚠ *Annotated 2026-09-22 (bot/suji-anatomy): the hypothetical is already instantiated in
+  this repo's own muscle table — and the docstring's own two-joint list omits it.*
+  `coupled-groups`' docstring names its two-joint muscles: rectus femoris, hamstrings,
+  gastrocnemius, semispinalis, splenius. It does not name **iliopsoas**, whose instance
+  (`attachment.kotoba`, the Ward 2009 17.6 cm² entry) carries
+  `:origin {:segment "lumbar" :along (trunk-frac->lumbar 0.05) …}` with
+  `:acts-about :hip :task :hip-extension` — a muscle whose origin rides on the **lumbar**
+  segment and whose only task lives at the **hip**. The bullet says nothing in this anatomy
+  needs to be in two coupled groups because the lumbar spine is not a group; but the moment
+  the lumbar spine became one — the way the neck did on 2026-09-07 — iliopsoas would have to
+  belong to the lumbar group AND the lower-limb group simultaneously, and a partition cannot
+  hold it. By the repo's own `crosses?` rule (`spine.kotoba`: a muscle loads a level when its
+  two attachments land on opposite sides of the level's cut — the same derived rule that
+  stopped wrist extensors loading C3/C4) the crossing half is already structural, not
+  hypothetical: origin on the lumbar segment, insertion on the thigh, so the side-of-level
+  test puts origin above and insertion below every lumbar cut. The mechanical stakes are
+  Santaguida PL & McGill SM, *The psoas major muscle: a three-dimensional geometric study*,
+  **J Biomech 28(3):339-345, 1995** (doi:10.1016/0021-9290(94)00064-b, PMID 7730392; abstract
+  read 2026-09-22 via PubMed efetch; full text `:could-not-obtain`, Elsevier, no PMC record):
+  seven cadavers plus MRI centroid paths of 15 males, per-lumbar-level lines of action, and
+  two stated results that bite here — the psoas **cannot be adequately represented with a
+  series of straight line vectors from vertebral origins to insertion** (the model's single
+  chord from `lumbar` 0.05 to `thigh` 0.10 is exactly that), and bilateral activation gives it
+  **the potential to stabilize the lumbar spine with compressive loading**. Direction of what
+  the model omits: any force the hip equilibrium ever gives this muscle is a compression the
+  lumbar levels receive without a lumbar equilibrium ever having checked it — the same LOW
+  side the standing figure already sits on (0.845× the series' 400 N anchor, annotated
+  2026-09-18). Per-level magnitudes are in the paywalled text (`:could-not-obtain`); at this
+  model's desk postures the hip load is near zero, so nothing today moves. **No constant
+  moves** — the iliopsoas instance, its 17.6 cm² and its 0.035 m wrap are untouched, Hansraj
+  5-value and Wilke sitting 348.86176709999995 N byte-identical (README-only diff). What this
+  tick could NOT verify live: the crossing was read from `spine/levels-crossed`'s rule and
+  not executed — `kbb -M:test` in a fresh clone returns `2 dep(s) … NOT on the classpath … 0
+  test namespace(s) found` and the sci-backend runner fails the same way, so no probe ran.
 - **Nothing is coupled across the midline.** The two legs are solved separately because they
   share no muscle. A model with a muscle spanning the midline would need one group for both.
 - **It is still a static optimum.** No co-contraction for stability, no history, no
