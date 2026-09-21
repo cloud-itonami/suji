@@ -4554,6 +4554,45 @@ trunk that stays put.
 | knee moment, per side | −0.4255 N·m | **−35.663 N·m** | standing is unloaded |
 | soleus vs gastrocnemius | 159.3 > 71.2 N | **444.3 < 459.7 N** | soleus carries more |
 
+
+⚠ *Annotated 2026-09-21 (bot/suji-anatomy): this table's **measured** column carries no
+citation anywhere in this README — its first two rows now have one, and the measured values
+sit inside the printed bands at the mid-interval and above them at steady state.* Di Giulio I
+& Baltzopoulos V, *Attainment of Quiet Standing in Humans: Are the Lower Limb Joints
+Controlled Relative to a Misaligned Postural Reference?*, **Front Physiol 10:625, 2019**
+(doi:10.3389/fphys.2019.00625, PMID 31275151, PMC6593307; full text read 2026-09-21 via the
+Europe PMC REST fullTextXML endpoint, CC BY). Thirteen healthy adults (46 ± 13 y, mass
+71.7 ± 13.0 kg — the model's 70 kg body is inside 1 SD; height 1.68 ± 0.13 m), motion capture
+plus force platform, quiet standing reached after walking, inverse dynamics (Vaughan's
+convention; positive ankle moment = dorsiflexion): the body's anteroposterior centre-of-gravity
+line sits **47 ± 4 mm ahead of the ankle joint centre** at the mid interval and **58 ± 5 mm at
+steady state** (mean ± SEM; CoG_AP–Ankle_Mid = 47.08 mm, CoG_AP–Ankle_End = 58.00 mm, both
+significantly different between intervals), and the **ankle moment is 17.10 ± 4.36 N·m rising
+to 26.33 ± 5.26 N·m** over the same two intervals. Against the two printed bands: both
+gravity-line values sit inside **0.02–0.06 m**, and 17.10 sits inside **10–20 N·m** — but the
+steady-state 26.33 N·m is ABOVE the band's top end, so the band as printed is a mid-stance
+band, not a steady-state one. The model's own neutral value, 3.70 cm, sits **below** the
+measured 4.7–5.8 cm — the under-statement direction the table's first row does not state.
+Two things this annotation cannot close. (i) The paper's printed ankle moment is per side only
+by inference: 47 mm × 71.7 kg × 9.80665 m/s² = 33.2 N·m of total external plantarflexion
+moment, half of which is 16.6 N·m ≈ 17.10 (arithmetic `:representative` on the paper's own
+means); whether the printed moments are per leg or summed is not stated in the text
+(`:could-not-obtain` at this level), and the band check inherits that ambiguity. (ii) The
+paper's own conclusion is that these subjects stand **forward of the classic alignment** — a
+lower-limb configuration "controlled relative to a misaligned postural reference" — which
+makes its steady-state values the high end of any measured band, the same direction this
+table's Cho-46.5° column over-shoots in. The same source also measures what the third row
+asserts is absent: **knee moments of 17.62 ± 5.13 → 33.98 ± 5.82 N·m in the same standing
+trials** — a measured, non-zero knee moment in quiet standing, against this table's
+"standing is unloaded" cell; the two figures sit on different conventions (inverse-dynamics
+external moment on a forward-leaning posture with the gravity line 4.7–5.8 cm ahead of the
+ankle, vs this model's 0.43 N·m knee equilibrium at a 3.7 cm gravity line), so this is a named
+neighbour of the Cho contradiction, not a fifth broken measurement. The same read is the
+nearest measured witness for the fourth row and stays qualitative: the paper's hip moment
+swings 12.81 ± 10.50 → −31.19 ± 5.54 N·m, which is a statement about configuration change,
+not about soleus-versus-gastrocnemius (`:could-not-obtain` at this level). **No constant
+moves** — the four pins and the printed bands stay as they are, Hansraj 5-value and Wilke
+sitting 348.86176709999995 N byte-identical (README-only diff).
 **No range was widened.** The four assertions moved to `posture/quiet-standing-lumbar-neutral`,
 a named control that is what `quiet-standing` used to be, and
 `cho-s-standing-lordosis-and-the-measured-line-of-gravity-cannot-both-hold` pins all four sizes
