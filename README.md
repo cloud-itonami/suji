@@ -3920,6 +3920,28 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   `attachment/coupled-arms` at `:c2c3`. **No constant moves** — no provenance
   change, no value recomputed in src, Hansraj 5-value and Wilke sitting
   348.86176709999995 N byte-identical (README-only diff).
+  ⚠ *Annotated 2026-09-21 (bot/suji-anatomy): the blocker recorded above is
+  INCOMPLETE, and the missing half makes the requested pins un-installable from
+  this host even with the coordinates solved.* Measured in a fresh `origin/main`
+  clone (`cba2dd3`): putting the `io.github.kotoba-lang/text` west checkout
+  (`orgs/kotoba-lang/text`, `3dcb2ab`, which defines the `kotoba.lang.*`
+  namespaces) directly on the classpath —
+  `kbb --classpath src:<text-checkout> <script>` — does NOT fix the load: both
+  the default and the `--backend sci` engines still die with `Could not find
+  namespace: suji.methods.segment`, on a src tree that is present. The reason is
+  legible in the engine itself: the kbb classpath resolver probes **`.cljk`**
+  (its own shim doc: stock nbb probes `.cljs .cljc .clj`; kbb adds `.cljk`),
+  and this tree renamed every source `.cljc` → **`.kotoba`** at the kbb cutover
+  (6fc9792) — an extension on neither probe list. So the suite's failure is not
+  (only) "resolves no git coordinates"; it is that no engine in this
+  environment can see a `.kotoba` file as a namespace at all, which no
+  `nbb.edn` declaration repairs. Consistently: `kbb -M:test` substitutes its
+  cljs test runner and finds **0 test namespace(s)**, and `clojure -M:test`
+  finds none (the files are not `.clj`). The 2026-09-20b pins therefore stand
+  requested but remain un-installable here, and the fix they wait on is
+  upstream of this repo: either the engine learns the `.kotoba` extension, or
+  the tree carries a runner that can. **No constant moves** — README-only diff,
+  Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical.
 - **`:c7`, and this one is new — found by asking what else the closed solve was hiding.**
   Upper trapezius and levator scapulae run past the cervicothoracic junction (occiput and
   nuchal line → lateral clavicle; upper cervical transverse processes → scapula), so both
