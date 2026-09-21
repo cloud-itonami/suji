@@ -891,6 +891,25 @@ and `:no-published-curve-for-this-region` keeps its name:
    `endurance-floor-pct` and the pooled coefficients untouched; the bucket
    keeps `:no-published-curve-for-this-region`; Hansraj 5-value and Wilke
    sitting 348.86176709999995 N byte-identical.
+   ⚠ *Consolidated 2026-09-21 (bot/suji-anatomy): this study was annotated twice
+   — an earlier entry (abstract read 2026-09-18, `isOpenAccess` N, no PMC record) and
+   this one — with divergent numbering (the list ran 1–9 and then 8–9 again). The
+   earlier annotation's unique content, folded here and the duplicate deleted:
+   (i) the cohort is the bucket's OLDEST and LARGEST (items 2–7 sampled 12–40
+   subjects, students or young adults 18–45) and its FIRST middle-aged cohort, so the
+   age direction above is measured twice inside one test family; (ii) it brackets the
+   model's floor from the measured side: `endurance-floor-pct` prices **70.1 min** at
+   8 %MVC, this cohort's measured task-failure at an UNSTATED intensity averages
+   **0.64 min** (SD 0.40) — ~**110×** below the priced floor (arithmetic on one
+   published mean and one model output, `:representative`; NEET states no %MVC,
+   `:parameter-not-in-source`) — and the abstract's own 25th-percentile cutpoint
+   (~26 s) gives a population EDGE in minutes, a gap of one, not two, orders of
+   magnitude at the measurement's bottom decile; (iii) men slightly above women;
+   per-decade normative values are in the paywalled tables (`:could-not-obtain`);
+   India-based cohort, CTRI/2024/08/072963 — generalisation to this actor's bodies
+   unstudied. **No constant moves** — `endurance-minutes`, `endurance-floor-pct` and
+   the pooled coefficients untouched; Hansraj 5-value and Wilke sitting
+   348.86176709999995 N byte-identical.
 
 Direction of the mismatch, stated and NOT closed: at just above the 8 %MVC floor
 the model prices a held load at **>70 min**, while these tests put healthy
@@ -937,45 +956,8 @@ not a held posture; and the model's %MVC for the cervical extensors is built fro
 `cervical_extensors 12.0 cm2`, which is `:representative` - the x-coordinate of the
 model's own point is the least-sourced number in the comparison. No constant moves;
 Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical.
-8. **Kennady F, Sannasi R, Premkumar M, Dsouza GA, "Normative Values of Neck
-   Extensor Endurance Test in Adults: An Observational Study", *Physiother Res Int*
-   31(1):e70162, 2026 (doi:10.1002/pri.70162, PMID 41532949; abstract read
-   2026-09-18 via the Europe PMC REST API — isOpenAccess N, no PMC record, full
-   text `:could-not-obtain`).** 448 healthy adults aged 29-60 (the bucket's
-   OLDEST and LARGEST cohort: items 2-7 sampled 12-40 subjects, students or
-   young adults 18-45), the standardized NEET protocol, mean holding time
-   **38.42 +/- 24.04 s** (median 35.82, IQR 16.96), declining progressively with
-   age, men slightly above women, higher-IPAQ participants longer (p < 0.05);
-   the abstract proposes **the 25th percentile, ~26 s, as the reduced-endurance
-   cutpoint**. Two things this adds to the bucket and one it does not.
-   (i) It brackets the model's floor from the measured side: the model's
-   `endurance-floor-pct` switches the acute term off below 8 %MVC, pricing a held
-   load at **70.1 min** there, while this cohort's measured task-failure at an
-   UNSTATED intensity averages 0.64 min with an SD of 0.40 — the measured floor
-   sits **~110x below** the model's priced floor (arithmetic on one published
-   mean and one model output, `:representative`, and the intensities do not
-   meet: NEET states no %MVC, `:parameter-not-in-source`, the same reason items
-   2-5 could not enter the x-axis). What the 26 s cutpoint does make checkable
-   is the direction the paragraph above leaves silent: a *population* reference
-   below 26 s in the 29-60 age band, against this model's priced >70 min at
-   8 %MVC, is a gap of one, not two, orders of magnitude at the measurement's
-   own bottom decile — the wide statement has a measured EDGE now, and the edge
-   is in minutes. (ii) It is the bucket's second-highest n after item 4's 440
-   and its FIRST middle-aged cohort, so the age trend inside one protocol
-   (progressive decline, 18-28 -> 29-60) now has two measured rungs this file
-   already carries side by side: 43.1 s young (item 4) vs 38.42 s middle-aged,
-   a 0.89x ratio of the two published means, `:representative` — the paper
-   reports no cross-study comparison, and the two cohorts' protocols are the
-   SAME test by name, so the direction (older is shorter) is measured twice.
-   What it does not close: the intensity is still unstated, so this is the
-   bucket's EIGHTH measurement and still no curve; per-decade normative values
-   are in the paywalled tables (`:could-not-obtain`); India-based cohort,
-   CTRI/2024/08/072963 — generalisation to this actor's bodies unstudied.
-   **No constant moves** — `endurance-minutes`, `endurance-floor-pct` and the
-   pooled coefficients untouched; Hansraj 5-value and Wilke sitting
-   348.86176709999995 N byte-identical.
 
-9. **Parrella M, Arvanitidis M, Macaluso A & Falla D, "The effects of ageing on
+10. **Parrella M, Arvanitidis M, Macaluso A & Falla D, "The effects of ageing on
    fatigue and endurance of the spinal extensor muscles: a systematic review and
    meta-analysis", *GeroScience* 2026 (doi:10.1007/s11357-025-01987-x, PMID
    41206405, PMC13575018 — full text read 2026-09-19 from the PMC copy, open
