@@ -5418,3 +5418,40 @@ Nothing here changes a constant: `0.2` and `−2.32` keep their
 `:absent-from-source` for the neck, and the bucket keeps its name. What changed
 is that the bucket's one measured point at a stated intensity can no longer
 move in the tree without a red test arguing for it.
+
+  ⚠ *Annotated 2026-09-22 (bot/suji-anatomy): the bucket's SECOND stated intensity
+is prose-only — the test above covers one point of the pair, and the measured side
+of the second has no pin at all.* The 2026-09-17 item 7 row (Marchand et al,
+60 %MVC, 68.1 ± 32.3 s) extends this diagnostic table to two intensities, but only
+in README text: a tree-wide scan today found the strings `68.1`, `32.3`, `0.58` and
+`marchand` (any case) in no file under `test/` — `strain_test`'s
+`the-first-stated-intensity...` transcribes and pins only the 50 %MVC row. What is
+and is not protected at 60 %MVC: the MODEL-side value is *not* the unprotected part
+— it is the same two `:could-not-obtain` constants the 50 %MVC pin already holds
+(12.0 · 0.6^−2.32 = 39.2528 s = 0.65421 min, re-computed 2026-09-22 by the pinned
+formula; the same computation at 0.5 reproduces the existing pin
+0.9986644391212895 exactly, which is the check that the recomputation used the
+model's own curve and not the README's rounded 39.2). What CAN drift silently is
+the measured side and the two claims built on it: (i) the transcribed means
+68.1 s / 32.3 s and the 60 %MVC intensity itself — a transcription of 68.1 → 78.1
+leaves every existing test green while flipping the direction claim, because
+39.25 s is BELOW 68.1 but ABOVE 78.1; (ii) the pair of ratios 0.73× (50 %MVC) vs
+0.5764× (60 %MVC) whose monotone-downward ordering is the only shape statement two
+cross-protocol points support; (iii) the −0.89 SD reading ((68.1 − 39.2528)/32.3,
+re-computed 2026-09-22). Proposed, not installed: at `math/nearly=`, pin the
+transcribed Marchand means and the intensity `= 60`, the model value
+0.6542128869385199 min, the ratio 0.5763990193290924 and the −0.893 SD, with the
+break that must go red being a perturbation of either transcribed mean — the same
+break class the 2026-09-19 chord-tilt pins demonstrated. It is NOT installed in
+this PR because this session could not run the suite at all on a fresh clone of
+`origin/main` (`8b45df4`): `bb test` → `Could not locate suji/test_runner.bb,
+suji/test_runner.clj or suji/test_runner.cljc on classpath` (exit 1, upstream's
+own runner missing); `clojure -M:test` → `Ran 0 tests containing 0 assertions`
+under `Testing user` (the runner finds no `suji.methods.*` namespace on this
+path); `nbb --classpath src` cannot load `.kotoba` namespaces
+(`Could not find namespace: suji.methods.strain`) and the `kbb --backend sci`
+runner dies at its first test namespace (`suji.cells.state-machines-test`) — the
+same class as the 2026-09-22 biomech note. A test added unseen red would be a
+claim, not coverage. No constant moves — `endurance-minutes` coefficients, the
+50 %MVC pin and every transcribed value stay as they are; Hansraj 5-value and
+Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
