@@ -740,6 +740,44 @@ ratios: **there is still no published endurance curve for the neck**, which is t
 one bucket this actor's headline muscles have always been in — and whose sixth
 entry (Chowdhury 2022) is the first to state its intensity, 50% of each subject's
 own maximum, which is the axis the power law's x-coordinate needs.
+⚠ *Re-measured 2026-09-23 (bot/suji-anatomy): the 2026-09-07 numbers this paragraph
+prints are a stale snapshot, and the "re-measured" it claims was never done — the
+paragraph predates the very muscles it says were folded in.* Measured on the fresh
+`origin/main` clone (`21f9bb8`) with the suite's own pipeline
+(`segment/build-body 70.0 1.70` → `posture/posture-from-workstation
+posture/laptop-on-lap` → `load/solve-posture-loads` → `muscle/solve-muscle-tensions`
+→ `strain/session-cross-check`, nbb host): **56 instances, not 51**, and the
+declined buckets are **no published curve for the neck (11), no %MVC because the
+entry is a ligament (2), the model's own floor (26), and `recruit` refused
+(`:acts-the-wrong-way`) (4)** — 13 compared is the only number that held. Provenance
+is commit-level and measured at each step, not assumed: (i) the denominator 51 is
+the tree at `edde110` (2026-09-07 03:31, "README + report: the upper cervical spine
+is no longer empty"), which is the commit that *wrote* this paragraph — and it
+**predates** the suboccipitals `adb8353` (04:00, +OCS/RCPM/RCPMi, instances 51→54)
+and the atlanto-occipital flexors `b298899` (04:55, +longus_capitis/rectus_capitis_
+anterior, instances 54→56). So the claim "re-measured after the upper cervical
+muscles did" is not true: those 5 instances landed *after* the 51 was counted, and
+none of the bucket figures was ever updated to them. (ii) the no-curve bucket grew
+5→11 by exactly the 6 neck instances that arrived after `edde110` (OCS, RCP major,
+RCP minor, longus_capitis, rectus_capitis_anterior, plus the sternocleidomastoid
+moving out of `refused` into this bucket at `99fa23d`, 2026-09-11), not by three;
+the "3 → 5" it attributes to "the three neck muscles" undercounts by 2, and the
+source numbers in the ce4df04 baseline (3 no-curve / 10 floor / 4 refused) do not
+reconcile with the 5/20/11 this paragraph already printed. (iii) the floor never
+moved 10→11: it is 20 at `edde110`, holds at 20 through `b298899`, and only moves to
+**26** at `99fa23d` (2026-09-11, "spine: name the antagonist priced and switched
+off on a level's line (#11)"), which re-routes gastrocnemius, hamstrings and soleus
+from `refused` to `:model-returns-no-finite-endurance` — that is the commit that
+moved the floor (20→26), the refused bucket (11→4), and the no-curve bucket (10→11),
+all three in one. No test catches this: `strain-test`
+(`a-session-cross-check-separates-what-was-checked-from-what-was-not`, line 318)
+asserts the *presence* of the `:compared` / `:no-published-curve-for-this-region` /
+`:model-returns-no-finite-endurance` keys and that at least one row falls outside the
+reference spread, but asserts no numeric total or bucket count — so the 51 and the
+5/20/11 here are prose-only, the same silently-drifting-prose class the `:c7`
+(2026-09-19), `:c2c3` (2026-09-20) and re-rooting (2026-09-22) annotations record.
+**No constant moves** — no `def` touched, Hansraj 5-value and Wilke sitting
+348.86176709999995 N byte-identical (README-only diff).
 
 **Updated 2026-09-12: four MEASURED neck-extensor endurance results were found, and
 none of them is a curve. Updated 2026-09-14: a fifth was found, and it brought a
