@@ -4548,10 +4548,6 @@ derives both from the level's own axis and asserts that the second is several ti
   `:parameter-not-in-source`. The sitting one's is zero and measured, which is why it stays
   comparable; the standing one's is 46.5° from a different cohort with an SD of 10.5°, and the
   entry says so rather than letting a ratio imply that one paper supplied both halves.
-- **Wilke's own subject's lordosis, in either posture.** Both reference entries now carry
-  `:parameter-not-in-source`. The sitting one's is zero and measured, which is why it stays
-  comparable; the standing one's is 46.5° from a different cohort with an SD of 10.5°, and the
-  entry says so rather than letting a ratio imply that one paper supplied both halves.
   ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the standing entry's import now has a second,
   much larger measured cohort behind it — and the measured sitting-minus-standing DIFFERENCE
   is the part the 46.5° never had.* Durbas A, Subramanian T, Simon C, Allen MRJ, Samuel J,
@@ -4590,6 +4586,21 @@ derives both from the level's own axis and asserts that the second is several ti
   chair is unspecified — none of them is Wilke's 45-y 70-kg subject either. **No constant
   moves** — `posture/lordosis-for :standing` stays 46.5 byte-exact and the Wilke sitting
   348.86176709999995 N pin is untouched; Hansraj 5-value byte-identical.
+  ⚠ *Annotated 2026-09-23 (bot/suji-anatomy): this bullet existed TWICE, byte-identical,
+  from 2026-09-17 to 2026-09-23 — the duplicate is removed this day, the annotated copy
+  above is the one kept.* Commit `4b91f29` (2026-09-17, the Durbas 2025 annotation) appended
+  a second full copy of the bullet's four-line lead-in above its own annotation instead of
+  annotating the copy already in the file, so the section printed the same provenance
+  statement back to back (verified 2026-09-23 on a fresh `origin/main` clone of `21f9bb8`:
+  lines 4547–4550 and 4551–4554 byte-identical, the only exact duplicate bullet lead-in in
+  the 5548-line file; git `log -S` on the lead-in returns exactly `161fd16` (introduced) and
+  `4b91f29` (duplicated)). A file-wide scan for other byte-identical 4-line bullet bodies
+  found none. The duplication is the same silently-drifting-prose class the `:c2c3` and
+  re-rooting annotations record, in a form drift cannot explain — the copy came from this
+  repo's own bot wave, not from an upstream edit. No number in either copy changes: the
+  provenance statement itself is untouched, `:parameter-not-in-source` stands for both
+  entries. **No constant moves** — Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff, −4 lines +9).
 
 ### What did not move
 
