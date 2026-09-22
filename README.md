@@ -4967,6 +4967,32 @@ posture rooted at `:l5s1`, `:pelvis-base` and `:mid-ankle` gives the same **22.5
 moment and the same line of gravity, with a control first that the three chains really are in
 visibly different places, and a check that the summed segments are the ones
 `load/lumbosacral-moment` sums rather than a hand-assembled lookalike.
+  ⚠ *Annotated 2026-09-22 (bot/suji-anatomy): the 22.513 N·m this paragraph quotes is the
+  moment's pre-2026-09-11 value, and the test's own pin has moved on without it.*
+  `re-rooting-the-chain-moves-no-moment` (`test/suji/methods/pose_test.kotoba`) pins the moment
+  it holds invariant across the three roots at `math/nearly=` 1e-9 — and the pinned number has
+  been **0.901314694482678 N·m** on the 70 kg / 1.70 m body since 2026-09-11, with the test's
+  own comment marking **22.512908211478976 N·m** as the value "until 2026-09-11", when the
+  pelvis stopped taking the whole lordosis (Mills' 0.586) and the chord tilt — which is what
+  the moment *is*, by this very section's argument — shrank it 25-fold (arithmetic on the two
+  pinned values, 22.5129 / 0.9013). The invariance this section argues is untouched: re-rooting
+  is a rigid translation whatever the moment's size, and the test still asserts one value at
+  all three roots with the line of gravity beside it. What drifted is the prose copy: this
+  section kept printing 22.513 after the pin became 0.9013, the same silently-drifting-prose
+  class the `:c2c3` bullet's 2026-09-20 annotation records. Found while reading the same
+  2026-09-10/11 wave: the neighbouring "Breaks that produced no failure" bullet (README:4924)
+  still names `the-direction-agreeing-with-wilke-is-not-evidence`, a deftest that no longer
+  exists under that name — commit `41f2169` renamed it to
+  `the-direction-agreeing-with-wilke-was-not-evidence-and-it-has-stopped-agreeing` and inverted
+  what it asserts (the model now disagrees with Wilke's direction by construction) — and its
+  named catches sum to 1 + 4 + 4 = 9, not eleven. The recount is `:could-not-obtain` here: the
+  suite does not run on this host (fresh clone of `7817896`: `clojure -M:test` reports
+  "Testing user / Ran 0 tests", and the kbb sci runner cannot resolve
+  `io.github.kotoba-lang/text` from a fresh clone), so the break's present-day failure count
+  is unmeasured — a prose count of test failures is exactly the class this README's own
+  `:c2c3` and `:c7` annotations keep finding. **No constant moves** — no test edited, no value
+  recomputed, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
 
 **So the +115% term is not a rooting artefact.** It is the lumbar chord: `lumbar-chord-tilt-deg`
 puts the chord at `trunk + lordosis/2`, which is where a circular arc's chord lies between its two
