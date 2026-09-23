@@ -5017,6 +5017,43 @@ red with a message naming the claim it broke; every file was restored byte-ident
   for one nbb run and was restored sha256-identical; no `src/` or `test/` file changed in
   this commit, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
   (README-only diff).
+  ⚠ *Re-measured 2026-09-23 (bot/suji-anatomy-20260923-armswap) — the arm-swap instance
+  itself, not the term-drop instance the annotation above measured: on the same fresh
+  worktree at `6d5a7c0`, the break is this bullet's own — the standing arm
+  `es-arm (* (/ (:moment-nm t) (:arm-m t)) (:projection s))` replaced by the sitting arm
+  (`(:arm-m t)` → `(:arm-m s)`), which makes the swap a no-op because it is then
+  byte-identical to the neighbouring `es-moment` definition two lines up
+  (`src/suji/methods/spine.kotoba:1120-1121`); the `other-crossing` clone is untouched —
+  and the catch at HEAD is not "the pinned per-term values". Baseline
+  **333 tests / 3023 assertions / 0 failures** (exit 0), then the break on the MIRROR's
+  `spine.cljc` only (`/tmp/nbb-mirror-armswap-20260923`, restored sha256-identical
+  `1940d654…f0aee5` before and after, byte-identical restore asserted): exactly **3
+  assertions fail, in 2 deftests**. (i) `:pelvis-origin-moment-arms` → **0 N** — the arm
+  term vanishes — failing its full-precision pin
+  (`math/nearly= -0.05724025764582985`, `spine_test.kotoba:1429`); (ii)
+  `:level-axis-under-the-muscle-line` moves to **-0.12272904121656658 N** (0.06548878357073673
+  + 0.05724025764582985, the vanishing arm absorbed — the arithmetic of the telescoping
+  the bullet describes) and fails its full-precision pin
+  (`math/nearly= -0.06548878357073673`, `spine_test.kotoba:1430-1431`); (iii)
+  **`(is (neg? arm-term))` fails at 0 N in
+  `the-pelvis-origin-arms-unload-this-posture-and-would-load-the-mirror-of-it`
+  (`spine_test.kotoba:1581`)** — a SIGN assertion with no pin, added by the 2026-09-07
+  reference-posture wave (`a5e6b0c`), which the bullet's "only the *pinned per-term
+  values* caught it" does not cover because that test predates the bullet. So the
+  bullet's two claims split at HEAD: "the sum is unchanged — the terms telescope — so
+  `:residual-n` stayed at 10⁻¹´" HOLDS (measured **2.3092638912203256e-14 N**;
+  `:chain-identity-residual-nm` -6.938893903907228e-18 N·m; `:other-crossing-muscles`
+  unchanged at 0.7166578623355458 N) and "only the pinned per-term values caught it"
+  does not (3 assertions, 1 unpinned). The level-axis pin's magnitude is
+  0.122729/0.065489 = 1.87× the 2026-09-08 value (0.12272904121656658 /
+  0.06548878357073673, `:representative` arithmetic on the two pinned values the break
+  moves); the over-statement's direction — the bullet undersizes the catch, and it
+  undersizes it by a larger factor after each wave that moves the pins — is fixed by the
+  2026-09-07 test addition and the 2026-09-11 pin move this section's own table records.
+  **No constant moves** — same discipline as the annotation above: the break lived in a
+  throwaway mirror for three nbb runs (baseline / with-break / residual probe) and was
+  restored sha256-identical; no `src/` or `test/` file changed in this commit, Hansraj
+  5-value and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).*
 - **The 2026-09-08 break that produced no failure now produces eleven.** Making
   `lumbar-chord-tilt-deg` ignore the pelvic tilt — the break that left the old
   direction-agreement control green — now fails `the-direction-agreeing-with-wilke-is-not-
