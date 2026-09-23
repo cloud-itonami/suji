@@ -4975,6 +4975,52 @@ red with a message naming the claim it broke; every file was restored byte-ident
   direction-agreement control green — now fails `the-direction-agreeing-with-wilke-is-not-
   evidence`, all four of the new decomposition tests, and four clauses of the
   line-of-gravity contradiction.
+  ⚠ *Re-counted 2026-09-23 (bot/suji-anatomy): the count is now measured, and it is
+  not eleven — it is **65 failing assertions across 15 tests**, and the control the
+  bullet says the break fails is green under the break.* Measured on a detached
+  worktree of `f3ee37c` via the nbb portable-suite runner
+  (`scripts/nbb_test.kotoba`, the runner this repo ships for exactly the
+  host-blocking situation the 2026-09-22 annotation hit): baseline first — **333
+  tests, 3023 assertions, 0 failures, 0 errors** — then the break applied to the
+  mirror only (`trunk-flexion-deg` returned alone, the pelvic-tilt term dropped),
+  then restored sha256-verified. The 65: `a-lumbar-level-s-axis-is-the-arc-s-tangent-
+  at-its-own-position` 20, `the-five-lumbar-levels-have-five-different-axes` 7,
+  `the-lumbar-chord-is-the-mean-tangent-of-the-measured-arc` 7,
+  `the-line-of-gravity-splits-into-three-travels-that-sum-to-it` 5,
+  `cho-s-standing-lordosis-and-the-measured-line-of-gravity-cannot-both-hold` 5,
+  `the-standing-sitting-decomposition-accounts-for-every-newton` 5,
+  `the-dominant-term-was-the-lumbar-chord-and-the-chord-is-measured-now` 3,
+  `a-tilted-level-drops-its-shear-and-nothing-carries-it` 3,
+  `the-two-wilke-cross-checks-are-pinned-at-full-precision` 3,
+  `l5s1-now-carries-less-axial-compression-than-l4l5-and-that-is-the-shear` 2, and
+  1 each in `re-rooting-the-chain-moves-no-moment`,
+  `standing-and-sitting-now-differ-and-the-difference-is-the-lordosis`,
+  `the-chord-tilt-s-sign-does-not-survive-the-source-s-last-digit`,
+  `the-lordosis-sensitivity-reversed-and-is-now-far-too-low` and
+  `the-pelvis-origin-arms-unload-this-posture-and-would-load-the-mirror-of-it` —
+  15 tests, all in `spine-test` (11), `pose-test` (2), `lower-limb-test` (1) and
+  `posture-test` (1). Two things the bullet gets wrong at HEAD. (i) The named
+  control `the-direction-agreeing-with-wilke-is-not-evidence` no longer exists
+  (renamed `…-and-it-has-stopped-agreeing`, 2026-09-22 annotation below), and the
+  renamed test is GREEN under the break — it was inverted on 2026-09-11 to assert
+  the model disagrees with Wilke by construction, so a break that restores the old
+  agreeing direction satisfies it. The bullet's "now fails <that test>" names a
+  catch that does not fire. (ii) The bullet's arithmetic names 1 + 4 + 4 = 9, and
+  the 2026-09-22 annotation recorded the recount as `:could-not-obtain` because
+  `clojure -M:test` reports "Ran 0 tests" on a fresh clone and the kbb sci runner
+  cannot resolve `io.github.kotoba-lang/text`. The portable nbb runner has neither
+  problem, so the recount is a measurement now: neither 9 nor 11, but 65 — and the
+  miss is not a rounding of the same list. Of the bullet's own named buckets, the
+  "four clauses of the line-of-gravity contradiction" exist as
+  `the-line-of-gravity-splits-into-three-travels-that-sum-to-it` and fail 5; the
+  "four new decomposition tests" are legible as the decomposition-family deftests
+  and fail 5 + 3 + 1 + 1 across four of them; the direction test fails 0. The
+  count that is true at HEAD is 65/15, driven mostly by the five-level axis
+  machinery the 2026-09-11 wave added after the bullet was written. **No constant
+  moves** — the break lived in a throwaway mirror copy for one nbb run and was
+  restored sha256-identical; no `src/` or `test/` file changed in this commit,
+  Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
 
 ## The root was not the defect (2026-09-10)
 
