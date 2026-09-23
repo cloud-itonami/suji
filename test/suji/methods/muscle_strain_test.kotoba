@@ -324,3 +324,72 @@
         (str "it is a few percent of the C7 demand, not a rounding artefact and "
              "not a headline: " (get-in summary [:two-joint-unfed-nm :c7]) " of "
              (get-in loads [:cervical :extensor-moment-nm])))))
+
+(defn- c2c3-unfed-at
+  "The `:two-joint-unfed-nm :c2c3` total at `posture-from-workstation`'s output
+  for a workstation posture. `:c2c3` has no equilibrium in this model, so the
+  moment is reported and fed to nobody - and until now no `deftest` asserted a
+  number under it anywhere: `lower-limb-test` pins the deep-squat unfed map to
+  the KEY SET `#{:c2c3 :c7}` only. The README's 2026-09-20b note requested both
+  totals at `math/nearly=` 1e-12, next to this file's own `:c7` pin."
+  [pst]
+  (let [b (segment/build-body 70.0 1.70)
+        loads (load/solve-posture-loads b pst)
+        tens (muscle/solve-muscle-tensions b pst loads)]
+    (get-in (muscle/tension-summary tens loads) [:two-joint-unfed-nm :c2c3])))
+
+(deftest the-c2c3-unfed-longus-capitis-moment-is-pinned-at-full-precision
+  ;; THE ONE SURVIVOR OF *WHAT THE COUPLED SOLVE STILL CANNOT EXPRESS*, as a
+  ;; number. `longus_capitis` is the only muscle crossing `:c2c3` (declared
+  ;; `:crosses {:joint :c2c3}` in attachment), no equilibrium covers the joint,
+  ;; so its secondary moment there lands in `:two-joint-unfed-nm` and is read by
+  ;; nobody. The two numbers the README carries were prose only - the
+  ;; 2026-09-20b annotation re-measured them and asked for exactly these pins,
+  ;; at `posture-from-workstation`'s output, which is what every workstation
+  ;; consumer builds from (the raw `posture/deep-squat` def gives -0.0585 and
+  ;; feeds nobody). Measured 2026-09-23 at HEAD 6d5a7c0 on the nbb mirror,
+  ;; repeatable to the digit.
+  (let [lap (c2c3-unfed-at (posture/posture-from-workstation posture/laptop-on-lap))]
+    (is (number? lap)
+        (str "the laptop-on-lap :c2c3 unfed moment must be a number: " (pr-str lap)))
+    (is (math/nearly= -0.1581450793522565 lap 1e-12)
+        (str "measured 2026-09-23 at laptop-on-lap, 70 kg / 1.70 m, at "
+             "posture-from-workstation's output: " (pr-str lap)
+             " N.m - the README's 1.9e-4 is ~830x smaller AND positive: a "
+             "pre-coupled-solve snapshot of the solver, not a property of the "
+             "posture")))
+  (let [squat (c2c3-unfed-at (posture/posture-from-workstation posture/deep-squat))]
+    (is (number? squat)
+        (str "the deep-squat :c2c3 unfed moment must be a number: " (pr-str squat)))
+    (is (math/nearly= -0.03408252217605897 squat 1e-12)
+        (str "measured 2026-09-23 at deep-squat, 70 kg / 1.70 m, at "
+             "posture-from-workstation's output: " (pr-str squat)
+             " N.m - the README's -0.0585 is what the RAW posture def gives "
+             "(re-measured -0.05846667...), not what this pipeline produces")))
+  ;; THE BREAK THAT MUST GO RED, named rather than assumed. Deleting the
+  ;; crossing drops `:c2c3` from the unfed map (the key-set pin in
+  ;; lower-limb-test passes a map without it - the total was protected by
+  ;; nothing); perturbing `coupled-arms`/`secondary-arm` at `:c2c3` moves the
+  ;; total off the pinned value.
+  (let [b (segment/build-body 70.0 1.70)
+        p (posture/posture-from-workstation posture/laptop-on-lap)
+        loads (load/solve-posture-loads b p)
+        tens (muscle/solve-muscle-tensions b p loads)
+        by (into {} (map (juxt :name identity)) tens)
+        lc (get by "longus_capitis")
+        summary (muscle/tension-summary tens loads)]
+    (is (= :c2c3 (:crosses-joint lc))
+        (str "longus_capitis must report the crossing the whole entry hangs on: "
+             (pr-str (select-keys lc [:crosses-joint :secondary-arm-m]))))
+    (is (and (number? (:secondary-arm-m lc))
+             (math/nearly= (* (:secondary-arm-m lc) (:force-n lc))
+                            (:secondary-moment-nm lc) 1e-9))
+        (str "the reported secondary moment must be arm x force: " lc))
+    (is (= #{:c2c3 :c7} (set (keys (:two-joint-unfed-nm summary))))
+        (str "the unfed set is exactly the two the coupled groups cannot reach: "
+             (:two-joint-unfed-nm summary)))
+    (is (= (get-in summary [:two-joint-unfed-nm :c2c3]) (:secondary-moment-nm lc))
+        (str "the :c2c3 total IS the longus_capitis secondary moment - one line "
+             "crosses, so total and row must agree: "
+             (get-in summary [:two-joint-unfed-nm :c2c3]) " vs "
+             (pr-str (:secondary-moment-nm lc))))))
