@@ -624,3 +624,68 @@
     ;; the intensity is the axis the power law needs — assert it is stated in
     ;; the carried record, wherever that record lives
     (is (= 50.0 (double 50.0)))))
+
+;; --- the bucket's second stated intensity, Marchand 2019 at 60 %MVC ----------
+;; (installed 2026-09-24 by bot/suji-anatomy per the README 2026-09-22 request)
+
+(deftest the-second-stated-intensity-in-the-neck-bucket-meets-the-model-on-its-own-axis
+  ;; The neck bucket's seventh measurement (README 2026-09-17, item 7) is the
+  ;; SECOND whose intensity is stated: Marchand A-A, Houle M, Girard M-P,
+  ;; Hebert M-E, Descarreaux M, "Comparing neck extensor muscle function in
+  ;; asymptomatic Canadian adults and adults with tension-type headache: a
+  ;; cross-sectional study", BMJ Open 9(5):e020984, 2019
+  ;; (doi:10.1136/bmjopen-2017-020984, PMID 31079076, PMC6530443; full text read
+  ;; 2026-09-17 at bmjopen.bmj.com, open access CC BY-NC). 40 asymptomatic
+  ;; participants, prone with the cervicothoracic junction stabilised, strap
+  ;; over the external occipital protuberance, endurance target 60% of each
+  ;; subject's own MVC (+/-5% feedback): 68.1 +/- 32.3 s control, 61.9 +/- 20.1 s
+  ;; tension-type-headache, and an MVC force on the same apparatus
+  ;; 111.3 +/- 38.7 N control.
+  ;; The README 2026-09-22 annotation recorded that this row exists in prose
+  ;; only - the 50 %MVC pin (the-first-stated-intensity...) holds the Zhou
+  ;; transcriptions, and a tree-wide scan found `68.1` / `32.3` / `0.58` /
+  ;; `marchand` in no file under test/ - so a transcription of 68.1 -> 78.1
+  ;; would flip the direction claim while every existing test stays green
+  ;; (39.25 s is BELOW 68.1 but ABOVE 78.1). Pin the measured side and the
+  ;; pair-of-ratios claim, recomputed longhand.
+  ;; NO CONSTANT MOVES: the model value at 60 %MVC is the same two
+  ;; `:could-not-obtain` coefficients the 50 %MVC pin already holds
+  ;; (12.0 * 0.6^-2.32 s = 39.2528 s = 0.6542128869385199 min); this test pins
+  ;; transcriptions and arithmetic, it tunes nothing.
+  (let [marchand-mean-seconds 68.1
+        marchand-sd-seconds   32.3
+        marchand-tth-seconds  61.9
+        marchand-intensity    60.0
+        model-at-60-min       (* 0.2 (Math/pow 0.6 -2.32))
+        model-at-60-seconds   (* 60.0 model-at-60-min)]
+    ;; the transcriptions themselves, to the digit the abstract prints
+    (is (math/nearly= (/ marchand-mean-seconds 60.0) 1.135 1e-9))
+    (is (math/nearly= (/ marchand-tth-seconds 60.0) 1.0316666666666667 1e-9))
+    (is (= 60.0 marchand-intensity))
+    ;; the model's value at the stated intensity, from the docstring's own form,
+    ;; and agreement between the function under test and the longhand form
+    (is (math/nearly= (strain/endurance-minutes 60.0) model-at-60-min 1e-9))
+    (is (math/nearly= model-at-60-min 0.6542128869385199 1e-12))
+    (is (math/nearly= model-at-60-seconds 39.25277321631119 1e-9))
+    ;; the direction of the mismatch at 60 %MVC, pinned so it cannot flip
+    ;; silently: the model is BELOW the measured control mean (the 0.58x
+    ;; reading), and - the case the 68.1 -> 78.1 transcription guard names -
+    ;; below the TTH mean too, so the ordering the README states holds both ways
+    (is (< model-at-60-seconds marchand-mean-seconds)
+        "model at 60 %MVC must sit below the Marchand control mean (39.25 vs 68.1 s)")
+    (is (< model-at-60-seconds marchand-tth-seconds)
+        "and below the tension-type-headache mean (39.25 vs 61.9 s)")
+    ;; the ratio and the SD reading, pinned at full precision (README 2026-09-22
+    ;; annotation): 0.5764x = -0.893 SD
+    (is (math/nearly= (/ model-at-60-seconds marchand-mean-seconds)
+                      0.5763990193290924 1e-12))
+    (is (math/nearly= (/ (- marchand-mean-seconds model-at-60-seconds) marchand-sd-seconds)
+                      0.8931029963990342 1e-9))
+    ;; the pair-of-ratios shape claim: 0.73x at 50 %MVC vs 0.5764x at 60 %MVC is
+    ;; monotone downward in intensity - the shape a measured decay steeper than
+    ;; -2.32 would give (README 2026-09-17). Two cross-protocol points prove no
+    ;; direction claim, which is why this is pinned as the arithmetic it is and
+    ;; not as a fit; but the arithmetic itself must not drift.
+    (is (< (/ model-at-60-seconds marchand-mean-seconds)
+           (/ (* 60.0 (strain/endurance-minutes 50.0)) 82.0))
+        "the model/measured ratio at 60 %MVC must stay below the one at 50 %MVC (0.5764 vs 0.73)")))
