@@ -4990,6 +4990,33 @@ red with a message naming the claim it broke; every file was restored byte-ident
   `:residual-n` stayed at 10⁻¹⁴ and only the *pinned per-term values* caught it. Closure is a
   weaker check than it looks; it catches a term being dropped (tested separately, residual
   1.2169 N) and not a term being mis-priced.
+  ⚠ *Re-measured 2026-09-23 (bot/suji-anatomy; <!-- annotated-2026-09-23-termdrop -->):
+  the parenthetical's 1.2169 N is the term's 2026-09-10 value, and the break it sizes is
+  caught today at 0.7167 N — the same break, 1.70× smaller than this bullet says.* Measured
+  on a fresh clone of `origin/main` (`9d57894`) with the nbb portable-suite runner
+  (`scripts/nbb_test.cljc`, the mirror harness): baseline **333 tests / 3023 assertions /
+  0 failures** (exit 0), then the break applied to the mirror's `spine.cljc` only —
+  `:other-crossing-muscles`' `:newtons` set to `0.0`, which is this bullet's own break class
+  (a term priced at zero; the arm-swap no-op was its 2026-09-10 instance) — then restored
+  sha256-identical (`1940d654…f0aee5` before and after). The break goes red in exactly **2
+  assertions, both in `the-standing-sitting-decomposition-accounts-for-every-newton`**: the
+  closure assertion prints **residual 0.7166578623355715 N**, and the term's own full-
+  precision pin (`math/nearly= 0.7166578623355458`, `spine_test.kotoba:1432`) fails beside
+  it — so a dropped term is caught twice, by closure and by its pin. The mechanism claim
+  stands; the number does not. The decomposition table this section itself prints below
+  (`:other-crossing-muscles` row) shows the term moving 1.2169405131731992 → 1.2169405131733129
+  → 0.729580 → 0.716658 through the 2026-09-10/11 waves — the same wave that shrank the
+  lumbosacral moment 25-fold — and the term's pin moved with it, while this bullet kept the
+  pre-wave figure exactly the way the re-rooting paragraph one section down kept 22.513 (the
+  2026-09-22 annotation records that case). 1.2169 / 0.7167 = 1.70 (`:representative`
+  arithmetic on one measured residual and one pinned term); the over-statement's direction is
+  fixed by the wave that shrank the term and grows if the term shrinks further. This bullet
+  had no annotation before today — the 2026-09-22 and 2026-09-23 passes covered its
+  neighbours (the deftest rename, and the 'now produces eleven' count, measured 65/15) but
+  not this parenthetical. **No constant moves** — the break lived in a throwaway mirror copy
+  for one nbb run and was restored sha256-identical; no `src/` or `test/` file changed in
+  this commit, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
 - **The 2026-09-08 break that produced no failure now produces eleven.** Making
   `lumbar-chord-tilt-deg` ignore the pelvic tilt — the break that left the old
   direction-agreement control green — now fails `the-direction-agreeing-with-wilke-is-not-
