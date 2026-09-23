@@ -4250,6 +4250,26 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   test namespace(s) found` and the sci-backend runner fails the same way, so no probe ran.
 - **Nothing is coupled across the midline.** The two legs are solved separately because they
   share no muscle. A model with a muscle spanning the midline would need one group for both.
+⚠ *Annotated 2026-09-23 (bot/suji-anatomy): the claim is measured TRUE at the muscle-instance
+  level and OVERSTATED at the load level. Instance table read, not assumed
+  (`src/suji/methods/attachment.kotoba`, 34 instances): 22 carry `:paired? true` — every one
+  of the 8 lower-limb muscles (gluteus_maximus, iliopsoas, vasti, rectus_femoris,
+  hamstrings, gastrocnemius, soleus, tibialis_anterior) is per-side, and no instance spans
+  both sides — so "the two legs share no muscle" holds. But "nothing is coupled across the
+  midline" does not follow: the pelvis is NOT in `paired-set`
+  (`src/suji/methods/segment.kotoba`, the set is only upper_arm/forearm/hand/thigh/shank/foot),
+  gluteus_maximus originates on that single midline pelvis (`:origin {\:segment "pelvis" …
+  \:lat 0.0350}`), and `build-body`'s own docstring says `load` SUMS the two legs' contributions
+  ("The lower limb is never loaded onto a midline joint — `pose` places both legs and `load`
+  sums them"). So both legs' hip tensions already meet in one pelvis balance and pass through
+  L5/S1 together: the coupling the bullet says would need a midline muscle exists TODAY as a
+  midline SEGMENT, with no per-side equilibrium anywhere below L5/S1. The bullet names only
+  the muscle-group coupling; the segment coupling is the load path that actually carries the
+  standing figure. No test guards this invariant (the only "midline" hits in test/ are
+  comments). Suite not runnable on this host (`kbb -M:test` fresh clone → 0 test namespaces,
+  recorded 2026-09-21) — this annotation is a rule-and-table reading, not a live probe.
+  **No constant moves** — no src/test file touched, Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical (README-only diff).*
 - **It is still a static optimum.** No co-contraction for stability, no history, no
   activation dynamics — a coupled static optimum predicts *less* co-contraction than a body
   produces, not more.
