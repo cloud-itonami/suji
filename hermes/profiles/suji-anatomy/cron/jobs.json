@@ -1,0 +1,26 @@
+{
+  "jobs": [
+    {
+      "base_url": null,
+      "context_from": null,
+      "deliver": "local",
+      "enabled": true,
+      "enabled_toolsets": null,
+      "id": "9c22ebc66af0",
+      "model": "qwen3.8-27b-whitehacker",
+      "name": "suji-anatomy-tick",
+      "no_agent": false,
+      "prompt": "suji-anatomy tick。SOUL.md の「1 回の実行（cron tick）の仕事」に従う。\n\n1. evidence script を 1 回だけ実行: `cd $HOME/.hermes/profiles/suji-anatomy && nbb scripts/anatomy_evidence.cljs`\n2. 末尾の SMOKE-OK を確認。出なければ「測定失敗」とだけ報告して終了（再計算・再検証しない）。MEASUREMENT-FAILED は exit 2 で、これは clean ではない。\n3. script が並べたギャップ（suji README が自分で「できない / 得られなかった」と書いている節）から 1 件を選ぶ。前回と同じ節でよいが、前回と同じ提案は繰り返さない。\n4. その 1 件について、抽象化していない finding を 1 つ提案する。数値には出典か :representative / :parameter-not-in-source と誤差の向きを付ける。可能なら fresh clone で patch を作り branch bot/suji-anatomy-<日時> に載せて PR を作る。merge・main 直 push・west pin 前進はしない。\n5. 報告書式: 対象 repo / ギャップ名 / 提案 1 件 / pin lag 3 本 / 公開面 / 台帳 seq / 異常。\n\n絶対規則（SOUL.md より): propose only。1 tick = 1 finding。測れなかった測定を成功として報告しない。1 repo に 2 人の書き手を入れない（他の agent が作業中の repo は対象にしない）。比が 1 に近づくことは検証ではない —— 文献に向けて数値を調整しない。導出できない定数は発明した定数である。Hansraj の 5 値と Wilke 座位 348.86176709999995 N を動かさない。",
+      "provider": "kotoba",
+      "schedule": {
+        "kind": "cron",
+        "expr": "23 */2 * * *",
+        "display": "23 */2 * * *"
+      },
+      "script": null,
+      "skill": null,
+      "skills": [],
+      "workdir": null
+    }
+  ]
+}
