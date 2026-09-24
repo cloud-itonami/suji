@@ -4248,6 +4248,36 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   tick could NOT verify live: the crossing was read from `spine/levels-crossed`'s rule and
   not executed — `kbb -M:test` in a fresh clone returns `2 dep(s) … NOT on the classpath … 0
   test namespace(s) found` and the sci-backend runner fails the same way, so no probe ran.
+  ⚠ *Re-probed 2026-09-24 (bot/suji-anatomy): the crossing this note left unexecuted is
+  now executed, and the claim "the side-of-level test puts origin above and insertion below
+  every lumbar cut" is WRONG — the rule crosses the muscle through exactly ONE level, L5/S1.*
+  Measured on a fresh clone of `origin/main` (`6fc9792` lineage) via the nbb portable route
+  (`.kotoba` to `.cljc` mirror + `io.github.kotoba-lang/text` on the classpath; the same
+  `scripts/nbb_test` situation this note recorded), calling `spine/levels-crossed` on the
+  placed pose (`pose/solve-pose` of `posture/posture-from-workstation`):
+  **both sides cross `["L5/S1"]` at `laptop-on-lap`, and the left side crosses `["L5/S1"]`
+  at `deep-squat`** — not L4/L5 through L1/L2. The reason is arithmetic the note's prose
+  skipped: the origin is stated as a fraction of the OLD single trunk
+  (`trunk-frac->lumbar 0.05` = 0.05/0.35 = **0.1428 of the lumbar segment**), and the L4/L5
+  cut sits at lumbar 0.2 — ABOVE the origin — so on every level L4/L5 and higher the origin
+  and the thigh insertion land on the SAME proximal side of the cut and the crossing fails.
+  Only L5/S1 (lumbar 0.0) puts the origin distal of the cut with the thigh proximal. The
+  rule is live, not a lookalike: break-controls in the same probe move the origin to
+  trunk 0.40 and trunk 0.95 and the crossed set follows to all five lumbar levels
+  (`["L5/S1" "L4/L5" "L3/L4" "L2/L3" "L1/L2"]`), so a stalled rule cannot explain the
+  single-level answer. What the correction changes in this note: the two-group hazard
+  SURVIVES at L5/S1 — one lumbar cut already puts iliopsoas on both sides of the level a
+  lumbar coupled group would own, so the partition objection stands — but the compression
+  the note prices as reaching "the lumbar levels" reaches **one** level, and the "same LOW
+  side" reading shrinks with it (any force the hip equilibrium gives this muscle loads
+  L5/S1 un-checked; L4/L5 and above never receive it through this rule at all, because the
+  muscle's origin sits below those cuts). Error direction of the note as written: it
+  OVERSTATES the reach 5× (five cuts, measured one). Break it again to disagree: move the
+  origin's `:along` above the L4/L5 cut (trunk > 0.07) and the crossed set jumps to five —
+  which is also the derivation the note can check without running anything.
+  **No constant moves** — the probe read the shipped tables (`attachment/muscles` 17.6 cm2,
+  wrap 0.035 m untouched), no `src/` or `test/` file changed in this commit, Hansraj
+  5-value and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 - **Nothing is coupled across the midline.** The two legs are solved separately because they
   share no muscle. A model with a muscle spanning the midline would need one group for both.
 ⚠ *Annotated 2026-09-23 (bot/suji-anatomy): the claim is measured TRUE at the muscle-instance
