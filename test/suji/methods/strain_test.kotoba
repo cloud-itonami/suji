@@ -331,6 +331,20 @@
         "the cervical extensors are in this posture and have no curve")
     (is (contains? (:summary sc) :model-returns-no-finite-endurance)
         "and several groups sit below the model's own floor")
+    ;; README 2026-09-07 printed '13 of 51' with buckets 5/2/20/11 and claimed a
+    ;; re-measure that predates the muscles it names; the 2026-09-23 annotation
+    ;; re-measured 56 instances with buckets 11/2/26/4 and this pin holds those
+    ;; measured counts, so a posture, routing, floor or instance-table drift
+    ;; breaks a test that names the counts instead of a prose paragraph.
+    (is (= 56 (:total sc)) "56 solved instances at laptop-on-lap (2026-09-23 re-measure)")
+    (is (= 13 (:compared sc)) "13 rows produced a ratio (7 muscles, 6 of them paired)")
+    (is (= {:acts-the-wrong-way 4
+            :compared 13
+            :model-returns-no-finite-endurance 26
+            :no-mvc 2
+            :no-published-curve-for-this-region 11}
+           (into (sorted-map) (:summary sc)))
+        "the full bucket census at laptop-on-lap, pinned from the 2026-09-23 re-measure")
     ;; and the disagreement is present in a real posture, not only at chosen inputs
     (let [outside (filter #(false? (:within-reference-spread? %))
                           (remove :could-not-obtain (:rows sc)))]
