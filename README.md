@@ -1244,6 +1244,28 @@ two answers, and nothing that compared them.
 This moment is the ENTIRE load of the `:trunk-extension` equilibrium, so it set erector spinae
 %MVC and, through `spine`, every lumbar compression here. At L5/S1 in `laptop-on-lap` the total
 went **950 N → 1,542 N** (0.53 → 0.86 MPa), of which the muscle term is 483 → 1,075 N.
+  ⚠ *Annotated 2026-09-24 (bot/suji-anatomy): this sentence's MPa are the model's
+mean-disc-stress unit, not Wilke's nucleus-pressure unit — the two share a symbol and nothing
+else, and no line in this README connects them until the 2026-09-16 annotation at "A second
+external number" (README's own words there: "a nucleus pressure is not a mean disc stress").
+The model's `:stress-mpa` is `(/ force-n disc-area-m2)` (`level-compression`,
+`src/suji/methods/spine.kotoba`: force = weight-above + muscle + ligament, divided by the
+stature-scaled disc area) — a disc-average. Wilke 1999 measured pressure in the **L4/L5
+nucleus** of one 45-y / 70 kg / 1.68 m volunteer. The two are related only through
+Nachemson's in-vitro index (I = Pnucleus / Pdisc; `nachemson-pressure-index`, L1 1.6 / L2 1.7
+/ L3 1.5 / L4 1.7, Table 5 p.281 — already transcribed in *A pressure is not a force* above),
+which makes a nucleus pressure ≈ 1.5–1.7× a disc-average stress. On the repo's own conversion,
+the model's printed 0.86 MPa corresponds to a nucleus pressure of **1.29–1.46 MPa**, i.e. the
+0.53 → 0.86 jump reads 0.795 → 1.29 MPa on Wilke's unit (×1.5, L3 index) — comparisons
+against the 0.83 MPa "sitting with maximum flexion" entry as-printed understate by 55–76%
+(×1.5) or 76–99% (×1.7). The model's mean stress is **below** the nucleus pressure it is
+typed next to, by exactly the index, everywhere this unit appears — the "peak stress moved
+from C7/T1 (1.302 MPa) to L2/L3 (0.996 MPa)" sentence ("What moved, and what did
+not", 2026-09-07 crossing) prints the same quantity in the same unit. Direction of any
+cross-unit reading: model values read as if nucleus pressures are **under-stated by
+÷1.5–÷1.7**. No constant moves — `:stress-mpa`, `disc-area-m2` and
+`nachemson-pressure-index` are untouched (README-only diff); Hansraj 5-value and Wilke
+sitting 348.86176709999995 N byte-identical.*
 
 *`cervical-load` was blind to trunk flexion.* It took `head-flexion-deg` and computed `sin` of
 it — but gravity is world-fixed and `pose` places the head at trunk + head, so the head's tilt
