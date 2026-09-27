@@ -4131,6 +4131,46 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   `lower-limb-test`, which is where that break is catchable today). No
   constant moves — no `min-coeff` change, no arm recomputed, Hansraj 5-value
   and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
+  ⚠ *Annotated 2026-09-27 (bot/suji-anatomy): the 2026-09-19 request's deep-squat half is now
+  installed — and the number the request wrote down was the RAW def's, not the pipeline's.*
+  `strain-test/the-deep-squat-c7-unfed-girdle-moment-is-pinned-at-full-precision`
+  (test/suji/methods/muscle_strain_test.kotoba) pins, at `math/nearly=` 1e-12, on the same
+  pipeline every workstation consumer builds from (`build-body 70.0 1.70` →
+  `posture-from-workstation`): the deep-squat `:two-joint-unfed-nm :c7` total, the four girdle
+  rows' `:secondary-arm-m`, and a rows-sum identity (total = 2·UT moment + 2·LS moment). Three
+  measurements at HEAD `c51dcdf` (nbb mirror, 3 runs, repeatable to the digit):
+  (i) **the workstation-output deep-squat total is −1.2232176118517235 N·m, not the −1.8428
+  this bullet quotes** — the quoted figure is what the RAW `posture/deep-squat` def gives
+  (re-measured −1.842798183540419, four digits confirmed, and now pinned in the same test),
+  which is the same stale-prose mechanism the `:c2c3` bullet's 2026-09-20b annotation caught;
+  the consumer pipeline's value is 33.6% smaller in magnitude (arithmetic on the two pinned
+  values, 1.842798183540419 / 1.2232176118517235). (ii) **the share statement moves with it**:
+  against the workstation pipeline's own C7 demand (2.349914136475177 N·m) the unfed girdle
+  moment is **52.1% of the demand** at deep-squat (1.2232176118517235 / 2.349914136475177,
+  arithmetic on two model outputs) — versus 7.6% at laptop-on-lap — so at this posture the
+  unfed girdle suspension is not a footnote; the bullet's laptop-first framing understates
+  where the number matters. (iii) **the four arms are now pinned at full precision, not merely
+  below the floor**: upper_trapezius −0.007372702909802641 m and levator_scapulae
+  −0.01284937962522827 m (both sides byte-equal; the laptop-era arms this bullet's floor
+  argument quotes — −3.22 mm / −1.13 mm — reproduce as the laptop rows,
+  −0.0032189487866044466 / −0.0011257246116879605, and stay what they were). The break that
+  must go red was verified rather than assumed: an upper-trapezius-only ×1.1 perturbation of
+  `attachment/secondary-arm` turns **5 assertions red across 2 tests** — all four of this
+  test's UT pins and totals, plus the laptop total's existing `math/nearly=` pin (the UT arms
+  enter that total too, so the 2026-09-19 note's levator-only hope stands and its
+  UT-any-perturbation case is caught by BOTH totals) — while the `:c2c3` pins stay green
+  (`longus_capitis` untouched), which is the break's surgical control. The levator arm pins
+  did not move under the break (they are in the green set), so each muscle's arm is caught by
+  its own pin rather than by the total alone. Restored byte-identically (sha256
+  `63a086e760c49c18ea22ed41ade14a3551c8fc9cd1625b32bb4c12f8c5efd22e` verified); **336 tests /
+  3052 assertions, 0 failures** on the nbb mirror at HEAD. What this does not close: the
+  `:c7` moment is still fed to nobody — no equilibrium covers the cervicothoracic junction
+  outside the coupled groups — and both arms remain below `recruit/min-coeff`, so the refusal
+  that keeps these muscles out of the neck group stands; the deep-squat demand 2.349914136475177
+  N·m is itself a model output with no external reference at this posture (`:parameter-not-in-source`).
+  **No constant moves** — no `min-coeff` change, no arm recomputed in src, Hansraj 5-value and
+  Wilke sitting 348.86176709999995 N byte-identical (test+README diff only).
+
   **They are not in the `:neck` group and the obstacle is the solver's INPUTS, not the
   solver:** their own equilibrium is a suspension balance — a force, with a dimensionless
   direction cosine for a coefficient — and the neck group's rows are moments.
