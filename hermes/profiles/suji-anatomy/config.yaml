@@ -91,7 +91,7 @@ fallback_providers:
     base_url: https://openrouter.ai/api/v1
 plugins:
   enabled: []
-_config_version: 45
+_config_version: 46
 agent:
   max_turns: 500
 
@@ -100,3 +100,5 @@ agent:
 cron:
   bot_chat_delivery_timeout_seconds: 900
   max_parallel_jobs: 12
+gateway:
+  cron_only: true
