@@ -322,6 +322,126 @@ pressure in the third lumbar disc. **The full text is still `:could-not-obtain`*
 per-task value is used here — only the abstract’s own maxima, which is the level
 this entry is allowed to claim.
 
+**Annotated 2026-09-18 (bot/suji-anatomy): the calculation scheme this paper
+validates is publicly readable, and it names where the absent intra-abdominal
+pressure term lives.** Schultz AB, Andersson GBJ, *Analysis of loads on the
+lumbar spine*, Spine 6(1):76–82, 1981 (doi:10.1097/00007632-198101000-00017,
+PMID 7209677; full text read 2026-09-18 from the CDC Stacks copy,
+<https://stacks.cdc.gov/view/cdc/224809>). Same series, companion paper — its
+own reference 12 is the JBJS study above, still listed as *"(Unpublished
+manuscript)"* at the 1981 submission. Three things it carries that this entry
+could not reach while the JBJS full text stayed `:could-not-obtain`.
+(i) **The general model carries an explicit intra-abdominal pressure
+resultant.** Ten muscle equivalents (five per side: latissimus dorsi, erector,
+external oblique, internal oblique, rectus abdominis), an IAP force `P` at
+`(0, y_r)` that enters the z-equation with the **same sign as the
+motion-segment compression `C`** (`Fz = C + P − …`, Table 1, p.79), and spine
+resistances `C, Sx, Sy`; *"the intra-abdominal pressure resultant can be
+determined from experimental measurements"* (p.79). That is the term the
+*Why it is short* bullet calls absent here: its published sign **adds to the
+compression the spine carries**, so its absence puts this model's ~349 N on
+the LOW side — the same side of the disagreement the section already
+attributes to the missing tissue terms; this annotation does not claim the
+term closes the gap, only that it points the same way. (ii) **The validation
+link itself is in this paper, on data from the JBJS study**: Fig. 5 is
+predicted spine compression against **measured L3 intradiscal pressure**,
+r = 0.91, from its reference 12 (the JBJS paper); Fig. 4 is predicted erector
+tension against EMG, r = 0.984/0.988, from its reference 9 (Andersson et al
+1980, seated table work). This repo currently bridges pressure→force through
+Nachemson's cadaver pressure index instead; the 1981 figure is the in-vivo
+version of that bridge, on this exact study's data — a reading, not a
+replacement, and no number moves here. (iii) **Its indeterminacy handling is
+a bounded objective, and it is not this model's**: linear programming
+minimizing spine compression with muscle tension capped at 100 N/cm²
+(pp.79–80), against this repo's minimum cubed stress (Crowninshield &
+Brand). The paper's own caution (p.81) says objective-function choice moves
+sub-maximal muscle-tension estimates while leaving compression and maximal
+effort relatively insensitive — so the two objectives can diverge in the
+muscle forces without diverging in the compression, which is the direction
+in which this repo's comparison to Wilke (compression) is the more robust
+half. What this does not do: it installs no IAP value — the paper states the
+term and points to measurement (its reference 8: Örtengren R, Andersson GBJ,
+Nachemson AL, *Studies of relationships between lumbar disc pressure,
+myoelectric back muscle activity and intra-abdominal (intragastric)
+pressure*, Spine 6(1):98–103, 1981 — same issue, adjacent paper), whose
+per-task numbers are not read here; the JBJS 1982 full text remains
+`:could-not-obtain`. **No constant moves**: Hansraj's five multipliers and
+Wilke sitting 348.86176709999995 N are byte-identical (README-only diff).
+
+⚠ *Annotated 2026-09-18, later the same day (bot/suji-anatomy), a second read of the same
+companion paper: it also prints the series' own chain-side standing anchor, and the model's
+standing figure sits below it by less than a fifth.* Three numbers the morning read of this
+section did not carry. (i) The paper's motivation paragraph states the range of lumbar
+compression outright: *"might be near zero in quiet lying, **400 Newtons (N) in quiet
+standing**, and 4,000 N in a strenuous exertion"* (p.76) — a chain-convention statement (a
+net reaction, the quantity class this model computes), not a disc pressure routed through
+any index. Against the model's post-2026-09-11 standing figure **338.002 N** at L4/L5, that
+is **0.845 ×** (arithmetic `:representative` on a prose anchor and a model output): the
+model undershoots this series' own chain-side quiet-standing statement by ~15%, where it
+undershoots the index-converted Wilke entry (600 N) by 44% and Nishizawa's measured
+512.68 ± 108.38 N by 34%. (ii) The two reference classes sit exactly the index factor
+apart from each other: the paper's chain-side 400 N through the repo's own
+`nachemson-pressure-index` (×1.5, the conversion *A pressure is not a force* establishes)
+is **600 N** — the same figure the Wilke standing entry converts to. That equality is
+arithmetic on two published numbers and the repo's own index, and it does not validate the
+index — the index's provenance lives in this README's own section, not in this paper; what
+it does show is that the model's two standing undershoots (0.56 ×, 0.845 ×) are one
+undershoot seen through the conversion this README already documents, not two independent
+failures. (iii) The paper's worked Example 1 computes the net reaction for holding a 40 N
+weight in one hand: **F_z = 391 N, M_x = 31.3 N·m** (first data set) and **F_z = 390 N,
+M_x = 33.2 N·m** (second, y_q = 40 cm), from a body split the paper states as W_trunk
+252 N (36% of body weight, cutting plane at L3), W_head 35 N, both limbs ~63-64 N, hand
+load 40 N — the series' own cutting-plane arithmetic, at L3 where this model sums at L4/L5
+(level `:could-not-obtain` to equate), and with a 40 N hand load the model's quiet standing
+does not carry. Its trunk cross-section geometry is named too: *"representative of a person
+who has a trunk width of 30 cm and a trunk depth of 20 cm at the L3 level"*, with ten
+muscle-equivalent coordinates read off cross-section anatomy (Eycleshymer & Schoemaker
+1911, its ref 5: x_erector = 3.6 cm, y_erector = 10.8 cm; x_external-oblique = 13.5,
+y = 3.8; x_latissimus = 5.4, y = 4.4; x_internal-oblique = 6.3, y = 5.6, cm) — the same
+series' erector geometry this repo's erector-spinae chain has no published counterpart for.
+What this does not close: the 400 N is a prose *"for example"* in a calculation-scheme
+paper, not a per-subject measurement row — no cohort, no level, no SD (`:could-not-obtain`);
+and the 1982 JBJS full text, where the same series validates these estimates against
+intradiscal pressure (Fig. 5 here, r = 0.91), stays `:could-not-obtain`, so the paper's own
+400 N cannot be traced to a measurement through it. **No constant moves** — Hansraj's five
+multipliers and Wilke sitting 348.86176709999995 N are byte-identical (README-only diff).
+
+⚠ *Annotated 2026-09-22 (bot/suji-anatomy): a readable IAP source in the same measurement
+class exists, and the absent term's magnitude is now known at the two postures this model
+compares.* The per-task numbers this entry waits on (the 2026-09-18 annotation's item (i):
+Örtengren R, Andersson GBJ, Nachemson AL, *Studies of relationships between lumbar disc
+pressure, myoelectric back muscle activity and intra-abdominal (intragastric) pressure*,
+Spine 6(1):98–103, 1981) have no abstract to read — verified 2026-09-22: neither the
+Europe PMC REST core record (PMID 7209681) nor Crossref (doi:10.1097/00007632-198101000-00021)
+carries an `abstractText`, so the paper is a title that answers no question at abstract
+level (`:could-not-obtain`). The nearest readable measurement of the same quantity:
+**Cobb WS, Burns JM, Kercher KW, Matthews BD, Norton HJ, Heniford BT, "Normal
+intraabdominal pressure in healthy adults", *J Surg Res* 129(2):231–235, 2005
+(doi:10.1016/j.jss.2005.06.015, PMID 16140336; abstract read 2026-09-22 via Europe PMC
+REST; full text `:could-not-obtain`, Elsevier subscription, no PMC record)**. 20 healthy
+nonobese adults (10 male / 10 female, ≤30 y, mean 22.7 y, BMI 24.6 kg/m²), transurethral
+bladder (Foley) catheter, 13 tasks: mean IAP **sitting 16.7 mm Hg, standing 20 mm Hg** —
+the two postures this model's sitting/standing pair compares — with cough 107.6 and
+jumping 171 mm Hg the only larger tasks, and 25.5 mm Hg the max over the remaining
+low-load ones. Ordering: **standing > sitting**; ratio of means 20/16.7 = 1.20
+(`:representative` arithmetic on two abstract means — the abstract gives no per-task SDs
+(`:could-not-obtain`), and a ratio of means understates the spread of a ratio). What it
+does not do: it installs no IAP term. Bladder-catheter IAP is an abdominal surrogate, not
+the intragastric/direct class the Örtengren study measured, and the abstract states no
+equivalence between the two conventions (`:could-not-obtain`); converting pressure to a
+force through this repo's `nachemson-pressure-index` would apply the same ×1.5 the
+section's own text declines to validate. The annotation only pins that the term whose
+absence the 2026-09-18 read located — the published sign of which **adds to the
+compression the spine carries**, putting this model's ~349 N on the LOW side — has a
+measured magnitude of order 16.7–20 mm Hg at exactly the two postures compared, from a
+readable source; so the missing term's direction now carries a number, not just a sign.
+What it does not close: the JBJS 1982 full text stays `:could-not-obtain` and with it the
+chain between this IAP and the 2400 N / 1800 N / 1600 kPa abstract maxima; the Cobb cohort
+is young (mean 22.7 y) and n=20; IAP varies with BMI (the paper's own correlation finding)
+and this repo's postures carry no BMI (`:parameter-not-in-source`). **No constant moves**:
+Hansraj's five multipliers and Wilke sitting 348.86176709999995 N are byte-identical
+(README-only diff).
+
 ## The dose layer against the endurance literature — and it disagrees
 
 The stiffness index (強張り) is what a reader of this app actually sees: it is the
@@ -411,6 +531,27 @@ top (0.20 min against 0.37 at 100 %MVC).
 muscle.** Measured 2026-09-07 on `laptop-on-lap`, of the four muscle groups whose
 %MVC lands inside the fitted range, **two fall outside the reference's own wide
 interval and they fall out on opposite sides**:
+
+> ⚠ *Where the sign flips is now computed, not just observed (found 2026-09-15,
+> bot/suji-anatomy).* The model's exponent −2.32 is steeper than every one of Frey
+> Law & Avin's fitted exponents (the steepest measured region is the trunk at
+> −2.27, Table 2), so each model-vs-region disagreement has exactly one sign
+> change, at the intensity where the two power laws meet: `12.0·f^−2.32 =
+> b₀·f^b1` solves to **17.00 %MVC against the pooled curve, 23.50 against grip,
+> 33.64 against the knee, 64.65 against the shoulder** — and against the trunk
+> **0.000293 %MVC**, i.e. the model runs SHORT against the trunk curve at every
+> intensity in the fitted range (0.53–0.59× from 100 %MVC down to 10 %MVC). This
+> is why the table above looks the way it does: the deltoid row sits below the
+> shoulder's 64.65 %MVC crossing (model longer), the erector spinae row sits above
+> the trunk's (model shorter), and the biceps row at 12.1 %MVC is above the
+> elbow's 2.53 %MVC crossing (model shorter, 0.84×) — the sign of each row was
+> never a property of the muscle, it is the position of the row relative to that
+> one crossing intensity. The crossings are derived from Table 2's published
+> coefficients, not fitted; no constant moves and no row changes. Hansraj's five
+> multipliers and Wilke sitting 348.86176709999995 N are untouched (no line
+> containing either is removed). The erector-spinae row's earlier value
+> (25.7 %MVC, 0.57×) lands on the same side of the trunk's crossing, so that
+> row's sign did not move with the load either — only the ratio did.
 
 | muscle | region | %MVC | model ÷ reference |
 |---|---|---|---|
@@ -599,11 +740,51 @@ ratios: **there is still no published endurance curve for the neck**, which is t
 one bucket this actor's headline muscles have always been in — and whose sixth
 entry (Chowdhury 2022) is the first to state its intensity, 50% of each subject's
 own maximum, which is the axis the power law's x-coordinate needs.
+⚠ *Re-measured 2026-09-23 (bot/suji-anatomy): the 2026-09-07 numbers this paragraph
+prints are a stale snapshot, and the "re-measured" it claims was never done — the
+paragraph predates the very muscles it says were folded in.* Measured on the fresh
+`origin/main` clone (`21f9bb8`) with the suite's own pipeline
+(`segment/build-body 70.0 1.70` → `posture/posture-from-workstation
+posture/laptop-on-lap` → `load/solve-posture-loads` → `muscle/solve-muscle-tensions`
+→ `strain/session-cross-check`, nbb host): **56 instances, not 51**, and the
+declined buckets are **no published curve for the neck (11), no %MVC because the
+entry is a ligament (2), the model's own floor (26), and `recruit` refused
+(`:acts-the-wrong-way`) (4)** — 13 compared is the only number that held. Provenance
+is commit-level and measured at each step, not assumed: (i) the denominator 51 is
+the tree at `edde110` (2026-09-07 03:31, "README + report: the upper cervical spine
+is no longer empty"), which is the commit that *wrote* this paragraph — and it
+**predates** the suboccipitals `adb8353` (04:00, +OCS/RCPM/RCPMi, instances 51→54)
+and the atlanto-occipital flexors `b298899` (04:55, +longus_capitis/rectus_capitis_
+anterior, instances 54→56). So the claim "re-measured after the upper cervical
+muscles did" is not true: those 5 instances landed *after* the 51 was counted, and
+none of the bucket figures was ever updated to them. (ii) the no-curve bucket grew
+5→11 by exactly the 6 neck instances that arrived after `edde110` (OCS, RCP major,
+RCP minor, longus_capitis, rectus_capitis_anterior, plus the sternocleidomastoid
+moving out of `refused` into this bucket at `99fa23d`, 2026-09-11), not by three;
+the "3 → 5" it attributes to "the three neck muscles" undercounts by 2, and the
+source numbers in the ce4df04 baseline (3 no-curve / 10 floor / 4 refused) do not
+reconcile with the 5/20/11 this paragraph already printed. (iii) the floor never
+moved 10→11: it is 20 at `edde110`, holds at 20 through `b298899`, and only moves to
+**26** at `99fa23d` (2026-09-11, "spine: name the antagonist priced and switched
+off on a level's line (#11)"), which re-routes gastrocnemius, hamstrings and soleus
+from `refused` to `:model-returns-no-finite-endurance` — that is the commit that
+moved the floor (20→26), the refused bucket (11→4), and the no-curve bucket (10→11),
+all three in one. No test catches this: `strain-test`
+(`a-session-cross-check-separates-what-was-checked-from-what-was-not`, line 318)
+asserts the *presence* of the `:compared` / `:no-published-curve-for-this-region` /
+`:model-returns-no-finite-endurance` keys and that at least one row falls outside the
+reference spread, but asserts no numeric total or bucket count — so the 51 and the
+5/20/11 here are prose-only, the same silently-drifting-prose class the `:c7`
+(2026-09-19), `:c2c3` (2026-09-20) and re-rooting (2026-09-22) annotations record.
+**No constant moves** — no `def` touched, Hansraj 5-value and Wilke sitting
+348.86176709999995 N byte-identical (README-only diff).
 
 **Updated 2026-09-12: four MEASURED neck-extensor endurance results were found, and
 none of them is a curve. Updated 2026-09-14: a fifth was found, and it brought a
 measured neck-extension MVC with it; later the same day a sixth was found, and
-it is the first whose intensity is stated.** They are recorded here and nowhere else — no constant
+it is the first whose intensity is stated. Updated 2026-09-17: a seventh was
+found, and it brings the bucket's second stated intensity and a second measured
+neck-extension MVC.** They are recorded here and nowhere else — no constant
 moved, `task->reference-region` still returns `:absent-from-source` for the neck,
 and `:no-published-curve-for-this-region` keeps its name:
 
@@ -670,6 +851,139 @@ and `:no-published-curve-for-this-region` keeps its name:
    No constant moves: the numbers are recorded here only. The dose layer's
    comparison stays `:no-published-curve-for-this-region` — a curve is a family
    over intensity, and one intensity per posture direction is not a curve.
+   ⚠ *Annotated 2026-09-16 (bot/suji-anatomy): the sixth measurement carries an axis
+   the dose layer does not have at all.* The three Zhou 2024 times are one
+   intensity, three HEAD-NECK POSTURES — the 56 ± 23 s at 40° extended is 32% shorter
+   than the 82 ± 43 s neutral, and the 117 ± 68 s at 40° flexed is 43% longer
+   (ratios of the paper's own means: 0.68 and 1.43, `:representative` — the paper
+   reports no posture ratio, and a ratio of means understates the spread of a ratio).
+   The model's endurance layer is a function of %MVC alone (`strain/endurance-min`
+   takes f = %MVC/100 and nothing else), so two workstations whose cervical
+   extensors sit at the SAME %MVC at different head tilts are priced at the SAME
+   endurance time and the same dose, where the measurement says they should differ by
+   about 0.68-1.43x. That is a missing independent variable, not a wrong
+   coefficient: `task->reference-region` still returns `:absent-from-source` for the
+   neck, and nothing here proposes a posture term for the power law — three postures
+   at one intensity cannot fit one. What the annotation adds is the direction the
+   missing axis runs (flexion buys time, extension spends it), so the gap is named
+   with its sign. Hansraj 5-value and Wilke sitting 348.86176709999995 N untouched
+   — the dose layer holds no pinned quantity.
+
+7. **Marchand A-A, Houle M, Girard M-P, Hébert M-È, Descarreaux M, "Comparing neck
+   extensor muscle function in asymptomatic Canadian adults and adults with
+   tension-type headache: a cross-sectional study", *BMJ Open* 9(5):e020984, 2019
+   (doi:10.1136/bmjopen-2017-020984, PMID 31079076, PMC6530443 — full text read
+   2026-09-17 at bmjopen.bmj.com, open access CC BY-NC; the Europe PMC REST API
+   returned 503 throughout this session, so this came from the journal site).**
+   40 asymptomatic participants (47.5% female) plus 44 with tension-type headache;
+   prone, head and neck past the table edge, cervicothoracic junction stabilised,
+   strap over the external occipital protuberance; MVC from 3 ramp-and-hold
+   trials, endurance target set at **60% of each subject's own MVC with a ±5%
+   feedback window**. Its abstract states all three quantities items 2–5 lacked
+   at once: intensity (**60 %MVC** — the bucket's second stated intensity, after
+   Chowdhury/Zhou's 50%), time (**68.1 ± 32.3 s** control; 61.9 ± 20.1 s TTH,
+   mean difference 6.2 s, p > 0.05), and an MVC force measured on the same
+   subjects with the same apparatus (**111.3 ± 38.7 N** control, 95.9 ± 30.4 N
+   TTH). It extends the 2026-09-15 diagnostic table below to a SECOND stated
+   intensity: the model's own curve at f = 0.6 prices **39.2 s**
+   (12.0·0.6^-2.32) against 68.1 ± 32.3 s measured — model/measurement
+   **0.58×, −0.89 SD**, inside ±1 SD like the 0.73× at 50 %MVC, and the pair of
+   ratios (0.73× at 50 %MVC, 0.58× at 60 %MVC) is monotone downward in intensity,
+   the shape a measured decay steeper than the model's −2.32 would give — but two
+   cross-protocol points (different cohorts, apparatus and task-failure
+   definitions) cannot fix an exponent and both ratios sit inside the
+   measurements' own SDs, so no direction claim is proven; 60 %MVC is also
+   outside the 8–47 %MVC range the pooled curve was ever checked over, and the
+   model's own %MVC x-coordinate remains built from `cervical_extensors 12.0
+   cm2`, still `:representative`. What IS new beyond the table row: the paper
+   brings a **second measured neck-extension MVC 1.88× below item 5's** (111.3 vs
+   209 ± 76 N, `:representative` arithmetic on two published means — neither
+   reports a spread on the ratio): prone strap against a stabilised
+   cervicothoracic junction versus supine head-off-plinth against a hand-held
+   dynamometer at the occiput — different load path, posture and sex mix, neither
+   reading wins (`:could-not-obtain`), and any future %MVC for the cervical
+   extensors has to choose between them. No constant moves — `endurance-minutes`,
+   `endurance-floor-pct` and the pooled coefficients untouched; Hansraj 5-value
+   and Wilke sitting 348.86176709999995 N byte-identical.
+
+8. **O'Leary S, Hoogma C, Solberg ØM, Sundberg S, Pedler A, Van Wyk L,
+   "Comparative Strength and Endurance Parameters of the Craniocervical and
+   Cervicothoracic Extensors and Flexors in Females With and Without Idiopathic
+   Neck Pain", *J Appl Biomech* 35(3):209-215, 2019 (doi:10.1123/jab.2018-0033,
+   PMID 30860406; abstract read 2026-09-19 via the Europe PMC REST API; the
+   per-direction table behind the same Human Kinetics paywall as item 1 —
+   re-attempted 2026-09-19, the article page serves the abstract only to an
+   anonymous reader, no PMC record, UQ eSpace requires login, so the absolute
+   seconds are again `:could-not-obtain`).** The same group's companion to item
+   1: 30 women with idiopathic neck pain against 30 matched-BMI controls, the
+   SAME protocol — time to task failure in seconds at **50 %MVC**, in 4
+   directions (craniocervical flexion/extension, cervicothoracic
+   flexion/extension) and 6 ratios. What its abstract adds that item 1's does
+   not: a measured statement about the EXTENSOR side of the axis the dose layer
+   runs on. In neck pain, the measured deficit is **confined to the flexors** —
+   endurance time **10.77-10.9 s less (23.3%-27.5%, P < .03)** at both flexion
+   axes, with extensor **strength** reduced (**1.58-4.7 N·m, 12.4%-17.9%,
+   P < .04**) but *"no other strength or endurance ratio was significantly
+   different between groups"*, i.e. no measured extensor-endurance deficit.
+   Read against this bucket: the extensors are the muscles this README's
+   `:cervical-extension` dose layer prices, and the one neck-pain measurement it
+   can reach at a stated intensity says their endurance share is the part that
+   does NOT drop when the flexors' does (23-28%) — while item 1's own healthy
+   finding is that the extensors endure 2-2.4× longer than the flexors at the
+   same 50 %MVC. Neither abstract states an absolute per-direction second, so
+   neither number can enter the power law's y-axis; the 10.77-10.9 s is a
+   BETWEEN-GROUP difference (`:representative` range as stated by the source,
+   spread `:could-not-obtain`), not a holding time this model can price. What
+   the entry does close: item 1's regional split (craniocervical vs
+   cervicothoracic) is now measured in a second cohort, and the bucket's
+   extensor side has a directional witness rather than a silence. No constant
+   moves — `endurance-minutes`, `endurance-floor-pct` and the pooled
+   coefficients untouched; Hansraj 5-value and Wilke sitting
+   348.86176709999995 N byte-identical.
+
+9. **Kennady F, Sannasi R, Premkumar M, Dsouza GA, "Normative Values of Neck
+   Extensor Endurance Test in Adults: An Observational Study", *Physiother Res
+   Int* 31(1):e70162, 2026 (doi:10.1002/pri.70162, PMID 41532949; abstract read
+   2026-09-20 via the Europe PMC REST API — no PMC record, so only the abstract
+   is held).** 448 healthy adults aged 29-60 y, the standardized NEET protocol:
+   mean **38.42 ± 24.04 s** (median 35.82, IQR 16.96 s), endurance declining
+   progressively with age, higher with IPAQ physical-activity level (p < 0.05),
+   25th percentile ≈ 26 s. The intensity is again unstated
+   (`:parameter-not-in-source`) — the same reason items 2-5 cannot enter the
+   power law's x-axis. What it adds beyond item 4 (440 healthy young adults
+   18-28 y, same test family, 43.1 s): an **age direction inside one protocol
+   family** — the two published means give 38.42/43.1 = **0.89
+   (`:representative` arithmetic on two means from different cohorts and
+   continents; neither paper states an age coefficient, item 4's spread is not
+   stated in this file, and Kennady's own SD is 24 s, so the pair brackets a
+   trend the abstract itself states rather than measuring one)** — and the
+   bucket's first entry to carry the healthy cohort's SPREAD as a median with
+   an IQR rather than a mean alone: half of 448 healthy adults fail the test in
+   under ~36 s, against the model's >70 min price for a held cervical load just
+   above the 8 %MVC floor (the paragraph below) — a second cohort on the
+   measurement side of that mismatch. No constant moves — `endurance-minutes`,
+   `endurance-floor-pct` and the pooled coefficients untouched; the bucket
+   keeps `:no-published-curve-for-this-region`; Hansraj 5-value and Wilke
+   sitting 348.86176709999995 N byte-identical.
+   ⚠ *Consolidated 2026-09-21 (bot/suji-anatomy): this study was annotated twice
+   — an earlier entry (abstract read 2026-09-18, `isOpenAccess` N, no PMC record) and
+   this one — with divergent numbering (the list ran 1–9 and then 8–9 again). The
+   earlier annotation's unique content, folded here and the duplicate deleted:
+   (i) the cohort is the bucket's OLDEST and LARGEST (items 2–7 sampled 12–40
+   subjects, students or young adults 18–45) and its FIRST middle-aged cohort, so the
+   age direction above is measured twice inside one test family; (ii) it brackets the
+   model's floor from the measured side: `endurance-floor-pct` prices **70.1 min** at
+   8 %MVC, this cohort's measured task-failure at an UNSTATED intensity averages
+   **0.64 min** (SD 0.40) — ~**110×** below the priced floor (arithmetic on one
+   published mean and one model output, `:representative`; NEET states no %MVC,
+   `:parameter-not-in-source`) — and the abstract's own 25th-percentile cutpoint
+   (~26 s) gives a population EDGE in minutes, a gap of one, not two, orders of
+   magnitude at the measurement's bottom decile; (iii) men slightly above women;
+   per-decade normative values are in the paywalled tables (`:could-not-obtain`);
+   India-based cohort, CTRI/2024/08/072963 — generalisation to this actor's bodies
+   unstudied. **No constant moves** — `endurance-minutes`, `endurance-floor-pct` and
+   the pooled coefficients untouched; Hansraj 5-value and Wilke sitting
+   348.86176709999995 N byte-identical.
 
 Direction of the mismatch, stated and NOT closed: at just above the 8 %MVC floor
 the model prices a held load at **>70 min**, while these tests put healthy
@@ -678,10 +992,86 @@ at a stated 50% of maximum for under two minutes. The
 x-axes do not meet — a measured point needs its %MVC to join a curve — so this
 entry is a pointer, not a calibration. The headline muscle remains in the
 `:no-published-curve-for-this-region` bucket; what changed is that the bucket now
-names the six measurements it is waiting for — the fifth carries the one
-neck-extension MVC (209 +/- 76 N, Vintimilla 2024) that any future %MVC for the
-cervical extensors has to be built from, and the sixth is the one entry whose
-own intensity is stated (50% of maximum, Chowdhury 2022).
+names the seven measurements it is waiting for — the fifth and seventh carry the
+measured neck-extension MVCs (209 ± 76 N supine hand-held, Vintimilla 2024;
+111.3 ± 38.7 N prone strap, Marchand 2019) that any future %MVC for the cervical
+extensors has to be built from, and the sixth and seventh are the entries whose
+own intensity is stated (50% of maximum, Chowdhury 2022; 60% of maximum,
+Marchand 2019).
+
+`branch: no-published-curve-for-this-region` keeps its name. But one comparison now
+meets on a shared x-axis, and it was measured 2026-09-15 (bot/suji-anatomy,
+diagnostic only - no constant moves, no keyword changes):
+
+Zhou 2024 states the intensity (50% of each subject's own maximum) and states the
+holding times, so at **that one intensity** the model's curve and the measurement
+can both be evaluated without inventing anything:
+
+| quantity at 50 %MVC | value | source |
+|---|---|---|
+| this model's pooled curve | **59.9 s** | `strain/model-form` ET = 12.0*f^-2.32 s at f = 0.5 |
+| Frey-Law & Avin `general` | 86.5 s | 21.92*0.5^-1.98 |
+| Frey-Law & Avin `trunk` | 109.4 s | 22.69*0.5^-2.27 |
+| Zhou neutral | 82 +/- 43 s | measured |
+| Zhou 40 deg extended | 56 +/- 23 s | measured |
+| Zhou 40 deg flexed | 117 +/- 68 s | measured |
+
+Model/measurement = **0.73x (-0.51 SD), 1.07x (+0.17 SD), 0.51x (-0.84 SD)** - all
+three inside +/-1 SD of the measurement, and the 1.07 and 0.73 also sit inside the
++/-47 % prediction interval of the general curve the repo already carries. So the
+paragraph above is right *where it can be checked* only in the sense that the
+direction claim is silent there: the >70-minute-vs-4.8-minute mismatch lives at
+intensities nobody stated, and at the one intensity that IS stated the pooled
+curve does not misprice the neck by an order of magnitude - the wide statement
+cannot be extrapolated down to the floor from either side. What is still true and
+still not closed: three directions x one intensity is three points, not a curve;
+Zhou's subjects held to exhaustion at 50 %MVC, which is a task-failure protocol,
+not a held posture; and the model's %MVC for the cervical extensors is built from
+`cervical_extensors 12.0 cm2`, which is `:representative` - the x-coordinate of the
+model's own point is the least-sourced number in the comparison. No constant moves;
+Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical.
+
+10. **Parrella M, Arvanitidis M, Macaluso A & Falla D, "The effects of ageing on
+   fatigue and endurance of the spinal extensor muscles: a systematic review and
+   meta-analysis", *GeroScience* 2026 (doi:10.1007/s11357-025-01987-x, PMID
+   41206405, PMC13575018 — full text read 2026-09-19 from the PMC copy, open
+   access).** A 2026 systematic review of fatigue and endurance of the spinal
+   extensor muscles — scope stated as including "the lumbar, thoracic and
+   cervical (neck) extensors", Medline/EMBASE/PubMed/Web of Science/CINAHL
+   searched from inception to **28 June 2025**, 1253 records screened, 13
+   studies included, 9 in the meta-analysis — and its neck result is the
+   negative this bucket has been claiming, dated and independent: *"no studies
+   investigating the neck extensor muscles in the context of fatigue and ageing
+   were retrieved"*, with the discussion asking for age-related neck-extensor
+   fatigue studies *"as no such data were identified in the present review."*
+   An independent team, searching to mid-2025, retrieved zero neck-extensor
+   fatigue/endurance data on the one dimension this review was built for — which
+   is not the same as finding no curve, but it is the first *systematically
+   searched* confirmation of the emptiness, and it makes the bucket's claim
+   nobody's oversight: someone went looking with a written protocol and came
+   back with nothing. The measurement it does have is on the neighbouring
+   region: a random-effects meta-analysis, moderate certainty of evidence
+   (GRADE), gives endurance time of the **back extensors** during sustained
+   isometric contractions as **−41.31 s in older adults (>60 y) versus younger
+   controls (95% CI −64.04 to −18.57)**. What that adds here is a second axis
+   the bucket has never named: `endurance-minutes` is a function of %MVC (plus
+   the 8 %MVC floor) and nothing else, so this model prices a 70-year-old's
+   held posture identically to a 25-year-old's at the same %MVC — and the one
+   region the ageing evidence covers says the model **over-states endurance
+   time for the older body** by tens of seconds per task (error direction
+   stated; for the neck the review's own search returned nothing, so the age
+   direction on the headline muscle stays `:could-not-obtain` — and no curve
+   for the neck exists to receive an age term anyway). What it does not close:
+   (i) the −41.31 s is back extensors under prone Biering-Sørensen-type
+   protocols, not cervical — the review retrieved no cervical protocol on this
+   axis at all, which is the point; (ii) the model's actors carry no age at
+   all — the over-statement applies to a hypothetical older actor, not to any
+   body this repo currently reports; (iii) the review notes the included
+   studies' EMG findings are inconsistent, so the neuromuscular mechanism
+   behind the time decline is open even where the decline itself is not.
+   **No constant moves** — `endurance-minutes`, `endurance-floor-pct` and the
+   pooled coefficients untouched; Hansraj 5-value and Wilke sitting
+   348.86176709999995 N byte-identical (README-only diff).
 
 ## Isaac Sim / kami-genesis
 
@@ -854,6 +1244,28 @@ two answers, and nothing that compared them.
 This moment is the ENTIRE load of the `:trunk-extension` equilibrium, so it set erector spinae
 %MVC and, through `spine`, every lumbar compression here. At L5/S1 in `laptop-on-lap` the total
 went **950 N → 1,542 N** (0.53 → 0.86 MPa), of which the muscle term is 483 → 1,075 N.
+  ⚠ *Annotated 2026-09-24 (bot/suji-anatomy): this sentence's MPa are the model's
+mean-disc-stress unit, not Wilke's nucleus-pressure unit — the two share a symbol and nothing
+else, and no line in this README connects them until the 2026-09-16 annotation at "A second
+external number" (README's own words there: "a nucleus pressure is not a mean disc stress").
+The model's `:stress-mpa` is `(/ force-n disc-area-m2)` (`level-compression`,
+`src/suji/methods/spine.kotoba`: force = weight-above + muscle + ligament, divided by the
+stature-scaled disc area) — a disc-average. Wilke 1999 measured pressure in the **L4/L5
+nucleus** of one 45-y / 70 kg / 1.68 m volunteer. The two are related only through
+Nachemson's in-vitro index (I = Pnucleus / Pdisc; `nachemson-pressure-index`, L1 1.6 / L2 1.7
+/ L3 1.5 / L4 1.7, Table 5 p.281 — already transcribed in *A pressure is not a force* above),
+which makes a nucleus pressure ≈ 1.5–1.7× a disc-average stress. On the repo's own conversion,
+the model's printed 0.86 MPa corresponds to a nucleus pressure of **1.29–1.46 MPa**, i.e. the
+0.53 → 0.86 jump reads 0.795 → 1.29 MPa on Wilke's unit (×1.5, L3 index) — comparisons
+against the 0.83 MPa "sitting with maximum flexion" entry as-printed understate by 55–76%
+(×1.5) or 76–99% (×1.7). The model's mean stress is **below** the nucleus pressure it is
+typed next to, by exactly the index, everywhere this unit appears — the "peak stress moved
+from C7/T1 (1.302 MPa) to L2/L3 (0.996 MPa)" sentence ("What moved, and what did
+not", 2026-09-07 crossing) prints the same quantity in the same unit. Direction of any
+cross-unit reading: model values read as if nucleus pressures are **under-stated by
+÷1.5–÷1.7**. No constant moves — `:stress-mpa`, `disc-area-m2` and
+`nachemson-pressure-index` are untouched (README-only diff); Hansraj 5-value and Wilke
+sitting 348.86176709999995 N byte-identical.*
 
 *`cervical-load` was blind to trunk flexion.* It took `head-flexion-deg` and computed `sin` of
 it — but gravity is world-fixed and `pose` places the head at trunk + head, so the head's tilt
@@ -980,6 +1392,78 @@ hand-written expressions. `recruit` shares them by minimum cubed stress
 (Crowninshield & Brand 1981) in closed form — exact, and it moves when the anatomy
 moves. The old trapezius expression also charged the head's extension load a second
 time, on top of the cervical group; that term is gone.
+
+**A second dissection cohort now measures what the girdle's own `:pcsa-cm2`
+entries are representative of (found 2026-09-17, bot/suji-anatomy).** The
+`attachment/muscles` table carries `upper_trapezius :pcsa-cm2 9.0` and
+`levator_scapulae :pcsa-cm2 5.0` as representative values with no measurement
+behind them. De La Paz JS, Buckley HR, Halcrow SE, Techataweewan N, Woodley SJ,
+*Architecture of head and neck soft tissues and associated entheses*, J Anat
+243(1):110–127, 2023 (doi:10.1111/joa.13853, PMID 36882366, PMC10273350; full
+text read 2026-09-17 via Europe PMC REST fullTextXML) measures upper trapezius
+PCSA in 20 donated cadavers (New Zealand ×10 embalmed, 83 ± 8 y; Thailand ×10
+fresh, 69 ± 13 y; sides pooled after finding no significant between-side
+difference, N = 10 muscles per sex/population group): **2.1 ± 0.6** (NZ M),
+**2.2 ± 1.0** (NZ F), **3.2 ± 1.1** (Thai M), **1.9 ± 0.7** (Thai F) cm² —
+with muscle volume 22.1–43.5 cm³ and fascicle length 10.7–13.9 cm. Its own
+Discussion groups Kamibayashi & Richmond 1998 among the previous dissection
+studies with which these upper trapezius values agree ("the upper trapezius
+ranges between 2.0 and 3.5 cm²", citing Bayoglu 2017, Borst 2011, Johnson 1994,
+Kamibayashi & Richmond 1998) — a citing-paper summary, since the K&R original
+itself is paywalled (`:could-not-obtain` at this level; the 1998 table's
+trapezius row, and whether the 9.0 was ever meant to be K&R's clavotrapezius,
+remains unverified from the primary source). Against the measured band the
+model's 9.0 cm² is **2.8–4.7× per-side dissection PCSA, error direction
+over-stating force capacity**; the same paper measures the upper trapezius
+*clavicle enthesis area* at **8.8–10.6 cm²** (Table 4: 10.5/9.5/10.6/8.8) — a
+band the 9.0 sits inside, which names a candidate mechanism (an attachment-area
+magnitude where a force-producing cross-section is wanted) without asserting it
+happened. No constant moves: `:pcsa-cm2 9.0` and 5.0 stay byte-exact and
+unverified either way — this entry is a second measured anchor, not a
+replacement; elderly cadavers (67–93 y) and the embalmed half of the sample
+shrink PCSA (the paper's own Discussion: semispinalis capitis ran smaller than
+all four cited dissection studies), so the over-statement direction is the one
+robust reading. Hansraj's five multipliers and Wilke sitting
+348.86176709999995 N are untouched.
+
+⚠ *Annotated 2026-09-21 (bot/suji-anatomy): the K&R half of this gap is not
+`unverified` — it was resolved in the source eight days before this paragraph was
+written, and the two measurements the paragraph does not carry are the ones the
+paragraph's own premise needs.* This 2026-09-17 entry states the K&R original is
+`:could-not-obtain` at this level and that "the 1998 table's trapezius row, and
+whether the 9.0 was ever meant to be K&R's clavotrapezius, remains unverified
+from the primary source," and frames both `:pcsa-cm2` entries (9.0 / 5.0) as
+"representative values with no measurement behind them." That is not what the
+primary source of record says. It was read in full on 2026-09-09 — Vasavada AN,
+ch. 3 of *Rothman-Simeone: The Spine* (pp. 64–65, which reprints Kamibayashi LK
+& Richmond FJR, *Morphometry of human neck muscles*, Spine 23(12):1314–1323,
+1998, Table 3-3), obtained 2026-09-07, read as the chapter, not as an abstract —
+and the resolution was committed with it: `d29095b` "suji: resolve the
+upper_trapezius / levator_scapulae → K&R mapping" (PR #4, merged 2026-09-09),
+which wrote the "MAPPING RESOLVED 2026-09-09" note into the `:source` of **both**
+entries in `attachment/muscles` (the same note the 2026-09-10 `.cljc → .kotoba`
+rename `8fae392` carried verbatim). The two measured rows the 2026-09-17
+paragraph lacks: (i) `upper_trapezius`'s attachment — occiput and nuchal line to
+the lateral clavicle — is exactly the CAVOTRAPEZIUS, the rostral segment (pars
+descendens, skull to clavicle); the chapter's two caudal segments (acromiotrapezius /
+spinotrapezius) attach to the acromion and the scapular spine, which this model
+does not carry, so the whole entry is the one segment K&R measures, at **1.96
+(0.62) cm² PER SIDE, range 1.25–2.94, N = 10** — the model's 9.0 exceeds it **4.6×**;
+(ii) `levator_scapulae` IS in that same table, at **2.18 (0.80) cm² PER SIDE, range
+1.39–3.24, N = 8** — the model's 5.0 exceeds it **2.3×**. Both are exactly the SOUL
+gap's pair, both with the error direction already stated in the source (capacity
+OVERSTATED, so scapular-suspension %MVC UNDERSTATED — an overstatement, not a
+direction flip), and both entries say the value is NOT changed: "`:pcsa-cm2` stays
+9.0 / 5.0 in BOTH tables, so the-pcsa-written-twice-is-written-the-same-twice still
+holds" — confirmed here: `muscle/muscles` line 233 / 234 and `attachment/muscles`
+line 544 / 569 carry 9.0 / 5.0, byte-identical. What this does not close: De La Paz
+2023 is a *second*, independent cohort for the trapezius row (2.1–3.2 cm², 20
+cadavers), and it does not measure `levator_scapulae` — so the K&R levator row
+(N = 8 cadavers, 1998) remains the only measurement behind the 5.0; the two trapezius
+sources agree in magnitude (K&R 1.96 vs De La Paz 2.1–3.2, `:representative`
+arithmetic on per-side means, no cross-study comparison) but neither is the value the
+model carries. **No constant moves** — 9.0 and 5.0 stay byte-exact, Hansraj's five
+multipliers and Wilke sitting 348.86176709999995 N are untouched (README-only diff).
 
 **Passive tension (2026-09-06).** A stretched muscle produces force without being
 activated and without costing anything metabolically — it is the tissue resisting
@@ -1374,6 +1858,66 @@ All the change is in the levels above it, which is the point.
 - **It is modelled midline, so its lateral flexion and axial rotation are absent.**
   Those would need it paired and in `:cervical-lateral-flexion`, and a muscle
   belongs to one task here.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the refused muscle has a measured in-vivo
+  size now, and it is not small.* Rozenstoka S, Comadran de Barnola E, Kauzena S,
+  Akuratere G, Galeja Z, Deicmane D, *Sternocleidomastoid muscle morphology is
+  independently associated with neck strength and endurance in athletes and
+  para-athletes*, **Front Physiol 17:1852707, 2026** (doi:10.3389/fphys.2026.1852707,
+  PMID 42661709, PMC13518177; full text read 2026-09-17 through the Europe PMC REST
+  fullTextXML endpoint, CC BY). 195 men — athletes, para-athletes and physically active
+  controls (mean 33.5 ± 9.4 y), acute neck injury / recent cervical surgery excluded —
+  bilateral axial ultrasound at the carotid-bifurcation level, fascia traced:
+  **SCM CSA 4.69 ± 1.03 cm² bilateral average** (right 4.67 ± 0.97; clavicular head
+  1.81 ± 0.43 and sternal head 1.72 ± 0.53, traced at the distal division and summing to
+  less than the whole-muscle figure — an internal inconsistency of the paper's own
+  tables, the reconciliation `:could-not-obtain`). Against the lump that stands for the
+  side it fights: **0.39× the `cervical_extensors` 12.0 cm²** (arithmetic on one
+  published mean and one `:representative` constant, both bilateral) — the antagonist
+  this model refuses in every posture is measured at over a third of the extensor
+  lump's cross-section, and the refusal's cost is compression, not force share, as the
+  refusal bullet above states. The same paper ties morphology to function on the
+  flexion side: SCM CSA was independently associated with maximal flexor strength
+  (β = +1.32 kg per cm², 95% CI [+0.56, +2.07]) and neck-flexor endurance
+  (β = +0.53 min per cm², 95% CI [+0.23, +0.83]) after age, BMI, handgrip and sport
+  domain — a measured per-cm² slope, not a curve, on a trained cohort. What it does
+  not close: (i) **males only, all trained** — for this actor's desk bodies the size is
+  likely an OVER-statement (a sedentary SCM is smaller; direction stated, no sedentary
+  value in this source); (ii) ultrasound **anatomical** CSA traced at one level, not
+  PCSA — it includes non-contractile tissue, so as a capacity input it would over-state
+  force, the same direction as the Izumida caveat at C2/C3; (iii) no attachment
+  coordinates (`:could-not-obtain`) — an instance still has nowhere to be put, because
+  the midline/pairing limits named in the next bullet apply to it too. **No constant
+  moves** — no `sternocleidomastoid` instance is created, the refusal stands, Hansraj
+  5-value and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
+  ⚠ *Annotated 2026-09-22 (bot/suji-anatomy): this same file already carries the
+  muscle's measured dissection PCSA, and it is smaller than the ultrasound number the
+  annotation above prices with — the two published sizes have never been put side by
+  side.* Table 3-3 of the Vasavada 2010 chapter (the same fetch this file's splenius
+  entry reads; Kamibayashi & Richmond 1998, Spine 23(12):1314–1323, read in full
+  2026-09-07) prints a row **"Sternocleidomastoideus"**: N = 9, mass 40.4 (9) g,
+  muscle length 19 (1.6) cm, NF length 10.8 (0.9) cm, **PCSA 3.72 (0.91) cm² per
+  side, range 1.81–5.26** — carried in this file since the neck split as one of the
+  three measured values of the PCSA column, without ever being cross-checked against
+  Rozenstoka's 4.69 ± 1.03 cm². The annotation's own caveat (ii) says the ultrasound
+  class over-states PCSA; the two published numbers put the direction as arithmetic:
+  4.69 / 3.72 = **1.26×** (`:representative` on two means from different cohorts —
+  195 living trained males vs 9 cadavers — so the ratio carries both cohorts' caveats
+  and its magnitude is `:could-not-obtain` at the per-subject level, but its sign is
+  the one the modality difference predicts: anatomical CSA ≥ PCSA). The refusal's
+  comparator follows the capacity-relevant number: per-side PCSA against the lump is
+  **3.72 / 12.0 = 0.31×** (`:representative`; the 12.0 cm² `cervical_extensors`
+  divisor is itself `:representative` with no source, `:parameter-not-in-source`, so
+  the ratio inherits both entries' provenance), not the 0.39× stated above — the
+  refused antagonist is about a third of the extensor lump's cross-section on the
+  measured PCSA this file already had, and the 0.39× stands as the anatomical-CSA
+  reading of the same comparison. What this does not close: (i) the compression the
+  refusal costs remains unpriced — an instance is still not created; (ii) no
+  attachment coordinates (`:could-not-obtain`, unchanged); (iii) modality explains
+  the 1.26× gap in direction, but cohort (cadaveric vs living trained) and fixation
+  share the explanation and their split is `:could-not-obtain`. **No constant moves**
+  — no `sternocleidomastoid` instance is created, the refusal stands, the annotation
+  above keeps its text with this correction appended, Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 - **The wrap radius is the cervical column's own, 0.012 m**, shared with
   `cervical_extensors` because it is the same column. A muscle lying further out
   from the bone has a larger effective radius and this model does not know how much
@@ -1383,14 +1927,112 @@ All the change is in the levels above it, which is the point.
   +29.8 mm at neutral and **−10.3 mm at 45° of head flexion**, so without it the
   model's principal head extensor would be reported as a flexor in the posture this
   actor exists to describe.
+> ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the other side of this caveat is now
+> measured, in vivo.* Suderman BL & Vasavada AN, *Neck muscle moment arms obtained
+> in vivo from MRI: effect of curved and straight modeled paths*, Ann Biomed Eng
+> 45(8):2009-2024, 2017 (doi:10.1007/s10439-017-1830-8, PMID 28397021; abstract
+> read 2026-09-17 via the Europe PMC REST API; full text paywalled, no PMC record,
+> `:could-not-obtain`). Two subject-specific cervical models built from in-vivo
+> MRI, 15 neck muscles, curved vs straight paths crossed with three moment-arm
+> methods (tendon excursion, geometric, effective torque): curved paths give
+> significantly different moment arms than straight ones for **10 of 15 muscles**
+> (p < 0.05), the three methods disagree for **11 of 15** (p < 0.05), and the
+> abstract's stated direction is that **straight lines over-estimate the
+> extension moment**. The model's wrap is the curved-path choice and exists for
+> exactly the sign reason the paper names (the unwrapped `semispinalis_capitis`
+> chord is −10.3 mm at 45° of head flexion); what the paper measures is that the
+> wrap parameters are not free either — Suderman BL, Krishnamoorthy B & Vasavada
+> AN, *Neck muscle paths and moment arms are significantly affected by wrapping
+> surface parameters*, Comput Methods Biomech Biomed Engin 15(7):735-744, 2012
+> (doi:10.1080/10255842.2011.558085, PMID 21416413; abstract read 2026-09-17 via
+> the Europe PMC REST API; full text paywalled, `:could-not-obtain`) — the same
+> `semispinalis capitis` checked against MRI centroid paths: **both the wrapping
+> radius and its kinematic linkage to the vertebrae significantly affect the
+> moment arm** (radius is the parameter this bullet fixes at 0.012 m;
+> per-muscle and per-radius values `:could-not-obtain`, abstract-only), and with
+> wrapping surfaces poorly matched to the centroid path a kinematic method
+> (tendon excursion) predicted **flexion** moment arms in certain postures where
+> the geometric method (distance to the instant centre) predicted extension —
+> the very sign-flip class the wrap exists to prevent, arriving from the wrapped
+> side. So the bullet's stated direction stands (a larger real radius
+> over-states the force and the compression that follows), and it gains a
+> stronger one: at a radius set without a measured check, not only the magnitude
+> but the **sign** of an arm is what the wrapping parameter can flip. What it
+> does not close: neither abstract carries a number for the 0.012 m itself or
+> for this model's `semispinalis_capitis` arm at any posture (`:could-not-obtain`
+> at this level); two subjects in the 2017 cohort; the 2012 surface-fitting
+> details are behind the paywall. **No constant moves** — the 0.012 m wrap
+> radius stays exactly where it is, and Hansraj 5-value and Wilke sitting
+> 348.86176709999995 N are byte-identical (README-only diff).
 - **The splenius entry is capitis + cervicis.** The source gives one mass and one
   PCSA for both and separates them only by fascicle length, so this entry puts a
   share of splenius cervicis's cross-section on a cranial insertion it does not have
   (cervicis runs to the C1–C3 transverse processes). It crosses the same six levels
   either way, so the error is in *where on the skull* the force is applied.
+  ⚠ *Annotated 2026-09-18 (bot/suji-anatomy): the one-row premise is confirmed in the
+  fetched full text, and the repo's own citation family is where the split exists —
+  paywalled.* Read 2026-09-18 from the same Vasavada 2010 chapter PDF
+  (<https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf>, `pdftotext -layout`):
+  Table 3-3 p.65 carries a row printed literally **"Splenius"**, N=9 — mass 42.9 (13.8) g,
+  NF length 9.5 (2.3) cm, **PCSA 4.26 (1.04) cm² per side, range 2.57–5.48** — and the only
+  per-part values it carries are two muscle-length sub-lines (capitis 12.3 (1.5) cm,
+  cervicis 14.7 (2.3) cm). The chapter's own text says why the parts are not
+  interchangeable even at equal PCSA: the fascicle lengths are similar but the
+  muscle-tendon lengths are not, because the splenius capitis has **short aponeuroses**
+  and the splenius cervicis **long** ones — the single PCSA row blends two architectures
+  that differ in tendon fraction. The per-muscle split the lump lacks exists in the
+  repo's own citation family: Vasavada A, Li S, Delp S, *Influence of muscle morphometry
+  and moment arms on the moment-generating capacity of human neck muscles*, Spine
+  23(4):412-422, 1998 (PMID 9516695; abstract read 2026-09-18 via the Europe PMC REST
+  API; inEPMC = N, inPMC = N, no PMC record, full text `:could-not-obtain` — paywalled
+  Spine) — the model the chapter quotes for the semispinalis/splenius moment-arm
+  statements this entry already relies on — treats splenius capitis and splenius
+  cervicis as **two muscles**, and its abstract states that at upright neutral
+  splenius capitis carries one of the largest extension moment arms in the neck and
+  that its force-generating capacity **varies substantially with head posture** (large
+  arm, short fascicles). The chapter states the per-muscle consequence directly
+  (p.67-68): *"the splenius capitis has a much larger moment arm than the splenius
+  cervicis."* Direction of the error, now anchored rather than inferred: the
+  skull-attached entry applies capitis's larger arm to the whole 8.52 cm² bilateral
+  PCSA, so the cervicis share inside the lump is delivered through a larger arm than
+  its own **and** at a joint its own line does not reach — the atlanto-occipital
+  extension capacity and the C7 extension arm are both **over-stated** by the
+  cervicis share's fraction of the lump. No source in hand sizes that fraction: K&R
+  carry one row (checked in the fetched text), and the Vasavada/Li/Delp per-muscle
+  tables are `:could-not-obtain`. The abstract adds one more thing the entry's fixed
+  PCSA cannot say: splenius capitis's per-PCSA force capacity is posture-dependent, so
+  the constant 8.52 cm² answers at the neutral capacity in every head posture. No
+  constant moves — no per-partition share is installed, and Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 - **The specimens were cadavers.** Kamibayashi & Richmond's own N is 9 or 10 per
   muscle and the ranges are wide — semispinalis capitis spans 3.93 to 7.32 cm²,
   nearly a factor of two.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the cadaver caveat has a measured in-vivo
+  comparator, and the three living means land inside the cadaver range.* Izumida H,
+  Daimon K, Umezawa H, Michikawa T, Fujiwara H, Okada E, Nojiri K, Katoh H, Shimizu K,
+  Ishihama H, Nakamura M, Matsumoto M, Watanabe K, *Longitudinal MRI study over 20 years
+  of cervical posterior extensor muscle area in asymptomatic subjects*, **Sci Rep
+  15(1):21826, 2025** (doi:10.1038/s41598-025-08055-6, PMID 40595211, PMC12218271;
+  full text read 2026-09-20 via the Europe PMC REST fullTextXML endpoint, CC BY). 55
+  living asymptomatic volunteers (35 M / 20 F, mean age 31.9 ± 13.8 y at the initial
+  scan, mean interval 21.9 ± 0.8 y between scans), T2-weighted axial 1.5-T MRI,
+  semispinalis capitis traced inside its visible fascia at three levels: **621.8 ± 207.9
+  mm² at C3/4, 594.5 ± 176.6 mm² at C4/5, 474.8 ± 148.0 mm² at C5/6** (Table 2, initial
+  investigation). All three per-level means sit **inside** Kamibayashi & Richmond's
+  cadaver span 3.93–7.32 cm² (6.218 / 5.945 / 4.748 cm² — arithmetic on one published
+  range and three published means, `:representative`; the comparison bounds the
+  cadaver-versus-living gap, it does not measure one). What keeps it from being a check
+  of the PCSA itself: the paper states in its own methods that these are **anatomical**
+  CSA — *"does not necessarily reflect force production"*, its own distinction from
+  physiological CSA — so as a capacity input it would over-state force by the
+  non-contractile share, while cadaveric fixation shrinks tissue the other way; the two
+  error directions are opposite and neither is quantified here. The measurement is
+  level-resolved slices and no whole-muscle in-vivo figure is carried — a sum across
+  C3/4–C5/6 would over-count a belly that spans the levels (`:could-not-obtain` at this
+  level). Baseline images came from film, the cohort is Japanese, fatty degeneration was
+  already present at baseline, and dropout was age-skewed (58.8–85.4% by decade). No
+  constant moves — no instance, no PCSA touched, Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical (README-only diff).
 
 ## The neck had one joint (2026-09-07)
 
@@ -1499,12 +2141,12 @@ Three of four, PCSA measured from the same Kamibayashi & Richmond table as the c
 muscles (per side, mean, range; doubled below because a midline group here carries the
 bilateral sum):
 
-| muscle | PCSA/side | bilateral | modelled length | measured length |
-|---|---|---|---|---|
-| rectus capitis posterior major | 0.93 cm² (0.44–1.45) | 1.86 | 41.5 mm | 30–48 mm ✓ |
-| rectus capitis posterior minor | 0.50 cm² (0.48–0.83) | 1.00 | 23.0 mm | 26–31 mm — **3.0 mm short** |
-| obliquus capitis superior | 1.03 cm² (0.29–1.59) | 2.06 | 39.5 mm | 43–57 mm — **3.5 mm short** |
-| *obliquus capitis inferior* | *1.29 cm² (0.69–1.73)* | *2.58* | — | **not modelled** |
+| muscle | PCSA/side | bilateral | modelled length | measured length (K&R 1998) | measured length (Lin 2022) |
+|---|---|---|---|---|---|
+| rectus capitis posterior major | 0.93 cm² (0.44–1.45) | 1.86 | 41.5 mm | 30–48 mm ✓ | 42.1 ± 6.3 mm ✓ |
+| rectus capitis posterior minor | 0.50 cm² (0.48–0.83) | 1.00 | 23.0 mm | 26–31 mm — **3.0 mm short** | 29.1 ± 4.3 mm — **6.1 mm below the mean, 1.8 mm below the mean − SD** |
+| obliquus capitis superior | 1.03 cm² (0.29–1.59) | 2.06 | 39.5 mm | 43–57 mm — **3.5 mm short** | 43.3 ± 5.5 mm ✓ (inside the mean − SD) |
+| *obliquus capitis inferior* | *1.29 cm² (0.69–1.73)* | *2.58* | — | **not modelled** | 54.6 ± 5.4 mm (measured, unmodelled) |
 
 **They are calibrated against a measured LENGTH, not against an invented moment arm.**
 Everywhere else in `attachment` the offsets are chosen so the neutral arm reproduces a
@@ -1515,6 +2157,68 @@ the cadaver measurement, which is **reported and not tuned**: both shortfalls ha
 same cause and it is not these muscles — this model's `upper_cervical` is 37 mm where
 an atlas plus axis is nearer 50, because `segment` cuts the neck at the model's own
 uniform 18.6 mm level spacing and C2 with its dens is taller than a typical vertebra.
+
+**A second cohort measures the same three muscles, 2026-09-14.** Lin G, Wang W,
+Wilkinson T, *Changes in deep neck muscle length from the neutral to forward head
+posture. A cadaveric study using Thiel cadavers*, Clinical Anatomy
+2022;35(3):332-339 (doi:10.1002/ca.23834, PMID 35038194, PMC9304288; full text read
+2026-09-14 through the Europe PMC REST API — PubMed HTML serves a cookie page).
+Six Thiel-embalmed cadavers (4 M / 2 F, mean age 86.2 ± 8.7), 16 deep neck muscles
+per cadaver digitised attachment-to-attachment with a MicroScribe 3D Digitizer,
+straight line between attachments — the SAME length convention K&R used and the
+same one this model's line of action uses, so the two cohorts are directly
+comparable rather than merely both existing. Its Table 2 (neutral, 55° posture):
+
+- rectus capitis posterior **major** 42.1 ± 6.3 mm — the modelled 41.5 lands
+  inside this band too; the two cohorts agree with each other (K&R 30-48) as well
+  as with the model.
+- rectus capitis posterior **minor** 29.1 ± 4.3 mm — the modelled 23.0 is now
+  **6.1 mm below the mean, and 1.8 mm below the mean − SD**, where the K&R
+  shortfall was 3.0 mm. The second cohort makes the shortfall LARGER, not
+  smaller: it is not the spread of one cadaver sample.
+- obliquus capitis **superior** 43.3 ± 5.5 mm — the modelled 39.5 sits inside the
+  mean − SD, closer than K&R's range put it.
+
+The shortfall's stated cause — `upper_cervical` at 37 mm where an atlas plus axis
+is nearer 50 — predicts a shortfall of roughly the density difference between the
+two segments, and it under-predicts what both cohorts measure for the minor. What
+this changes is the SIZE of the open gap, not its direction: the direction was
+already stated (modelled short, understating the muscle's length and mis-stating
+its force-length operating point), and no value moves here — the 4 mm allowance in
+`the-suboccipital-lengths-are-checked-against-the-measurement` is the model's own
+error budget and is not widened to admit 6.1 mm without a mechanism that accounts
+for the difference between the 4 mm and the 6.1.
+
+**A third cohort measures the three modelled suboccipitals' cross-section
+alive, 2026-09-16.** Cigana I, Libardi R, *Reliability of rehabilitative
+musculoskeletal sonography for measuring the visible cross-sectional area of
+suboccipital muscles*, Cureus 16(10):e68772, 2024 (doi:10.7759/cureus.68772,
+PMID 39371882, PMC11456216; full text read 2026-09-16 through the Europe PMC
+REST fullTextXML endpoint). Seventeen pain-free, healthy participants (9 F /
+8 M, 22-65 y, mean 42.5 ± 14.1, mean BMI 25.2), **sitting**, real-time B-mode
+sonography, linear probe aligned perpendicular to the muscle fibres: visible
+CSA of rectus capitis posterior minor, rectus capitis posterior major and
+obliquus capitis inferior — the same three suboccipitals the table above
+models, on the living side of the cadaver/living divide. Initial-session
+means: **RCPM 140.24 ± 26.48 mm², RCPMaj 97.41 ± 26.22 mm², OCI
+235.29 ± 60.74 mm²** (Examiner 2: 144.12 / 81.59 / 227.65; single-measure
+reliability ICCs 0.71-0.86). Whether a row is one side or both is not stated
+(`:could-not-obtain` — one probe position per muscle per scan); read per-side,
+the same convention as the K&R column. Against K&R's per-side PCSA:
+**RCPMaj 0.97 vs 0.93 cm² — agrees within 4%, inside K&R's own range
+(0.44-1.45)**; RCPM 1.40 vs 0.50 cm² — **2.8×, above K&R's range max
+(0.83)**; OCI 2.35 vs 1.29 cm² — **1.8×, above K&R's range max (1.73)**. What
+the two discrepancies cannot be resolved into: visible CSA is one cut through
+living tissue in a chosen probe plane, while K&R's PCSA is mass over fibre
+length in embalmed cadavers — an oblique cut over-states a short pennated
+muscle's cross-section and embalming shrinks its volume, so both biases point
+the same way and their sizes are unknown; the direction of the disagreement
+between the two readings is nameable, its magnitude is not, so neither reading
+wins and the RCPMaj agreement is the only point where the two modalities
+actually meet. No constant moves — the K&R PCSAs stay exactly where they are,
+the OCI stays unmodelled (it still needs an atlas and an axis as separate
+bodies), and Hansraj 5-value and Wilke sitting 348.86176709999995 N
+byte-identical.
 
 **The moment arms vary with posture**, which is the thing a muscle with both ends on
 one bone can never do (−15° to 60° of head flexion):
@@ -1659,6 +2363,36 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
 
 - **Obliquus capitis inferior**, 2.58 cm² bilateral — C2 spinous → C1 transverse, both
   ends on `upper_cervical`. It needs the atlas and the axis to be separate bodies.
+  ⚠ *Annotated 2026-09-18 (bot/suji-anatomy): the number is the source's own measured
+  row, read this day in the fetched full text — and the row's function statement
+  sharpens what the missing segmentation is missing.* Read 2026-09-18 from the Vasavada
+  2010 chapter PDF (<https://nmbl.stanford.edu/publications/pdf/Vasavada2010.pdf>,
+  `pdftotext -layout`, the same fetch the splenius entry's annotation used). Its
+  Table 3-3 (p.65, the data reproduced from Kamibayashi & Richmond 1998, Spine
+  23:1314-1323) prints a row **"Obliquus capitis inferior"**: N=9, mass 5.1 (1.8) g,
+  **PCSA 1.29 (0.54) cm² per side, range 0.69–1.73** — the bullet's 2.58 cm² is exactly
+  that row doubled, so the figure this bullet carries is measured, not
+  `:representative`, and now has its row named. What the row cannot say, the chapter's
+  text does (p.66): OCI *runs primarily mediolaterally from the spinous process of C2
+  to the transverse process of C1* — both ends of that line ride on the two bodies
+  this model merges into `upper_cervical` — and *the rectus capitis posterior major
+  and the obliquus capitis inferior are oriented to produce ipsilateral rotation*,
+  with extension only the shared contribution of all four suboccipitals (*"all four of
+  these muscles can contribute to extension of the head with respect to the neck"*).
+  So the gap is not only the missing body: an atlas and axis split apart in this
+  MIDLINE SAGITTAL model would still have no task for the muscle's dominant measured
+  orientation, because axial rotation is the degree of freedom this model does not
+  have at any cervical level — the same absence *What the neck still cannot express*
+  names for the lateral-bend bullet and the atlanto-axial joint. What this does not
+  close: (i) the row is cadaveric, N=9 — the same class of source this model already
+  accepts — and no in-vivo OCI cross-section was found (searched 2026-09-18, abstracts
+  only: the muscle is below MRI ROI resolution in the cohorts this file already cites,
+  which is the reason those papers scan MF+SC as one ROI and skip the suboccipitals);
+  (ii) the chapter states no per-muscle moment arm for rotation, so the size of the
+  unfed rotational role is `:could-not-obtain`. **No constant moves** — no
+  `obliquus_capitis_inferior` instance is created, the atlas and axis stay one
+  segment, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
 - **The atlanto-axial joint.** ⚠ Its "cardinal motion is 40.5° of axial rotation"
   is a citation, not a number the source carries — a note dated 2026-09-13 could not
   find it in the source it was attributed to (Bogduk & Mercer's Table 5 is Dvorak
@@ -1678,6 +2412,31 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
   sagittal model still has nowhere to spend any of it, and Oc-C1's share is small:
   the paper quotes prior in-vivo Oc-C1 rotation at about 1.7° and the joint's own
   in-vitro range at about 5°.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy, second note): the 40.5 has a source now,
+  and it is not the one it was attributed to.* Penning L, Wilmink JT, *Rotation of
+  the cervical spine. A CT study in normal subjects*, **Spine 12(8):732-740, 1987**
+  (doi:10.1097/00007632-198710000-00003, PMID 3686228; abstract read 2026-09-20 via
+  the Europe PMC REST API; no PMC record, full text `:could-not-obtain`). Twenty
+  normal subjects aged 20-26, axial CT sections with the head in maximal rotation
+  to the right or the left, each of the eight segments occiput→T1 read as its
+  rotation difference from the sagittal plane; the abstract's mean values in
+  segment order are **1.0 / 40.5 / 3.0 / 6.5 / 6.8 / 6.9 / 5.4 / 2.1 degrees** —
+  the second, C1-C2, is the bullet's 40.5° to one side. The abstract carries no SD
+  and no per-segment spread (`:could-not-obtain` at this level; a range of 29-46°
+  is quoted for this paper in secondary literature only, not read in the primary).
+  What this repairs and what it does not: (i) the number the bullet carries is a
+  measured in-vivo mean from a 1987 CT study, not an invented constant — but it was
+  attributed to Bogduk & Mercer, and the attribution was wrong, which is the
+  failure the 2026-09-13 note recorded; the bullet's figure remains prose, now
+  with its origin named instead of orphaned. (ii) It does not disagree with Kang's
+  37.9 ± 5.1: 40.5 sits 0.51 SD above Kang's mean (arithmetic on the two papers'
+  own stated values, `:representative`), and the methods differ — Penning reads
+  per-segment rotation differences from axial CT sections at maximal rotation,
+  Kang reconstructs Cardan angles per vertebra from markers; both are one-side
+  maxima. (iii) Neither changes the model: a midline sagittal model has no
+  axial-rotation degree of freedom at any cervical level, the atlas and axis stay
+  one segment, no instance is created. **No constant moves** — Hansraj 5-value
+  and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 - ~~**Any upper cervical flexor**~~ **Closed 2026-09-08** — `longus_capitis` (PCSA
   measured) and `rectus_capitis_anterior` (PCSA representative) act about the
   atlanto-occipital joint. ~~What is *not* closed is the surplus: carrying it would take
@@ -1693,26 +2452,203 @@ workstations: 273.61858521664936 / 194.4819901245166 / 103.0363709306259 N, iden
   the occiput and its function is **lateral bending**, not sagittal flexion; a midline
   sagittal model has nowhere to put it, and Kamibayashi & Richmond do not measure it
   either.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the muscle this bullet says has nowhere
+  to be put has a measured chord under the model's own sagittal task — and the chord
+  does not move.* Lin G, Wang W, Wilkinson T, *Changes in deep neck muscle length from
+  the neutral to forward head posture. A cadaveric study using Thiel cadavers*,
+  Clinical Anatomy 2022;35(3):332-339 (doi:10.1002/ca.23834, PMID 35038194,
+  PMC9304288; full text re-read 2026-09-20 from the PMC HTML copy; the same paper
+  this file already reads for `rectus_capitis_anterior` 30.7 mm and the longus colli
+  parts). Its Table 2 groups rectus capitis lateralis under "Occipital flexors" —
+  the bullet's own class — and measures, on six Thiel-embalmed cadavers (4 M / 2 F,
+  mean 86.2 ± 8.7 y, MicroScribe digitised attachment-to-attachment, the model's
+  straight-line chord convention): **18.8 ± 3.0 mm at the neutral posture**, 18.3 ± 2.7
+  at slight FHP (−2.6 ± 3.7 %) and 18.1 ± 1.9 at severe FHP (−3.0 ± 5.8 %), p = 0.21 —
+  **no significant length change at either severity**; within its own group only
+  longus capitis moves (4.1 / 8.8 %, p < 0.05), while rectus capitis anterior's row is
+  the same flat shape (3.2 ± 6.5 %, non-significant). Cross-check against the
+  2026-09-17 annotation on this muscle in *What the upper cervical spine still cannot
+  express*: Ma 2019's formalin-semifixed **21.3 mm** craniocaudal surface length vs
+  Lin's **18.8 mm** chord — a chord between attachment centres is shorter than a
+  surface-following path by geometry, so the two measurements agree in order without
+  either being averaged into the other. What this adds that the earlier annotation
+  did not have is a measured *behaviour* statement: across the sagittal severity range
+  this model's postures live in, the lateral column's chord is static — the measured
+  shape of "nowhere to put it", because a line that carries no sagittal length change
+  also has no sagittal equilibrium to enter. Error directions kept: Thiel-embalmed
+  cadaver chord between attachment centres, not fibre length, n=6, the oldest cohort
+  this file cites; no mass and no PCSA in this paper either (`:could-not-obtain`), so
+  the capacity question stays as the 2026-09-17 annotation left it. Reported, not
+  built: no `rectus_capitis_lateralis` instance, no constant moves — Hansraj 5-value
+  and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 - ~~**A coupled solve over the C7 and atlanto-occipital constraints.**~~ **Closed
   2026-09-08** — `recruit/solve`, one dual variable per constraint, active set read off
   the KKT prices. The gap the flexors turned from a suspicion into a measurement is the
   gap that measurement closed. See **The coupled solve**.
 - **A motion sequence.** The partition is a fixed proportion; real cervical flexion moves
   the lower column, then the upper, then the lower again.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the two columns are not proportionate —
+  measured, and the disagreement is direction-reversal, not just rhythm.* Ordway NR,
+  Seymour RJ, Donelson RG, Hojnowski LS, Edwards WT, *Cervical flexion, extension,
+  protrusion, and retraction. A radiographic segmental analysis*, Spine
+  24(3):240-247, 1999 (doi:10.1097/00007632-199902010-00008, PMID 10025018; abstract
+  read 2026-09-17 via the Europe PMC REST API; no PMC record, so the per-level
+  angular tables are `:could-not-obtain` — abstract-only). Lateral radiographs, 20
+  asymptomatic volunteers, occiput to C7, four end-range positions plus neutral.
+  Two measured facts a fixed-proportion partition cannot carry. (i) **The columns
+  move in opposite directions under a different task**: retraction is lower-cervical
+  EXTENSION with upper-cervical FLEXION, and protrusion is lower-cervical FLEXION
+  with upper-cervical EXTENSION — the model has no protrusion or retraction pose, so
+  it cannot even state the question. (ii) **A full-length pose does not spend the
+  upper column's end-range**: full-length flexion and full-length extension both leave
+  Occ-C1 and C1-C2 inside their range, and only retraction takes Occ-C1 and C1-C2 to
+  full end-range flexion (only protrusion, to their end-range extension) — so the
+  share each column receives depends on the task, not on a constant. What it does not
+  close: abstract-only, so no per-level degree value enters anywhere; and the
+  temporal rhythm the bullet names ("lower, then the upper, then the lower again") is
+  a dynamic question, while these are static end-range radiographs — this measures
+  the partition, not the sequence. No constant moves — Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 - **Lateral bend within the neck.** `pose` gives all three cervical segments the same
   lateral-bend angle, so there is no side-bending rhythm and no coupled axial rotation —
   which is most of what the atlanto-axial joint does.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the shared angle is doubly non-uniform —
+  per level, and between levels and tasks.* Ishii T, Mukai Y, Hosono N, Sakaura H,
+  Fujii R, Nakajima Y, Tamura S, Iwasaki M, Yoshikawa H, Sugamoto K, *Kinematics of
+  the cervical spine in lateral bending: in vivo three-dimensional analysis*,
+  **Spine 31(2):155-160, 2006** (doi:10.1097/01.brs.0000195173.47334.1f, PMID
+  16418633; abstract read 2026-09-17 via the Europe PMC REST API; no PMC record, so
+  the per-level tables are `:could-not-obtain` — abstract-only). Twelve healthy
+  volunteers, 3D MRI in 7 positions at 10° increments of lateral bending, volume
+  registration per vertebra. Three measured facts a single shared angle cannot
+  carry. (i) **Per-level lateral bending is not uniform**: mean maximum lateral
+  bending to one side spans **1.6° to 5.7°** across levels (about 3.5× between the
+  least- and most-mobile level; the abstract names no level `:could-not-obtain`),
+  while `pose` spends the same angle on every cervical segment. (ii) **The
+  coupling is real and bimodal in sign**: coupled axial rotation runs
+  **opposite** to the lateral bending at Oc-C1 (0.2°) and C1-C2 (**17.1°**), and
+  in the **same** direction at the subaxial levels except C7-T1 — the
+  atlanto-axial joint indeed does most of it, and 17.1° of it is invisible to a
+  sagittal model. (iii) Coupled flexion-extension stays under **1.1°** at every
+  level, so the sagittal plane this model owns is the *small* component — the
+  missing terms are the two it cannot state. Lin CC, Lu TW, Wang TM, Hsu CY, Hsu
+  SJ, Shih TF, *In vivo three-dimensional intervertebral kinematics of the
+  subaxial cervical spine during seated axial rotation and lateral bending via a
+  fluoroscopy-to-CT registration approach*, J Biomech 47(13):3907-3913, 2014
+  (doi:10.1016/j.jbiomech.2014.08.014, PMID 25218506; abstract read 2026-09-17
+  via the Europe PMC REST API; no PMC record) is the upright, weight-bearing
+  check: ten asymptomatic young adults, biplane fluoroscopy, subaxial per-level
+  ROM to one side **6.1-6.4° during lateral bending** (C3/C4-C6/C7; 4.2/4.6/3.0/
+  1.3° during axial rotation), with the coupled-rotation/lateral-bending ratio
+  spanning **0.23-0.75 across levels in LB** — and Lin's own finding that this
+  upright dynamic pattern *differs from previous supine static studies*
+  (significance at C4/5-C6/7, p <= 0.0037) means the two sources do not collapse
+  to one per-level table. What this does not close: both are abstract-only here,
+  so no per-level angle enters the model or `pose` (`:could-not-obtain`); neither
+  paper equates MRI-static to fluoroscopy-dynamic conventions; and neither names
+  the moment or load a coupled rotation implies — kinematics only, no force
+  claim. The annotation pins shape and direction, not a constant: the shared
+  angle over-states the least-mobile level and under-states C1-C2's coupling.
+  No constant moves — Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff).
 - **The three suboccipitals are modelled midline**, so their lateral flexion and their
   role in steadying the head in rotation are absent. That costs most for obliquus capitis
   superior, which really runs from a transverse process 25 mm off the midline.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the 25 mm carries no source — not in this
+  bullet and not in `attachment.kotoba`'s `:source` string, which states the same 25 mm —
+  so it is `:parameter-not-in-source`, and for the first time it has a measured floor.*
+  Cacciola F, Phalke U, Goel A, *Vertebral artery in relationship to C1-C2 vertebrae:
+  an anatomical study*, Neurology India 52(2):178-184, 2004 (PMID 15269464; no DOI,
+  no PMC record; **full PDF read 2026-09-17** from the University of Toronto public copy —
+  PubMed HTML serves a cookie page and Europe PMC carries abstract only). Ten cadaveric
+  heads (20 sides) plus ten dry C1-C2 pairs, digital calliper: the distance from the
+  **midline to the medial-most edge of the vertebral artery groove on the outer cortex of
+  the C1 posterior arch is 14.3-19.7 mm, mean 18.2 mm**, and the artery itself rides the
+  groove at a mean **22.1 mm** from the midline. The groove runs laterally INTO the
+  transverse foramen, which the same paper states sits "in the transverse process lateral
+  to the lateral mass" — so every landmark the OCS origin could sit on is at or lateral to
+  the groove, and the measured floor for the origin's lateral offset is **18.2 mm** (the
+  transverse-process tip itself is `:could-not-obtain` from this source; the C2
+  transverse-process tip, 29.3 mm, is already cited in the rectus-capitis-anterior bullet
+  above). What this does to the pinned length check:
+  `the-suboccipital-lengths-are-checked-against-the-measurement` pins OCS's flattened
+  chord SHORT of 43 mm (39.5 modelled against K&R's 43-57), and the missing lateral term
+  is a candidate mechanism of exactly that size — sqrt(39.5^2 + 18.2^2) ~= **43.5 mm**
+  (arithmetic `:representative` on one modelled chord and one measured floor), which would
+  carry the chord into the measured range with no segment change at all. The arithmetic
+  does NOT close the question: the confessed 37-vs-50 mm `upper_cervical` cut shortens the
+  same chord, so the pinned shortfall is the sum of (at least) two same-direction terms
+  and one chord cannot separate them. Reported, not built: `:lat` stays 0.0 — restoring
+  the measured floor would break the pinned length test and move a solver input, and
+  neither the measured floor nor this arithmetic is a licence for either. No constant
+  moves — Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical.
 - **`upper_cervical` is 37 mm where an atlas plus axis is nearer 50**, because the model
   cuts the neck at its own uniform level spacing. Everything spanning that joint comes out
   short, and a short muscle changes length by a larger fraction for the same rotation — so
   the force–length term falls off faster than it should, biasing these three toward *less*
   available force and a *higher* %MVC than a correctly scaled model would report.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the "nearer 50" now has a measured floor, and
+  the under-statement direction is measured, not asserted.* Sunar M & Kapakin S,
+  *Morphometric Evaluation of Craniocervical Junction by Magnetic Resonance Imaging Method*,
+  Asian J Neurosurg 14(3), 2019 (doi:10.4103/ajns.ajns_293_17, PMID 31497088,
+  PMC6703074; full text and Table 3 read 2026-09-20 via the Europe PMC REST fullTextXML
+  endpoint, CC BY-NC-SA). 306 individuals (95 male / 211 female, aged 20+), sagittal MRI,
+  in vivo. The source measures the **dens axis height (DAH)** — its own definition: "the
+  distance between the center of the basis of the dens axis and the apex" — at
+  **30.9 ± 2.3 mm (female) and 33.8 ± 2.2 mm (male)** (sex difference significant), and the
+  **total cervical length (TLCV)** — "the distance from the apex of the dens to the basis of
+  the corpus of the seventh cervical vertebra" — at **106.6 ± 6.4 / 116.7 ± 7.3 mm**. Set
+  against this model's derivation: `upper_cervical` spans 0.12 of the C7→vertex length
+  (`segment.kotoba`: `atlanto-occipital-along` 0.42 − `lower-cervical-span` 0.30), i.e.
+  0.12 × 0.182 × 1.70 m = **37.1 mm** (the README's 37, on the model's own reference
+  stature). The odontoid process **alone**, measured in vivo, is 0.83× (female) to 0.91×
+  (male) of the model's entire atlas+axis span, leaving **3.3 mm (male) to 6.2 mm (female)**
+  of the 37.1 mm for the atlas ring, the C2 corpus and the C2/C3 disc together (arithmetic
+  on two published means and one derived constant, `:representative`). DAH is a *floor* on
+  the unit height, and it under-counts in the model's favour twice: the unit's top end (the
+  atlanto-occipital joint) sits above the dens apex, and the dens base-center start point
+  sits inside the C2 body — so the true unit height is at least DAH plus everything this
+  read did not measure (atlas ring height, C2 corpus height: `:could-not-obtain` here). The
+  total-length row cross-checks the other end: TLCV to the C7 corpus *base* is
+  106.6–116.7 mm, and the model's occipito-atlantal cut sits 0.42 × 309.4 = 130 mm above C7
+  — consistent once the C7 body and the C7/T1 disc below its corpus are added back, i.e. the
+  model's total cervical height is not the error; the error is its *distribution*, uniform
+  18.6 mm per level against a top unit the measurement puts at a floor of 30.9–33.8 mm
+  before the atlas is counted. The "nearer 50" stays `:representative` — no source here
+  measures the atlanto-occipital-to-C2/C3 span itself, and no instance, length or mass
+  moves on this annotation. **No constant moves** — `upper-cervical-span` and its 0.12
+  derivation are untouched, Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff).
 - **The five lower cervical levels still share one orientation.** `lower_cervical` is C3
   to C7 and is still one rigid body; C7/T1 … C3/C4 are five samples of it. What is no
   longer true is that the *skull* shares that frame.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the code's own gap sentence got its
+  measured witness, and the witness is a rank order, not a number row.* `spine.kotoba`
+  says `lower_cervical` carries five levels that share one frame "for exactly the
+  reason the lumbar spine did until 2026-09-11: nobody has put a measured segmental
+  distribution into this file for it" (`lumbar-segment-name` docstring). A measured
+  segmental distribution for the lower cervical levels exists in the paper this
+  section already reads — Kang 2019 (PMID 30990826, PMC6467451, the same fetch the
+  atlanto-axial bullet cites, re-read 2026-09-20 from the PMC copy): it distributes
+  the *regions'* maximal active rotation (69.7 ± 5.5° total, 63.13% of it taken
+  above the lower cervical spine) and states the per-segment ranks in words —
+  **C2-C3 is the smallest rotation among the lower cervical segments; C3-C4 and
+  C4-C5 carry relatively large rotation; C5-C6 and C6-C7 are the smallest in the
+  entire spine, confined by the thorax** — with the cause carried as an attribution
+  from Bogduk's anatomy, not measured here: the orientation of the zygapophysial
+  joint surfaces. That rank order is the part a one-frame `lower_cervical` cannot
+  carry: five samples of one segment read as interchangeable, while the measured
+  ranks make the middle two segments the rotators and the end segments the stiff
+  ones. The error direction of the current straight frame is fixed by those ranks
+  if the segment is ever split: an equal `:along` share would overstate the end
+  levels (C2-C3 and the C6-C7 side) and understate C3-C4/C4-C5. What this does not
+  close: the per-segment *numbers* behind the ranks are printed only in the paper's
+  Fig 6 — figure-only here, `:could-not-obtain` as a number row — and the ranks
+  are *axial* rotation, so the sagittal distribution the lumbar analog
+  (`posture/lumbar-segmental-shares`) consumes, per-level cervical lordosis shares,
+  is still without a source. **No constant moves** — `lower_cervical` stays one
+  segment, `level-axis-offset-deg` stays zero off the lumbar spine, Hansraj 5-value
+  and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 
 ## The upper cervical spine had no flexors (2026-09-08)
 
@@ -1996,10 +2932,67 @@ cervical semispinalis cervicis or one-level cervical multifidus — was searched
   side, and its cross-section is currently as unsourced as the extensors'. It does not
   close the extensor block, and the 113 mm2 is not an extensor number.
 
-So the block is confirmed to be **a source that does not exist in vivo either**, not a
+So the block was confirmed to be **a source that does not exist in vivo either**, not a
 source nobody has looked for. The candidate moment arms in the table above (+16.74 mm at
 neutral for the one-level multifidus) remain usable the day a measured PCSA appears; the
 PCSA does not.
+
+> ⚠ **That "in vivo" half was refuted on 2026-09-14 (bot/suji-anatomy) — the next section
+> reads it.** What survives of the sentence is the narrower claim: no in-vivo source gives
+> the **PCSA** of these muscles, and none resolves the **C2/C3** level. The per-level
+> in-vivo *anatomical* CSA has existed since 2011.
+
+### An in-vivo per-level anatomical CSA does exist (found 2026-09-14, bot/suji-anatomy)
+
+**Izumida H, Daimon K, Umezawa H, et al., "Longitudinal MRI study over 20 years of
+cervical posterior extensor muscle area in asymptomatic subjects", *Sci Rep* 15:21826,
+2025** (doi:10.1038/s41598-025-08055-6; full text read 2026-09-14 at nature.com —
+open access, CC BY; its baseline arm is the Okada 2011 cohort, Eur Spine J 20:1567-1573,
+doi:10.1007/s00586-011-1774-x, PMID 21431426, PMC3175907, whose own full text is
+paywalled and whose abstract carries only the whole-group sums). 55 of 497 asymptomatic
+volunteers (35 M / 20 F, mean 31.9 ± 13.8 y at baseline), 1.5-T T2-weighted axial MRI,
+ROI traced on visible fascia, two raters (intra- 0.92 / inter- 0.89 ICC). Table 2
+measures, **in vivo and per level, exactly the two muscles the lump's `:source` names
+first** — bilateral means, mm2:
+
+| level | multifidus | semispinalis cervicis | MF+SSC bilateral |
+|---|---|---|---|
+| C3/4 | 146.4 ± 48.0 | 180.3 ± 51.8 | **326.7** |
+| C4/5 | 245.6 ± 75.6 | 318.6 ± 102.8 | **564.2** |
+| C5/6 | 239.0 ± 83.1 | 410.8 ± 148.0 | **649.8** |
+
+(Side check done rather than assumed: the paper's own left/right rows at C4/5,
+840.8 + 868.6 = 1709.4 mm2, reproduce its table's group total, so these figures are
+**bilateral**, the same convention the 12.0 cm2 lump carries.)
+
+**What this measures against.** MF+SSC summed over just the three measured levels is
+**1540.7 mm2 = 15.4 cm2**, which already exceeds the whole **12.0 cm2** lump that claims
+four muscles (semispinalis cervicis, multifidus, longissimus and spinalis cervicis) over
+the full C3-C7 span — the same direction as the 2026-09-12 Zheng-chain bracket (16.5 to
+50.9 cm2 bilateral MF+SC), now confirmed at its low end by a single-cohort direct
+measurement instead of a two-population chain. It remains a statement about the lump, not
+a replacement for it: the measured span is three of the model's five lower-cervical
+levels, so neither number covers the same territory.
+
+**What it does not close, named rather than blurred.**
+
+1. The quantity is **anatomical CSA**, and the paper says so in its own Methods:
+   *"All measurements represent anatomical CSA ... does not necessarily reflect force
+   production. This is distinct from physiological CSA, which estimates muscle
+   force-generating capacity."* The conversion anatomical → PCSA needs volume and
+   fascicle length (`:conversion-not-in-source`); Anderson's 1.2-3.7 cm fascicle
+   range is the only divisor this repo holds, and it was dissected, not imaged.
+   So the 15.4 cm2 is a bracket on the lump's **cross-section**, not on its capacity.
+2. The table **starts at C3/4** — the C2/C3 level the `:c2c3` block needs is one
+   level above the first measured row. The C3/4 multifidus row (146.4 ± 48.0) is a
+   measured *adjacent* level, not a value for the one-level C2/C3 candidate.
+3. Fatty degeneration rose to 169.5-200.4% of the pure-muscle signal at follow-up,
+   so the 20-year rows are aged tissue; only the baseline arm is quoted here.
+
+**No constant moves.** The 12.0 cm2 stays byte-exactly where it is; the block's
+blocker is now "no PCSA in vivo and no C2/C3 row", which is narrower and truer than
+"no in-vivo source exists". The `:c2c3` candidate stays in `awaiting-muscles`.
+
 ### A source the 2026-09-10 search missed (found 2026-09-12, bot/suji-anatomy)
 
 **Anderson JS, Hsu AW, Vasavada AN, *Morphology, architecture, and biomechanics of
@@ -2023,6 +3016,91 @@ It does not close the block, for three stated reasons:
    candidate at all;
 3. semispinalis cervicis, longissimus cervicis and spinalis cervicis are still
    unmeasured by it.
+
+**The 2026-09-12 search is extended one day later, 2026-09-15, and the two
+measured numbers above now have a measured counterweight from the other
+direction.** The bracket above derives a PCSA from a volume and a fascicle
+length. Three independent in-vivo imaging cohorts measure the same two
+muscles the lump names as a direct anatomic cross-section — none measures a
+PCSA, so none closes the block, but all three measure the same quantity at
+the same anatomical scale, and they disagree with the volume-derived bracket
+by roughly an order of magnitude:
+
+1. **Okada E, Matsumoto M, Ichihara D, et al., "Cross-sectional area of
+   posterior extensor muscles of the cervical spine in asymptomatic subjects:
+   a 10-year longitudinal magnetic resonance imaging study", Eur Spine J
+   2012;20(9):1563-1573** (doi:10.1007/s00586-011-1774-x), extended 20-year by
+   the same group, Sci Rep 2025 (s41598-025-08055-6; the 20-year full text was
+   read 2026-09-15 and its Table 2 is the initial-investigation cohort of the
+   same 1993-96 scans). **Per-muscle, per-level, bilateral mean CSA, T2 MRI,
+   497→55 healthy adults (35 M / 20 F, baseline mean age 31.9 ± 13.8):**
+   initial investigation, bilateral mm2 — multifidus **146.4 / 245.6 / 239.0**
+   and semispinalis cervicis **180.3 / 318.6 / 410.8** at C3/4, C4/5, C5/6;
+   i.e. **MF+SC together 3.27 / 5.64 / 6.50 cm2 per level**. These are the
+   first per-muscle per-level in-vivo means this block's two named muscles
+   have had. Caveats, all stated by the source or implicit in it: anatomic
+   CSA, not PCSA — the 20-year paper says so in its own methods; T2
+   signal-intensity fat grading the authors call not yet standardised; and a
+   population-average cohort, not this model's 70 kg / 1.70 m reference body.
+
+2. **Fernandez-de-las-Penas C, Albert-Sanchis JC, Buil M, Benitez JC,
+   Alburquerque-Sendin F, "Cross-sectional area of cervical multifidus muscle
+   in females with chronic bilateral neck pain compared to controls",
+   J Orthop Sports Phys Ther 2008;38(4):175-180**
+   (doi:10.2519/jospt.2008.2598, PMID 18459244; full text read 2026-09-15).
+   20 healthy women, ultrasound, C3-C6 bilaterally: **per-side cervical
+   multifidus CSA 0.79 / 0.87 / 0.89 / 0.80 cm2** (mean, C3/C4/C5/C6, with
+   95% CI in the source) — **bilateral 1.6-1.8 cm2 per level**, female-only,
+   prone at a slightly flexed upper cervical posture. The paper also states
+   C3 is the smallest level in both groups, and its control cohort agrees
+   with the whiplash- literature that the muscle is level-graded rather than
+   uniform.
+
+3. **Rankin G, Stokes M, Newham DJ, "Size and shape of the posterior neck
+   muscles measured by ultrasound imaging: normal values in males and females
+   of different ages", Man Ther 2005;10(2):108-115**
+   (doi:10.1016/j.math.2004.08.004, PMID 15922231; full text read 2026-09-15).
+   99 healthy subjects (46 M / 53 F, 18-72 y), ultrasound at the C3 level,
+   prone, neutral. It scanned **semispinalis cervicis + cervical multifidus +
+   rotatores as ONE ROI**, because *the fascial division between multifidus
+   and semispinalis cervicis could not be identified consistently in all
+   subjects* — the same inseparability Fortin 2018 recorded at C2-C3. The
+   paper's Table 2 values did not survive the text extraction, so its exact
+   per-side means are `:could-not-obtain` here; what is readable is the shape
+   (teardrop, lateral dimension about half the AP), males larger (P < 0.001,
+   not significant once normalised for body mass), no age effect, and a male
+   regression **CSA = 1.61 x spinous-process length − 1.42** (r = 0.79,
+   P < 0.001), which at a 4.4 cm C3 spinous process predicts a per-side
+   deep-group CSA of about **5.6 cm2** — `:representative`, derived from the
+   paper's own regression rather than read from its table, and the
+   spinous-process length is the paper's cohort's, not this model's.
+
+**What the three cohorts do to the block's defence.** The block's operative
+claim stays true: none of them measures a **PCSA**, which is what the model's
+`:pcsa-cm2` field and Crowninshield-Brand sharing consume, and none separates
+the fascicular subgroups the Anderson 2005 dissection showed the muscle is
+built from. What changes is the SIZE of the neighbourhood 12.0 cm2 lives in.
+The volume-derived bracket above puts the whole four-muscle group at
+16.5-50.9 cm2 bilateral; the direct CSA cohorts put **one level's** MF+SC at
+3.3-6.5 cm2 bilateral (Okada, mixed sex) and one level's MF alone at
+1.6-1.8 cm2 bilateral (Fernandez, female-only). The two measured populations
+are consistent with each other once the level axis is fixed, and they bracket
+the lump from the other side: **12.0 cm2 is 1.8-3.7x the measured per-level
+MF+SC cross-section, and 7-7.5x the measured per-level multifidus alone**.
+Per-level CSAs of segmental muscles must not be summed over levels — the same
+telescoping error this repo has already named once — so the measured scale
+that most nearly matches what the lump represents at its own single-level
+insertion (below C6/C7, per its `:source`) is the 3.3-6.5 cm2 figure, and
+against that figure the lump **over-states** capacity (error direction:
+%MVC under-stated). Against the volume-side bracket it **under-states**
+(error direction: %MVC over-stated). Both directions are recorded and
+neither is averaged away; the resolution is a mechanism question — how much
+of a segmental muscle's per-level slice is one anatomical muscle counted
+several times — that no paper in this file answers. **No constant moves** —
+12.0 stays exactly where it is, the C2/C3 block stays closed-for-provenance,
+and `task->reference-region` still returns `:absent-from-source` for the deep
+extensors. Hansraj 5-value and Wilke sitting 348.86176709999995 N
+byte-identical.
 
 **What it does add: the first measured bracket on the lump, from two measured
 numbers.** Zheng L, Siegmund G, Ozyigit G, Vasavada A, *Sex-specific prediction of
@@ -2052,6 +3130,104 @@ and the one-line resolution stays the owner's judgement. The 0.7 N.m extension
 capacity is also the first measured scale for what a solver at `:c2c3` could call on
 from the extension side — comparable against that joint's demand the day the PCSA
 question closes.
+
+### A second in-vivo source the 2026-09-10 search missed (found 2026-09-16, bot/suji-anatomy)
+
+**Izumida H, Daimon K, Umezawa H, Michikawa T, Fujiwara H, Okada E, Nojiri K, Katoh H,
+Shimizu K, Ishihama H, Nakamura M, Matsumoto M, Watanabe K, *Longitudinal MRI study
+over 20 years of cervical posterior extensor muscle area in asymptomatic subjects*,
+Sci Rep 15:21826, 2025** (doi:10.1038/s41598-025-08055-6, PMID 40595211, PMC12218271;
+full text read 2026-09-16 through the Europe PMC REST fullTextXML endpoint, CC BY).
+55 asymptomatic volunteers (35 M / 20 F, mean 31.9 ± 13.8 y at baseline), 1.5-T T2
+axial MRI, each muscle's fascia traced by hand in ImageJ, by the convention of
+Elliott 2007 (ref 8) and Iizuka 2001 (ref 31) — the Elliott paper the search above
+checked, a different cohort and a decade later. Its Table 2
+measures **the deep group the lump declares, per muscle and per level, in vivo,
+asymptomatic** — which is what the 2026-09-10 search asked for and did not find:
+
+| level | multifidus (mm²) | semispinalis cervicis (mm²) | semispinalis capitis (mm²) | splenius capitis (mm²) | total (mm²) |
+|---|---|---|---|---|---|
+| C3/4 | 146.4 ± 48.0 | 180.3 ± 51.8 | 621.8 ± 207.9 | 522.8 ± 170.7 | 1458.0 ± 418.7 |
+| C4/5 | 245.6 ± 75.6 | 318.6 ± 102.8 | 594.5 ± 176.6 | 550.7 ± 206.7 | 1709.4 ± 499.0 |
+| C5/6 | 239.0 ± 83.1 | 410.8 ± 148.0 | 474.8 ± 148.0 | 527.7 ± 167.8 | 1652.9 ± 460.3 |
+
+The paper does not state whether a row is one side or both (`:could-not-obtain` —
+the side question is answered only for the group total, and the left-right table
+puts the whole group at 840.8 + 868.6 = 1709.4 mm² at C4/5, which **equals the
+multifidus row's level total, 245.6 + 318.6 + 594.5 + 550.7 = 1709.4**, so the
+arithmetic reads each column as BILATERAL sums; the same check closes at C5/6 to
+within 0.6 mm² and misses at C3/4 by 13.3 mm², i.e. the reading is arithmetic, not a
+statement in the source).
+
+Why it does not close the block, four stated reasons:
+
+1. **It is CSA, not PCSA** — a traced axial fascia outline includes fat and
+   non-contractile tissue (the same paper measures fatty degeneration at
+   109–115% of a young reference at baseline, rising to 170–200% over 20 y), so a
+   PCSA built from it would be an over-statement by that fat fraction, direction
+   of the error **over**-stating available force.
+2. **The levels are C3/4, C4/5, C5/6** — the lump's insertion sits below C6/C7, so
+   the level it actually crosses (C7/T1) is **below** every level the table
+   measures; the one-level multifidus the C2/C3 table needs runs C3 → C2, which is
+   **above** every level the table measures. Nothing in it is the cross-section at
+   either joint the model would solve.
+3. **It is whole-muscle**, not the one- or two-segment fascicle the candidate table
+   needs — a whole multifidus at C4/5 is the sum of its fascicles over several
+   levels, so it over-states any one-level subgroup.
+4. longissimus and spinalis cervicis remain unmeasured (absent from every ROI, as
+   with every other study found).
+⚠ *Annotated 2026-09-19 (bot/suji-anatomy): "absent from every ROI" holds for every CSA
+  cohort, but one of the two muscles has a measured in-vivo VOLUME.* Belavý DL,
+  Miokovic T, Armbrecht G, Felsenberg D, *Hypertrophy in the cervical muscles and
+  thoracic discs in bed rest?*, **J Appl Physiol 115(4):586-596, 2013**
+  (doi:10.1152/japplphysiol.00376.2013, PMID 23813530; abstract read 2026-09-19 via
+  the Europe PMC REST API; no PMC record, full text paywalled, per-muscle volume
+  values `:could-not-obtain`). The 2nd Berlin Bed Rest Study (BBR2-2): 24 males,
+  60-day bed rest (no exercise / resistive / resistive + vibration arms), axial
+  cervical MRI from skull to T3, and the measured volume list includes **spinalis
+  cervicis by name** — alongside semispinalis capitis, splenius capitis, longus
+  capitis, longus colli, levator scapulae, sternocleidomastoid and the scalenes —
+  with every listed muscle increasing in volume during bed rest except semispinalis
+  capitis (P < 0.025). What this changes in this section: the claim narrows again.
+  spinalis cervicis is measured in vivo — just not as a per-level CSA and not as a
+  PCSA. A volume with a fascicle length is the same quantity class the Zheng/
+  Anderson chain already built a bracket from (volume ÷ fascicle length, cos(pennation)=1
+  over-stating), so this muscle is one readable full text away from the same kind of
+  bracket the other two lump members have. What it does not close: (i) the measurement
+  is a bed-rest *change* from hypertrophy, not a posture's cross-section — any volume
+  figure read off this study would over-state a neutral seated or standing neck
+  (direction stated; magnitude `:could-not-obtain` from the abstract, as are the
+  per-muscle values); (ii) abstract-only; (iii) **longissimus cervicis stays
+  unmeasured** — absent from this list too, and the lump's `:source` names both halves,
+  so the pair the block still needs remains half-measured. **No constant moves** —
+  the 12.0 cm² stays byte-exact where it is, the `:c2c3` block stays
+  blocked-for-provenance, Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff).
+
+**What it does add: the first measured per-muscle in-vivo numbers for the deep
+group, and they tighten the Zheng/Anderson bracket from above.** Summing the
+bilateral reading: MF+SSC at C3/4 = 0.33 cm², C4/5 = 0.56 cm², C5/6 = 0.65 cm² —
+two of the four muscles the lump declares, at **0.33–0.65 cm² per LEVEL**, against
+Zheng/Anderson's 16.5–50.9 cm² for the *whole muscle pair across the whole neck*.
+If the per-level reading is right, the pair's total over C3/4–C5/6 (plus the
+unmeasured C6/7 and C7/T1) is order **1.5–2 cm²**, and the 12.0 cm² lump then
+OVER-states the deep pair by roughly 6–8× (direction: capacity over-stated, %MVC
+under-stated) — the OPPOSITE direction from the Zheng/Anderson bracket, which said
+the lump UNDER-states. The two measured sources now point in opposite directions,
+so the 12.0 cannot be resolved by either alone; that is the finding, not a
+correction. **No constant moves** — 12.0 stays exactly where it is, the C2/C3
+block stays blocked on the same contradiction it was blocked on, and what changes
+is that the 2026-09-12 note's "the block is no longer 'no source exists'" gains a
+second, population-based reading that contradicts the first's direction. The 0.7
+N·m extension scale from Anderson stays the only measured capacity figure.
+
+Same paper's own 20-year drift is not a constant for this model either: the group
+mean moves +9.5% / −2.2% / −4.7% per level (initial → 20-y), a *change*, not a
+posture's cross-section, and its three levels C3/4–C5/6 are the upper three of
+`lower_cervical`'s five — all below the `:c2c3` joint where the candidate lives.
+
+Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical (prose only).
+
 
 
 What *did* change at C2/C3: `longus_capitis` runs up the front of the column to the
@@ -2093,8 +3269,74 @@ capitis passive term at a posture where its active force is zero.
   **Closed 2026-09-08.** The coupled solve was built; there is no surplus.
 - **Rectus capitis lateralis** — a lateral bender, and a midline sagittal model has
   nowhere to put it. Also unmeasured by the source.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): "unmeasured by the source" remains true of
+  Kamibayashi & Richmond, but measured geometry AND measured passive stiffness for this
+  muscle exist outside it, and neither is folded in.* (a) Ma SC, Liu S, Agazzi S, Jia W,
+  *Rectus Capitis Lateralis Muscle: A Cadaveric Study of a Key Surgical Landmark in the
+  Posterior and Lateral Approaches to the Jugular Foramen*, World Neurosurgery
+  2019;128:e859-e864 (doi:10.1016/j.wneu.2019.05.018, PMID 31082563; abstract read
+  2026-09-17 via the Europe PMC REST API — the abstract carries no dimensions; the
+  numbers below were read on the publisher's page, no PMC record, full text
+  subscription-only). Eight formaldehyde-semifixed cadaveric heads: craniocaudal length
+  **21.3 mm** (range 20–23 mm), and anteroposterior depth **6.5 mm** (range 6–7 mm) at
+  the cephalad end where it inserts on the jugular process. The origin/insertion pair
+  this fixes the shape of — C1 transverse process → jugular process — is the same lateral
+  column the 2026-09-16 `rectus_capitis_anterior` annotation above needs a `:lat`
+  coordinate for, so a first measured span exists for exactly the line a lateral-bender
+  instance would need; the C1-side lateral coordinate itself is still
+  `:could-not-obtain` from these sources. Error directions kept: semifixed cadaveric
+  surface length, not fibre length, and fixation shrinks soft tissue, so the true
+  in-vivo span is if anything longer; no mass and no PCSA in either abstract
+  (`:could-not-obtain`). (b) Hallgren RC, *Injury Threshold of Rectus Capitis Muscles at
+  the Atlanto-occipital Joint*, J Manipulative Physiol Ther 2017;40(2):71-76
+  (doi:10.1016/j.jmpt.2016.11.001, PMID 27993391; abstract read 2026-09-17 via the
+  Europe PMC REST API). Three unembalmed head-neck specimens, servo-controlled
+  load-displacement to failure: the RCL failed at **significantly higher load and strain
+  than the other three rectus capitis pairs**, and RCL + rectus capitis anterior had
+  **significantly higher passive stiffness** than the other two (yield loads and
+  stiffness values themselves `:could-not-obtain` from the abstract, n=3, all female,
+  aged 63-70+). Read together, the muscle this bullet says has "nowhere to put it" is
+  measured to be the stiffest passive element at the atlanto-occipital joint — the
+  midline sagittal model has nowhere to put an active lateral line, but the measured
+  fact is a *passive* stabiliser's contribution, which no joint this model has expresses
+  at all. Reported, not built: no instance, no constant moves — Hansraj 5-value and
+  Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 - **Longus colli**, all three parts. Its superior oblique part is expressible (above); its
   vertical part runs within `lower_cervical` at both ends and is the known error shape.
+  ⚠ *Annotated 2026-09-19 (bot/suji-anatomy): the blocker clause itself is contradicted by
+  the source this section already carries — the vertical part's caudal end is NOT
+  cervical. Lin 2022 (doi:10.1002/ca.23834, PMC9304288, full text re-read 2026-09-19
+  via the Europe PMC REST API; the same paper the 2026-09-14 `rectus_capitis_anterior`
+  check below comes from) digitises the longus colli as three separate rows, and its
+  primary-landmark list for locating the deep cervical muscles' attachments includes
+  "the center point of the anterior surface of the **T3 vertebral body**" alongside the
+  transverse processes of C7, T1 and T2 — landmarks that exist in the protocol only
+  because the longus colli's caudal attachments (its vertical and inferior oblique
+  parts; the paper cites Standring 2016 for the attachments) sit on thoracic bodies
+  below the model's lowest joint, which is C7/T1 (`spine.kotoba`: `lower_cervical` is
+  C3-C7 and one rigid body; nothing sits below it). The measured length agrees with
+  the arithmetic of that anatomy: Lin's Table 2 gives longus colli (vertical)
+  **139.9 ± 7.2 mm** at the 55° neutral posture (n=6 Thiel-embalmed cadavers,
+  straight line between attachments — the model's own chord convention), which is
+  **2.1x** the same-table superior oblique part (65.9 mm) digitised with the same
+  convention on the same six specimens; arithmetic `:representative` on two published
+  means (139.9/65.9 = 2.123). A chord 2.1x the part that reaches the atlas does not
+  fit inside one cervical column, and the vertical part's FHP response stays flat
+  (-1.1 ± 1.2% slight, -2.1 ± 2.5% severe, both non-significant) the way a mid-column
+  anchored muscle does when only the head moves forward. So the real blocker is not
+  "both ends within one segment" — it is that the model has **no thoracic body at
+  all**; the clause as written understates the fix by one whole body set, and the
+  inferior oblique part shares the caudal end (same thoracic bodies, same missing
+  segment), so the correct error shape for BOTH parts is an attachment the model
+  cannot place, not a two-end collision inside `lower_cervical`. Check constants for
+  the day a thoracic body exists: vertical 139.9 ± 7.2 mm, inferior oblique
+  100.3 ± 10.7 mm (Lin Table 2, 55° neutral; per-cadaver scatter and level-resolved
+  values `:could-not-obtain` at this level). Error directions kept: Thiel-embalmed
+  cadaver chord, not fibre length, n=6 aged 86.2 ± 8.7; the same table measured the
+  model's RCA 30.7 mm against the model's own 16.06 mm, so this source runs long
+  against this model's chord convention the other way, not uniformly.
+  Reported, not built: no instance, no constant moves — Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
   ⚠ *Stale sentence below - corrected 2026-09-12:* this section said none of the three
   has a published PCSA, but the Stemper 2010 search recorded in *C2/C3: expressible,
   and blocked by provenance* above **does** give longus colli an in-vivo number:
@@ -2131,13 +3373,131 @@ capitis passive term at a posture where its active force is zero.
   no value moves on this branch. Direction of the error this fixes toward: if the
   measured 30.7 mm is the truth, the model's RCA origin/insertion offsets place the two
   ends too close together — most plausibly the insertion, 5 mm up the skull axis, where
-  a basiocciput attachment sits higher.
+  a basiocciput attachment sits higher.  ⚠ *Annotated 2026-09-16 (bot/suji-anatomy), a second candidate for the same failed
+  check — and it has a measured size.* The model puts BOTH ends of
+  `rectus_capitis_anterior` at `:lat 0.0`. The `:lat` coordinate exists and is
+  consumed (`mirror` negates it for the paired side), so flattening this midline
+  muscle onto the axis is a choice, not a structural limit — but the real origin is
+  NOT on the midline: it is on the anterior surface of the C1 LATERAL MASS. The
+  lateral offset the failed check implies is arithmetic on the two numbers this
+  bullet already carries: √(30.7² − 16.06²) = **26.2 mm** (22.9–29.3 mm across
+  Lin's ±1 SD, arithmetic `:representative`). Measured neighbours of the same
+  lateral column: the axis's superior articular facet's lateral-most edge sits
+  **22.8 mm (right) / 22.6 mm (left) from the midline** in 120 Indian dry C2
+  vertebrae, and the C2 transverse process tip **29.3 mm** (Singla M, Goel P,
+  Ansari MS, Ravi KS, Khare S, J Clin Diagn Res 9(5):AC04-9, 2015,
+  doi:10.7860/jcdr/2015/13118.5931, PMID 26155467; abstract read 2026-09-16 via the
+  Europe PMC REST API), and the atlantoaxial lateral mass joint surface itself is
+  **16.3–16.5 mm transverse** (Zhang Z, Zhao Y, Chou D, Zhang S, Zhou R, Ma Z,
+  Wang L, Yu Z, Liu Y, Wang Y, J Orthop Surg Res 18(1):919, 2023,
+  doi:10.1186/s13018-023-04410-3, PMID 38042858; abstract only, per-side values
+  `:could-not-obtain` at this level). The C1 lateral mass's own centroid distance
+  from the midline is `:could-not-obtain` from these abstracts — so the required
+  26.2 mm band (22.9–29.3) OVERLAPS the measured 22.8 mm C2 facet edge and
+  approaches the 29.3 mm C2 transverse distance, which makes a lateral origin of
+  that size anatomically plausible, NOT confirmed for C1. This does not contradict
+  the insertion-height candidate above: a chord 14.6 mm short of its measurement
+  can be short for more than one reason, and this arithmetic only shows the
+  lateral term is of the right size to be the dominant one. The one-line change it
+  points at is REPORTED, not made — give `:origin :lat` ≈ ±0.0154 (26.2/1.7, the
+  stature-fraction convention `attachment.kotoba` states at its head) — because
+  that moves the flexion moment arm about the atlanto-occipital joint, which is a
+  solver input, and a failed-length check's arithmetic is not a licence to move
+  one. No constant moves — Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical (README-only diff).
+
 - **Both flexors are modelled midline**, so longus capitis's ipsilateral rotation — which
   Vasavada attributes to its superomedial fascicle orientation — is absent, as is rectus
   capitis anterior's lateral bending.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the midline placement clause is contradicted
+  by a measured one, and where the model averages it is measured too.* Kennedy E, Albert M,
+  Nicholson H, *Do longus capitis and colli really stabilise the cervical spine? A study of
+  their fascicular anatomy and peak force capabilities*, Musculoskeletal Science & Practice
+  **32:104-113, 2017 Dec** (doi:10.1016/j.msksp.2017.10.005, PMID 29107220; no PMC record,
+  Europe PMC REST metadata `inEPMC=N` `isOpenAccess=N`, so the record is a citation and not
+  a link; full text read 2026-09-20 from the Otago University Research Archive deposit PDF,
+  30 pp — an author deposit of a manuscript whose cover leaves journal ISSN/volume/month
+  and ethics committee names as "XX" placeholders, not the Elsevier page, so the journal
+  facts above come from the Europe PMC REST `core` record and not from the PDF cover).
+  Dissected 7 embalmed cadavers (3 M aged 65–95 / 4 F aged 63–93), both sides where
+  possible, fascicles identified by unique attachment sites. Three measured statements,
+  each against one clause of this bullet:
+  (a) **the lateral placement.** The Introduction says both muscles are **"located deep in
+  the anterior neck, lying against the cervical spine"** and the retained results sentence
+  says they **"lie closely against the **anterolateral** aspect of the cervical spine,
+  running longitudinally for the length of the cervical spine"**. Both are measured
+  laterally placed — so all four offsets of the two flexors (`longus_capitis` origin
+  and insertion, `rectus_capitis_anterior` origin and insertion) sitting at `:lat 0.0`
+  flatten a measured anterolateral column onto the midline. The `:lat` coordinate exists
+  and is consumed (`attachment`'s `:lat` strap), so the flattening is a chosen placement, not a
+  structural limit; this is the LONGUS CAPITIS muscle this clause names, and RCA carrying
+  the same flattening is the separate pair already annotated on 2026-09-16.
+  (b) **the ipsilateral-rotation clause this bullet gives to Vasavada is this source's
+  *speculation*, not this source's measurement.** The measured counterpart is the
+  source's own review sentence: anatomical descriptions of lateral flexion and
+  contralateral rotation are **"speculative rather than based on formal investigation
+  and, given their small size, potentially overstate the functional abilities"**, and
+  the Introduction carries Vasavada 1998's measured estimate that, with the head in the
+  neutral posture, longus capitis and longus colli could contribute to **17% of the total
+  flexion moment** while **"longus capitis/colli would not contribute substantially to any
+  other movements"**. So the absent ipsilateral line is a claim no measured study confirmed
+  — the model keeps absent it, and nothing in this source's measured half licenses putting
+  a `:lat` direction into that line. Both directions therefore hold: the measurements
+  give the lateral placement and leave the *rotation name* speculative.
+  (c) **the origin `:along 0.50` is a model average of four measured separate rows.** Table 1
+  digitises longus capitis by unique attachment sites per cadaver: fascicles whose unique
+  attachment site is each one of the **anterior tubercles of C3 / C4 / C5 / C6** — four
+  separate rows — male mean fascicle length 5.29 (SEM 0.59) / 6.34 (1.51) / 4.23 (0.96) /
+  4.96 (1.13) mm n=3, female 4.03 (0.34) / 6.00 (1.57) / 3.76 (0.45) / 5.36 (1.64) mm n=4
+  (rows measured against pen and ruler to the nearest mm, embalmed cadavers, so
+  `:representative` for reach and a floor for what a single modeled chord can carry);
+  the aponeurosis measured on the anterior surface is a **consistent feature fusing the
+  fascicles to C5 and C6 in the middle**, and small fascicles reached the T2 and T3
+  vertebral bodies in 2 cadavers while one fascicle reached the **atlanto-axial joint
+  capsule in 1**. The model collapses these to ONE origin at C3–C6's midpoint (`:along
+  0.50`) and ONE insertion on the clivus, both `:lat 0.0` — averaging four measured
+  tubercle strands, three of which are laterally offset from the column's own facet line,
+  onto the axis point; the AA-capsule strand is the one `upper_cervical` node merge
+  (`segment` already records the axis-only split as a gap) absorbs without an
+  `:atlanto-axial` joint existing anywhere in the tree, and the measured T2/T3 strands
+  land below C7/T1 into the thorax body which the segment tree does not partition.
+  *The lateral span and per-tubercle coordinates :could-not-obtain here:* this deposit
+  prints peak-force and torque tables (Tables 4–6) but no attachment-coordinate table
+  — the paper's 3D coordinate step used OsiriX/CT+IAR and is not printed numerically —
+  so no numeric lateral offset for either flexor is available from this source, and the
+  error's direction (measured lateral to the axis vs modeled on it) is carried by a
+  placement sentence and a per-tubercle row set, no number.
+  What this does NOT close: (i) no in-vivo per-fascicle x,y,z coordinate is published;
+  (ii) the measured aponeurosis turns four strands into one fused anterior belly in vivo,
+  so the one-point origin is nearer the measured corpus than the four-row per-fascicle
+  anatomy alone suggests — both directions held, nothing here licenses moving an
+  `:lat` or `:along`; (iii) the MRI-derived muscle VOLUMES (longus capitis male 7.3 (0.3) /
+  female 4.9 (0.3) cm², dissected 4.0 (0.6) / 3.6 (1.6) per side) are VOLUMES — PCSA
+  computed as volume/fascicular length here — not the model's `1.84` (Kamibayashi &
+  Richmond Table 2 per-side 0.92 unitless); volume cm² is not PCSA cm², so no PCSA
+  converges on 1.84 from this deposit.
+  **No constant moves** — the four `:lat 0.0` stay, `longus_capitis` PCSA stays 1.84,
+  `rectus_capitis_anterior` 1.00 stays, `:along 0.50` stays, Hansraj 5 values and Wilke
+  sitting `348.86176709999995 N` byte-identical — README-only diff.
 - **`upper_cervical` is still 37 mm where an atlas plus axis is nearer 50**, so
   `rectus_capitis_anterior`, which spans it, is short for the same reason
-  `rectus_capitis_posterior_minor` is.
+  `rectus_capitis_posterior_minor` is. The "nearer 50" now has a measured
+  in-vivo anchor, not just the dry-bone body heights of 2026-09-11: Polat S,
+  Oksüzler M, *Determination of reference values of the craniovertebral junction
+  in healthy individuals using computed tomography*, Cukurova Medical Journal
+  2025;50(3):732-743 (doi:10.17826/cumj.1708045; no PMID found; abstract read via
+  the publisher page — full text :could-not-obtain, the numbers are the paper's
+  own stated means) measured **axis height 34.78 ± 2.82 mm** in 180 healthy
+  adults (males 36.40 ± 2.61, females 33.33 ± 2.15) on CT — the whole C2,
+  dens tip to inferior endplate. Against the model's 18.6 mm uniform subaxial
+  unit that is a +16.2 mm C2 excess at the mean, roughly three times the +4 to
+  +6 mm the Xu 1995 *body-only* heights give (attachment.kotoba's note below);
+  the direction agrees and the size is larger. Adding the C1 ring (~10 mm
+  anterior arch, dry-bone ranges) and the occipital condyle column still does
+  not reach 50 from these sources, so the ~50 stack total stays
+  `:representative` and is installed nowhere; what is measured is that C2 alone
+  is taller than a subaxial unit, which is why the uniform-spacing cut runs the
+  spanning muscles short.
 
 **The frontal plane is CARRIED (2026-09-06).** Six muscle groups were added for
 it — middle deltoid and latissimus dorsi at each shoulder, quadratus lumborum and
@@ -2644,6 +4004,90 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   its moment there is still reported as `:two-joint-unfed-nm` and still fed to nobody. The
   blocker is unchanged and is **provenance, not the solver**: see *C2/C3: expressible, and
   blocked by provenance*. This is the one survivor of the original finding.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the two numbers the README quotes for this
+  unfed moment are both prose only — no `deftest` anywhere in the tree asserts any
+  `:c2c3` value.* The suite's contact with `:c2c3` is structural, never numeric:
+  `lower-limb-test` pins the deep-squat unfed map to the KEY SET exactly `#{:c2c3 :c7}`
+  (`the-three-equilibria-hold-simultaneously`, asserting `(= #{:c2c3 :c7} (set (keys
+  (:two-joint-unfed-nm summary))))`) — it asserts the map has the key, and never a
+  number under it — and `spine-test`/`attachment-test` pin that NO muscle is solved at
+  `:c2c3` and that the candidate arms move with the joint, neither of which touches the
+  unfed moment's magnitude. So the two copies this README carries are the only copies:
+  **1.9e-4 N·m at `laptop-on-lap`** (the derivation table's `longus_capitis` row, under
+  *The derivation, and how it was checked*) and **−0.0585 N·m at `deep-squat`** (the
+  what-moved table's `:two-joint-unfed-nm` row above). A tree-wide scan on 2026-09-20
+  found the strings `1.9e-4` and `0.0585` in no `.kotoba`/`.clj` file under `test/` or
+  `src/` — a refactor of `tension-summary` or the crossing bookkeeping could move the
+  `:c2c3` entry at every posture while the key-set assertion and the `:c7` laptop pin
+  stay green, which is the same silently-drifting-prose class the `:c7` bullet's own
+  2026-09-19 annotation records for its neighbours. Note the deep-squat `:c2c3` value is
+  308× the laptop one — the head's moment arm grows as the trunk falls forward — so the
+  entry is NOT a rounding artefact that the key set could stand in for. Pins requested,
+  **not installed here** — this session could not run the suite at all (`kbb` resolves
+  no git coordinates; `io.github.kotoba-lang/text` not on the classpath, the same
+  blocker recorded 2026-09-19), so this is a README-only diff: at `math/nearly=` 1e-12,
+  next to the existing pins, assert the laptop `:c2c3` total and the deep-squat `:c2c3`
+  total; the break that must go red is any perturbation of the longus-capitis crossing
+  or of `attachment/coupled-arms` at `:c2c3`. **No constant moves** — no provenance
+  change, no value recomputed, Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff).
+  ⚠ *Annotated 2026-09-20b (bot/suji-anatomy): both quoted numbers were re-measured in
+  the live tree this day, and BOTH are wrong — the first by ~830× and a sign, the second
+  by being measured at a posture map no consumer of the suite uses.* Measured on the
+  fresh `origin/main` clone (`a843531`, PR #87's commit merged) with the suite's own
+  entry point `posture/posture-from-workstation` and the suite's own body
+  (`segment/build-body 70.0 1.70`), via `muscle/tension-summary` `:two-joint-unfed-nm`,
+  nbb host, 3 runs, repeatable to the digit:
+  `laptop-on-lap :c2c3 = −0.1581450793522565 N·m` (the README's 1.9e-4 is ~830× smaller
+  AND positive — the re-measured value is extension-direction negative, the same sign
+  class as the deep-squat entry), and
+  `deep-squat :c2c3 = −0.03408252217605897 N·m` (the README's −0.0585 is the value the
+  RAW `posture/deep-squat` def produces — re-measured on the raw map: −0.05846667…
+  confirmed to 4 digits — but `posture-from-workstation`, which is what
+  `muscle_strain_test`'s own `:c7` pin uses and what every workstation consumer
+  builds from, produces −0.0341, not −0.0585).
+  The laptop number's drift source is legible: at `laptop-on-lap` the coupled solve
+  holds `longus_capitis` at its ZERO-FORCE bound (`:force-n 0`, `:active-n 0`, both
+  sides — re-measured on the raw map, where the whole `:c2c3` entry is 0), so the
+  1.9e-4 N·m the 2026-09-08 derivation table recorded was a state of the solver then,
+  not a property of the posture: an unfed moment of a muscle the optimum does not hire
+  at this posture is 0, and 1.9e-4 was a pre-coupled-solve or different-coefficient
+  snapshot. What survives of the 2026-09-20 note's own arithmetic: the deep-squat
+  value is NOT 308× the laptop one — at the suite's entry point it is 0.216× (the
+  ratio runs the OTHER way), so neither quoted figure's ratio to the other survives;
+  what survives is the structural claim, which is stronger now than it was — both
+  numbers are prose-only AND both are stale, which is the silently-drifting class the
+  same note names, caught in the act 0 days after it was written down. Pins requested
+  (unchanged from the note above, now with the numbers they must carry): at
+  `math/nearly=` 1e-12, next to the existing `:c7` pin, assert the laptop `:c2c3`
+  total `−0.1581450793522565` and the deep-squat `:c2c3` total `−0.03408252217605897`
+  AT `posture-from-workstation`'s output, not the raw def; the break that must go red
+  is any perturbation of the longus-capitis crossing or of
+  `attachment/coupled-arms` at `:c2c3`. **No constant moves** — no provenance
+  change, no value recomputed in src, Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical (README-only diff).
+  ⚠ *Annotated 2026-09-21 (bot/suji-anatomy): the blocker recorded above is
+  INCOMPLETE, and the missing half makes the requested pins un-installable from
+  this host even with the coordinates solved.* Measured in a fresh `origin/main`
+  clone (`cba2dd3`): putting the `io.github.kotoba-lang/text` west checkout
+  (`orgs/kotoba-lang/text`, `3dcb2ab`, which defines the `kotoba.lang.*`
+  namespaces) directly on the classpath —
+  `kbb --classpath src:<text-checkout> <script>` — does NOT fix the load: both
+  the default and the `--backend sci` engines still die with `Could not find
+  namespace: suji.methods.segment`, on a src tree that is present. The reason is
+  legible in the engine itself: the kbb classpath resolver probes **`.cljk`**
+  (its own shim doc: stock nbb probes `.cljs .cljc .clj`; kbb adds `.cljk`),
+  and this tree renamed every source `.cljc` → **`.kotoba`** at the kbb cutover
+  (6fc9792) — an extension on neither probe list. So the suite's failure is not
+  (only) "resolves no git coordinates"; it is that no engine in this
+  environment can see a `.kotoba` file as a namespace at all, which no
+  `nbb.edn` declaration repairs. Consistently: `kbb -M:test` substitutes its
+  cljs test runner and finds **0 test namespace(s)**, and `clojure -M:test`
+  finds none (the files are not `.clj`). The 2026-09-20b pins therefore stand
+  requested but remain un-installable here, and the fix they wait on is
+  upstream of this repo: either the engine learns the `.kotoba` extension, or
+  the tree carries a runner that can. **No constant moves** — README-only diff,
+  Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical.
 - **`:c7`, and this one is new — found by asking what else the closed solve was hiding.**
   Upper trapezius and levator scapulae run past the cervicothoracic junction (occiput and
   nuchal line → lateral clavicle; upper cervical transverse processes → scapula), so both
@@ -2652,6 +4096,81 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   Measured at `laptop-on-lap`: **−0.3786 N·m against a C7 demand of 4.9762, i.e. 7.6%**;
   −1.8428 N·m in a deep squat, where the arms are held out. They now declare
   `:crosses {:joint :c7}`, so it is a number at every posture rather than this paragraph.
+  ⚠ *Annotated 2026-09-19 (bot/suji-anatomy): of the three numbers this bullet
+  quotes, one is pinned at full precision and the other two are prose only —
+  and the one pin the suite does carry is on a DIFFERENT posture than the one
+  this bullet leads with.* What the suite holds, measured in
+  `test/suji/methods/muscle_strain_test.kotoba`
+  (`the-girdle-suspension-muscles-load-c7-and-are-not-in-its-group`):
+  **laptop-on-lap** is pinned, `math/nearly= -0.3786202544993853` at 1e-12
+  tolerance, with the 5–15%-of-demand band asserted around it. What the suite
+  does NOT hold: (i) the **deep-squat** figure this bullet quotes second,
+  **−1.8428 N·m**, appears nowhere in the test tree — no `deftest` asserts any
+  value at `posture/deep-squat` for `:two-joint-unfed-nm :c7`
+  (`lower-limb-test` pins the three deep-squat equilibria's UNFED map to be
+  exactly `#{:c2c3 :c7}` and the arm×force identity there, but no number at
+  C7), so the README's second number is the only copy of it; (ii) the two
+  **per-muscle arms the floor argument rests on** (−3.22 mm upper trapezius,
+  −1.13 mm levator scapulae) are asserted only as *a number below
+  `recruit/min-coeff`* — the magnitude is unpinned, so an arm drifting to any
+  value under the 5 mm floor (and every proportionality that follows it, the
+  unfed moment at every posture) passes green while this paragraph keeps
+  quoting whatever it quoted when written. The same bullet's own ⚠ about the
+  `attachment/mirror` bug showed exactly this failure class: a silently
+  nil-reported moment. Proposed pins, **not installed here** — this session
+  could not run the suite at all: `kbb` resolves no git coordinates
+  (`io.github.kotoba-lang/text` is not `:local/root` and is not on the
+  classpath; `Could not find namespace`), the same blocker recorded for
+  biomech on 2026-09-18 — so this is a README-only diff and the pins are
+  requested from a host where the suite runs: the deep-squat
+  `:two-joint-unfed-nm :c7` total and both four entries' `:secondary-arm-m`
+  at `math/nearly=` 1e-12, next to the laptop pin that already exists; the
+  break that must go red is any arm perturbation (the laptop total will NOT
+  move for a levator-only arm change unless its own arm×force identity
+  reaches the summary — see the arm×force check at deep squat in
+  `lower-limb-test`, which is where that break is catchable today). No
+  constant moves — no `min-coeff` change, no arm recomputed, Hansraj 5-value
+  and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
+  ⚠ *Annotated 2026-09-27 (bot/suji-anatomy): the 2026-09-19 request's deep-squat half is now
+  installed — and the number the request wrote down was the RAW def's, not the pipeline's.*
+  `strain-test/the-deep-squat-c7-unfed-girdle-moment-is-pinned-at-full-precision`
+  (test/suji/methods/muscle_strain_test.kotoba) pins, at `math/nearly=` 1e-12, on the same
+  pipeline every workstation consumer builds from (`build-body 70.0 1.70` →
+  `posture-from-workstation`): the deep-squat `:two-joint-unfed-nm :c7` total, the four girdle
+  rows' `:secondary-arm-m`, and a rows-sum identity (total = 2·UT moment + 2·LS moment). Three
+  measurements at HEAD `c51dcdf` (nbb mirror, 3 runs, repeatable to the digit):
+  (i) **the workstation-output deep-squat total is −1.2232176118517235 N·m, not the −1.8428
+  this bullet quotes** — the quoted figure is what the RAW `posture/deep-squat` def gives
+  (re-measured −1.842798183540419, four digits confirmed, and now pinned in the same test),
+  which is the same stale-prose mechanism the `:c2c3` bullet's 2026-09-20b annotation caught;
+  the consumer pipeline's value is 33.6% smaller in magnitude (arithmetic on the two pinned
+  values, 1.842798183540419 / 1.2232176118517235). (ii) **the share statement moves with it**:
+  against the workstation pipeline's own C7 demand (2.349914136475177 N·m) the unfed girdle
+  moment is **52.1% of the demand** at deep-squat (1.2232176118517235 / 2.349914136475177,
+  arithmetic on two model outputs) — versus 7.6% at laptop-on-lap — so at this posture the
+  unfed girdle suspension is not a footnote; the bullet's laptop-first framing understates
+  where the number matters. (iii) **the four arms are now pinned at full precision, not merely
+  below the floor**: upper_trapezius −0.007372702909802641 m and levator_scapulae
+  −0.01284937962522827 m (both sides byte-equal; the laptop-era arms this bullet's floor
+  argument quotes — −3.22 mm / −1.13 mm — reproduce as the laptop rows,
+  −0.0032189487866044466 / −0.0011257246116879605, and stay what they were). The break that
+  must go red was verified rather than assumed: an upper-trapezius-only ×1.1 perturbation of
+  `attachment/secondary-arm` turns **5 assertions red across 2 tests** — all four of this
+  test's UT pins and totals, plus the laptop total's existing `math/nearly=` pin (the UT arms
+  enter that total too, so the 2026-09-19 note's levator-only hope stands and its
+  UT-any-perturbation case is caught by BOTH totals) — while the `:c2c3` pins stay green
+  (`longus_capitis` untouched), which is the break's surgical control. The levator arm pins
+  did not move under the break (they are in the green set), so each muscle's arm is caught by
+  its own pin rather than by the total alone. Restored byte-identically (sha256
+  `63a086e760c49c18ea22ed41ade14a3551c8fc9cd1625b32bb4c12f8c5efd22e` verified); **336 tests /
+  3052 assertions, 0 failures** on the nbb mirror at HEAD. What this does not close: the
+  `:c7` moment is still fed to nobody — no equilibrium covers the cervicothoracic junction
+  outside the coupled groups — and both arms remain below `recruit/min-coeff`, so the refusal
+  that keeps these muscles out of the neck group stands; the deep-squat demand 2.349914136475177
+  N·m is itself a model output with no external reference at this posture (`:parameter-not-in-source`).
+  **No constant moves** — no `min-coeff` change, no arm recomputed in src, Hansraj 5-value and
+  Wilke sitting 348.86176709999995 N byte-identical (test+README diff only).
+
   **They are not in the `:neck` group and the obstacle is the solver's INPUTS, not the
   solver:** their own equilibrium is a suspension balance — a force, with a dimensionless
   direction cosine for a coefficient — and the neck group's rows are moments.
@@ -2676,20 +4195,197 @@ exactly would still be unvalidated, and this repo has now recorded that four tim
   sensitive to it. Measured over 36 postures: **11.23 %MVC** is the worst forward-head
   co-contraction and **38.06 %** the worst genuine flexion demand (head tipped back), against
   the **184.82 %** that assigning the old surplus would have produced.
+  ⚠ *Annotated 2026-09-18 (bot/suji-anatomy): the flexor side of this co-contraction has a
+  measured resting counterpart, and it is five times below the worst-case prediction.*
+  Khan A, Khan Z, Bhati P, Hussain ME, *Influence of Forward Head Posture on
+  Cervicocephalic Kinesthesia and Electromyographic Activity of Neck Musculature in
+  Asymptomatic Individuals*, **J Chiropr Med 19(4):733–740, 2020**
+  (doi:10.1016/j.jcm.2020.07.002, PMID 33536860, PMC7835487; full text read 2026-09-18
+  from the PMC copy — the Europe PMC `fullTextXML` endpoint returned HTTP 500 throughout
+  the session, the NCBI PMC HTML was the source). 22 asymptomatic volunteers with forward
+  head posture (craniovertebral angle 50.9 ± 1.77°) and 22 without (67.4 ± 7.89°), surface
+  EMG over the lower third of the sternal head of the sternocleidomastoid, normalized per
+  subject to a supine resisted neck-flexion MVIC (mean of 3 trials): **SCM at rest in
+  relaxed sitting 2.2 ± 0.40 / 2.4 ± 0.83 %MVIC (right/left) in the FHP group against
+  1.7 ± 1.00 / 1.9 ± 0.96 in the control group** (p = .04, Table 3), and during an active
+  supine flexion task 58–84 %MVIC (Table 4). Against the model's worst forward-head
+  atlanto-occipital co-contraction of 11.23 %MVC, the measured resting flexor tone in a
+  forward-head sitter is ~0.20× the prediction (right 2.2/11.23 = 0.196, left 2.4/11.23 =
+  0.214 — arithmetic on published means and one model output). What it does not close:
+  (i) surface EMG sees only the superficial flexor; the model's flexor dose also carries
+  `longus_capitis` (9.94 %MVC at `laptop-on-lap`), which surface electrodes cannot see, so
+  the measured number under-counts the very share the model prices
+  (`:muscle-coverage-not-in-source`, direction stated); (ii) relaxed sitting is not the
+  model's worst forward-head workspace posture — the ≤53° / >53° CVA split is a cohort
+  cut, not a matched posture set, and no %MVIC at a specified craniovertebral angle on
+  this subject pool exists (`:could-not-obtain`); (iii) the MVIC normalizer is a supine
+  resisted flexion, not this model's per-muscle maximum-force construct. The direction
+  that survives: a real forward-head sitter carries a *small* continuous flexor tone —
+  order 2 %MVIC, five times below the 11.23 %MVC worst case — so the prediction reads as
+  a worst-posture bound rather than a typical-desk value, and the caveat that the whole
+  effect is sensitive to the `:representative` 12.0 mm wrapping radius stands.
+  **No constant moves** — no instance created, the 26.8 / 32.9 / 12.0 mm arms stay
+  `:representative`, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
 - **The suboccipitals still carry nothing at a desk**, and the reason is better than it was.
   It used to be that their load was floored at zero by a decomposition; now the joint *has* a
   load, the load is *met*, and the coupled optimum simply prefers the muscles that were going
   to cross that joint anyway. They do take force where the optimum wants them — 0.32 / 0.11 /
   0.26 N at head −55° on a trunk flexed 75° — which is what makes the desk zero a measurement
   rather than a constant.
+  ⚠ *Annotated 2026-09-18 (bot/suji-anatomy): at a seated head the measured suboccipitals are
+  not silent — the desk zero is the side the model errs on, and a fine-wire study puts a number
+  on the tone this zero omits.* Hallgren RC, Pierce SJ, Sharma DB, Rowan JJ, *Forward Head
+  Posture and Activation of Rectus Capitis Posterior Muscles*, **J Am Osteopath Assoc
+  117(1):24-31, 2017** (doi:10.7556/jaoa.2017.004, PMID 28055084; abstract read 2026-09-18 via
+  the Europe PMC REST API — PubMed HTML serves a consent page; no PMC record, full text
+  `:could-not-obtain`). 20 asymptomatic participants, bipolar fine-wire intramuscular
+  electrodes in rectus capitis posterior minor and major, head moved from a self-selected
+  neutral seated position into a protruded position and back, 4 cycles, mixed-effects β
+  regression: **at the neutral head position the RCP muscles are already active — 11 %MVIC
+  (minor) and 14 %MVIC (major)** — and at the protruded position **35 %MVIC (minor) and
+  39 %MVIC (major)**, the neutral→protruded increase significant (abstract truncates the
+  exact p-value, `:could-not-obtain`). The companion paper is the neutral-activity result
+  stated on its own terms: Hallgren RC, Pierce SJ, Prokop LL, Rowan JJ, Lee AS,
+  *Electromyographic activity of rectus capitis posterior minor muscles associated with
+  voluntary retraction of the head*, **Spine J 14(1):104-112, 2014**
+  (doi:10.1016/j.spinee.2013.06.011, PMID 23954557; abstract, full text
+  `:could-not-obtain`) — 17 asymptomatic subjects, fine-wire in both RCPm, and its
+  conclusion is that *RCPm is active when the head is held in a neutral position*, rising
+  significantly in retraction. Against this bullet's desk zero: the model reports the
+  suboccipitals carrying nothing at desk postures and 0.32 / 0.11 / 0.26 N at head −55° on a
+  trunk flexed 75°; the measurement says a real seated head carries a continuous
+  suboccipital tone of order **one-tenth of its own maximum** already at neutral, so the
+  model's zero is an **under**-statement of the desk-time load, and the direction of the
+  error is the opposite of what "the joint has a load and it is met" could be read to imply
+  — the optimum finds a cheaper way to meet the joint's load through other muscles than the
+  measured nervous system does. What this does not close: (i) the quantities are not the
+  same — a %MVIC reading from fine-wire electrodes in muscles of this size is not a force
+  in N, and this model's %MVC construct normalizes by its own per-muscle maximum-force
+  parameter, so 11–14 %MVIC is recorded as the measured *presence and order* of desk-time
+  tone, not substituted for the model's zero (`:quantity-not-equatable`); (ii) the normalizer
+  is an MVIC effort performed with fine-wire electrodes in two of the smallest muscles in the
+  body — a low maximum inflates every percentage, and the paper's own MVIC task is not this
+  model's construct (`:parameter-not-in-source`); (iii) 20 / 17 asymptomatic volunteers in a
+  self-selected neutral seat, not this actor's named desk postures, and protrusion (the
+  35/39 % condition) is a pose this model does not even state — the posture-side bridge is
+  `:could-not-obtain`; (iv) obliquus capitis superior — the model's third suboccipital — was
+  not sampled. **No constant moves** — no suboccipital instance changes, the desk zero
+  stands and is now annotated with the direction it errs in, Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 - **A muscle cannot be in two coupled groups.** `coupled-groups` is a partition. Nothing in
   this anatomy needs to be in two, but a trunk model that coupled the lumbar spine to the hip
   would.
+  ⚠ *Annotated 2026-09-22 (bot/suji-anatomy): the hypothetical is already instantiated in
+  this repo's own muscle table — and the docstring's own two-joint list omits it.*
+  `coupled-groups`' docstring names its two-joint muscles: rectus femoris, hamstrings,
+  gastrocnemius, semispinalis, splenius. It does not name **iliopsoas**, whose instance
+  (`attachment.kotoba`, the Ward 2009 17.6 cm² entry) carries
+  `:origin {:segment "lumbar" :along (trunk-frac->lumbar 0.05) …}` with
+  `:acts-about :hip :task :hip-extension` — a muscle whose origin rides on the **lumbar**
+  segment and whose only task lives at the **hip**. The bullet says nothing in this anatomy
+  needs to be in two coupled groups because the lumbar spine is not a group; but the moment
+  the lumbar spine became one — the way the neck did on 2026-09-07 — iliopsoas would have to
+  belong to the lumbar group AND the lower-limb group simultaneously, and a partition cannot
+  hold it. By the repo's own `crosses?` rule (`spine.kotoba`: a muscle loads a level when its
+  two attachments land on opposite sides of the level's cut — the same derived rule that
+  stopped wrist extensors loading C3/C4) the crossing half is already structural, not
+  hypothetical: origin on the lumbar segment, insertion on the thigh, so the side-of-level
+  test puts origin above and insertion below every lumbar cut. The mechanical stakes are
+  Santaguida PL & McGill SM, *The psoas major muscle: a three-dimensional geometric study*,
+  **J Biomech 28(3):339-345, 1995** (doi:10.1016/0021-9290(94)00064-b, PMID 7730392; abstract
+  read 2026-09-22 via PubMed efetch; full text `:could-not-obtain`, Elsevier, no PMC record):
+  seven cadavers plus MRI centroid paths of 15 males, per-lumbar-level lines of action, and
+  two stated results that bite here — the psoas **cannot be adequately represented with a
+  series of straight line vectors from vertebral origins to insertion** (the model's single
+  chord from `lumbar` 0.05 to `thigh` 0.10 is exactly that), and bilateral activation gives it
+  **the potential to stabilize the lumbar spine with compressive loading**. Direction of what
+  the model omits: any force the hip equilibrium ever gives this muscle is a compression the
+  lumbar levels receive without a lumbar equilibrium ever having checked it — the same LOW
+  side the standing figure already sits on (0.845× the series' 400 N anchor, annotated
+  2026-09-18). Per-level magnitudes are in the paywalled text (`:could-not-obtain`); at this
+  model's desk postures the hip load is near zero, so nothing today moves. **No constant
+  moves** — the iliopsoas instance, its 17.6 cm² and its 0.035 m wrap are untouched, Hansraj
+  5-value and Wilke sitting 348.86176709999995 N byte-identical (README-only diff). What this
+  tick could NOT verify live: the crossing was read from `spine/levels-crossed`'s rule and
+  not executed — `kbb -M:test` in a fresh clone returns `2 dep(s) … NOT on the classpath … 0
+  test namespace(s) found` and the sci-backend runner fails the same way, so no probe ran.
+  ⚠ *Re-probed 2026-09-24 (bot/suji-anatomy): the crossing this note left unexecuted is
+  now executed, and the claim "the side-of-level test puts origin above and insertion below
+  every lumbar cut" is WRONG — the rule crosses the muscle through exactly ONE level, L5/S1.*
+  Measured on a fresh clone of `origin/main` (`6fc9792` lineage) via the nbb portable route
+  (`.kotoba` to `.cljc` mirror + `io.github.kotoba-lang/text` on the classpath; the same
+  `scripts/nbb_test` situation this note recorded), calling `spine/levels-crossed` on the
+  placed pose (`pose/solve-pose` of `posture/posture-from-workstation`):
+  **both sides cross `["L5/S1"]` at `laptop-on-lap`, and the left side crosses `["L5/S1"]`
+  at `deep-squat`** — not L4/L5 through L1/L2. The reason is arithmetic the note's prose
+  skipped: the origin is stated as a fraction of the OLD single trunk
+  (`trunk-frac->lumbar 0.05` = 0.05/0.35 = **0.1428 of the lumbar segment**), and the L4/L5
+  cut sits at lumbar 0.2 — ABOVE the origin — so on every level L4/L5 and higher the origin
+  and the thigh insertion land on the SAME proximal side of the cut and the crossing fails.
+  Only L5/S1 (lumbar 0.0) puts the origin distal of the cut with the thigh proximal. The
+  rule is live, not a lookalike: break-controls in the same probe move the origin to
+  trunk 0.40 and trunk 0.95 and the crossed set follows to all five lumbar levels
+  (`["L5/S1" "L4/L5" "L3/L4" "L2/L3" "L1/L2"]`), so a stalled rule cannot explain the
+  single-level answer. What the correction changes in this note: the two-group hazard
+  SURVIVES at L5/S1 — one lumbar cut already puts iliopsoas on both sides of the level a
+  lumbar coupled group would own, so the partition objection stands — but the compression
+  the note prices as reaching "the lumbar levels" reaches **one** level, and the "same LOW
+  side" reading shrinks with it (any force the hip equilibrium gives this muscle loads
+  L5/S1 un-checked; L4/L5 and above never receive it through this rule at all, because the
+  muscle's origin sits below those cuts). Error direction of the note as written: it
+  OVERSTATES the reach 5× (five cuts, measured one). Break it again to disagree: move the
+  origin's `:along` above the L4/L5 cut (trunk > 0.07) and the crossed set jumps to five —
+  which is also the derivation the note can check without running anything.
+  **No constant moves** — the probe read the shipped tables (`attachment/muscles` 17.6 cm2,
+  wrap 0.035 m untouched), no `src/` or `test/` file changed in this commit, Hansraj
+  5-value and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
 - **Nothing is coupled across the midline.** The two legs are solved separately because they
   share no muscle. A model with a muscle spanning the midline would need one group for both.
+⚠ *Annotated 2026-09-23 (bot/suji-anatomy): the claim is measured TRUE at the muscle-instance
+  level and OVERSTATED at the load level. Instance table read, not assumed
+  (`src/suji/methods/attachment.kotoba`, 34 instances): 22 carry `:paired? true` — every one
+  of the 8 lower-limb muscles (gluteus_maximus, iliopsoas, vasti, rectus_femoris,
+  hamstrings, gastrocnemius, soleus, tibialis_anterior) is per-side, and no instance spans
+  both sides — so "the two legs share no muscle" holds. But "nothing is coupled across the
+  midline" does not follow: the pelvis is NOT in `paired-set`
+  (`src/suji/methods/segment.kotoba`, the set is only upper_arm/forearm/hand/thigh/shank/foot),
+  gluteus_maximus originates on that single midline pelvis (`:origin {\:segment "pelvis" …
+  \:lat 0.0350}`), and `build-body`'s own docstring says `load` SUMS the two legs' contributions
+  ("The lower limb is never loaded onto a midline joint — `pose` places both legs and `load`
+  sums them"). So both legs' hip tensions already meet in one pelvis balance and pass through
+  L5/S1 together: the coupling the bullet says would need a midline muscle exists TODAY as a
+  midline SEGMENT, with no per-side equilibrium anywhere below L5/S1. The bullet names only
+  the muscle-group coupling; the segment coupling is the load path that actually carries the
+  standing figure. No test guards this invariant (the only "midline" hits in test/ are
+  comments). Suite not runnable on this host (`kbb -M:test` fresh clone → 0 test namespaces,
+  recorded 2026-09-21) — this annotation is a rule-and-table reading, not a live probe.
+  **No constant moves** — no src/test file touched, Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical (README-only diff).*
 - **It is still a static optimum.** No co-contraction for stability, no history, no
   activation dynamics — a coupled static optimum predicts *less* co-contraction than a body
   produces, not more.
+⚠ *Annotated 2026-09-19 (bot/suji-anatomy): the bullet's sign clause, "not more", is
+  measured nowhere, and the only measured co-contraction numbers this README carries
+  both sit against the model's WORST postures rather than matched ones.* Khan 2020's
+  SCM resting tone (2.2 / 2.4 %MVIC in forward-head sitters, annotated above) is
+  0.20× / 0.21× the 11.23 %MVC atlanto-occipital worst case — but it is a resting tone
+  in a self-selected sit, not a co-contraction measurement at the model's worst
+  posture, so its being five times below the prediction says the prediction is a
+  worst-posture bound, not that the optimum over- or under-predicts (`:could-not-obtain`
+  — no study reports %MVIC co-contraction at a specified craniovertebral angle on a
+  matched posture set, per this README's own caveat on that annotation). Hallgren 2017's
+  RCP tone (11–14 %MVIC at a self-selected neutral, annotated above) is the same shape
+  from the other side: a measured continuous activity against a model desk ZERO. So at
+  the neck joints this model actually prices, every available measurement pairs a
+  resting/neutral tone with a worst-case optimum or a zero, and the bullet's under-
+  prediction claim — drawn, per its own wording, from the static-optimum literature on
+  trunk-scale co-contraction — has no matched counterpart at any joint here. What the
+  existing numbers do constrain: a static optimum is consistent with the measured
+  continuous flexor/extensor tones only if its worst-case output is treated as a bound,
+  so the "not more" clause is not a safe default at the joints this model serves until
+  a matched-posture measurement exists. No constant moves — Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 
 ## The pelvis had no rotation (2026-09-08)
 
@@ -2864,11 +4560,23 @@ derives both from the level's own axis and asserts that the second is several ti
 
 ### What could not be sourced
 
-- **How lordosis divides between the sacrum and the lumbar discs.** Cho reports the
-  correlations (r = 0.731 with sacral slope, r = −0.842 with pelvic tilt) and **not the
-  partition**. This model has no vertebral wedging, so the pelvis carries all of it, which
-  **over-rotates the hips and both legs** in a lordotic posture. Named in
-  `posture/pelvic-tilt-for` with the direction of the error rather than split by a guess.
+- **How lordosis divides between the sacrum and the lumbar discs.** ⚠ *Half of this bullet
+  went stale on 2026-09-11 and its function name went stale with it (marked 2026-09-15,
+  bot/suji-anatomy — both corrections are inline).* Cho reports the correlations
+  (r = 0.731 with sacral slope, r = −0.842 with pelvic tilt) and **not the partition** —
+  from Cho that is still true. But *"the pelvis carries all of it"* stopped describing this
+  model the day the partition was measured from a second cohort: the pelvis spends **0.586**
+  of a lordosis change (`posture/sacral-slope-share-of-lordosis`, Mills et al. 2026,
+  ΔSS 16.7 / ΔLL 28.5 over the same posture change), installed in `pose/pelvic-rotation-deg`
+  — see *The segmental lordosis crossed the standing–sitting difference* below. The
+  over-rotation this bullet names is 0.586 × 46.5° = **27.25°** now, not 46.5°. And the
+  function it names, `posture/pelvic-tilt-for`, no longer exists — partition and posture key
+  moved together on 2026-09-11 (`pelvic-tilt-for` → `posture/lordosis-for`;
+  `:pelvic-tilt-deg` → `:lumbar-lordosis-deg`, which `pose/solve-pose` now **refuses**).
+  What is still unsourced is the partition **at Cho's own 46.5°**: Mills' ratio is measured
+  over a 28.5° change, and her regression over a 61.1° change gives 0.63 (R = 0.85), on
+  which reading the model would spend 4% less lordosis on the pelvis — the error direction
+  `posture/sacral-slope-share-of-lordosis`'s docstring already states.
   ⚠ *Annotated 2026-09-14 (bot/suji-anatomy): the disc-versus-body half of this
   partition is measured, and the vertebral-body share is small.* Been E, Barash A,
   Marom A, Kramer PA, *Vertebral bodies or discs: Which contributes more to
@@ -2893,15 +4601,197 @@ derives both from the level's own axis and asserts that the second is several ti
   leave the pelvis's share untouched, so the standing-compression disagreement
   with Wilke does not move from this. No constant moves — Hansraj 5-value and
   Wilke sitting 348.86176709999995 N byte-identical.
-- **Pelvic incidence.** The morphological constant that fixes how much sacral slope a
-  particular pelvis has needs a sacral endplate and a femoral-head geometry; this model has a
-  rod from L5/S1 to the hip axis. So `:pelvic-tilt-deg` is a **change** from the straight-lumbar
-  neutral, not an absolute pelvic tilt, and the model can compare two postures without being
-  able to state either one's SS or PT. Wilke's comparison is a difference too.
+  ⚠ *Annotated 2026-09-16 (bot/suji-anatomy): a measured instance of the partition itself
+  now exists, and it lands against the pelvis carrying any of it — for the share of lordosis
+  a lumbar support buys.* De Carvalho DE & Callaghan JP, *Influence of automobile seat
+  lumbar support prominence on spine and pelvic postures: a radiological investigation*,
+  **Applied Ergonomics 43(5), 2012** (doi:10.1016/j.apergo.2011.12.007, PMID 22280849;
+  abstract read 2026-09-16 via the Europe PMC REST API; full text paywalled,
+  `:could-not-obtain`). Eight male volunteers, radiographed standing and sitting in an
+  automobile seat at 0, 2 and 4 cm of lumbar support prominence (LSP): lordosis rose
+  **20° → 25° → 30°** across the three supports (0 vs 4 cm p < 0.0001, 2 vs 4 cm
+  p = 0.0256 — 2.5°/cm from the paper's own means, arithmetic `:representative`, so it
+  under-states the spread), while **every pelvic-posture measure moved sitting vs standing
+  (p < 0.0001) and none of them moved with the support** — the paper's own conclusion is
+  that the support changes vertebral rotations and "had no effect on pelvis postures", the
+  change landing mostly at the upper lumbar joints with the largest at the support apex
+  level, L2/L3. That is this bullet's stated direction, measured: a lordosis delivered with
+  the pelvis held still, which this model can only produce by rotating the pelvis (no
+  wedging), so for a back-supported workstation the model **over-rotates the hips and both
+  legs by the whole support-bought angle**. What it does not close: (i) Cho's correlations
+  ask for the partition of *posture* lordosis across sacral slope and pelvic tilt; this
+  measures the partition of the *response to an added support* — the same seam, not the
+  same question; (ii) an automobile seat, not a desk chair, and n = 8 males; (iii)
+  abstract-only, so the per-condition SDs and per-disc angles are `:could-not-obtain`.
+  **No constant moves** — Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the transverse load this model does not
+  carry has a measured in-vivo counterpart, and it is not small.* Rohlmann A, Pohl D,
+  Bender A, Graichen F, Dymke J, Schmidt H, Bergmann G,
+  *Activities of everyday life with high spinal loads*,
+  **PLoS ONE 9(5):e98510, 2014** (doi:10.1371/journal.pone.0098510, PMID 24866883,
+  PMC4035320; full text read 2026-09-17 via the Europe PMC REST fullTextXML
+  endpoint, CC BY). Telemeterised vertebral-body replacement, 5 patients
+  (fixators spanning T12–L2 to L2–L4; VBR at L1 for four of them, L3 for one),
+  more than 13,500 datasets over up to 65 months, implant load components
+  measured directly. The measurement names exactly the mechanism this model
+  refuses: *"At level L1, the spine is slightly curved; in a standing position,
+  this vertebra is mostly posteriorly inclined, which may be the reason for high
+  shear forces in the posterior direction ... a part of that resultant force acts
+  in the posterior direction"* — a standing, posteriorly-inclined lumbar level
+  carries measured shear, the same geometry this model's `W × sin` term describes.
+  Magnitudes: posterior shear up to **230 N** (arm elevation with a weight in
+  hands; in all 5 patients) and six further activities above 150 N (Table 6),
+  anterior up to **130 N** (upper body flexion, Table 5), lateral up to 212 N —
+  and even lying relaxed supine, the instrumented level measures an ap shear of
+  5 / 68 / 111 / −39 / −59 N across the five patients (Table 1). Often the shear
+  was *already acting in the posterior direction before the exercise started*,
+  which the paper attributes to muscle forces: a real lumbar level carries its
+  shear through facets, ligaments and muscle, not through the disc's compressive
+  term. What this does not close: (i) the measurement is an **implant** load at
+  L1 or L3 in fused/partially-replaced spines, not the disc interface at L4/L5 —
+  level and convention are `:could-not-obtain` for this model's own levels;
+  (ii) the tables are top-10 lists, not a standing-relaxed value — no quiet-
+  standing per-level shear number is published here (`:could-not-obtain`);
+  (iii) several of the high-shear trials had weights in the hands, so they are
+  not this model's empty-handed workstations. It pins order and direction, not a
+  constant: the 137.711 N this model leaves uncarried at 46.5° of lordosis is the
+  same order as what a real posteriorly-inclined lumbar level is measured to
+  carry in ordinary life. **No constant moves** — the model still computes no
+  shear, and the README caveat above stands; Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical.
+  byte-identical (README-only diff).
+- **Pelvic incidence.** ⚠ *The key this bullet names is retired (marked 2026-09-15,
+  bot/suji-anatomy).* The morphological constant that fixes how much sacral slope a
+  particular pelvis has needs a sacral endplate and a femoral-head geometry; this model still
+  has a rod from L5/S1 to the hip axis, so the limitation itself stands unchanged. But
+  `:pelvic-tilt-deg` is no longer a key this library accepts — the posture key was renamed
+  `:lumbar-lordosis-deg` on 2026-09-11 and `pose/solve-pose` **refuses** a posture carrying
+  the old one. The sentence survives under the new key with the same content: the input is a
+  **change** from the straight-lumbar neutral, not an absolute pelvic tilt, and the model can
+  compare two postures without being able to state either one's SS or PT. Wilke's comparison
+  is a difference too.
+  ⚠ *Annotated 2026-09-16 (bot/suji-anatomy): the morphological constant now has a measured
+  asymptomatic-population value — the geometry to carry it is still missing.* Vialle R,
+  Levassor N, Rillardon L, Templier A, Skalli W, Guigui P, *Radiographic analysis of the
+  sagittal alignment and balance of the spine in asymptomatic subjects*, J Bone Joint Surg Am
+  87(2):260-267, 2005 (doi:10.2106/jbjs.d.02043, PMID 15687145; abstract read 2026-09-16 via
+  the Europe PMC REST API; full text `:could-not-obtain` — JBJS paywalled, no PMC record).
+  300 asymptomatic volunteers, standing radiographs, digitised: **pelvic incidence
+  55° ± 10.6°, sacral slope 41° ± 8.4°, pelvic tilt 13° ± 6°, maximum lumbar lordosis
+  60° ± 10°**; sacral slope–PI r = 0.8, lordosis–sacral slope r = 0.86, pelvic tilt–PI
+  r = 0.66, lordosis–(PI, pelvic tilt, thoracic kyphosis) r = 0.9; vertebral wedging and
+  intervertebral angulation T9–S1 were measured but the abstract carries only the T9 sagittal
+  offset (10.3° ± 3.1°), so the disc-vs-sacrum partition values are `:could-not-obtain` at
+  this level. What it pins without closing the bullet: (i) a measured standing pelvis holds a
+  60° lordosis with only **13° ± 6° of pelvic tilt about the same mechanical axis this model
+  rotates its pelvis about** (the femoral heads) — so in a measured asymptomatic population
+  the standing sacral pitch is mostly **morphology** (the 41° endplate slope inside PI), not
+  posture; the model has no sacral endplate, so it has nowhere to put the 41° and spends its
+  lordosis change as hip-axis rotation (0.586 × 46.5° = 27.25° since 2026-09-11) — more than
+  twice the measured mean PT and above its mean + 1 SD (19°). The two figures sit on
+  different conventions (the model's is a change from its own straight-lumbar neutral, with
+  anterior positive; Vialle's is absolute, posterior positive), so this is a measured anchor
+  for a quantity the model cannot state, **not** a refutation of its spend. (ii) Through the
+  per-subject identity PI = SS + PT (the published means satisfy it to rounding: 41 + 13 = 54
+  against PI 55), the model's spend implies its stool-neutral pelvis sits at SS ≈ 41 − 27.25
+  = 13.75° (`:representative` arithmetic on two published means from different cohorts —
+  true only if Mills' 0.586 share transfers to Cho's stool→standing pair; the direction if it
+  does not: a higher real stool SS means the model over-rotates the sacrum and hip by the
+  difference, the same direction bullet one confesses). (iii) Cho's own cohort — the source
+  the model's 46.5° comes from — measures PI/SS/PT per posture (Fig. 4, Legaye's method) but
+  publishes **no numeric SS/PT/PI value in text or table**: its two tables carry lordosis
+  only and the pelvic parameters appear only in figures (images), so the ΔSS/ΔPT of the very
+  stool→standing pair the 46.5° comes from stays `:could-not-obtain`. (iv) The source is
+  internally inconsistent: Cho's abstract states standing LL **48.5° ± 8.7°** while its body
+  text states **47.1° ± 10.5°** — this README's 46.5° derives from the body reading; the
+  abstract reading would give 47.9°. A +1.4° transcription choice inside the source itself,
+  now named at the constant it would move.
+  ⚠ *Annotated 2026-09-18 (bot/suji-anatomy): the constant now also has a YOUNG asymptomatic
+  male triplet measured on the same subjects, standing — and its low-PI half sits outside
+  Vialle's mean − 1 SD.* Fukushima K, Tsutsumi M, Nakata A, Kakimoto A, Yamaguchi I, Hoshino
+  T, Matsuzaki S, Kudo S, *Relationship between pelvic incidence and hip, pelvic, and lumbar
+  motion during squatting in healthy individuals with high and low pelvic incidence*, **Sci
+  Rep 16:5831, 2026** (doi:10.1038/s41598-026-36815-5, PMID 41559209, PMCID PMC12894836;
+  full text read 2026-09-18 through the Europe PMC REST fullTextXML endpoint — the same
+  fetch this README's deep-squat annotation used). Table 1, 26 healthy men (20.6 / 22.4 y),
+  quartile split on PI, standing radiographs: **PI 38.8 ± 2.7° (low group, n = 13) /
+  60.0 ± 6.2° (high group, n = 13)**, SS 36.1 ± 2.9 / 47.7 ± 4.3, PT 2.8 ± 2.3 / 12.3 ± 5.5.
+  Three things this adds and one it does not. (i) The per-group identity PI = SS + PT holds
+  to rounding in BOTH groups (38.9 and 60.0 against 38.8 and 60.0) on three directly
+  measured numbers — a sharper check than Vialle's means-sums-to-rounding pass, which mixed
+  a broad age range. (ii) The low group's 38.8 ± 2.7° sits **below Vialle's 55 − 10.6 =
+  44.4°**, i.e. a measured asymptomatic young pelvis exists more than one SD under the one
+  asymptomatic distribution this bullet carried — so Vialle's 55° is not a floor for a young
+  cohort, and any `:representative` PI arithmetic built on it carries that as an unmeasured
+  direction for young men (a lower true PI means the model's spend over-states such a
+  pelvis's sacral pitch by the difference). (iii) The SAME subjects' squat data (the deep-squat
+  annotation above) measures the pelvis rotating **33.6 ± 6.7° (low PI) / 32.2 ± 6.0° (high
+  PI) about the hip axis** during the descent — a measured scale for how far a real pelvis
+  swings about the very axis the model rotates its pelvis about; it is a DYNAMIC excursion
+  over a squat, not a static standing spend, so it brackets direction and order of size only.
+  What it does NOT close: no SS or PT for Wilke's subject or Cho's stool (the bullet's own
+  `:parameter-not-in-source`s stand); the model's implied stool SS ≈ 13.75° from the Vialle
+  annotation above stays `:representative` — this cohort is standing-only, and its PT is
+  absolute radiographic while the model's is a change from straight-lumbar neutral.
+  **No constant moves** — `:pelvic-tilt-deg` stays a change, not an absolute; Hansraj 5-value
+  and Wilke sitting 348.86176709999995 N byte-identical.
 - **Wilke's own subject's lordosis, in either posture.** Both reference entries now carry
   `:parameter-not-in-source`. The sitting one's is zero and measured, which is why it stays
   comparable; the standing one's is 46.5° from a different cohort with an SD of 10.5°, and the
   entry says so rather than letting a ratio imply that one paper supplied both halves.
+  ⚠ *Annotated 2026-09-17 (bot/suji-anatomy): the standing entry's import now has a second,
+  much larger measured cohort behind it — and the measured sitting-minus-standing DIFFERENCE
+  is the part the 46.5° never had.* Durbas A, Subramanian T, Simon C, Allen MRJ, Samuel J,
+  Colón LF, Mazzucco MR, Pagan C, Karasavvidis T, Vigdorchik J, Cunningham ME, Kim HJ,
+  Lovecchio FC, *Evaluating Variations in Spinopelvic Parameters from Sitting to Standing:
+  A Comparative Analysis of 1447 Older Adults Across Age, BMI, and Gender Subgroups*,
+  **J Clin Med 14(9):2952, 2025** (doi:10.3390/jcm14092952, PMID 40363985, PMCID PMC12072520;
+  full text read 2026-09-17 through the Europe PMC REST fullTextXML endpoint, CC BY).
+  1447 preoperative hip-replacement candidates (795 F / 652 M, mean 63.59 ± 10.85 y,
+  BMI 28.81 ± 5.70), each with BOTH a sitting and a standing lateral lumbar radiograph
+  (coronal Cobb < 20°, no spondylolisthesis, no prior fusion) — the largest series measured
+  in both postures, by two orders of magnitude over Cho's 30 and Mills' 50. Table 1:
+  standing LL **48.49 ± 12.21°**, sitting LL **30.05 ± 11.92°**, ΔLL (standing − sitting)
+  **18.44 ± 13.29°**, ΔSS +14.67 ± 10.18, ΔPT −19.20 ± 11.00. Three things this measures
+  that nothing in-tree had: (i) the standing entry's 46.5° was read from ONE cohort of 30
+  and its SD 10.5 was the only stated spread — the standing named posture is now measured
+  at 47.1 ± 10.5 (Cho, 31 y) / 53.3 ± 10.7 (Mills, 25.7 y) / 48.49 ± 12.21 (Durbas, 63.6 y),
+  and Cho's reading sits at the low edge of a real three-cohort band rather than alone;
+  (ii) the model spends **46.5° of standing-minus-sitting lordosis** while the largest
+  cohort's mean difference is 18.44 ± 13.29° — 2.52× the mean, z = 2.11 against its SD —
+  so the 46.5° is now bracketed, not just imported: it over-states the measured mean
+  posture difference, direction stated, and the sitting side is why (Durbas' sitting film
+  is a preoperative seat whose geometry the paper does not state, `:could-not-obtain`,
+  sitting LL 30.05 against the model's stool-measured 0.6 — the stool is Wilke's own
+  posture word, so the model's zero stays measured where it is and the two sitting
+  numbers are not the same posture); (iii) free of any cohort, the DIRECTION is now
+  four-source (Cho, Mills, Durbas, and the LBP cohort Durbas cites): standing is the more
+  lordotic posture, matching Wilke's 0.50 > 0.46 MPa — direction only, and this README's
+  own rule that direction-is-not-evidence stands. Also landing near a transcription seam
+  this README already named: Cho's abstract reading 48.5° (which would make the entry
+  47.9°) is the number Durbas' 1447-subject standing mean lands on (48.49 ± 12.21), so
+  the +1.4° body-versus-abstract choice inside Cho is no longer anchored to Cho alone.
+  What this does NOT close: Wilke states no lordosis, so both entries keep
+  `:parameter-not-in-source`; Durbas are older (ΔLL falls 47% from <60 y to ≥70 y,
+  p < 0.001, their own Table 2), heavier (BMI 28.8), hip-OA candidates, and their sitting
+  chair is unspecified — none of them is Wilke's 45-y 70-kg subject either. **No constant
+  moves** — `posture/lordosis-for :standing` stays 46.5 byte-exact and the Wilke sitting
+  348.86176709999995 N pin is untouched; Hansraj 5-value byte-identical.
+  ⚠ *Annotated 2026-09-23 (bot/suji-anatomy): this bullet existed TWICE, byte-identical,
+  from 2026-09-17 to 2026-09-23 — the duplicate is removed this day, the annotated copy
+  above is the one kept.* Commit `4b91f29` (2026-09-17, the Durbas 2025 annotation) appended
+  a second full copy of the bullet's four-line lead-in above its own annotation instead of
+  annotating the copy already in the file, so the section printed the same provenance
+  statement back to back (verified 2026-09-23 on a fresh `origin/main` clone of `21f9bb8`:
+  lines 4547–4550 and 4551–4554 byte-identical, the only exact duplicate bullet lead-in in
+  the 5548-line file; git `log -S` on the lead-in returns exactly `161fd16` (introduced) and
+  `4b91f29` (duplicated)). A file-wide scan for other byte-identical 4-line bullet bodies
+  found none. The duplication is the same silently-drifting-prose class the `:c2c3` and
+  re-rooting annotations record, in a form drift cannot explain — the copy came from this
+  repo's own bot wave, not from an upstream edit. No number in either copy changes: the
+  provenance statement itself is untouched, `:parameter-not-in-source` stands for both
+  entries. **No constant moves** — Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff, −4 lines +9).
 
 ### What did not move
 
@@ -2919,7 +4809,38 @@ split placed a joint and nothing acts about it. It is named now, beside `:c2c3`,
 reason — this model states trunk extension as **one** equilibrium at `:l5s1`, its single
 lumped erector spinae inserts *below* T12/L1 and does not even cross it, and carving segmental
 fascicles out of a 34.0 cm² lump that is itself `:representative` would need a number to divide
-it by that this repo does not have. Its absence makes no number wrong; what is unavailable is
+it by that this repo does not have.
+  ⚠ *Annotated 2026-09-16 (bot/suji-anatomy): the dividing number's source family exists and
+  can now be named; its values remain* `:could-not-obtain`. Macintosh JE, Bogduk N, *"1987
+  Volvo award in basic science. The morphology of the lumbar erector spinae"*, **Spine
+  12(7):658–668, 1987** (PMID 3686217, doi:10.1097/00007632-198709000-00004); Macintosh JE,
+  Bogduk N, Pearcy MJ, *"The effects of flexion on the geometry and actions of the lumbar
+  erector spinae"*, **Spine 18(7):884–893, 1993** (PMID 8316889,
+  doi:10.1097/00007632-199306000-00013); Macintosh JE, Bogduk N, *"The attachments of the
+  lumbar erector spinae"*, **Spine 16(7):783–792, 1991** (PMID 1925755,
+  doi:10.1097/00007632-199107000-00017); Macintosh JE, Valencia FP, Bogduk N, Munro RR, *"The
+  morphology of the human lumbar multifidus"*, **Clin Biomech, 1986**
+  (doi:10.1016/0268-0033(86)90146-4) and Macintosh JE, Bogduk N, *"The biomechanics of the
+  lumbar multifidus"*, **Clin Biomech, 1986** (doi:10.1016/0268-0033(86)90147-6) — the
+  last two cited through the reference list of the thoraco-lumbar modelling systematic review
+  (*Advances in Musculoskeletal Modeling of the Thoraco-Lumbar Spine*, Ann Biomed Eng 2025,
+  PMC12575568; review full text read 2026-09-16 via the Europe PMC REST API). All three Spine
+  papers are paywalled with no PMC record (inEPMC = N, inPMC = N for PMIDs 3686217 / 8316889
+  / 1925755; checked 2026-09-16), so only the 1987 abstract is in hand — read via the Europe
+  PMC REST API — and it carries **no CSA value**; whether the papers' tables give
+  per-fascicle CSAs and per-level moment arms at every lumbar level is `:could-not-obtain`
+  at this level. What the 1987 abstract does pin, measured: the lumbar fibers *"arise from
+  the lumbar accessory processes and the L1–4 transverse processes, and insert independently
+  of the erector spinae aponeurosis into the ilium"*, and iliocostalis lumborum pars
+  lumborum *"constitutes a substantial portion of the total muscle mass acting directly on
+  the lumbar vertebrae"* — so in the dissected anatomy a substantial share of extensor
+  capacity acts **directly on lumbar vertebrae**, which is the exact thing this model's lump
+  cannot state. Direction of the model's artefact, then, both ways: it **over**-states the
+  trunk extension demanded at L5/S1 (the whole lump carries all of it) and states **no**
+  extension capacity at any upper lumbar level — the same over-concentration whose standing
+  overshoot (682.422 N, ratio 1.1374) is recorded above. It does not close the bullet: no
+  per-fascicle share of the 34.0 cm² is obtainable from here, so the lump stays
+  `:representative` and stays whole. Its absence makes no number wrong; what is unavailable is
 any statement about the thoracolumbar junction at all.
 
 ## Every posture's lordosis came from somewhere (2026-09-09)
@@ -2941,7 +4862,7 @@ reads identically to a measured one.**
 
 | posture | lordosis | basis |
 |---|---|---|
-| `quiet-standing` | **46.5°** | **measured** — Cho standing 47.1° ± 10.5°, minus her stool's 0.6°. Derived as `(pelvic-tilt-for :standing)`, not written as a literal |
+| `quiet-standing` | **46.5°** | **measured** — Cho standing 47.1° ± 10.5°, minus her stool's 0.6°. Derived from the table, not written as a literal — `(pelvic-tilt-for :standing)` when this row was written, `(lordosis-for :standing)` since the 2026-09-11 rename |
 | `seated-posture` (the constructor's default) | **0.0°** | **measured** — Cho stool 0.6° ± 3.6°, minus itself. The one zero in this library that is a measurement, and it is derived the same way |
 | `standing-neutral` | 0.0° | **by construction** — every joint at neutral is the definition of the posture, and the lumbar spine is a joint. Not a claim about a body |
 | `deep-squat` | 0.0° | **`:parameter-not-in-source`** — Cho radiographs standing and five *sitting* postures; a squat is not among them. Direction stated: a squat is the posture lordosis is most often reported to reverse in, so a zero here likely **over**-states it |
@@ -2955,8 +4876,10 @@ for rather than answering `nil` — nil and *"no lordosis"* are the same value, 
 failure the table replaces. `posture-test` is the gate: add a posture without an entry and the
 suite goes red.
 
-Both Wilke reference entries now **derive** their tilts from the same table
-(`(pelvic-tilt-for :standing)` / `(pelvic-tilt-for :stool)`) instead of carrying `46.5` and
+Both Wilke reference entries now **derive** their tilts from the same table —
+`(pelvic-tilt-for :standing)` / `(pelvic-tilt-for :stool)` when this was written,
+`(posture/lordosis-for :standing)` / `(posture/lordosis-for :stool)` since the 2026-09-11
+rename (`:pelvic-tilt-deg` → `:lumbar-lordosis-deg` moved with it) — instead of carrying `46.5` and
 `0.0` as literals. `47.1 − 0.6 == 46.5` to the bit in double, so **neither cross-check moved**.
 
 ### Installing the measured standing lordosis breaks four other measurements
@@ -2977,6 +4900,45 @@ trunk that stays put.
 | knee moment, per side | −0.4255 N·m | **−35.663 N·m** | standing is unloaded |
 | soleus vs gastrocnemius | 159.3 > 71.2 N | **444.3 < 459.7 N** | soleus carries more |
 
+
+⚠ *Annotated 2026-09-21 (bot/suji-anatomy): this table's **measured** column carries no
+citation anywhere in this README — its first two rows now have one, and the measured values
+sit inside the printed bands at the mid-interval and above them at steady state.* Di Giulio I
+& Baltzopoulos V, *Attainment of Quiet Standing in Humans: Are the Lower Limb Joints
+Controlled Relative to a Misaligned Postural Reference?*, **Front Physiol 10:625, 2019**
+(doi:10.3389/fphys.2019.00625, PMID 31275151, PMC6593307; full text read 2026-09-21 via the
+Europe PMC REST fullTextXML endpoint, CC BY). Thirteen healthy adults (46 ± 13 y, mass
+71.7 ± 13.0 kg — the model's 70 kg body is inside 1 SD; height 1.68 ± 0.13 m), motion capture
+plus force platform, quiet standing reached after walking, inverse dynamics (Vaughan's
+convention; positive ankle moment = dorsiflexion): the body's anteroposterior centre-of-gravity
+line sits **47 ± 4 mm ahead of the ankle joint centre** at the mid interval and **58 ± 5 mm at
+steady state** (mean ± SEM; CoG_AP–Ankle_Mid = 47.08 mm, CoG_AP–Ankle_End = 58.00 mm, both
+significantly different between intervals), and the **ankle moment is 17.10 ± 4.36 N·m rising
+to 26.33 ± 5.26 N·m** over the same two intervals. Against the two printed bands: both
+gravity-line values sit inside **0.02–0.06 m**, and 17.10 sits inside **10–20 N·m** — but the
+steady-state 26.33 N·m is ABOVE the band's top end, so the band as printed is a mid-stance
+band, not a steady-state one. The model's own neutral value, 3.70 cm, sits **below** the
+measured 4.7–5.8 cm — the under-statement direction the table's first row does not state.
+Two things this annotation cannot close. (i) The paper's printed ankle moment is per side only
+by inference: 47 mm × 71.7 kg × 9.80665 m/s² = 33.2 N·m of total external plantarflexion
+moment, half of which is 16.6 N·m ≈ 17.10 (arithmetic `:representative` on the paper's own
+means); whether the printed moments are per leg or summed is not stated in the text
+(`:could-not-obtain` at this level), and the band check inherits that ambiguity. (ii) The
+paper's own conclusion is that these subjects stand **forward of the classic alignment** — a
+lower-limb configuration "controlled relative to a misaligned postural reference" — which
+makes its steady-state values the high end of any measured band, the same direction this
+table's Cho-46.5° column over-shoots in. The same source also measures what the third row
+asserts is absent: **knee moments of 17.62 ± 5.13 → 33.98 ± 5.82 N·m in the same standing
+trials** — a measured, non-zero knee moment in quiet standing, against this table's
+"standing is unloaded" cell; the two figures sit on different conventions (inverse-dynamics
+external moment on a forward-leaning posture with the gravity line 4.7–5.8 cm ahead of the
+ankle, vs this model's 0.43 N·m knee equilibrium at a 3.7 cm gravity line), so this is a named
+neighbour of the Cho contradiction, not a fifth broken measurement. The same read is the
+nearest measured witness for the fourth row and stays qualitative: the paper's hip moment
+swings 12.81 ± 10.50 → −31.19 ± 5.54 N·m, which is a statement about configuration change,
+not about soleus-versus-gastrocnemius (`:could-not-obtain` at this level). **No constant
+moves** — the four pins and the printed bands stay as they are, Hansraj 5-value and Wilke
+sitting 348.86176709999995 N byte-identical (README-only diff).
 **No range was widened.** The four assertions moved to `posture/quiet-standing-lumbar-neutral`,
 a named control that is what `quiet-standing` used to be, and
 `cho-s-standing-lordosis-and-the-measured-line-of-gravity-cannot-both-hold` pins all four sizes
@@ -3053,7 +5015,7 @@ fudge factor, no fitted constant was added on this branch.
 | Hansraj cervical anchor | `1.0 / 2.260021051801672 / 3.366025403784438 / 4.242640687119285 / 4.830127018922192` | **byte-identical**, probed on both trees | **did not move.** `cervical-load` is a function of head tilt from vertical and the mass above C7; `pose` places the skull at `trunk + head` and the pelvis is not in that chain |
 | `cervical-cross-check`, `laptop-on-lap` | 1.703621550846191 | **byte-identical** | unchanged — no workstation's lordosis moved |
 | `cervical-cross-check`, quiet standing | 1.7123137218782603 | **1.7123137218782603** | unchanged even though the posture's lordosis moved 0 → 46.5°, which is the control on the row above |
-| endurance dose (`strain/session-cross-check`), quiet standing | **0 compared / 56** | **9 compared / 56** | **a change, and not obviously an improvement.** Nine muscles now work hard enough to have a finite endurance where none did, and the model/reference ratios are erector spinae 0.573 (`:trunk`), soleus 0.573 and gastrocnemius 0.496 (`:ankle`), gluteus maximus 0.577 (`:trunk`, `:nearest-region`), hamstrings 1.110 (`:knee`). The %MVCs behind them are 14–27%, which is the same overshoot arriving in the strain layer: they are driven by the invented lumbosacral moment and by the ankle and knee moments the translation creates, not by anything about standing. **More rows compared is not more agreement** — nothing here says the nine are right |
+| endurance dose (`strain/session-cross-check`), quiet standing | **0 compared / 56** | **9 compared / 56** | **a change, and not obviously an improvement.** Nine muscles now work hard enough to have a finite endurance where none did, and the model/reference ratios are erector spinae 0.573 (`:trunk`), soleus 0.573 and gastrocnemius 0.496 (`:ankle`), gluteus maximus 0.577 (`:trunk`, `:nearest-region`), hamstrings 1.110 (`:knee`). The %MVCs behind them are 14–27%, which is the same overshoot arriving in the strain layer: they are driven by the invented lumbosacral moment and by the ankle and knee moments the translation creates, not by anything about standing. **More rows compared is not more agreement** — nothing here says the nine are right. ⚠ *Annotated 2026-09-23 (bot/suji-anatomy): the row does not reproduce on the tree it sits on — count, membership, all three leg ratios and the %MVC band.* Re-measured 2026-09-23 on a fresh clone of `f3ee37c` (the commit this row was last edited in, #102) by driving `strain/session-cross-check` at `quiet-standing` (lumbar 46.5, the same posture this row's 'after' column holds) directly through the nbb mirror harness (the kbb suite does not resolve its git deps from a fresh clone — '0 test namespace(s) found', known limitation; the harness is the one that ran the 2026-09-23 session-cross-check instance counts). Four independently wrong things, not one: (i) the cross-check compares **6 of 56, not 9** — hamstrings, gastrocnemius and soleus, each bilateral: three leg pairs; (ii) **erector spinae 0.573 and gluteus maximus 0.577 do not appear in the compared set at all** — both fall to `:model-returns-no-finite-endurance` (erector spinae at 0.85 %MVC, gluteus maximus at 7.99 %MVC); (iii) **none of the three leg ratios matches the prose**: measured hamstrings 1.6353, gastrocnemius 0.6034, soleus 0.6302 against the prose 1.110 / 0.496 / 0.573 — +47.3% / +21.7% / +10.0%, all in the same direction (measured higher); (iv) **the prose %MVC band 14–27% contains none of the measured values** (9.93, 11.00, 11.74). The control `quiet-standing-lumbar-neutral` compares 0 of 56, so the '0 compared' before-column is right and the entire drift sits in the after-column. 5 named muscles × 2 sides is 10, not 9, so no bilateral grouping of the prose's own list yields its count either. `:could-not-obtain` for the tree that measured 9: no provenance for it is named anywhere in the section, back-searching commits was not done here (measured at `f3ee37c` only), and the measured ratios are systematically HIGHER than the prose, so this is not a rounding of the same numbers. The prose row quoting numbers its own test no longer produces is the same silently-drifting-prose class the `:c2c3` (2026-09-20) and 22.513 N·m → 0.9013 N·m (2026-09-22) annotations record. Suggested owner-side fix: re-derive the row from `session-cross-check` at `HEAD` (6 compared, three bilateral leg pairs, ratios 1.6353 / 0.6034 / 0.6302) or name the commit where 9 at 14–27% last measured. **No constant moves** — no test edited, no value recomputed, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical (README-only diff) |
 | endurance dose, three workstations | unchanged | **byte-identical** | no workstation's lordosis moved |
 | L4/L5 at quiet standing | 363.96355817189135 N | **696.5922364394459 N** | **+91%**, from the same artefact — the invented lumbosacral moment. There is no reference for this posture at this level, so it is a movement and not a disagreement |
 
@@ -3089,10 +5051,31 @@ fudge factor, no fitted constant was added on this branch.
   keeps `:lumbar-lordosis-deg 0.0` and the direction note now points here instead of saying
   "likely wrong" with no sign. Hansraj 5-value and Wilke sitting 348.86176709999995 N
   byte-identical.
-- **Which of Cho's two chairs a `:back-supported` workstation is.** *Chair with lumbar support*
-  (36.2° ± 8.4°) and *90°-angled chair* (17.7° ± 4.4°) are both plausible readings of the
-  library's one boolean, and reading either one onto it would be choosing. The bracket is
-  recorded instead.
+- ~~**Which of Cho's two chairs a `:back-supported` workstation is.** *Chair with lumbar
+  support* (36.2° ± 8.4°) and *90°-angled chair* (17.7° ± 4.4°) are both plausible readings
+  of the library's one boolean, and reading either one onto it would be choosing. The
+  bracket is recorded instead.~~ ⚠ **Annotated 2026-09-16 (bot/suji-anatomy): the source
+  itself makes the reading.** Cho's own Fig. 2 caption names the condition "(A) The subject
+  sat on chair with back support" for the 36.2° ± 8.4° chair — the lumbar-support chair is
+  the one the paper calls *back support*, so `:back-supported` maps to it by the paper's own
+  nomenclature rather than by a choice between two plausible readings; the 90°-angled chair
+  (17.7° ± 4.4°) remains a distinct posture this library has no boolean for. Andersson GB,
+  Murphy RW, Örtengren R, Nachemson AL, *The influence of backrest inclination and lumbar
+  support on lumbar lordosis*, Spine 4(1):52-58, 1979 (doi:10.1097/00007632-197901000-00009,
+  PMID 432716; abstract obtained 2026-09-16 via the Europe PMC REST API, full text
+  `:could-not-obtain` — paywalled, no PMC record) is the measured reason the discrimination
+  runs on the lumbar support and not on the backrest: 38 healthy subjects, four backrest
+  inclinations × four support sizes × three support levels, and its abstract states that
+  increases in the backrest-seat angle had **only minor effect** on the lumbar lordosis
+  while a lumbar support had a **significant** influence ("the lordosis increased with
+  increasing support"; support placement level not significant). The abstract states the
+  directions and significance, not per-condition angles (`:could-not-obtain` for the
+  numbers), so nothing here becomes a value. What the annotation does NOT do: it does not
+  install 36.2° as the `:back-supported` lordosis — the model's seated workstations keep
+  their current provenance, and the remaining openness is only that a real office chair's
+  lumbar pad depth is a continuous variable Andersson measured at four sizes, not the
+  binary the boolean implies. Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical.
 - ~~**How much of the 10.27 cm of translation a real standing pelvis would remove.**~~ **Sized
   on 2026-09-10: none of it.** The hip-rooted chain now exists and the answer is that re-rooting
   is a rigid translation, so it removes nothing. The split is also exact now —
@@ -3100,6 +5083,36 @@ fudge factor, no fitted constant was added on this branch.
   0.832 cm below L5/S1 — without the counterfactual the ≈7.1/≈3.2 estimate needed. See below.
 - **Wilke's own subject's lordosis**, in either posture — unchanged from 2026-09-08, and still
   the reason both entries carry `:parameter-not-in-source`.
+  ⚠ *Annotated 2026-09-19 (bot/suji-anatomy): the paper built to carry the subject's geometry
+  has now been read in full, and the number is absent by construction, not by paywall.*
+  Wilke H-J, Neef P, Hinz B, Seidel H, Claes L, *Intradiscal pressure together with
+  anthropometric data — a data set for the validation of models*, Clinical Biomechanics
+  16(Suppl 1):S111-S126, 2001 (doi:10.1016/s0268-0033(00)00103-0, PMID 11275349; full text
+  read 2026-09-19 from the publisher page served through the DOI resolver; no PMC record,
+  Europe PMC REST metadata has `inEPMC=N`, `isOpenAccess=N`). Three things this read fixes
+  about the gap. (i) **The paper's own angle axis is an excursion from the subject's standing
+  neutral, not an absolute orientation.** The Zebris CMS50 mobility was measured "between the
+  sacrum and the thoracolumbar junction", and "all motions were started from the neutral
+  position, defined when he was standing relaxed": pressures are printed against that axis —
+  1.08 MPa at 36° of standing flexion, 0.6 MPa at 19° of standing extension, 0.63 MPa at
+  about 20° of stool-sitting forward bend. So the datum this bullet asks for is not merely
+  absent from the paper; it is zeroed out by the paper's own coordinate convention — the
+  neutral's lordosis is the origin of the axis, not a point on it. Both
+  `:parameter-not-in-source` entries keep their name. (ii) **What the paper publishes instead,
+  and the model does not have: the subject's lumbar spinous heights in BOTH postures**
+  (Appendix A: standing L3/L4/L5 = 109.0/105.0/102.5 cm above the floor; sitting
+  23.0/20.1/15.0 cm above the 45.6 cm seat surface, i.e. 68.6/65.7/60.6 cm above the floor),
+  measured 2.5 y after the pressure run on the same subject at 72 kg against the 70 kg of the
+  pressure study. The 40.4 cm of L3 descent between the two postures is a measured sit-vs-
+  stand geometry fact; what share of it is pelvis versus spine the paper does not say
+  (`:could-not-obtain` — its own caveat that the video recordings had no body markers and no
+  constant camera position stands), so it is not a partition, and no model constant can be
+  built from it. (iii) **Both pinned Wilke entries survive at the relaxed end.** The full
+  text repeats relaxed standing at 0.5 MPa (reproducible band 0.43-0.50 MPa) and reports
+  stool-relaxed sitting at 0.45-0.50 MPa against the abstract's 0.46 MPa — the two postures
+  this model compares are the same pressure band in the source, so the source itself does not
+  separate them at the relaxed end. **No constant moves** — Hansraj 5-value and Wilke sitting
+  348.86176709999995 N byte-identical (README-only diff).
 
 ### Breaks that produced no failure
 
@@ -3112,11 +5125,121 @@ red with a message naming the claim it broke; every file was restored byte-ident
   `:residual-n` stayed at 10⁻¹⁴ and only the *pinned per-term values* caught it. Closure is a
   weaker check than it looks; it catches a term being dropped (tested separately, residual
   1.2169 N) and not a term being mis-priced.
+  ⚠ *Re-measured 2026-09-23 (bot/suji-anatomy; <!-- annotated-2026-09-23-termdrop -->):
+  the parenthetical's 1.2169 N is the term's 2026-09-10 value, and the break it sizes is
+  caught today at 0.7167 N — the same break, 1.70× smaller than this bullet says.* Measured
+  on a fresh clone of `origin/main` (`9d57894`) with the nbb portable-suite runner
+  (`scripts/nbb_test.cljc`, the mirror harness): baseline **333 tests / 3023 assertions /
+  0 failures** (exit 0), then the break applied to the mirror's `spine.cljc` only —
+  `:other-crossing-muscles`' `:newtons` set to `0.0`, which is this bullet's own break class
+  (a term priced at zero; the arm-swap no-op was its 2026-09-10 instance) — then restored
+  sha256-identical (`1940d654…f0aee5` before and after). The break goes red in exactly **2
+  assertions, both in `the-standing-sitting-decomposition-accounts-for-every-newton`**: the
+  closure assertion prints **residual 0.7166578623355715 N**, and the term's own full-
+  precision pin (`math/nearly= 0.7166578623355458`, `spine_test.kotoba:1432`) fails beside
+  it — so a dropped term is caught twice, by closure and by its pin. The mechanism claim
+  stands; the number does not. The decomposition table this section itself prints below
+  (`:other-crossing-muscles` row) shows the term moving 1.2169405131731992 → 1.2169405131733129
+  → 0.729580 → 0.716658 through the 2026-09-10/11 waves — the same wave that shrank the
+  lumbosacral moment 25-fold — and the term's pin moved with it, while this bullet kept the
+  pre-wave figure exactly the way the re-rooting paragraph one section down kept 22.513 (the
+  2026-09-22 annotation records that case). 1.2169 / 0.7167 = 1.70 (`:representative`
+  arithmetic on one measured residual and one pinned term); the over-statement's direction is
+  fixed by the wave that shrank the term and grows if the term shrinks further. This bullet
+  had no annotation before today — the 2026-09-22 and 2026-09-23 passes covered its
+  neighbours (the deftest rename, and the 'now produces eleven' count, measured 65/15) but
+  not this parenthetical. **No constant moves** — the break lived in a throwaway mirror copy
+  for one nbb run and was restored sha256-identical; no `src/` or `test/` file changed in
+  this commit, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
+  ⚠ *Re-measured 2026-09-23 (bot/suji-anatomy-20260923-armswap) — the arm-swap instance
+  itself, not the term-drop instance the annotation above measured: on the same fresh
+  worktree at `6d5a7c0`, the break is this bullet's own — the standing arm
+  `es-arm (* (/ (:moment-nm t) (:arm-m t)) (:projection s))` replaced by the sitting arm
+  (`(:arm-m t)` → `(:arm-m s)`), which makes the swap a no-op because it is then
+  byte-identical to the neighbouring `es-moment` definition two lines up
+  (`src/suji/methods/spine.kotoba:1120-1121`); the `other-crossing` clone is untouched —
+  and the catch at HEAD is not "the pinned per-term values". Baseline
+  **333 tests / 3023 assertions / 0 failures** (exit 0), then the break on the MIRROR's
+  `spine.cljc` only (`/tmp/nbb-mirror-armswap-20260923`, restored sha256-identical
+  `1940d654…f0aee5` before and after, byte-identical restore asserted): exactly **3
+  assertions fail, in 2 deftests**. (i) `:pelvis-origin-moment-arms` → **0 N** — the arm
+  term vanishes — failing its full-precision pin
+  (`math/nearly= -0.05724025764582985`, `spine_test.kotoba:1429`); (ii)
+  `:level-axis-under-the-muscle-line` moves to **-0.12272904121656658 N** (0.06548878357073673
+  + 0.05724025764582985, the vanishing arm absorbed — the arithmetic of the telescoping
+  the bullet describes) and fails its full-precision pin
+  (`math/nearly= -0.06548878357073673`, `spine_test.kotoba:1430-1431`); (iii)
+  **`(is (neg? arm-term))` fails at 0 N in
+  `the-pelvis-origin-arms-unload-this-posture-and-would-load-the-mirror-of-it`
+  (`spine_test.kotoba:1581`)** — a SIGN assertion with no pin, added by the 2026-09-07
+  reference-posture wave (`a5e6b0c`), which the bullet's "only the *pinned per-term
+  values* caught it" does not cover because that test predates the bullet. So the
+  bullet's two claims split at HEAD: "the sum is unchanged — the terms telescope — so
+  `:residual-n` stayed at 10⁻¹´" HOLDS (measured **2.3092638912203256e-14 N**;
+  `:chain-identity-residual-nm` -6.938893903907228e-18 N·m; `:other-crossing-muscles`
+  unchanged at 0.7166578623355458 N) and "only the pinned per-term values caught it"
+  does not (3 assertions, 1 unpinned). The level-axis pin's magnitude is
+  0.122729/0.065489 = 1.87× the 2026-09-08 value (0.12272904121656658 /
+  0.06548878357073673, `:representative` arithmetic on the two pinned values the break
+  moves); the over-statement's direction — the bullet undersizes the catch, and it
+  undersizes it by a larger factor after each wave that moves the pins — is fixed by the
+  2026-09-07 test addition and the 2026-09-11 pin move this section's own table records.
+  **No constant moves** — same discipline as the annotation above: the break lived in a
+  throwaway mirror for three nbb runs (baseline / with-break / residual probe) and was
+  restored sha256-identical; no `src/` or `test/` file changed in this commit, Hansraj
+  5-value and Wilke sitting 348.86176709999995 N byte-identical (README-only diff).*
 - **The 2026-09-08 break that produced no failure now produces eleven.** Making
   `lumbar-chord-tilt-deg` ignore the pelvic tilt — the break that left the old
   direction-agreement control green — now fails `the-direction-agreeing-with-wilke-is-not-
   evidence`, all four of the new decomposition tests, and four clauses of the
   line-of-gravity contradiction.
+  ⚠ *Re-counted 2026-09-23 (bot/suji-anatomy): the count is now measured, and it is
+  not eleven — it is **65 failing assertions across 15 tests**, and the control the
+  bullet says the break fails is green under the break.* Measured on a detached
+  worktree of `f3ee37c` via the nbb portable-suite runner
+  (`scripts/nbb_test.kotoba`, the runner this repo ships for exactly the
+  host-blocking situation the 2026-09-22 annotation hit): baseline first — **333
+  tests, 3023 assertions, 0 failures, 0 errors** — then the break applied to the
+  mirror only (`trunk-flexion-deg` returned alone, the pelvic-tilt term dropped),
+  then restored sha256-verified. The 65: `a-lumbar-level-s-axis-is-the-arc-s-tangent-
+  at-its-own-position` 20, `the-five-lumbar-levels-have-five-different-axes` 7,
+  `the-lumbar-chord-is-the-mean-tangent-of-the-measured-arc` 7,
+  `the-line-of-gravity-splits-into-three-travels-that-sum-to-it` 5,
+  `cho-s-standing-lordosis-and-the-measured-line-of-gravity-cannot-both-hold` 5,
+  `the-standing-sitting-decomposition-accounts-for-every-newton` 5,
+  `the-dominant-term-was-the-lumbar-chord-and-the-chord-is-measured-now` 3,
+  `a-tilted-level-drops-its-shear-and-nothing-carries-it` 3,
+  `the-two-wilke-cross-checks-are-pinned-at-full-precision` 3,
+  `l5s1-now-carries-less-axial-compression-than-l4l5-and-that-is-the-shear` 2, and
+  1 each in `re-rooting-the-chain-moves-no-moment`,
+  `standing-and-sitting-now-differ-and-the-difference-is-the-lordosis`,
+  `the-chord-tilt-s-sign-does-not-survive-the-source-s-last-digit`,
+  `the-lordosis-sensitivity-reversed-and-is-now-far-too-low` and
+  `the-pelvis-origin-arms-unload-this-posture-and-would-load-the-mirror-of-it` —
+  15 tests, all in `spine-test` (11), `pose-test` (2), `lower-limb-test` (1) and
+  `posture-test` (1). Two things the bullet gets wrong at HEAD. (i) The named
+  control `the-direction-agreeing-with-wilke-is-not-evidence` no longer exists
+  (renamed `…-and-it-has-stopped-agreeing`, 2026-09-22 annotation below), and the
+  renamed test is GREEN under the break — it was inverted on 2026-09-11 to assert
+  the model disagrees with Wilke by construction, so a break that restores the old
+  agreeing direction satisfies it. The bullet's "now fails <that test>" names a
+  catch that does not fire. (ii) The bullet's arithmetic names 1 + 4 + 4 = 9, and
+  the 2026-09-22 annotation recorded the recount as `:could-not-obtain` because
+  `clojure -M:test` reports "Ran 0 tests" on a fresh clone and the kbb sci runner
+  cannot resolve `io.github.kotoba-lang/text`. The portable nbb runner has neither
+  problem, so the recount is a measurement now: neither 9 nor 11, but 65 — and the
+  miss is not a rounding of the same list. Of the bullet's own named buckets, the
+  "four clauses of the line-of-gravity contradiction" exist as
+  `the-line-of-gravity-splits-into-three-travels-that-sum-to-it` and fail 5; the
+  "four new decomposition tests" are legible as the decomposition-family deftests
+  and fail 5 + 3 + 1 + 1 across four of them; the direction test fails 0. The
+  count that is true at HEAD is 65/15, driven mostly by the five-level axis
+  machinery the 2026-09-11 wave added after the bullet was written. **No constant
+  moves** — the break lived in a throwaway mirror copy for one nbb run and was
+  restored sha256-identical; no `src/` or `test/` file changed in this commit,
+  Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
 
 ## The root was not the defect (2026-09-10)
 
@@ -3158,6 +5281,32 @@ posture rooted at `:l5s1`, `:pelvis-base` and `:mid-ankle` gives the same **22.5
 moment and the same line of gravity, with a control first that the three chains really are in
 visibly different places, and a check that the summed segments are the ones
 `load/lumbosacral-moment` sums rather than a hand-assembled lookalike.
+  ⚠ *Annotated 2026-09-22 (bot/suji-anatomy): the 22.513 N·m this paragraph quotes is the
+  moment's pre-2026-09-11 value, and the test's own pin has moved on without it.*
+  `re-rooting-the-chain-moves-no-moment` (`test/suji/methods/pose_test.kotoba`) pins the moment
+  it holds invariant across the three roots at `math/nearly=` 1e-9 — and the pinned number has
+  been **0.901314694482678 N·m** on the 70 kg / 1.70 m body since 2026-09-11, with the test's
+  own comment marking **22.512908211478976 N·m** as the value "until 2026-09-11", when the
+  pelvis stopped taking the whole lordosis (Mills' 0.586) and the chord tilt — which is what
+  the moment *is*, by this very section's argument — shrank it 25-fold (arithmetic on the two
+  pinned values, 22.5129 / 0.9013). The invariance this section argues is untouched: re-rooting
+  is a rigid translation whatever the moment's size, and the test still asserts one value at
+  all three roots with the line of gravity beside it. What drifted is the prose copy: this
+  section kept printing 22.513 after the pin became 0.9013, the same silently-drifting-prose
+  class the `:c2c3` bullet's 2026-09-20 annotation records. Found while reading the same
+  2026-09-10/11 wave: the neighbouring "Breaks that produced no failure" bullet (README:4924)
+  still names `the-direction-agreeing-with-wilke-is-not-evidence`, a deftest that no longer
+  exists under that name — commit `41f2169` renamed it to
+  `the-direction-agreeing-with-wilke-was-not-evidence-and-it-has-stopped-agreeing` and inverted
+  what it asserts (the model now disagrees with Wilke's direction by construction) — and its
+  named catches sum to 1 + 4 + 4 = 9, not eleven. The recount is `:could-not-obtain` here: the
+  suite does not run on this host (fresh clone of `7817896`: `clojure -M:test` reports
+  "Testing user / Ran 0 tests", and the kbb sci runner cannot resolve
+  `io.github.kotoba-lang/text` from a fresh clone), so the break's present-day failure count
+  is unmeasured — a prose count of test failures is exactly the class this README's own
+  `:c2c3` and `:c7` annotations keep finding. **No constant moves** — no test edited, no value
+  recomputed, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
 
 **So the +115% term is not a rooting artefact.** It is the lumbar chord: `lumbar-chord-tilt-deg`
 puts the chord at `trunk + lordosis/2`, which is where a circular arc's chord lies between its two
@@ -3277,6 +5426,33 @@ pinned absolutely now, and the same break then fails four assertions naming the 
   pelvis` (`pose/lumbar-lordosis-deg`), which is what spends 46.5° of Cho's lordosis change as
   46.5° of pelvic rotation and produces both travels above. Nothing here measures whether a real
   stool-to-standing pelvis rotates that far.
+  ⚠ *Annotated 2026-09-16 (bot/suji-anatomy): the identity's two sides are now measured
+  simultaneously in real people.* Endo K, Suzuki H, Nishimura H, Tanaka H, Shishido T, Yamamoto K,
+  *Sagittal lumbar and pelvic alignment in the standing and sitting positions*, **J Orthop Sci
+  17(6):682-686, 2012** (doi:10.1007/s00776-012-0281-1, PMID 22915074; abstract read 2026-09-16
+  via the Europe PMC REST API; full text paywalled, `:could-not-obtain`). Fifty healthy adults,
+  lateral radiographs in standing and sitting, with lumbar lordotic angle (LLA), sacral slope
+  (SS), pelvic tilt (PT) and pelvic incidence (PI) measured per posture: the paper's stated
+  changes standing→sitting are **LLA −16.6°, sacral slope −18.7°, pelvic tilt +18.3°**
+  (P < 0.01; PI unchanged, so the per-subject identity PI = SS + PT closes at both ends).
+  Measured partition of the same postural change: the pelvis rotated **1.10× the lordosis
+  change** (18.3 / 16.6, arithmetic on the paper's own stated means, `:representative`) — the
+  rigid-pelvis identity is the right *shape*: a lordosis delivered without vertebral wedging
+  really does ride on the pelvis, which is what this model assumes. Measured against the model's
+  spend: the model partitions Cho's 46.5° stool→standing lordosis change as **0.586 × 46.5° =
+  27.25°** of hip-axis rotation (Mills' share, since 2026-09-11); the measured 1.10 partition
+  applied to the same 46.5° would rotate the pelvis **≈51.2°**. Direction of the error as the
+  model stands: IF Endo's partition transfers to Cho's stool→standing pair, the model
+  **under**-rotates its hips and legs for the lordosis it spends — by about half — which is the
+  same seam the lordosis-partition bullet above confesses, seen from the other side of the
+  0.586 cut. Two caveats keep it from being a correction: different cohort (Endo's standing LLA
+  33.3° ± 11.2° against Cho's 46.5/47.1° — how the partition scales with the size of the
+  lordosis being partitioned is not measured by either paper), and Endo's sitting condition is
+  not stated in the abstract (chair vs stool `:could-not-obtain` at this level; the same
+  abstract carries the summary readings LLA −50% and PT +25%, so the magnitudes quoted here are
+  the paper's own stated values, not this repo's recomputation). **No constant moves** — Mills'
+  0.586 is not touched, Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical
+  (README-only diff).
 - ~~**Say whether 21.407 N·m is the right standing lumbosacral moment.**~~ **Superseded by the
   2026-09-11 wave below: the chord stopped being derived from the rigid-pelvis identity, so the
   standing lumbosacral moment is now a number the model computes (0.0496 N·m at Cho's 46.5°) rather
@@ -3287,6 +5463,92 @@ pinned absolutely now, and the same break then fails four assertions naming the 
   stands in for it, and because the offset is rigid this costs nothing measurable *today* — it
   will stop being free the moment a seat reaction is applied at a point rather than assumed to
   take the whole thigh.
+  A first measured instance of what that offset is made of, read 2026-09-16 via the Europe PMC
+  REST API: Chen YL & Yang PJ, *A preliminary study of the measurement of external ischial
+  tuberosity width and its gender differences*, Journal of Physical Therapy Science
+  28(3):820-823, 2016 (doi:10.1589/jpts.28.820, PMID 27134365, PMC4842446, CC BY-NC-ND). Thirty
+  healthy Taiwanese volunteers (15 M, 20.7 y / 175.6 cm / 66.7 kg; 15 F, 21.4 y / 158.9 cm /
+  52.6 kg) sat on clay (impress method) and on an mFLEX pressure mat (seated-pressure method):
+  **external ischial tuberosity width — the distance between the two tuberosities as the seat
+  meets them — 11.96 ± 1.24 cm (impress) and 13.42 ± 1.42 cm (pressure) in males, 13.52 ± 0.83
+  and 13.30 ± 0.91 cm in females**; the paper proposes 12.0 cm (male) and 13.5 cm (female) as
+  design parameters, and adds Sauer et al. 1992 (11.65 cm male / 13.49 cm female, n=12/14) as
+  the external check. This is the WIDTH the two sit bones make, not the offset the model's
+  bullet is about — the sagittal distance from the tuberosity to the hip axis, and its direction
+  relative to the seat, is `:could-not-obtain` from this source. What it does pin: the seat
+  contact is not at the model's hip-axis point but at two points 12-13.5 cm apart straddling
+  the midline, so a point seat reaction applied at one hip axis is a coarser idealisation than
+  the anatomy supplies, and the error of carrying the tuberosity at the hip axis is of order
+  several centimetres in a direction the model does not state (the tuberosity lies inferior and
+  posterior to the acetabulum; the magnitude of that separation is the still-unmeasured part).
+  No constant moves — the hip axis keeps standing in, the bullet stays open.
+  ⚠ *Annotated 2026-09-20 (bot/suji-anatomy): the WIDTH gets a second, bone-side measurement on
+  a different modality — and the soft-tissue layer between the seat and the bone is now measured
+  as the difference of the two.* Musielak B, Jóźwiak M, Rychlik M, Chen BP, Idzior M,
+  Grzegorzewski A, *Does hemipelvis structure and position influence acetabulum orientation?*,
+  **BMC Musculoskelet Disord 17:131, 2016** (doi:10.1186/s12891-016-0982-2, PMID 26984181,
+  PMC4794903; full text read 2026-09-20 from the PMC copy, CC BY). 31 consecutive adult MALE
+  pelvices (62 hemipelves), 3D CT reconstruction (0.63 / 1.25 mm slices), bony landmarks:
+  **intertuberous distance — the distance between the lowest points (in the sagittal plane) of
+  the two ischial tuberosities — 105.91 ± 11.50 mm** (range 82.14–124.50), with interspinous
+  distance 251.56 ± 18.32 mm and pelvic height 151.92 ± 16.81 mm (Table 3). Against the 2026-09-16
+  instance above (Chen & Yang's external seated widths, male impress 119.6 ± 12.4 mm): the bony
+  pair sits **13.7 mm narrower** than where the seat meets them — ≈ 6.8 mm of soft tissue plus
+  seated-load displacement PER SIDE (arithmetic on two published means from different cohorts,
+  modalities and postures, `:representative`; supine CT bone distance vs. seated-loaded external
+  impression, so part of the gap is load deformation, share `:could-not-obtain`; the pressure-mat
+  reading 134.2 mm widens the same gap to 28.3 mm, 14.1 mm per side, as the upper bound). The
+  error direction of the seat idealisation sharpens both ways: what the seat reaction meets is
+  NOT the bone pair — the seat loads two patches ~13 cm apart centred on bones ~10.6 cm apart, so
+  a reaction built on the bony ITD would under-state the contact spread, and the bony anchor the
+  model would place sits ~7 mm per side medial of where the seat actually loads. The sex split
+  stays external-side only: Chen & Yang measure female external widths wider than male
+  (135.2 / 133.0 vs 119.6 mm) while Musielak measured males only, so a bony female ITD is
+  `:could-not-obtain` here. What it does NOT close is the bullet's own still-unmeasured part —
+  the SAGITTAL tuberosity-to-hip-axis separation: neither paper measures it, and Musielak's own
+  limitation states it ("we did not find any good indicator to evaluate the position and
+  structure of the hemipelvis in the sagittal plane"); the inferior-and-posterior direction
+  remains asserted anatomy, not a measurement. No constant moves — the hip axis keeps standing
+  in, the bullet stays open; Hansraj 5-value and Wilke sitting 348.86176709999995 N
+  byte-identical (README-only diff).
+  ⚠ *Annotated 2026-09-20, 23:10 (bot/suji-anatomy), a second pass on the same bullet: the
+  separation's INFERIOR half is measured, so "the inferior-and-posterior direction remains
+  asserted anatomy" above is now half wrong — the posterior half is still asserted.* Bombaci H,
+  Simsek B, Soyarslan M, Murat Yildirim M, *Determination of the hip rotation centre from
+  landmarks in pelvic radiograph*, **Acta Orthop Traumatol Turc 51(6):470-473, 2017**
+  (doi:10.1016/j.aott.2017.09.004, PMID 29029869, PMC6197315; full text read 2026-09-20 via
+  the Europe PMC REST fullTextXML endpoint). 100 healthy adults (50 M / 50 F, mean age 46.2,
+  range 18-91), standard AP pelvic radiographs, hip rotation centre located by concentric
+  circles on the femoral head: **the distance from the HRC to the inter-ischial line — the
+  line drawn through the lowest end of the pelvis, tangent to both ischial tuberosities — is
+  71 ± 6.35 mm in males and 65 ± 6.72 mm in females, i.e. 30.01 ± 2.05% and 29.10 ± 2.35% of
+  pelvic height** (pelvic height itself 239 ± 13.58 / 225 ± 12.52 mm, measured up to the
+  tangent on the upper ilium). That vertical is the inferior component of exactly the vector
+  the substitution rides on: the model roots the seated chain at the hip axis "standing in"
+  for the tuberosities, and the measured distance between the two roles is **≈ 6.5-7.1 cm**
+  (arithmetic on two published means, `:representative`) — the size the bullet's own
+  conditional says "will stop being free the moment a seat reaction is applied at a point
+  rather than assumed to take the whole thigh", now measured at the same order as the
+  12-13.5 cm contact spread the 2026-09-20 width annotation above carries. The 2026-09-10
+  invariance argument is untouched — a rigid translation moves no moment, and this
+  measurement does not challenge that; it sizes the vector the invariance silently carries.
+  What stays `:could-not-obtain`: (i) the POSTERIOR (sagittal) component — an AP radiograph
+  measures frontal-plane distances only, so 65-71 mm is a LOWER bound of the 3D
+  tuberosity-to-HRC separation and no source in hand prints the posterior offset; (ii) the
+  seated-LOADED geometry — supine and unloaded, while the model's root carries the trunk;
+  Chen & Yang's impress-versus-pressure spread is the external analogue of the same
+  deformation; (iii) the "vertical" is the radiograph's frame — supine pelvic tilt is not
+  seated pelvic tilt, so the direction "inferior" transfers and the angle does not.
+  Corroboration inside the same convention: the paper's own horizontal-from-teardrop ratios
+  (14.25% / 13.69% of pelvic height) reproduce the cadaver convention it cites — John JF,
+  Fisher PE, *Radiographic determination of the anatomic hip joint center: A cadaver study*,
+  Acta Orthop Scand 65(5):509-510, 1994 (doi:10.3109/17453679409000901, PMID 7801750; full
+  text from the journal's open archive: 31 specimens, 57 hips, joint centre 13% of pelvic
+  height lateral and 7% superior to the teardrop, pelvic height itself measured from the
+  ischiadic tubercles to the iliac crest) — a second cohort on a second modality agreeing on
+  the normalized convention, not on the sagittal number this bullet still lacks. No constant
+  moves — the hip axis keeps standing in, the bullet stays open; Hansraj 5-value and Wilke
+  sitting 348.86176709999995 N byte-identical (README-only diff).
 - **Nothing was installed.** No divisor, no fudge factor, no fitted constant. Dividing the chord's
   sensitivity by 8 still brings the difference ratio to 1.03 and still lives nowhere.
 
@@ -3323,6 +5585,66 @@ declares where its lordosis came from, and installing the standing one Cho measu
 separately measured facts about quiet standing — see "Every posture's lordosis came from
 somewhere" above. No hardware, no live member scan, no live kami-genesis backend. Cells `.solve()` raise
 at R0; `load_solve` transitions are unit-tested.
+
+
+## A second external number for the standing–sitting difference (2026-09-14)
+
+The 2026-09-11 wave crossed the standing−sitting L4/L5 difference to **−10.859 N** against
+Wilke's +48 N, and left it honestly undershooting. This section adds **one independently
+published figure for the same posture class**, not an adjustment — so a reader can see whether
+the model's undershoot is outside the literature or inside its spread.
+
+Nishizawa, Katsuhira, Watanabe, Oka & Matsudaira, "A simple method for estimating the
+intervertebral disc compressive force based on the posture analysis of community-dwelling
+older adults", **J Phys Ther Sci 2021;33(5):423–428**, DOI `10.1589/jpts.33.423`, PMID
+`34083882`, PMC `PMC8165360` (**full text read 2026-09-14**, open access CC-BY-NC-ND): 36
+healthy older adults (>65 y, no LBP), 10 s of quiet static standing on two force plates,
+L4–L5 disc compressive force from the paper's own static approximation
+(20·|extension moment| + 13·|flexion moment| + 8·|side-bending| + 23·|rotation| + W_HAT·cosθ,
+the coefficients being the paper's stated disc-to-erector and disc-to-rectus-abdominis moment
+arms) — **512.68 ± 108.38 N** of standing lumbar compression.
+
+Against Wilke's own 0.5 MPa standing entry (this repo's convention, 0.5 MPa × 1800 mm² = 900 N
+for a 45 y / 70 kg / 1.68 m subject), that is **0.57 ×** — an independent method publishing a
+standing figure **43% below** the single in-vivo subject the Wilke entries are taken from.
+
+⚠ *Annotated 2026-09-16 (bot/suji-anatomy): the parenthetical above mislabels the conversion,
+and the correction moves this section's conclusion.* `0.5 MPa × 1800 mm² = 900 N` is **not**
+this repo's convention: the same README's *A pressure is not a force* section establishes that
+a nucleus pressure is not a mean disc stress, and `spine/lumbar-cross-check` converts Wilke's
+pressure through `pressure->compressive-force-n` **via `nachemson-pressure-index`** — which is
+why this README's own recorded standing ratios are 682.422 N / **600 N** = 1.1374 (before the
+2026-09-11 wave) and 338.002 N / **600 N** = 0.563 (since). Through the index, the 0.48–0.50 MPa
+standing band is **508–600 N**. On the repo's own conversion this section's arithmetic reads:
+Nishizawa's **512.68 ± 108.38 N against 600 N is 0.85 ×** — about 15% below, inside its own
+±21% band and with its mean **inside Wilke's converted 508–600 N band** — not 0.57 ×, not 43%
+below. So the two published figures **agree** within their own spreads, the "second reference
+sits on the other side of that reference — the spread is wider than any single number" reading
+collapses, and what survives is stronger and one-sided: the model's post-crossing standing
+figure (338.0 N) undershoots **both** published references (0.56 × Wilke-converted, 0.66 ×
+Nishizawa). Error direction of the defect as written: the 900 N basis over-states Wilke's
+standing force by exactly the index (× 1.5), which over-states the disagreement between the
+two references; the model side is untouched by it — the cross-check that produced 0.563
+already used the index conversion, so this is a prose-only inconsistency, and fixing the prose
+moves the model **away** from agreement with both references (the undershoot is confirmed, not
+explained). Hansraj 5-value and Wilke sitting 348.86176709999995 N byte-identical (annotation
+only; no line containing either is removed, and `nachemson-pressure-index` is not touched).
+
+**:representative** — the cohort is mean age >65 y, not Wilke's 45-year-old, and the paper's
+±108 N is about 21% of the mean, which is the band this entry claims and no more. The
+difference this section asserts is a **level**, not the model's standing−sitting **difference**;
+equating the two would be the same class of error as pinning a difference where two pinned
+quantities are needed. **Error direction unstated on the cohort-to-Wilke comparison itself**
+(older spine geometry cuts both ways); what is stated is the band.
+
+**Nothing was installed.** No constant in `posture/`, `spine/` or `pose/` moves, no divisor,
+no fitted constant, no test re-pointed. The Hansraj anchor and the Wilke sitting pin are
+byte-identical. The one claim this section makes is the one a reader can check: an independent
+published method puts relaxed-standing lumbar compression below Wilke's own subject by about
+43%, so the model's post-crossing undershoot is a comparison against *one* reference, and a
+second reference sits on the other side of that reference — the spread is wider than any
+single number against it.
+
 
 ## The segmental lordosis crossed the standing–sitting difference (2026-09-11)
 
@@ -3435,3 +5757,106 @@ inputs is exactly the case the test watches for; nothing here changed a value.
 Nothing in this section changes a constant. The band, the 42, and the sign fragility are
 properties the source's printing precision imposes, not properties a fit removed.
 
+**Updated 2026-09-19 (bot/suji-anatomy): the sweep stopped carrying a second
+transcription, and the band endpoints are pinned.** Two things the 2026-09-12
+breaks exposed but did not fix. (i) The test hard-coded the seven inputs a
+second time as literals (`16.7`, `28.5`, `13.4 … 5.6`), so the sweep and the data
+in `posture.kotoba` could drift apart silently: a drifted literal keeps all four
+assertions true — the band it sweeps is rebuilt around whatever the literals say,
+and the installed point rides near its middle — while the README's printed band
+quietly stops being the test's band. The sweep now reads all seven inputs out of
+`spinopelvic-motion` itself, so there is exactly one transcription; a correction
+still legitimately changes the band, and the data's own pins (`= 16.7 ss`, `=
+28.5 ll`, the five-segment vector) remain what catch it. (ii) None of the four
+assertions said what the band IS. Three new assertions pin the band endpoints
+and the negative count to the numbers this section prints: low end
+**−0.1341°**, high end **+0.2393°**, **42 of 128 negative** — verified by a
+temporary 16.7 → 16.8 perturbation of one input: 7 failures, of which the three
+new pins are red with the recomputed band (0.0288 / 0.4028 / 0 negative) while
+the four 2026-09-12 assertions stay green — which is the point: the old four
+never named the band, so only the new pins mark that a correction now also
+requires updating the band printed here. Restored byte-identically (sha256
+verified); 15 tests / 139 assertions green on both hosts (nbb and kbb sci). No
+constant moves — Hansraj 5-value and Wilke sitting 348.86176709999995 N
+byte-identical (test+README diff only).
+
+
+## The neck bucket's first point on the %MVC axis became a test (2026-09-15)
+
+*What the neck still cannot express* (2026-09-12/14) recorded six measured
+neck-extensor endurance results and stated the direction of the mismatch:
+at just above the 8 %MVC floor the model prices a held load at >70 min while
+healthy neck-extensor task failure sits at 0.7-4.8 min — but with the x-axes not
+meeting, so the entry stayed a pointer. The sixth measurement (Zhou, Reddy &
+Zhang, **PNAS** 2024;121(34):e2401874121, doi `10.1073/pnas.2401874121`,
+PMID 39133855, PMC11348306, full text read 2026-09-14) is the first whose
+intensity is stated: sustained head-neck exertions at **50% of each subject's
+own maximum**, 24 subjects (11 M / 13 F), **82 ± 43 s neutral, 56 ± 23 s at
+40° extended, 117 ± 68 s at 40° flexed**.
+
+That makes the bucket's first real meeting with the model on the model's own
+axis — and until 2026-09-15 the meeting existed nowhere in the tree: the numbers
+were README prose only, so a refactor of the endurance relation could move what
+the model says at 50 %MVC without anything red. It is now
+`strain-test/the-first-stated-intensity-in-the-neck-bucket-meets-the-model-on-its-own-axis`,
+which recomputes both sides longhand and pins:
+
+- the model's own value: `endurance-minutes` at 50 %MVC = **0.9987 min**
+  (0.2 · 0.5^−2.32), inside one SD of the neutral measured mean
+  (1.367 ± 0.717 min) — an overlap, pinned as an overlap, not a match;
+- the direction of the mismatch, stated and pinned: at the stated intensity the
+  model is **above** the 40°-extended measured mean (0.933 min) and **below**
+  both the neutral (1.367 min) and 40°-flexed (1.95 min) ones — it is never more
+  than 2× any of the three, which is what the axis resolves here;
+- the transcribed means themselves, to the minute.
+
+**Break (restored byte-identically, sha256 checked):** moving the model's
+0.2-minute coefficient to 0.3 turned 22 assertions red across the suite, but
+every pre-existing failure is a statement about the *pooled* curve or the band
+resolution — the only failures that name the neck measurement are the new test's
+two. Before this test, the neck bucket's one meeting with the model on a stated
+intensity was invisible to the suite; now it is the most specific catch the
+coefficient has. The test was also verified red on its own expectation constant.
+
+Nothing here changes a constant: `0.2` and `−2.32` keep their
+`:provenance :could-not-obtain`, `task->reference-region` keeps returning
+`:absent-from-source` for the neck, and the bucket keeps its name. What changed
+is that the bucket's one measured point at a stated intensity can no longer
+move in the tree without a red test arguing for it.
+
+  ⚠ *Annotated 2026-09-22 (bot/suji-anatomy): the bucket's SECOND stated intensity
+is prose-only — the test above covers one point of the pair, and the measured side
+of the second has no pin at all.* The 2026-09-17 item 7 row (Marchand et al,
+60 %MVC, 68.1 ± 32.3 s) extends this diagnostic table to two intensities, but only
+in README text: a tree-wide scan today found the strings `68.1`, `32.3`, `0.58` and
+`marchand` (any case) in no file under `test/` — `strain_test`'s
+`the-first-stated-intensity...` transcribes and pins only the 50 %MVC row. What is
+and is not protected at 60 %MVC: the MODEL-side value is *not* the unprotected part
+— it is the same two `:could-not-obtain` constants the 50 %MVC pin already holds
+(12.0 · 0.6^−2.32 = 39.2528 s = 0.65421 min, re-computed 2026-09-22 by the pinned
+formula; the same computation at 0.5 reproduces the existing pin
+0.9986644391212895 exactly, which is the check that the recomputation used the
+model's own curve and not the README's rounded 39.2). What CAN drift silently is
+the measured side and the two claims built on it: (i) the transcribed means
+68.1 s / 32.3 s and the 60 %MVC intensity itself — a transcription of 68.1 → 78.1
+leaves every existing test green while flipping the direction claim, because
+39.25 s is BELOW 68.1 but ABOVE 78.1; (ii) the pair of ratios 0.73× (50 %MVC) vs
+0.5764× (60 %MVC) whose monotone-downward ordering is the only shape statement two
+cross-protocol points support; (iii) the −0.89 SD reading ((68.1 − 39.2528)/32.3,
+re-computed 2026-09-22). Proposed, not installed: at `math/nearly=`, pin the
+transcribed Marchand means and the intensity `= 60`, the model value
+0.6542128869385199 min, the ratio 0.5763990193290924 and the −0.893 SD, with the
+break that must go red being a perturbation of either transcribed mean — the same
+break class the 2026-09-19 chord-tilt pins demonstrated. It is NOT installed in
+this PR because this session could not run the suite at all on a fresh clone of
+`origin/main` (`8b45df4`): `bb test` → `Could not locate suji/test_runner.bb,
+suji/test_runner.clj or suji/test_runner.cljc on classpath` (exit 1, upstream's
+own runner missing); `clojure -M:test` → `Ran 0 tests containing 0 assertions`
+under `Testing user` (the runner finds no `suji.methods.*` namespace on this
+path); `nbb --classpath src` cannot load `.kotoba` namespaces
+(`Could not find namespace: suji.methods.strain`) and the `kbb --backend sci`
+runner dies at its first test namespace (`suji.cells.state-machines-test`) — the
+same class as the 2026-09-22 biomech note. A test added unseen red would be a
+claim, not coverage. No constant moves — `endurance-minutes` coefficients, the
+50 %MVC pin and every transcribed value stay as they are; Hansraj 5-value and
+Wilke sitting 348.86176709999995 N byte-identical (README-only diff).

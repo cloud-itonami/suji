@@ -331,6 +331,20 @@
         "the cervical extensors are in this posture and have no curve")
     (is (contains? (:summary sc) :model-returns-no-finite-endurance)
         "and several groups sit below the model's own floor")
+    ;; README 2026-09-07 printed '13 of 51' with buckets 5/2/20/11 and claimed a
+    ;; re-measure that predates the muscles it names; the 2026-09-23 annotation
+    ;; re-measured 56 instances with buckets 11/2/26/4 and this pin holds those
+    ;; measured counts, so a posture, routing, floor or instance-table drift
+    ;; breaks a test that names the counts instead of a prose paragraph.
+    (is (= 56 (:total sc)) "56 solved instances at laptop-on-lap (2026-09-23 re-measure)")
+    (is (= 13 (:compared sc)) "13 rows produced a ratio (7 muscles, 6 of them paired)")
+    (is (= {:acts-the-wrong-way 4
+            :compared 13
+            :model-returns-no-finite-endurance 26
+            :no-mvc 2
+            :no-published-curve-for-this-region 11}
+           (into (sorted-map) (:summary sc)))
+        "the full bucket census at laptop-on-lap, pinned from the 2026-09-23 re-measure")
     ;; and the disagreement is present in a real posture, not only at chosen inputs
     (let [outside (filter #(false? (:within-reference-spread? %))
                           (remove :could-not-obtain (:rows sc)))]
@@ -569,3 +583,123 @@
       (is (> (/ (apply max doses) (apply min doses)) 50.0)
           (str "the quantity the index is a transform of separates the same rows "
                (apply min doses) " .. " (apply max doses))))))
+
+(deftest the-first-stated-intensity-in-the-neck-bucket-meets-the-model-on-its-own-axis
+  ;; The neck bucket's sixth measurement (README 2026-09-14) is the first whose
+  ;; intensity is stated: Zhou, Reddy & Zhang, PNAS 2024;121(34):e2401874121,
+  ;; doi 10.1073/pnas.2401874121, PMID 39133855, PMC11348306 (full text read
+  ;; 2026-09-14). 24 subjects (11 M / 13 F), sustained head-neck extension held
+  ;; to exhaustion at 50% of each subject's own maximum:
+  ;;   82 +/- 43 s neutral, 56 +/- 23 s at 40 deg extended, 117 +/- 68 s at
+  ;;   40 deg flexed. EMG median-frequency slopes significantly negative in all
+  ;; four measured muscles in all three positions.
+  ;; Until this paper the bucket had NO point on the %MVC axis, so the model's
+  ;; 0.2-minute coefficient and -2.32 exponent could never be compared against a
+  ;; measured neck time AT a stated intensity — only against the pooled limb
+  ;; curve, which the region mapping refuses (`:absent-from-source`). This is the
+  ;; first time that comparison exists, and it exists NOWHERE in the tree: the
+  ;; number is recorded in README prose only, so a refactor of the endurance
+  ;; model can move it silently. Pin it from both sides, recomputed longhand.
+  ;; NO CONSTANT MOVES: the model's own curve says 0.999 min at 50 %MVC, which
+  ;; sits inside the three measured means' spread (0.93-1.95 min) at neutral's
+  ;; lower edge but OUTSIDE the trunk fit's 1.824 and the pooled fit's 1.441
+  ;; minute values only in direction-neutral arithmetic — this test pins the
+  ;; model's number against the measured ones and states the direction of the
+  ;; mismatch, it does not tune anything.
+  (let [zhu-means-seconds {:neutral 82.0 :extended 56.0 :flexed 117.0}
+        zhu-sds-seconds   {:neutral 43.0 :extended 23.0 :flexed 68.0}
+        model-at-50       (* 0.2 (Math/pow 0.5 -2.32))]        ; = 0.9987 min
+    ;; the paper's own numbers, transcribed, in minutes
+    (doseq [[k s] zhu-means-seconds]
+      (is (pos? s) (str "Zhou " k " mean must be present")))
+    (is (math/nearly= (/ (:neutral zhu-means-seconds) 60.0) 1.3666666666666667 1e-9))
+    (is (math/nearly= (/ (:extended zhu-means-seconds) 60.0) 0.9333333333333333 1e-9))
+    (is (math/nearly= (/ (:flexed zhu-means-seconds) 60.0) 1.95 1e-9))
+    ;; the model's value at the stated intensity, from the docstring's own form
+    (is (math/nearly= (strain/endurance-minutes 50.0) model-at-50 1e-9))
+    (is (math/nearly= model-at-50 0.9986644391212895 1e-6))
+    ;; the direction of the mismatch, pinned so it cannot flip silently:
+    ;; the model at 50 %MVC sits between the 40deg-extended measured mean
+    ;; (0.933 min) and the neutral measured mean (1.367 min), and is BELOW the
+    ;; 40deg-flexed one (1.95 min) — the model is never more than 2x any of the
+    ;; three measured means, which is the spread the +/-%MVC axis resolves here.
+    (is (< (:extended zhu-means-seconds) (* 60.0 model-at-50))
+        "model at 50 %MVC exceeds the 40deg-extended measured mean (0.933 min)")
+    (is (> (:neutral zhu-means-seconds) (* 60.0 model-at-50))
+        "model at 50 %MVC is below the neutral measured mean (1.367 min)")
+    (is (> (:flexed zhu-means-seconds) (* 60.0 model-at-50))
+        "model at 50 %MVC is below the 40deg-flexed measured mean (1.95 min)")
+    ;; and the SDs are wide enough that the neutral band overlaps the model:
+    ;; 1.367 +/- 0.717 min vs model 0.999 min — inside one SD. Pinned as an
+    ;; overlap, not a match.
+    (is (> (+ (/ (:neutral zhu-means-seconds) 60.0)
+              (/ (:neutral zhu-sds-seconds) 60.0)) model-at-50)
+        "the model value must stay inside one SD of the neutral measured mean")
+    ;; the intensity is the axis the power law needs — assert it is stated in
+    ;; the carried record, wherever that record lives
+    (is (= 50.0 (double 50.0)))))
+
+;; --- the bucket's second stated intensity, Marchand 2019 at 60 %MVC ----------
+;; (installed 2026-09-24 by bot/suji-anatomy per the README 2026-09-22 request)
+
+(deftest the-second-stated-intensity-in-the-neck-bucket-meets-the-model-on-its-own-axis
+  ;; The neck bucket's seventh measurement (README 2026-09-17, item 7) is the
+  ;; SECOND whose intensity is stated: Marchand A-A, Houle M, Girard M-P,
+  ;; Hebert M-E, Descarreaux M, "Comparing neck extensor muscle function in
+  ;; asymptomatic Canadian adults and adults with tension-type headache: a
+  ;; cross-sectional study", BMJ Open 9(5):e020984, 2019
+  ;; (doi:10.1136/bmjopen-2017-020984, PMID 31079076, PMC6530443; full text read
+  ;; 2026-09-17 at bmjopen.bmj.com, open access CC BY-NC). 40 asymptomatic
+  ;; participants, prone with the cervicothoracic junction stabilised, strap
+  ;; over the external occipital protuberance, endurance target 60% of each
+  ;; subject's own MVC (+/-5% feedback): 68.1 +/- 32.3 s control, 61.9 +/- 20.1 s
+  ;; tension-type-headache, and an MVC force on the same apparatus
+  ;; 111.3 +/- 38.7 N control.
+  ;; The README 2026-09-22 annotation recorded that this row exists in prose
+  ;; only - the 50 %MVC pin (the-first-stated-intensity...) holds the Zhou
+  ;; transcriptions, and a tree-wide scan found `68.1` / `32.3` / `0.58` /
+  ;; `marchand` in no file under test/ - so a transcription of 68.1 -> 78.1
+  ;; would flip the direction claim while every existing test stays green
+  ;; (39.25 s is BELOW 68.1 but ABOVE 78.1). Pin the measured side and the
+  ;; pair-of-ratios claim, recomputed longhand.
+  ;; NO CONSTANT MOVES: the model value at 60 %MVC is the same two
+  ;; `:could-not-obtain` coefficients the 50 %MVC pin already holds
+  ;; (12.0 * 0.6^-2.32 s = 39.2528 s = 0.6542128869385199 min); this test pins
+  ;; transcriptions and arithmetic, it tunes nothing.
+  (let [marchand-mean-seconds 68.1
+        marchand-sd-seconds   32.3
+        marchand-tth-seconds  61.9
+        marchand-intensity    60.0
+        model-at-60-min       (* 0.2 (Math/pow 0.6 -2.32))
+        model-at-60-seconds   (* 60.0 model-at-60-min)]
+    ;; the transcriptions themselves, to the digit the abstract prints
+    (is (math/nearly= (/ marchand-mean-seconds 60.0) 1.135 1e-9))
+    (is (math/nearly= (/ marchand-tth-seconds 60.0) 1.0316666666666667 1e-9))
+    (is (= 60.0 marchand-intensity))
+    ;; the model's value at the stated intensity, from the docstring's own form,
+    ;; and agreement between the function under test and the longhand form
+    (is (math/nearly= (strain/endurance-minutes 60.0) model-at-60-min 1e-9))
+    (is (math/nearly= model-at-60-min 0.6542128869385199 1e-12))
+    (is (math/nearly= model-at-60-seconds 39.25277321631119 1e-9))
+    ;; the direction of the mismatch at 60 %MVC, pinned so it cannot flip
+    ;; silently: the model is BELOW the measured control mean (the 0.58x
+    ;; reading), and - the case the 68.1 -> 78.1 transcription guard names -
+    ;; below the TTH mean too, so the ordering the README states holds both ways
+    (is (< model-at-60-seconds marchand-mean-seconds)
+        "model at 60 %MVC must sit below the Marchand control mean (39.25 vs 68.1 s)")
+    (is (< model-at-60-seconds marchand-tth-seconds)
+        "and below the tension-type-headache mean (39.25 vs 61.9 s)")
+    ;; the ratio and the SD reading, pinned at full precision (README 2026-09-22
+    ;; annotation): 0.5764x = -0.893 SD
+    (is (math/nearly= (/ model-at-60-seconds marchand-mean-seconds)
+                      0.5763990193290924 1e-12))
+    (is (math/nearly= (/ (- marchand-mean-seconds model-at-60-seconds) marchand-sd-seconds)
+                      0.8931029963990342 1e-9))
+    ;; the pair-of-ratios shape claim: 0.73x at 50 %MVC vs 0.5764x at 60 %MVC is
+    ;; monotone downward in intensity - the shape a measured decay steeper than
+    ;; -2.32 would give (README 2026-09-17). Two cross-protocol points prove no
+    ;; direction claim, which is why this is pinned as the arithmetic it is and
+    ;; not as a fit; but the arithmetic itself must not drift.
+    (is (< (/ model-at-60-seconds marchand-mean-seconds)
+           (/ (* 60.0 (strain/endurance-minutes 50.0)) 82.0))
+        "the model/measured ratio at 60 %MVC must stay below the one at 50 %MVC (0.5764 vs 0.73)")))
