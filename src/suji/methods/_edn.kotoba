@@ -5,7 +5,7 @@
   Ported from watatsuna/tsumugi (the same `_edn.cljc` family as ake/keizu/noroshi). Keeps
   keywords as their \":ns/name\" STRINGS, NOT Clojure keywords — the seed/manifest/schema
   records are string-keyed (\":body/id\", \":actor/cells\", \":db/ident\", …) and the Python
-  `:`-strings stay strings (root CLAUDE.md convention), so this loader yields the same string
+  `:`-strings stay strings (root AGENTS.md convention), so this loader yields the same string
   shape the Python `load_edn` does.
 
   Stdlib only (regex tokenizer); file I/O at the #?(:clj) edge."

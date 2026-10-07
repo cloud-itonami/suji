@@ -324,3 +324,155 @@
         (str "it is a few percent of the C7 demand, not a rounding artefact and "
              "not a headline: " (get-in summary [:two-joint-unfed-nm :c7]) " of "
              (get-in loads [:cervical :extensor-moment-nm])))))
+
+(defn- c2c3-unfed-at
+  "The `:two-joint-unfed-nm :c2c3` total at `posture-from-workstation`'s output
+  for a workstation posture. `:c2c3` has no equilibrium in this model, so the
+  moment is reported and fed to nobody - and until now no `deftest` asserted a
+  number under it anywhere: `lower-limb-test` pins the deep-squat unfed map to
+  the KEY SET `#{:c2c3 :c7}` only. The README's 2026-09-20b note requested both
+  totals at `math/nearly=` 1e-12, next to this file's own `:c7` pin."
+  [pst]
+  (let [b (segment/build-body 70.0 1.70)
+        loads (load/solve-posture-loads b pst)
+        tens (muscle/solve-muscle-tensions b pst loads)]
+    (get-in (muscle/tension-summary tens loads) [:two-joint-unfed-nm :c2c3])))
+
+(deftest the-c2c3-unfed-longus-capitis-moment-is-pinned-at-full-precision
+  ;; THE ONE SURVIVOR OF *WHAT THE COUPLED SOLVE STILL CANNOT EXPRESS*, as a
+  ;; number. `longus_capitis` is the only muscle crossing `:c2c3` (declared
+  ;; `:crosses {:joint :c2c3}` in attachment), no equilibrium covers the joint,
+  ;; so its secondary moment there lands in `:two-joint-unfed-nm` and is read by
+  ;; nobody. The two numbers the README carries were prose only - the
+  ;; 2026-09-20b annotation re-measured them and asked for exactly these pins,
+  ;; at `posture-from-workstation`'s output, which is what every workstation
+  ;; consumer builds from (the raw `posture/deep-squat` def gives -0.0585 and
+  ;; feeds nobody). Measured 2026-09-23 at HEAD 6d5a7c0 on the nbb mirror,
+  ;; repeatable to the digit.
+  (let [lap (c2c3-unfed-at (posture/posture-from-workstation posture/laptop-on-lap))]
+    (is (number? lap)
+        (str "the laptop-on-lap :c2c3 unfed moment must be a number: " (pr-str lap)))
+    (is (math/nearly= -0.1581450793522565 lap 1e-12)
+        (str "measured 2026-09-23 at laptop-on-lap, 70 kg / 1.70 m, at "
+             "posture-from-workstation's output: " (pr-str lap)
+             " N.m - the README's 1.9e-4 is ~830x smaller AND positive: a "
+             "pre-coupled-solve snapshot of the solver, not a property of the "
+             "posture")))
+  (let [squat (c2c3-unfed-at (posture/posture-from-workstation posture/deep-squat))]
+    (is (number? squat)
+        (str "the deep-squat :c2c3 unfed moment must be a number: " (pr-str squat)))
+    (is (math/nearly= -0.03408252217605897 squat 1e-12)
+        (str "measured 2026-09-23 at deep-squat, 70 kg / 1.70 m, at "
+             "posture-from-workstation's output: " (pr-str squat)
+             " N.m - the README's -0.0585 is what the RAW posture def gives "
+             "(re-measured -0.05846667...), not what this pipeline produces")))
+  ;; THE BREAK THAT MUST GO RED, named rather than assumed. Deleting the
+  ;; crossing drops `:c2c3` from the unfed map (the key-set pin in
+  ;; lower-limb-test passes a map without it - the total was protected by
+  ;; nothing); perturbing `coupled-arms`/`secondary-arm` at `:c2c3` moves the
+  ;; total off the pinned value.
+  (let [b (segment/build-body 70.0 1.70)
+        p (posture/posture-from-workstation posture/laptop-on-lap)
+        loads (load/solve-posture-loads b p)
+        tens (muscle/solve-muscle-tensions b p loads)
+        by (into {} (map (juxt :name identity)) tens)
+        lc (get by "longus_capitis")
+        summary (muscle/tension-summary tens loads)]
+    (is (= :c2c3 (:crosses-joint lc))
+        (str "longus_capitis must report the crossing the whole entry hangs on: "
+             (pr-str (select-keys lc [:crosses-joint :secondary-arm-m]))))
+    (is (and (number? (:secondary-arm-m lc))
+             (math/nearly= (* (:secondary-arm-m lc) (:force-n lc))
+                            (:secondary-moment-nm lc) 1e-9))
+        (str "the reported secondary moment must be arm x force: " lc))
+    (is (= #{:c2c3 :c7} (set (keys (:two-joint-unfed-nm summary))))
+        (str "the unfed set is exactly the two the coupled groups cannot reach: "
+             (:two-joint-unfed-nm summary)))
+    (is (= (get-in summary [:two-joint-unfed-nm :c2c3]) (:secondary-moment-nm lc))
+        (str "the :c2c3 total IS the longus_capitis secondary moment - one line "
+             "crosses, so total and row must agree: "
+             (get-in summary [:two-joint-unfed-nm :c2c3]) " vs "
+             (pr-str (:secondary-moment-nm lc))))))
+
+(defn- c7-girdle-at
+  "The `:two-joint-unfed-nm :c7` total and the four girdle-suspension rows at
+  `posture-from-workstation`'s output - the pipeline every workstation consumer
+  builds from, and the path the laptop `:c7` pin above already sits on."
+  [pst]
+  (let [b (segment/build-body 70.0 1.70)
+        loads (load/solve-posture-loads b pst)
+        tens (muscle/solve-muscle-tensions b pst loads)
+        by (into {} (map (juxt :name identity)) tens)
+        summary (muscle/tension-summary tens loads)]
+    {:summary summary
+     :rows (mapv #(get by %)
+                 ["upper_trapezius/left" "upper_trapezius/right"
+                  "levator_scapulae/left" "levator_scapulae/right"])}))
+
+(deftest the-deep-squat-c7-unfed-girdle-moment-is-pinned-at-full-precision
+  ;; THE README'S 2026-09-19 REQUEST, NOW EXECUTED. The `:c7` bullet pins the
+  ;; laptop total but its deep-squat figure -1.8428 N·m was prose only, the
+  ;; single copy in the tree, and the four girdle rows' arms about C7 were
+  ;; asserted only as `below recruit/min-coeff` - any magnitude under the 5 mm
+  ;; floor passed while this paragraph kept quoting whatever it quoted.
+  ;;
+  ;; WHAT THE MEASUREMENT FOUND (2026-09-27 at HEAD c51dcdf, nbb mirror, the
+  ;; suite's own pipeline `build-body 70.0 1.70` -> `posture-from-workstation`):
+  ;; the README's -1.8428 is what the RAW `posture/deep-squat` def gives
+  ;; (re-measured -1.842798183540419, four digits confirmed) - the same
+  ;; stale-prose class the `:c2c3` note's 2026-09-20b annotation caught, and
+  ;; again by the same mechanism: the consumer pipeline builds from
+  ;; `posture-from-workstation`, and at ITS output the deep-squat total is
+  ;; -1.2232176118517235 N·m, 34% smaller. Against that pipeline's own C7
+  ;; demand (2.349914136475177 N·m) the unfed girdle moment is 52% of the
+  ;; demand - versus 7.6% at laptop-on-lap - so at this posture the unfed
+  ;; share is a headline, not a footnote, and the row that carries it was
+  ;; quoted at the wrong posture's number.
+  ;;
+  ;; THE BREAK THAT MUST GO RED: perturbing `attachment/secondary-arm` for the
+  ;; girdle muscles. Verified 2026-09-27: an upper-trapezius-only x1.1 arm
+  ;; perturbation turns this test red at its `math/nearly=` pins (the
+  ;; deep-squat total, the arm magnitudes, and the rows-sum identity) while the
+  ;; laptop pin above ALSO fails - the four arms enter that total too - and the
+  ;; c2c3 pins stay green (longus_capitis is untouched). Restored
+  ;; byte-identically, sha256 checked; 336 tests green.
+  (let [squat (c7-girdle-at (posture/posture-from-workstation posture/deep-squat))
+        summary (:summary squat)
+        rows (group-by :name (:rows squat))
+        ut (:secondary-arm-m (first (rows "upper_trapezius/left")))
+        ls (:secondary-arm-m (first (rows "levator_scapulae/left")))
+        ut-m (:secondary-moment-nm (first (rows "upper_trapezius/left")))
+        ls-m (:secondary-moment-nm (first (rows "levator_scapulae/left")))]
+    (is (math/nearly= -1.2232176118517235
+                      (get-in summary [:two-joint-unfed-nm :c7]) 1e-12)
+        (str "measured 2026-09-27 at deep-squat (posture-from-workstation's "
+             "output), 70 kg / 1.70 m: " (get-in summary [:two-joint-unfed-nm :c7])
+             " N.m - the README's -1.8428 is the RAW posture def's value, not "
+             "this pipeline's"))
+    ;; and the raw def's number is now a pin too, so the prose figure cannot
+    ;; drift silently in either direction
+    (let [raw (c7-girdle-at posture/deep-squat)]
+      (is (math/nearly= -1.842798183540419
+                        (get-in (:summary raw) [:two-joint-unfed-nm :c7]) 1e-12)
+          (str "the README's -1.8428 N.m, re-measured on the raw def: "
+               (get-in (:summary raw) [:two-joint-unfed-nm :c7]))))
+    ;; the four arms are pinned at full precision, not merely below the floor.
+    ;; Pairs are byte-equal because the sagittal chain is midline-symmetric.
+    (is (math/nearly= -0.007372702909802641 ut 1e-12)
+        (str "upper_trapezius/left's arm about C7 at deep-squat: " (pr-str ut)))
+    (is (math/nearly= -0.007372702909802641
+                      (:secondary-arm-m (first (rows "upper_trapezius/right"))) 1e-12)
+        (str "upper_trapezius/right's arm about C7 at deep-squat: "
+             (pr-str (:secondary-arm-m (first (rows "upper_trapezius/right"))))))
+    (is (math/nearly= -0.01284937962522827 ls 1e-12)
+        (str "levator_scapulae/left's arm about C7 at deep-squat: " (pr-str ls)))
+    (is (math/nearly= -0.01284937962522827
+                      (:secondary-arm-m (first (rows "levator_scapulae/right"))) 1e-12)
+        (str "levator_scapulae/right's arm about C7 at deep-squat: "
+             (pr-str (:secondary-arm-m (first (rows "levator_scapulae/right"))))))
+    ;; and the summary total is the four rows, to the digit - the identity the
+    ;; laptop pin already implies but never asserted row-wise at this posture
+    (is (math/nearly= (+ ut-m ut-m ls-m ls-m)
+                      (get-in summary [:two-joint-unfed-nm :c7]) 1e-12)
+        (str "the unfed total is the four rows' moments: "
+             (+ ut-m ut-m ls-m ls-m) " vs " (get-in summary [:two-joint-unfed-nm :c7])))))
