@@ -192,7 +192,19 @@
    ;; and the axis in ONE segment, `upper_cervical` — so both its ends are still on
    ;; one bone and it would still be the error above. Splitting the atlas from the
    ;; axis would fix it and would open the atlanto-axial joint, whose cardinal
-   ;; motion is 40.5 deg of AXIAL ROTATION against about 10 deg of flexion; a
+   ;; motion is axial rotation. ⚠ PROVENANCE: the "40.5 deg of axial rotation"
+   ;; figure this comment carried until 2026-09-15 is a citation this repo could
+   ;; not obtain — the 2026-09-13 check found it in neither Bogduk & Mercer nor
+   ;; Dvorak et al. (whose 8.7 deg per side at C1/C2 is a SAGITTAL range, Table 5,
+   ;; N=28), so it was removed from here and from `segment`. What the joint does
+   ;; carry measured is Kang J, Chen G, Zhai X, He X, PLoS ONE
+   ;; 14(4):e0215357, 2019 (doi:10.1371/journal.pone.0215357, PMID 30990826,
+   ;; full text via Europe PMC REST, PMC6467451): C1-C2 axial rotation
+   ;; 37.9 +/- 5.1 deg in 20 asymptomatic volunteers (CT, Cardan angles) and
+   ;; 34.6 +/- 3.3 deg in cervical-spine patients — both inside the old 40.5, so
+   ;; the replacement is same-direction and tighter-spread, not a reversal. A
+   ;; sagittal model still spends none of it; no numeric pin touches it. About
+   ;; 10 deg of flexion at this joint stays :representative and unmeasured. a
    ;; sagittal model would pay for a vertebra-level mass split that no
    ;; anthropometric table publishes and collect almost none of the benefit. See
    ;; `segment/head-share-of-complex` for the three tables that were checked.
@@ -383,6 +395,16 @@
    ;; (+4 to +6 mm over a subaxial unit), which is the part that made the
    ;; uniform-spacing cut short. Errors run modelled-length SHORT; see
    ;; `the-suboccipital-lengths-are-checked-against-the-measurement`.
+;;   ⚠ Supplemented 2026-09-15 (bot/suji-anatomy): an IN-VIVO whole-C2 height now
+;;   exists — Polat S, Oksüzler M, "Determination of reference values of the
+;;   craniovertebral junction in healthy individuals using computed tomography",
+;;   Cukurova Medical Journal 2025;50(3):732-743 (doi:10.17826/cumj.1708045,
+;;   no PMID found; abstract read via the publisher page, full text
+;;   :could-not-obtain): axis height 34.78 +/- 2.82 mm (n=180 CT; M 36.40 +/- 2.61,
+;;   F 33.33 +/- 2.15), dens tip to inferior endplate. That is +16.2 mm over the
+;;   18.6 mm subaxial unit at the mean — about 3x the +4 to +6 mm the Xu body-only
+;;   heights give, same direction, larger size. The ~50 mm stack total remains
+;;   :representative and installed nowhere.
 
    "rectus_capitis_posterior_major"
    {:name "rectus_capitis_posterior_major" :pcsa-cm2 1.86
@@ -420,7 +442,7 @@
     :origin {:segment "upper_cervical" :along 0.72 :ant -0.0059 :lat 0.0}
     :insertion {:segment "head" :along 0.150 :ant -0.0135 :lat 0.0}
     :wrap {:radius-m 0.012 :sign 1.0}
-    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 1.03 cm2 per side x 2 = 2.06 cm2 bilateral (measured; N=8, range 0.29-1.59). Offsets representative. MODELLED MIDLINE AND THEREFORE SAGITTAL ONLY, which costs more here than it does for the other two: the real obliquus capitis superior runs from a TRANSVERSE process, 25 mm lateral, and its lateral flexion and its contribution to steadying the head in rotation are absent. What is modelled is the sagittal component of a bilateral pair."}
+    :source "PCSA Kamibayashi & Richmond 1998 Table 3-3, 1.03 cm2 per side x 2 = 2.06 cm2 bilateral (measured; N=8, range 0.29-1.59). Offsets representative. MODELLED MIDLINE AND THEREFORE SAGITTAL ONLY, which costs more here than it does for the other two: the real obliquus capitis superior runs from a TRANSVERSE process, 25 mm lateral (:parameter-not-in-source - the 25 is stated with no citation here or in the README bullet; the first measured floor is Cacciola F, Phalke U, Goel A, Vertebral artery in relationship to C1-C2 vertebrae: an anatomical study, Neurol India 2004;52(2):178-184, PMID 15269464, full PDF read 2026-09-17: midline to the medial-most edge of the vertebral artery groove on the C1 posterior arch 14.3-19.7 mm, mean 18.2 mm, with the artery itself at a mean 22.1 mm, and the transverse foramen sits in the transverse process lateral to the lateral mass, so any transverse-process origin is at or lateral to 18.2 mm; the tip itself :could-not-obtain), and its lateral flexion and its contribution to steadying the head in rotation are absent. What is modelled is the sagittal component of a bilateral pair."}
 
    ;; --- the upper cervical FLEXORS ----------------------------------------------
    ;; Added 2026-09-08, and the gap they close was named by the file that created

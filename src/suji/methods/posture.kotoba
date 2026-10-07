@@ -569,8 +569,9 @@
      ;;  - Fukushima et al. 2026, Sci Rep 16:5831, doi:10.1038/s41598-026-36815-5
      ;;    (full text): skin-marker lumbar curvature through a DEEP bodyweight
      ;;    squat, healthy males; the curvature crossed from lordosis to kyphosis
-     ;;    mid-descent in every subject (low-PI 40.8% of the cycle, high-PI
-     ;;    55.3%), i.e. at the held bottom the lumbar spine sat in flexion.
+     ;;    mid-descent in every subject (the crossing's timing is in the README's
+     ;;    deep-squat annotation), i.e. at the held bottom the lumbar spine sat in
+     ;;    flexion.
      ;;    Dynamic kinematics, not a radiographic Cobb angle — direction only,
      ;;    and in the direction the model already claimed. No constant moves.
      :direction-source {:searched :europe-pmc-and-web-2026-09-12
