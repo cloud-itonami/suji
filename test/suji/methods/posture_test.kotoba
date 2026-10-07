@@ -16,6 +16,7 @@
   (:require #?(:clj  [clojure.test :refer [deftest is]]
                :cljs [cljs.test :refer [deftest is]])
             [suji.methods.math :as math]
+            [suji.methods.pose :as pose]
             [suji.methods.posture :as posture]))
 
 (deftest every-named-posture-declares-where-its-lordosis-came-from
@@ -340,6 +341,113 @@
           (str "Mills' upper-arc lordosis, " installed-pll " deg, is inside the "
                "review's own 95% interval " [lo hi] " — which is wider than its "
                "own mean")))))
+
+(deftest the-chord-tilt-s-sign-does-not-survive-the-source-s-last-digit
+  ;; RE-MEASURED 2026-09-12, in the tree rather than only narrated in the README
+  ;; (which has carried this as prose since 92a1c06, probed 2026-09-10).
+  ;; The chord tilt is `(share - chord-turn-fraction) x lordosis`, and its two
+  ;; factors are nearly equal: 0.58596... is 16.7/28.5 and 0.58483... is the
+  ;; trapezoid integral over Mills' five standing segmental angles. Their
+  ;; difference is 0.0011, so ONE last digit in ANY of the seven published
+  ;; inputs moves the tilt by more than the tilt itself.
+  ;; Every input is published to 0.1 deg, so the honest bound is what the tilt
+  ;; does when each input sits at either end of its last printed digit:
+  ;; 2 (the delta column's SS and LL) x 2 x 2^5 (the five standing segments,
+  ;; which set both the normalising sum and the integral) = 128 combinations.
+  (let [d (:standing-to-relaxed-seated posture/spinopelvic-motion)
+        segs (get-in posture/spinopelvic-motion [:standing :segments])
+        lordosis 46.5
+        tilt-of (fn [ss ll seg-degs]
+                  (let [total (reduce + 0.0 seg-degs)
+                        shares (map (fn [deg] {:share (/ deg total)}) seg-degs)
+                        turn (posture/chord-turn-fraction
+                              (posture/turn-nodes shares))]
+                    (* (- (/ ss ll) turn) lordosis)))
+        ;; MEASURED 2026-09-19 (bot/suji-anatomy): the seven inputs are no longer
+        ;; transcribed a second time as literals here — they are read out of
+        ;; `spinopelvic-motion` itself, so the sweep and the data cannot drift
+        ;; apart silently. A transcription correction still changes the band
+        ;; (legitimately); the data's own pins (= 16.7 ss, = 28.5 ll, the
+        ;; five-segment vector) are what catch the correction.
+        alts (let [ss (:deg (:sacral-slope d))] [(- ss 0.05) (+ ss 0.05)])
+        alts-ll (let [ll (:deg (:lumbar-lordosis d))] [(- ll 0.05) (+ ll 0.05)])
+        alt-seg (fn [x] [(- x 0.05) (+ x 0.05)])
+        seg-degs (mapv :deg segs)
+        point (pose/lumbar-chord-tilt-deg 0.0 lordosis)
+        ;; the 128-combination sweep over the last printed digit of each input
+        tilts (for [ss alts ll alts-ll
+                    s1 (alt-seg (nth seg-degs 0)) s2 (alt-seg (nth seg-degs 1))
+                    s3 (alt-seg (nth seg-degs 2)) s4 (alt-seg (nth seg-degs 3))
+                    s5 (alt-seg (nth seg-degs 4))]
+                (tilt-of ss ll [s1 s2 s3 s4 s5]))
+        lo (reduce min tilts)
+        hi (reduce max tilts)
+        negatives (count (filter neg? tilts))]
+    (is (= 128 (count tilts)) "2 x 2 x 2^5 combinations over the last digit")
+    ;; the installed point sits inside the band its own inputs' printing
+    ;; precision leaves open — so it is a POINT IN A BAND, not a number
+    (is (< lo point hi)
+        (str "the installed chord tilt " point " deg lies inside ["
+             lo ", " hi "] deg, the band the table's last digit leaves"))
+    ;; THE SIGN IS NOT RESOLVED BY THE SOURCE. Positive = the sacral endplate
+    ;; turns further than the chord's mean tangent, i.e. a small anterior tilt
+    ;; of the lumbar segment. Some of the band is on the other side.
+    (is (pos? negatives)
+        (str negatives " of the 128 combinations give a NEGATIVE chord tilt — "
+             "a posterior one — without any transcription being wrong"))
+    ;; but the size of the band stays small: the whole reduction from 23.25 deg
+    ;; is robust even though its sign is not
+    (is (< (math/abs* lo) 0.5)
+        (str "even the most negative combination is only " lo
+             " deg against the 23.25 the circular-arc rule returned"))
+    (is (< hi 0.5)
+        (str "and the most positive is " hi " deg — the SIZE of the reduction "
+             "from 23.25 deg survives every last digit; only the sign does not"))
+    ;; the reason the sign is fragile, stated in the tree: the two factors are
+    ;; nearly equal and each is itself a ratio of rounded numbers
+    (is (< (math/abs* (- posture/sacral-slope-share-of-lordosis
+                        posture/lumbar-chord-turn-fraction))
+           0.01)
+        (str "the share and the turn fraction differ by only "
+             (math/abs* (- posture/sacral-slope-share-of-lordosis
+                           posture/lumbar-chord-turn-fraction))
+             " — the cancellation that makes the tilt a last-digit quantity"))
+    (is (math/nearly= point (* (- posture/sacral-slope-share-of-lordosis
+                                 posture/lumbar-chord-turn-fraction)
+                               lordosis)
+                       1e-12)
+        "and the installed value is exactly that difference times the lordosis")
+    ;; MEASURED 2026-09-19 (bot/suji-anatomy): the band endpoints themselves are
+    ;; now pinned, to the last digit the README states them at (2026-09-12
+    ;; section: [-0.1341, +0.2393]). Before this, none of the four assertions
+    ;; above said what the band IS — a drifted input literal would have kept all
+    ;; four true while the README's band quietly stopped being this test's band.
+    ;; The inputs are read from `spinopelvic-motion`, so this pin now ties the
+    ;; README's printed band to the transcribed data itself.
+    (is (math/nearly= lo -0.1341 0.00005)
+        (str "band low end " lo " deg — README states -0.1341"))
+    (is (math/nearly= hi 0.2393 0.00005)
+        (str "band high end " hi " deg — README states +0.2393"))
+    (is (= 42 negatives)
+        (str negatives " of the 128 combinations negative — README states 42"))
+    ))
+
+(deftest the-deep-squat-s-direction-must-name-where-it-came-from
+  ;; THE CLAIM'S OWN GATE, TURNED ON ITSELF. `:parameter-not-in-source` says
+  ;; which way the held neutral errs — for the deep squat, that the lordosis is
+  ;; "most often reported to REVERSE". A direction is a claim about the
+  ;; literature, and this repo's rule is that a literature claim carries a
+  ;; source or is marked as unsourced opinion. This test demands the squat's
+  ;; direction entry name WHERE the reversal is reported — same duty the
+  ;; `:searched` field already carries for the parameter itself.
+  (let [pns (:parameter-not-in-source
+             (posture/lordosis-provenance-for "deep-squat"))]
+    (is (string? (:direction pns))
+        "the deep squat states a direction, as it must")
+    (is (contains? pns :direction-source)
+        (str "the direction's reversal claim carries no source: it says "
+             (pr-str (:direction pns))))))
+
 
 (deftest every-cervical-segmental-source-says-what-was-obtained-of-it
   ;; 2026-09-13. `spine/level-axis-offset-deg` answers zero for every cervical
