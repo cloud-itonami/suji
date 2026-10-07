@@ -5860,3 +5860,38 @@ same class as the 2026-09-22 biomech note. A test added unseen red would be a
 claim, not coverage. No constant moves — `endurance-minutes` coefficients, the
 50 %MVC pin and every transcribed value stay as they are; Hansraj 5-value and
 Wilke sitting 348.86176709999995 N byte-identical (README-only diff).
+
+## The five cervical levels stopped being the same gap as a sentence (2026-09-13)
+
+`spine/level-axis-offset-deg` has answered zero for every cervical level since it
+existed, and `spine`'s own docstring has named the reason since 2026-09-07: nobody
+has put a measured segmental distribution into this library for the NECK, so the
+five levels on `lower_cervical` share one frame exactly the way the five lumbar
+levels did until 2026-09-11. What was missing was not the statement — it was the
+list of sources behind it, the thing that makes "none was found" a claim a reader
+can check instead of a summary of a search nobody can repeat.
+
+**The search, recorded in `posture/cervical-lordosis-sources-not-installed`:**
+
+- **The closest source, read in full** (Europe PMC REST `fullTextXML`,
+  fetched 2026-09-13): Bagherzadeh S, Kopparapu S, Roohollahi F, Kumar J, Bauer S,
+  Neal E, Noureldine MHA, Pressman E, Alikhani P, Rostami M. *Normative segmental
+  cervical lordosis distribution and sagittal vertical axis variations with T1
+  slope: Defining the role of the C2–C5 segment*, J Craniovertebr Junction Spine
+  2026;17(2):165-173 (DOI 10.4103/jcvjs.jcvjs_11_26, PMID 41929743). It reports
+  `UCL was 18.79° (±8.68), accounting for 67% (±30.89) of TCL. The SCL was 10.67°
+  (±9.48), representing 33% (±30.89) of TCL` — quoted, not rounded into a model
+  number. **It still cannot fill the gap**: its spans are C2–C5 and C6–C7 against
+  this model's five discs C7/T1…C3/C4 (C3–C7 exactly), and a five-span
+  distribution cannot be derived from a two-span one without inventing the
+  intermediate shares. Nothing was invented. Its own SDs are as wide as or wider
+  than its means, which is recorded as read.
+- **The classic per-level source, recorded as NOT obtained**: Hardacker et al.
+  1997, Spine 22(13):1472-1480. No PMCID; only its abstract was reachable, so it
+  is `:could-not-obtain` and NOT a citation — per this repo's rule that a
+  document read as an abstract is not a document whose numbers were read.
+
+No number moved. The cervical levels keep the segment's frame and the gap keeps
+its name; what changed is that the absence now has a search behind it, with a gate
+(`every-cervical-segmental-source-says-what-was-obtained-of-it`) so a future
+five-span source has to arrive with its spans rather than on its own.
